@@ -1,0 +1,16 @@
+v23.7.122 수정내용
+
+- 요금 표시를 월 2,000원 / 연 19,900원으로 변경
+- 결제/연장 버튼 문구도 월 2,000원 / 연 19,900원으로 변경
+- Supabase/PostgreSQL용 DB 시작 스키마 추가
+- 회원, 서류함, 서류, 교체이력, 공유링크, 결제, 알림, 즐겨찾기, 문의, 관리자 기록 테이블 설계 추가
+- 담당자 공유 링크 7일 유효 구조 반영
+- 요금제 seed 데이터: monthly 2,000원 / annual 19,900원 추가
+- DB 연결 예시 파일 추가: db/sitepass_db_config.example.js
+- DB 시작 가이드 추가: DATABASE_START_GUIDE.md
+- service worker 캐시 버전 v23.7.122로 변경
+
+중요
+- 아직 실제 원격 DB에 연결한 것은 아니며, DB를 만들 수 있는 SQL과 연결 준비 파일을 포함한 단계입니다.
+- Supabase 프로젝트 생성 후 SQL 실행 및 URL/anon key 입력이 필요합니다.
+- 정식 연결 전까지 앱 데이터는 기존처럼 브라우저 localStorage에 저장됩니다.
