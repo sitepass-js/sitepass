@@ -13,8 +13,8 @@
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
-  <title>SitePass v23.7.148 - 아이디 찾기 문자 인증 추가</title>
-  <!-- SitePass deploy-check: v23.7.148 id-find-sms-verify-flow -->
+  <title>SitePass v23.7.150 - 등록 결제 후 QR 생성 흐름</title>
+  <!-- SitePass deploy-check: v23.7.150 save-to-payment-then-qr -->
   <style>
     :root {
       --bg:#f3f6fb;
@@ -2306,6 +2306,36 @@
     .plan-select-card strong { display:block; font-size:18px; color:#172033; margin-bottom:5px; }
     .plan-select-card .plan-price { font-size:23px; font-weight:950; color:#173f9f; margin-bottom:5px; }
     .plan-select-card span { display:block; color:#667085; font-size:13px; line-height:1.45; font-weight:800; }
+    .payment-easy-box {
+      margin-top:12px;
+      padding:13px;
+      border:1px solid #cfe0ff;
+      border-radius:16px;
+      background:#f8fbff;
+    }
+    .payment-easy-box b { display:block; color:#173f9f; margin-bottom:6px; font-size:15px; }
+    .payment-easy-box ul { margin:6px 0 0 19px; padding:0; color:#344054; font-size:13px; line-height:1.55; font-weight:850; }
+    .payment-easy-box li + li { margin-top:4px; }
+    .payment-price-table {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+    .payment-price-card {
+      border:2px solid #d7dfed;
+      border-radius:18px;
+      background:#ffffff;
+      padding:13px;
+    }
+    .payment-price-card.highlight {
+      border-color:#2457d6;
+      background:#eef4ff;
+    }
+    .payment-price-card strong { display:block; font-size:17px; color:#172033; margin-bottom:6px; }
+    .payment-price-card .pay-line { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid #edf0f5; font-size:14px; font-weight:900; }
+    .payment-price-card .pay-line:last-child { border-bottom:0; }
+    .payment-price-card .pay-line span:last-child { color:#173f9f; font-weight:950; }
     .pricing-target-list { margin-top:14px; }
     .renew-panel {
       margin:12px 0;
@@ -3183,7 +3213,7 @@
         <h1>현장 장비 반입서류,<br>한 번 등록하고 링크 하나로 전달</h1>
         <p>장비·기사·인부 서류를 한 번만 등록해두세요. 현장마다 카톡이나 문자로 7일 만료 링크를 보내면, 담당자는 다운로드와 프린트만 바로 하면 됩니다.</p>
         <div class="menu-grid">
-          <button class="primary" onclick="startNewRegistration()">장비/기사/인부 등록</button>
+          <button id="homeRegisterButton" class="primary" onclick="startNewRegistration()">장비/기사/인부 등록</button>
           <button class="ghost" onclick="showScreen('listScreen')">장비/기사/인부 보관함</button>
         </div>
         <div class="roadmap-grid">
@@ -3259,7 +3289,7 @@
         <div class="step-guide-list">
           <div class="step-guide-item"><span class="step-guide-num">1</span><div><b>장비/기사/인부 등록</b><span>장비 등록번호와 장비명을 입력하고, 장비서류는 기본으로 등록합니다. 기사서류와 인부서류는 필요한 경우 체크해서 같은 QR 안에 묶습니다.</span></div></div>
           <div class="step-guide-item"><span class="step-guide-num">2</span><div><b>서류 첨부와 만료일 입력</b><span>사업자등록증, 장비등록증, 검사증, 보험증권 등 필요한 서류를 사진찍기 또는 파일선택으로 올립니다. 검사증·보험증권처럼 만료일이 있는 서류는 날짜를 입력합니다.</span></div></div>
-          <div class="step-guide-item"><span class="step-guide-num">3</span><div><b>통합 서류함 저장</b><span>저장하면 장비/기사/인부 서류가 하나의 통합 서류함으로 만들어지고, 보관함에서 QR과 담당자용 링크를 확인할 수 있습니다.</span></div></div>
+          <div class="step-guide-item"><span class="step-guide-num">3</span><div><b>통합 서류함 저장 후 결제</b><span>저장을 누르면 결제방법 화면으로 이동합니다. 결제가 완료되면 장비/기사/인부 서류가 보관함에 저장되고 QR·담당자용 링크가 생성됩니다.</span></div></div>
           <div class="step-guide-item"><span class="step-guide-num">4</span><div><b>보관함에서 담당자에게 공유</b><span>보관함에서 필요한 장비를 선택해 카톡이나 문자로 7일 확인 링크를 보냅니다. 받은 담당자는 로그인 없이 서류 확인, 다운로드, 프린트를 할 수 있습니다.</span></div></div>
           <div class="step-guide-item"><span class="step-guide-num">5</span><div><b>만료서류 갱신</b><span>보험증권, 검사증, 비파괴검사증, 기사 안전교육처럼 만료일이 있는 서류는 갱신 후 새 파일과 새 만료일을 넣으면 담당자 화면에도 바로 반영됩니다.</span></div></div>
         </div>
@@ -3349,22 +3379,44 @@
     <section id="pricingScreen" class="screen hidden">
       <div class="card">
         <h2>이용 결제방법</h2>
-        <p>SitePass 이용요금과 결제/연장 흐름을 확인하는 상세화면입니다.</p>
+        <p>처음 1대 등록 요금과 2대부터 추가등록 요금을 쉽게 확인하는 화면입니다.</p>
         <div class="notice blue-note" style="font-size:16px;font-weight:950;">
-          아래 1개월결제 링크 / 1년결제 링크를 누르면 결제 성공 후 QR이 바로 활성화되는 흐름을 확인할 수 있습니다.
+          첫 장비는 기본요금, 2대째부터는 보관함/등록화면에서 <b>추가등록</b>으로 등록하면 할인요금이 적용됩니다.
+        </div>
+        <div id="pendingRegistrationPaymentBox" class="notice blue-note hidden"></div>
+        <div class="payment-price-table">
+          <div class="payment-price-card highlight">
+            <strong>1대 등록</strong>
+            <div class="pay-line"><span>월 결제</span><span>월 2,000원</span></div>
+            <div class="pay-line"><span>연 결제</span><span>연 19,900원</span></div>
+          </div>
+          <div class="payment-price-card">
+            <strong>2대부터 추가등록</strong>
+            <div class="pay-line"><span>월 결제</span><span>월 1,000원</span></div>
+            <div class="pay-line"><span>연 결제</span><span>연 9,900원</span></div>
+          </div>
+        </div>
+        <div class="payment-easy-box">
+          <b>쉽게 보면 이렇게입니다.</b>
+          <ul>
+            <li>처음 장비 1대는 월 2,000원 또는 연 19,900원입니다.</li>
+            <li>이미 1대를 등록한 회원이 2대째부터 추가등록하면 월 1,000원 또는 연 9,900원입니다.</li>
+            <li>결제가 완료되면 해당 장비의 QR·담당자 링크가 바로 활성화됩니다.</li>
+            <li>월 결제는 한 달씩, 연 결제는 1년 단위로 이용하는 방식입니다.</li>
+          </ul>
         </div>
         <div class="plan-select-grid">
           <label class="plan-select-card">
             <input type="radio" name="paymentPlan" value="monthly" checked onchange="updateSelectedPaymentPlan()" />
-            <strong>월 결제</strong>
-            <div class="plan-price">월 2,000원</div>
-            <span>장비 1대 기준. 한 달씩 쓰고 싶은 장비업자에게 맞는 방식입니다.</span>
+            <strong>월 결제 선택</strong>
+            <div id="monthlyPlanPriceText" class="plan-price">월 2,000원</div>
+            <span id="monthlyPlanDescText">처음 1대 등록 기준. 한 달씩 이용하는 방식입니다.</span>
           </label>
           <label class="plan-select-card">
             <input type="radio" name="paymentPlan" value="annual" onchange="updateSelectedPaymentPlan()" />
-            <strong>연 결제</strong>
-            <div class="plan-price">연 19,900원</div>
-            <span>자주 쓰는 장비는 1년으로 연장해서 만료 걱정을 줄이는 방식입니다.</span>
+            <strong>연 결제 선택</strong>
+            <div id="annualPlanPriceText" class="plan-price">연 19,900원</div>
+            <span id="annualPlanDescText">처음 1대 등록 기준. 1년 동안 이용하는 방식입니다.</span>
           </label>
         </div>
         <div id="selectedPlanNote" class="notice blue-note"></div>
@@ -3373,12 +3425,12 @@
         </div>
         <div class="actions">
           <button class="secondary" onclick="showScreen('homeScreen')">처음 화면</button>
-          <button class="primary" onclick="startRegistrationWithSelectedPlan()">선택한 결제방법으로 등록하기</button>
+          <button id="paymentRegisterButton" class="primary" onclick="startRegistrationWithSelectedPlan()">선택한 결제방법으로 등록하기</button>
         </div>
       </div>
       <div class="card">
         <h2>이용 중인 서류함 결제/연장</h2>
-        <p>보관함에 있는 서류함은 여기서 1개월결제 링크 / 1년결제 링크로 결제 성공 후 QR 활성화 흐름을 확인할 수 있습니다.</p>
+        <p>보관함에 있는 서류함은 여기서 1개월결제 링크 / 1년결제 링크로 결제 성공 후 QR 활성화 흐름을 확인할 수 있습니다. 2대째부터는 추가등록 요금으로 표시됩니다.</p>
         <div id="pricingTargetList" class="pricing-target-list"></div>
       </div>
     </section>
@@ -4032,6 +4084,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     const ADMIN_WITHDRAWN_MEMBERS_KEY = STORAGE_KEY + '_withdrawn_members';
     const CONTACT_STORAGE_KEY = STORAGE_KEY + '_contacts';
     const SELECTED_PAYMENT_PLAN_KEY = STORAGE_KEY + '_selectedPaymentPlan';
+    const PENDING_REGISTRATION_KEY = STORAGE_KEY + '_pending_registration_payment_v23_7_150';
     const VISIT_STATS_KEY = STORAGE_KEY + '_visit_stats';
     const CLEAN_RESET_VERSION_KEY = STORAGE_KEY + '_clean_reset_v23_7_112';
     const COMPANY_KAKAO_CHANNEL_NAME = '제이에스건설';
@@ -4042,6 +4095,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     let adminMemberPage = 0;
     let adminExpandedMemberId = '';
     let adminListQuickFilter = 'all';
+    let pendingRegistrationItemMemory = null;
 
     let currentDetailLink = '';
     let cameraStream = null;
@@ -4238,7 +4292,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
         return !(sameId || samePhone || sameProviderId || sameSignupId || sameNameProvider);
       });
       setMembers(members);
-      [STORAGE_KEY, PREV_STORAGE_KEY_7, PREV_STORAGE_KEY_6, PREV_STORAGE_KEY_5, PREV_STORAGE_KEY_4, PREV_STORAGE_KEY_3, PREV_STORAGE_KEY_2, PREV_STORAGE_KEY, SELECTED_PAYMENT_PLAN_KEY].forEach(key => {
+      [STORAGE_KEY, PREV_STORAGE_KEY_7, PREV_STORAGE_KEY_6, PREV_STORAGE_KEY_5, PREV_STORAGE_KEY_4, PREV_STORAGE_KEY_3, PREV_STORAGE_KEY_2, PREV_STORAGE_KEY, SELECTED_PAYMENT_PLAN_KEY, PENDING_REGISTRATION_KEY].forEach(key => {
         if (key) localStorage.removeItem(key);
       });
       removeSessionValue(CURRENT_MEMBER_KEY);
@@ -6011,6 +6065,7 @@ async function saveMemberToSupabase(member) {
       document.querySelectorAll('.screen').forEach(screen => screen.classList.add('hidden'));
       const target = document.getElementById(id);
       if (target) target.classList.remove('hidden');
+      if (id === 'homeScreen') updateHomeRegistrationButton();
       if (id === 'listScreen') renderList();
       if (id === 'pricingScreen') renderPricingScreen();
       if (id === 'registerScreen') { const docBox = document.getElementById('docCards'); if (docBox && !docBox.innerHTML.trim()) renderDocCards(); renderAlertPreview(); renderBundleSummary(); updateRegisterModeUi(); }
@@ -8491,7 +8546,7 @@ async function saveMemberToSupabase(member) {
         banner.classList.toggle('hidden', !editingCode);
         if (editingCode) banner.innerHTML = '기존 통합 서류함 수정/갱신 중입니다. 장비는 그대로 두고 기사 교체, 보험증·검사증 날짜 갱신, 제원표·비파괴·특수건강검진 파일 교체가 가능합니다. <button type="button" class="mini-button" onclick="cancelEditMode()">수정취소</button>';
       }
-      if (saveButton) saveButton.textContent = editingCode ? '수정내용 저장' : '통합 서류함 저장';
+      if (saveButton) saveButton.textContent = editingCode ? '수정내용 저장' : (hasRegisteredEquipmentBundle() ? '추가등록 결제창으로 이동' : '첫 장비 결제창으로 이동');
       if (noInput) noInput.readOnly = !!editingCode;
     }
 
@@ -8634,22 +8689,37 @@ async function saveMemberToSupabase(member) {
       missingFiles.push(...workerValidation.missingFiles);
       const missingAuth = Object.values(docs).filter(doc => doc.groupKey !== 'equipment' && doc.fileName && !doc.authVerified).map(doc => (doc.groupTitle || '개인정보서류') + ' - ' + doc.title);
       if (missingAuth.length) {
-        alert('인증 미완료 서류가 있습니다.\n\n' + missingAuth.join('\n'));
+        alert(`인증 미완료 서류가 있습니다.
+
+${missingAuth.join(String.fromCharCode(10))}`);
         return;
       }
 
       if (missingFiles.length || missingDates.length) {
-        alert('필수 항목을 확인해주세요.\n\n미첨부 서류:\n' + (missingFiles.join('\n') || '없음') + '\n\n미입력 날짜:\n' + (missingDates.join('\n') || '없음'));
+        alert(`필수 항목을 확인해주세요.
+
+미첨부 서류:
+${missingFiles.join(String.fromCharCode(10)) || '없음'}
+
+미입력 날짜:
+${missingDates.join(String.fromCharCode(10)) || '없음'}`);
         return;
       }
 
-      const bundleMeta = getBundleMeta();
-      const selectedPlan = getPlanInfo(localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'monthly');
       const items = getItems();
       const currentMember = getCurrentMemberTest();
       const editIndex = editingCode ? items.findIndex(x => x.code === editingCode) : -1;
       const oldItem = editIndex >= 0 ? items[editIndex] : null;
+      const isNewRegistration = !oldItem;
+      const isAdditionalRegistration = isNewRegistration && items.length > 0;
+      const selectedPlan = getPlanInfo(localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'monthly', { additional: isAdditionalRegistration });
+      const bundleMeta = getBundleMeta();
       const code = oldItem ? oldItem.code : makeBundleCode(equipmentNo);
+      if (isNewRegistration && items.some(x => String(x.code || '') === String(code || ''))) {
+        alert(`이미 같은 장비 등록번호로 만든 서류함이 있습니다.
+보관함에서 기존 장비를 확인하거나 다른 장비번호로 등록해주세요.`);
+        return;
+      }
       const qrLink = oldItem ? (oldItem.qrLink || makeQrLink(code)) : makeQrLink(code);
       const nowIso = new Date().toISOString();
       const item = {
@@ -8669,22 +8739,91 @@ async function saveMemberToSupabase(member) {
         ownerProviderId: oldItem?.ownerProviderId || currentMember?.providerId || '',
         ownerName: oldItem?.ownerName || currentMember?.name || '',
         ownerPhone: oldItem?.ownerPhone || currentMember?.phone || '',
-        trialEndsAt: oldItem?.trialEndsAt || addDaysIso(nowIso, TRIAL_DAYS),
-        serviceStatus: oldItem?.serviceStatus || '실사용베타',
+        trialEndsAt: oldItem?.trialEndsAt || '',
+        serviceStatus: oldItem?.serviceStatus || '결제대기',
         paymentPlan: oldItem?.paymentPlan || selectedPlan.key,
-        basicPlan: oldItem?.basicPlan || ('선택 예정 · ' + selectedPlan.planText),
+        basicPlan: oldItem?.basicPlan || ('결제대기 · ' + selectedPlan.planText),
         alertPlan: oldItem?.alertPlan || '보험·검사 만료 알림 포함 준비',
         forwardPolicy: oldItem?.forwardPolicy || '담당자용 QR·링크 7일 접속 가능',
-        managerExpireAt: oldItem?.managerExpireAt || addDaysIso(nowIso, 7)
+        managerExpireAt: oldItem?.managerExpireAt || '',
+        paymentStatus: oldItem?.paymentStatus || '결제대기',
+        paymentAmount: oldItem?.paymentAmount || selectedPlan.price,
+        paymentTier: oldItem?.paymentTier || (isAdditionalRegistration ? 'additional' : 'first')
       };
       item.updateHistory = Array.isArray(oldItem?.updateHistory) ? oldItem.updateHistory.slice() : [];
       if (oldItem) {
         item.updateHistory.unshift({ at:nowIso, summary:buildUpdateSummary(oldItem, item).slice(0, 12) });
+        items[editIndex] = item;
+        let saved = setItems(items);
+        let savedLight = false;
+        if (!saved) {
+          const lightItems = items.map(makeStorageLightItem);
+          saved = setItems(lightItems);
+          savedLight = saved;
+        }
+        if (!saved) {
+          alert('브라우저 임시 저장공간이 부족해서 저장하지 못했습니다. 기존 코드를 삭제하거나 사진 없이 다시 확인해주세요.');
+          return;
+        }
+        const editSavedLightNote = savedLight ? (String.fromCharCode(10) + String.fromCharCode(10) + '용량을 줄이기 위해 원본/보정본 비교데이터는 제외하고 담당자용 사진 미리보기만 저장했습니다.') : '';
+        alert(`수정내용이 저장되었습니다.
+
+포함: ${bundleMeta.includedGroupNames.join(', ')}${editSavedLightNote}`);
+        editingCode = '';
+        resetForm(false);
+        renderDetail(code);
+        return;
       }
 
-      if (oldItem) items[editIndex] = item;
-      else items.unshift(item);
+      const pending = {
+        item,
+        paymentTier: isAdditionalRegistration ? 'additional' : 'first',
+        createdAt: nowIso
+      };
+      if (!setPendingRegistration(pending)) {
+        alert('결제 대기 정보를 임시 저장하지 못했습니다. 사진 용량을 줄이거나 기존 코드를 정리한 뒤 다시 시도해주세요.');
+        return;
+      }
+      updateSelectedPaymentPlan();
+      alert(`${isAdditionalRegistration ? '추가등록 서류 확인이 완료되었습니다.' : '첫 장비 서류 확인이 완료되었습니다.'}
 
+이제 결제방법 화면으로 이동합니다.
+결제를 완료하면 QR링크가 생성되고 보관함에 저장됩니다.`);
+      showScreen('pricingScreen');
+    }
+
+    function completePendingRegistrationPayment(plan) {
+      const pending = getPendingRegistration();
+      if (!pending || !pending.item) { alert('결제 대기 중인 등록서류가 없습니다.'); return; }
+      if (!requirePasswordReconfirm('등록 결제')) return;
+      const items = getItems();
+      const item = pending.item;
+      if (items.some(x => String(x.code || '') === String(item.code || ''))) {
+        alert('이미 같은 장비번호의 서류함이 저장되어 있습니다. 보관함을 확인해주세요.');
+        clearPendingRegistration();
+        renderPricingScreen();
+        return;
+      }
+      const info = getPlanInfo(plan || getSelectedPaymentPlan(), { additional: pending.paymentTier === 'additional' });
+      const now = new Date();
+      const nowIso = now.toISOString();
+      const paidItem = {
+        ...item,
+        serviceStatus: info.serviceStatus,
+        paymentPlan: info.key,
+        basicPlan: info.planText,
+        paidAt: nowIso,
+        trialEndsAt: addDaysIso(nowIso, info.days),
+        managerExpireAt: new Date(getSevenDaysFromNowMs()).toISOString(),
+        managerShareToken: makeManagerShareToken(),
+        paymentStatus: '등록결제완료',
+        paymentAmount: info.price,
+        paymentMethod: '등록 결제 테스트 처리',
+        paymentTier: pending.paymentTier,
+        updatedAt: nowIso
+      };
+      if (paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
+      items.unshift(paidItem);
       let saved = setItems(items);
       let savedLight = false;
       if (!saved) {
@@ -8693,15 +8832,21 @@ async function saveMemberToSupabase(member) {
         savedLight = saved;
       }
       if (!saved) {
-        alert('브라우저 임시 저장공간이 부족해서 저장하지 못했습니다. 기존 코드를 삭제하거나 사진 없이 다시 확인해주세요.');
+        alert('결제는 확인되었지만 브라우저 저장공간이 부족해서 서류함을 저장하지 못했습니다. 기존 코드를 삭제하거나 사진 용량을 줄여주세요.');
         return;
       }
-
-      const message = oldItem ? '수정내용이 저장되었습니다.' : '통합 서류함이 저장되었습니다.';
-      alert(message + '\n\n포함: ' + bundleMeta.includedGroupNames.join(', ') + '\n담당자에게는 장비/기사/인부 보관함의 공유하기로 7일 만료 QR·링크를 보내면 됩니다.' + (savedLight ? '\n\n용량을 줄이기 위해 원본/보정본 비교데이터는 제외하고 담당자용 사진 미리보기만 저장했습니다.' : ''));
-      editingCode = '';
+      clearPendingRegistration();
+      updateHomeRegistrationButton();
       resetForm(false);
-      renderDetail(code);
+      const paymentSavedLightNote = savedLight ? (String.fromCharCode(10) + String.fromCharCode(10) + '용량을 줄이기 위해 담당자용 사진 미리보기만 저장했습니다.') : '';
+      alert(`${info.label} 결제가 완료되었습니다.
+
+${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생성되고 보관함에 저장되었습니다.${paymentSavedLightNote}`);
+      renderDetail(paidItem.code);
+    }
+
+    function escapePlainTextForAlert(text) {
+      return String(text || '').split(String.fromCharCode(13)).join(' ').split(String.fromCharCode(10)).join(' ').trim();
     }
 
     function resetForm(clearEdit = true) {
@@ -10146,38 +10291,132 @@ async function saveMemberToSupabase(member) {
       openEmailShare(text, item ? [item] : []);
     }
 
+
+    function getPendingRegistration() {
+      if (pendingRegistrationItemMemory && pendingRegistrationItemMemory.item) return pendingRegistrationItemMemory;
+      try {
+        const raw = sessionStorage.getItem(PENDING_REGISTRATION_KEY) || localStorage.getItem(PENDING_REGISTRATION_KEY) || '';
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.item) {
+          pendingRegistrationItemMemory = parsed;
+          return parsed;
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function setPendingRegistration(pending) {
+      pendingRegistrationItemMemory = pending || null;
+      try { sessionStorage.setItem(PENDING_REGISTRATION_KEY, JSON.stringify(pending || null)); return true; } catch (e) {}
+      try { localStorage.setItem(PENDING_REGISTRATION_KEY, JSON.stringify(pending || null)); return true; } catch (e) {}
+      return !!pendingRegistrationItemMemory;
+    }
+
+    function clearPendingRegistration() {
+      pendingRegistrationItemMemory = null;
+      try { sessionStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
+      try { localStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
+    }
+
+    function hasRegisteredEquipmentBundle() {
+      return getItems().length > 0;
+    }
+
+    function updateHomeRegistrationButton() {
+      const btn = document.getElementById('homeRegisterButton');
+      if (!btn) return;
+      btn.textContent = hasRegisteredEquipmentBundle() ? '장비/기사/인력 추가등록' : '장비/기사/인부 등록';
+    }
+
+    function getPendingRegistrationTierText(pending) {
+      const additional = pending ? pending.paymentTier === 'additional' : isAdditionalRegistrationContext();
+      return additional ? '2대부터 추가등록' : '첫 장비 1대 등록';
+    }
+
+    function renderPendingRegistrationPaymentBox() {
+      const box = document.getElementById('pendingRegistrationPaymentBox');
+      if (!box) return;
+      const pending = getPendingRegistration();
+      if (!pending || !pending.item) {
+        box.classList.add('hidden');
+        box.innerHTML = '';
+        return;
+      }
+      const item = pending.item;
+      const tierText = getPendingRegistrationTierText(pending);
+      box.classList.remove('hidden');
+      box.innerHTML = '<b>결제 대기 중인 등록서류</b><br>' +
+        escapeHtml(tierText) + ' · ' + escapeHtml(item.equipmentName || '장비명 없음') + ' / ' + escapeHtml(item.equipmentNo || '') + '<br>' +
+        '결제를 완료하면 이 장비의 QR·담당자 링크가 바로 생성되고 보관함에 저장됩니다.';
+    }
+
     function getSelectedPaymentPlan() {
       const checked = document.querySelector('input[name="paymentPlan"]:checked');
       return checked?.value || localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'monthly';
     }
 
-    function getPlanInfo(plan) {
+    function isAdditionalRegistrationContext() {
+      const pending = getPendingRegistration();
+      if (pending && pending.paymentTier) return pending.paymentTier === 'additional';
+      return getItems().length > 0;
+    }
+
+    function isAdditionalPaymentItem(item, list) {
+      const items = Array.isArray(list) ? list : getItems();
+      if (!item || items.length <= 1) return false;
+      const oldest = items[items.length - 1];
+      return String(item.code || '') !== String(oldest?.code || '');
+    }
+
+    function getPlanInfo(plan, options) {
+      const additional = typeof options === 'boolean' ? options : !!(options && options.additional);
       if (plan === 'annual') {
-        return { key:'annual', label:'연 결제', price:'연 19,900원', days:365, serviceStatus:'유료사용', planText:'연 결제 · 연 19,900원' };
+        const price = additional ? '연 9,900원' : '연 19,900원';
+        const label = additional ? '추가등록 연 결제' : '1대 등록 연 결제';
+        return { key:'annual', label, price, days:365, serviceStatus:'유료사용', planText:label + ' · ' + price, additional };
       }
-      return { key:'monthly', label:'월 결제', price:'월 2,000원', days:30, serviceStatus:'유료사용', planText:'월 결제 · 월 2,000원' };
+      const price = additional ? '월 1,000원' : '월 2,000원';
+      const label = additional ? '추가등록 월 결제' : '1대 등록 월 결제';
+      return { key:'monthly', label, price, days:30, serviceStatus:'유료사용', planText:label + ' · ' + price, additional };
     }
 
     function updateSelectedPaymentPlan() {
       const plan = getSelectedPaymentPlan();
       localStorage.setItem(SELECTED_PAYMENT_PLAN_KEY, plan);
-      const info = getPlanInfo(plan);
+      const additional = isAdditionalRegistrationContext();
+      const info = getPlanInfo(plan, { additional });
+      const monthlyInfo = getPlanInfo('monthly', { additional });
+      const annualInfo = getPlanInfo('annual', { additional });
+      const monthlyPrice = document.getElementById('monthlyPlanPriceText');
+      const annualPrice = document.getElementById('annualPlanPriceText');
+      const monthlyDesc = document.getElementById('monthlyPlanDescText');
+      const annualDesc = document.getElementById('annualPlanDescText');
+      const registerButton = document.getElementById('paymentRegisterButton');
+      const pending = getPendingRegistration();
+      if (monthlyPrice) monthlyPrice.textContent = monthlyInfo.price;
+      if (annualPrice) annualPrice.textContent = annualInfo.price;
+      if (monthlyDesc) monthlyDesc.textContent = additional ? '2대부터 추가등록 기준. 한 달씩 이용하는 방식입니다.' : '처음 1대 등록 기준. 한 달씩 이용하는 방식입니다.';
+      if (annualDesc) annualDesc.textContent = additional ? '2대부터 추가등록 기준. 1년 동안 이용하는 방식입니다.' : '처음 1대 등록 기준. 1년 동안 이용하는 방식입니다.';
+      if (registerButton) registerButton.textContent = pending ? '결제하고 QR링크 생성' : (additional ? '선택한 결제방법으로 추가등록하기' : '선택한 결제방법으로 1대 등록하기');
       const note = document.getElementById('selectedPlanNote');
       if (note) {
-        note.innerHTML = '<b>선택한 요금제:</b> ' + escapeHtml(info.label) + ' / ' + escapeHtml(info.price) + '<br>정식 서비스에서는 실제 카드결제·계좌이체·자동갱신 여부를 결제대행사와 연결합니다.';
+        note.innerHTML = '<b>선택한 요금제:</b> ' + escapeHtml(info.label) + ' / ' + escapeHtml(info.price) + '<br>' + (additional ? '2대부터 추가등록 요금으로 결제됩니다.' : '첫 장비 1대 등록 요금으로 결제됩니다.') + '<br>' + (pending ? '결제를 완료하면 보관함에 저장되고 QR·담당자 링크가 바로 생성됩니다.' : '정식 서비스에서는 실제 카드결제·계좌이체·자동갱신 여부를 결제대행사와 연결합니다.');
       }
+      renderPendingRegistrationPaymentBox();
       renderPricingTargetList();
     }
 
 
-    function makeAutoPaymentHash(code, plan) {
+    function makeAutoPaymentHash(code, plan, tier) {
       const cleanPlan = plan === 'annual' ? 'annual' : 'monthly';
-      return '#pay=' + encodeURIComponent(code || '') + '&plan=' + encodeURIComponent(cleanPlan) + '&result=success';
+      const cleanTier = tier === 'additional' ? 'additional' : 'first';
+      return '#pay=' + encodeURIComponent(code || '') + '&plan=' + encodeURIComponent(cleanPlan) + '&tier=' + encodeURIComponent(cleanTier) + '&result=success';
     }
 
-    function makeAutoPaymentTestLink(code, plan) {
+    function makeAutoPaymentTestLink(code, plan, tier) {
       const base = String(window.location.href || './index.html').split('#')[0] || './index.html';
-      return base + makeAutoPaymentHash(code, plan);
+      return base + makeAutoPaymentHash(code, plan, tier);
     }
 
     function applyAutoPaymentResultToOwnerMember(paidItem, info, nowIso, newEnd) {
@@ -10212,11 +10451,11 @@ async function saveMemberToSupabase(member) {
       return 1;
     }
 
-    function completeAutoPaymentForItem(code, plan, sourceLabel) {
+    function completeAutoPaymentForItem(code, plan, sourceLabel, options) {
       const items = getItems();
       const idx = items.findIndex(item => String(item.code || '') === String(code || ''));
       if (idx < 0) return { ok:false, message:'결제할 서류함을 찾을 수 없습니다.', code:code || '' };
-      const info = getPlanInfo(plan || 'monthly');
+      const info = getPlanInfo(plan || 'monthly', { additional: !!(options && options.additional) });
       const now = new Date();
       const nowIso = now.toISOString();
       const currentEnd = items[idx].trialEndsAt ? new Date(items[idx].trialEndsAt) : now;
@@ -10259,7 +10498,8 @@ async function saveMemberToSupabase(member) {
         params[decodeURIComponent(pair[0] || '')] = decodeURIComponent(pair.slice(1).join('=') || '');
       });
       const plan = params.plan === 'annual' ? 'annual' : 'monthly';
-      const result = completeAutoPaymentForItem(code, plan, '자동결제 링크 확인');
+      const additional = params.tier === 'additional';
+      const result = completeAutoPaymentForItem(code, plan, '자동결제 링크 확인', { additional });
       if (!silent) {
         if (!result.ok) {
           alert(result.message || '자동결제 처리에 실패했습니다.');
@@ -10340,6 +10580,11 @@ async function saveMemberToSupabase(member) {
 
     function startRegistrationWithSelectedPlan() {
       updateSelectedPaymentPlan();
+      const pending = getPendingRegistration();
+      if (pending && pending.item) {
+        completePendingRegistrationPayment(getSelectedPaymentPlan());
+        return;
+      }
       startNewRegistration();
     }
 
@@ -10363,7 +10608,10 @@ async function saveMemberToSupabase(member) {
       if (!item) return '';
       const dueText = getPaymentDueText(item);
       const showChip = isPaymentDueSoon(item) ? '<div class="renew-chip">연장 필요 · ' + escapeHtml(dueText) + '</div>' : '<div class="small">종료까지 ' + escapeHtml(dueText) + '</div>';
-      return '<div class="renew-panel"><b>결제/연장</b><span>월 결제 또는 연 결제를 선택하면 현재 종료일 기준으로 기간이 연장됩니다. 로그인 상태여도 결제는 확인번호를 한 번 더 입력합니다.</span>' + showChip + '<div class="renew-actions"><button class="ghost" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'monthly\')">월 2,000원 연장</button><button class="primary" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'annual\')">연 19,900원 연장</button></div></div>';
+      const additional = isAdditionalPaymentItem(item);
+      const monthlyInfo = getPlanInfo('monthly', { additional });
+      const annualInfo = getPlanInfo('annual', { additional });
+      return '<div class="renew-panel"><b>결제/연장</b><span>' + (additional ? '추가등록 장비 요금으로 연장됩니다.' : '첫 1대 등록 요금으로 연장됩니다.') + ' 현재 종료일 기준으로 기간이 연장되고, 로그인 상태여도 확인번호를 한 번 더 입력합니다.</span>' + showChip + '<div class="renew-actions"><button class="ghost" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'monthly\')">' + escapeHtml(monthlyInfo.price) + ' 연장</button><button class="primary" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'annual\')">' + escapeHtml(annualInfo.price) + ' 연장</button></div></div>';
     }
 
     function renderListRenewButton(item) {
@@ -10376,21 +10624,26 @@ async function saveMemberToSupabase(member) {
       if (!box) return;
       const items = getItems();
       const plan = getSelectedPaymentPlan();
-      const info = getPlanInfo(plan);
       if (!items.length) {
-        box.innerHTML = '<div class="empty">아직 등록된 서류함이 없습니다.<br>선택한 요금제로 먼저 통합 서류함을 등록해보세요.</div>';
+        box.innerHTML = '<div class="empty">아직 등록된 서류함이 없습니다.<br>첫 장비는 서류 등록 후 월 2,000원 또는 연 19,900원 결제를 완료하면 QR링크가 생성됩니다.</div>';
         return;
       }
       box.innerHTML = items.map(item => {
-        const monthlyLink = makeAutoPaymentTestLink(item.code, 'monthly');
-        const annualLink = makeAutoPaymentTestLink(item.code, 'annual');
+        const additional = isAdditionalPaymentItem(item, items);
+        const info = getPlanInfo(plan, { additional });
+        const monthlyInfo = getPlanInfo('monthly', { additional });
+        const annualInfo = getPlanInfo('annual', { additional });
+        const tier = additional ? 'additional' : 'first';
+        const monthlyLink = makeAutoPaymentTestLink(item.code, 'monthly', tier);
+        const annualLink = makeAutoPaymentTestLink(item.code, 'annual', tier);
         return '<div class="list-item"><strong>' + escapeHtml(getItemTitle(item)) + '</strong>' +
           '<div class="small">현재 상태: ' + escapeHtml(getServiceStatusText(item)) + '</div>' +
+          '<div class="small">적용 구분: ' + (additional ? '2대부터 추가등록 요금' : '1대 등록 기본요금') + '</div>' +
           '<div class="small">선택 요금제: ' + escapeHtml(info.label + ' / ' + info.price) + '</div>' +
-          '<div class="renew-panel"><b>자동결제 링크 확인</b><span>관리자 수동처리 없이 결제 성공 링크가 돌아왔을 때 QR·담당자 링크가 바로 열리는지 확인합니다.</span>' +
+          '<div class="renew-panel"><b>자동결제 링크 확인</b><span>결제 성공 링크가 돌아왔을 때 QR·담당자 링크가 바로 열리는지 확인합니다.</span>' +
             '<div class="renew-actions">' +
-              '<a class="auto-pay-link monthly" href="' + escapeHtml(monthlyLink) + '">1개월결제 링크 확인</a>' +
-              '<a class="auto-pay-link annual" href="' + escapeHtml(annualLink) + '">1년결제 링크 확인</a>' +
+              '<a class="auto-pay-link monthly" href="' + escapeHtml(monthlyLink) + '">' + escapeHtml(monthlyInfo.price) + ' 결제 확인</a>' +
+              '<a class="auto-pay-link annual" href="' + escapeHtml(annualLink) + '">' + escapeHtml(annualInfo.price) + ' 결제 확인</a>' +
             '</div>' +
           '</div>' +
           '<div class="actions"><button class="primary" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'' + escapeJs(plan) + '\')">선택한 요금제로 수동연장</button><button class="ghost" onclick="renderDetail(\'' + escapeJs(item.code) + '\')">상세보기</button></div></div>';
@@ -10413,7 +10666,7 @@ async function saveMemberToSupabase(member) {
       const items = getItems();
       const idx = items.findIndex(x => x.code === code);
       if (idx < 0) { alert('연장할 서류함을 찾을 수 없습니다.'); return; }
-      const info = getPlanInfo(plan || getSelectedPaymentPlan());
+      const info = getPlanInfo(plan || getSelectedPaymentPlan(), { additional: isAdditionalPaymentItem(items[idx], items) });
       const now = new Date();
       const currentEnd = items[idx].trialEndsAt ? new Date(items[idx].trialEndsAt) : now;
       const base = currentEnd.getTime() > now.getTime() ? currentEnd : now;
