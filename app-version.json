@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.215",
+  "version": "v23.7.217",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix login first-screen password manager/autofill issue on mobile: use a real login form, stop clearing saved password on screen refresh, and keep ID/password fields compact with right-side login button.",
+  "note": "Login screen layout fix: keep password-manager autofill, make password show checkbox small and aligned under password input, prevent label wrapping.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T23:55:00+09:00"
+  "updatedAt": "2026-06-30T00:45:00+09:00"
 }
