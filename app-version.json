@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.206",
+  "version": "v23.7.207",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Restore mobile social login/signup buttons. Re-add missing saveMemberTest and OAuth pending key/redirect helper, force Kakao/Naver OAuth redirect on mobile, exchange OAuth code on return, and keep v23.7.204 admin duplicate cleanup plus v23.7.205 terms fixes.",
+  "note": "Fix social login runtime error: normalizeSignupProviderKey was missing. Normalize Kakao/Naver/SitePass signup provider names and keep mobile social login, terms, admin duplicate cleanup fixes.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T21:10:00+09:00"
+  "updatedAt": "2026-06-29T21:25:00+09:00"
 }
