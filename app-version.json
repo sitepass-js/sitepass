@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.207",
+  "version": "v23.7.208",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix social login runtime error: normalizeSignupProviderKey was missing. Normalize Kakao/Naver/SitePass signup provider names and keep mobile social login, terms, admin duplicate cleanup fixes.",
+  "note": "Add common My Account screen and password change for normal members, operator admins, and super admin.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T21:25:00+09:00"
+  "updatedAt": "2026-06-29T21:15:00+09:00"
 }
