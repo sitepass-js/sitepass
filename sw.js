@@ -1,13 +1,9 @@
-const SITEPASS_SW_VERSION = 'v23.7.174';
-const SITEPASS_CACHE = 'sitepass-cache-v23-7-174';
+const SITEPASS_SW_VERSION = 'v23.7.173';
+const SITEPASS_CACHE = 'sitepass-cache-v23-7-173';
 const SITEPASS_CORE = [
   './',
   './index.html',
-  './sitepass.webmanifest',
-  './app-version.json',
-  './icons/sitepass-icon-192.png',
-  './icons/sitepass-icon-512.png',
-  './icons/sitepass-icon-180.png'
+  './sitepass.webmanifest'
 ];
 
 self.addEventListener('install', event => {
@@ -47,7 +43,7 @@ self.addEventListener('fetch', event => {
         cache.put('./index.html', fresh.clone()).catch(() => null);
         return fresh;
       } catch (e) {
-        return (await caches.match('./index.html')) || (await caches.match('./')) || Response.error();
+        return (await caches.match('./index.html')) || Response.error();
       }
     })());
     return;
