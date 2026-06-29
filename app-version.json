@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.193",
+  "version": "v23.7.195",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Keep member data during updates, remove operator/viewer role choices, and keep admin account creation only in super-admin mode.",
+  "note": "Clean screen fix package: only runtime files are included, service worker cache is bumped to remove any broken cached page.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T16:20:00+09:00"
+  "updatedAt": "2026-06-29T19:24:39+09:00"
 }
