@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.191",
+  "version": "v23.7.192",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Kakao OAuth KOE205 fix: request only profile_nickname and profile_image scopes until email permission is available.",
+  "note": "Super admin changed to sitepass@kakao.com and added super-admin-only admin account creation/password reset for operator/viewer managers.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T15:30:00+09:00"
+  "updatedAt": "2026-06-29T16:00:00+09:00"
 }
