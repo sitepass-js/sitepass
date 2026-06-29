@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.225",
+  "version": "v23.7.228",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Admin member statistics rebuild: counts active members by Kakao/Naver/SitePass terms-completed provider, today signups, and withdrawal totals without manual Table Editor edits.",
+  "note": "Add optional email and SMS advertising consent checkboxes to SitePass and social signup terms, save consent to Supabase RPC, and show advertising consent counts on the admin summary board.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T03:30:00+09:00"
+  "updatedAt": "2026-06-30T05:20:00+09:00"
 }
