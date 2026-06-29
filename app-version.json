@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.198",
+  "version": "v23.7.200",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Withdrawn Kakao accounts no longer auto-login. Member withdrawal signs out Supabase, marks account withdrawn, blocks immediate login, and asks for rejoin confirmation.",
+  "note": "Fix live-site admin member list when Supabase sitepass_members has rows but GitHub Pages cannot read them due to RLS/permissions. Requires running the v23.7.200 admin member read RPC SQL once in Supabase.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T20:55:00+09:00"
+  "updatedAt": "2026-06-29T19:50:00+09:00"
 }

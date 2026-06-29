@@ -23,13 +23,13 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.195" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.200" />
 <!-- v23.7.186: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.198 withdraw-kakao-block -->
+  <!-- SitePass deploy-check: v23.7.200 internet-admin-members-read-fix -->
   <!-- SitePass screen-fix: clean package only, no guide/patch/text files required -->
   <style>
     :root {
@@ -4422,7 +4422,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     supabaseUrl: 'https://fipbgzvdwgjsmazmswaj.supabase.co',
     supabaseAnonKey: 'sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO',
     storageBucket: 'sitepass-documents',
-    appVersion: 'v23.7.198'
+    appVersion: 'v23.7.200'
   };
 
   window.sitepassSupabase = window.supabase.createClient(
@@ -4950,6 +4950,22 @@ async function saveMemberToSupabase(member) {
       return incoming.length;
     }
 
+
+    async function syncCurrentSupabaseAuthMemberToServer() {
+      try {
+        if (!window.sitepassSupabase || !window.sitepassSupabase.rpc) return false;
+        const { error } = await window.sitepassSupabase.rpc('sitepass_sync_current_user_member');
+        if (error) {
+          console.warn('현재 Supabase Auth 회원 서버 동기화 RPC 실패:', error.message);
+          return false;
+        }
+        return true;
+      } catch (e) {
+        console.warn('현재 Supabase Auth 회원 서버 동기화 RPC 예외:', e);
+        return false;
+      }
+    }
+
     async function syncSupabaseMembersForAdmin(forceAlert) {
       if (!isAdminLoggedIn()) return;
       if (adminSupabaseMemberSyncing) return;
@@ -4961,23 +4977,55 @@ async function saveMemberToSupabase(member) {
         return;
       }
       adminSupabaseMemberSyncing = true;
-      adminSupabaseMemberSyncMessage = 'Supabase 회원목록 불러오는 중...';
+      adminSupabaseMemberSyncMessage = '인터넷 서버 회원목록 불러오는 중...';
       renderAdmin();
       try {
-        const { data, error } = await window.sitepassSupabase
-          .from('sitepass_members')
-          .select('*')
-          .order('last_login_at', { ascending:false, nullsFirst:false })
-          .limit(1000);
-        if (error) {
-          console.warn('Supabase 회원목록 불러오기 실패:', error.message);
-          adminSupabaseMemberSyncMessage = 'Supabase 회원목록 불러오기 실패: ' + (error.message || '권한/RLS/테이블 확인 필요');
-          if (forceAlert) alert(adminSupabaseMemberSyncMessage);
-          return;
+        let rows = [];
+        let directErrorMessage = '';
+
+        // 1차: public.sitepass_members 직접 조회
+        try {
+          const { data, error } = await window.sitepassSupabase
+            .from('sitepass_members')
+            .select('*')
+            .order('last_login_at', { ascending:false, nullsFirst:false })
+            .limit(1000);
+          if (error) {
+            directErrorMessage = error.message || 'sitepass_members 직접 조회 실패';
+          } else {
+            rows = data || [];
+          }
+        } catch (directError) {
+          directErrorMessage = directError?.message || 'sitepass_members 직접 조회 예외';
         }
-        const count = mergeSupabaseMembersIntoLocal(data || []);
+
+        // 2차: 인터넷 배포/RLS 환경에서는 RPC로 Auth -> Members 동기화 후 조회
+        if (!rows.length && window.sitepassSupabase.rpc) {
+          try {
+            adminSupabaseMemberSyncMessage = '서버 Auth 가입자를 members로 동기화하는 중...';
+            renderAdmin();
+            const { data: rpcRows, error: rpcError } = await window.sitepassSupabase.rpc('sitepass_admin_sync_members');
+            if (rpcError) {
+              const msg = 'RPC 동기화 실패: ' + (rpcError.message || 'sitepass_admin_sync_members SQL 필요');
+              adminSupabaseMemberSyncMessage = directErrorMessage
+                ? directErrorMessage + '\n' + msg
+                : msg;
+              if (forceAlert) alert(adminSupabaseMemberSyncMessage);
+              return;
+            }
+            rows = rpcRows || [];
+          } catch (rpcException) {
+            adminSupabaseMemberSyncMessage = '서버 회원 동기화 RPC 예외: ' + (rpcException?.message || 'SQL/RLS 확인 필요');
+            if (forceAlert) alert(adminSupabaseMemberSyncMessage);
+            return;
+          }
+        }
+
+        const count = mergeSupabaseMembersIntoLocal(rows || []);
         adminSupabaseMemberSyncedAt = Date.now();
-        adminSupabaseMemberSyncMessage = 'Supabase 회원목록 동기화 완료: ' + count + '명 확인';
+        adminSupabaseMemberSyncMessage = rows.length
+          ? '인터넷 서버 회원목록 동기화 완료: ' + count + '명 확인'
+          : '인터넷 서버에서 회원을 찾지 못했습니다. Supabase에는 members가 있는데 화면에 안 보이면 v23.7.200 관리자 회원 읽기 SQL을 실행하세요.';
         if (forceAlert) alert(adminSupabaseMemberSyncMessage);
       } catch (e) {
         console.warn('Supabase 회원목록 불러오기 예외:', e);
@@ -4987,104 +5035,6 @@ async function saveMemberToSupabase(member) {
         adminSupabaseMemberSyncing = false;
         renderAdmin();
       }
-    }
-
-    function saveMemberTest(member) {
-      if (findWithdrawnMemberRecord(member) && !member?.rejoinConfirmedAt) {
-        console.warn('탈퇴 처리된 회원 저장 차단:', member?.providerId || member?.signupId || member?.id || member?.name);
-        return;
-      }
-      const members = ensureMemberIds();
-      const memberPhone = String(member.phone || '').replace(/[^0-9]/g, '');
-      const memberSignupId = String(member.signupId || '').toLowerCase();
-      const memberProviderId = String(member.providerId || '').toLowerCase();
-      const memberName = String(member.name || '').toLowerCase();
-      const existing = members.find(m => {
-        const mPhone = String(m.phone || '').replace(/[^0-9]/g, '');
-        const mSignupId = String(m.signupId || '').toLowerCase();
-        const mProviderId = String(m.providerId || '').toLowerCase();
-        const mName = String(m.name || '').toLowerCase();
-        return (member.id && m.id === member.id) ||
-          (memberPhone && mPhone === memberPhone) ||
-          (memberSignupId && mSignupId === memberSignupId) ||
-          (memberProviderId && mProviderId === memberProviderId) ||
-          (memberName && mName === memberName && (member.provider === m.provider || member.signupMethod === m.signupMethod));
-      });
-      if (existing) {
-        const keepAdminRole = existing.adminRole;
-        const keepAdminRoleUpdatedAt = existing.adminRoleUpdatedAt;
-        const keepAdminRoleUpdatedBy = existing.adminRoleUpdatedBy;
-        Object.assign(existing, member, { updatedAt:new Date().toISOString() });
-        if (keepAdminRole && !member.adminRole) existing.adminRole = keepAdminRole;
-        if (keepAdminRoleUpdatedAt && !member.adminRoleUpdatedAt) existing.adminRoleUpdatedAt = keepAdminRoleUpdatedAt;
-        if (keepAdminRoleUpdatedBy && !member.adminRoleUpdatedBy) existing.adminRoleUpdatedBy = keepAdminRoleUpdatedBy;
-      } else {
-        members.unshift({ id:'MEM-' + Date.now(), createdAt:new Date().toISOString(), status:'실사용베타', ...member });
-      }
-      setMembers(members);
-      saveMemberToSupabase(member);
-    }
-
-    function getSignupAgreements() {
-      const getChecked = id => !!document.getElementById(id)?.checked;
-      return {
-        service: getChecked('agreeServiceTerms'),
-        privacy: getChecked('agreePrivacyTerms'),
-        documentShare: getChecked('agreeDocumentTerms'),
-        sensitiveInfo: getChecked('agreeSensitiveTerms'),
-        paymentPolicy: getChecked('agreePaymentTerms'),
-        responsibility: getChecked('agreeResponsibilityTerms'),
-        serviceAlerts: getChecked('agreeAlertTerms'),
-        marketing: getChecked('agreeMarketingTerms'),
-        agreedAt: new Date().toISOString()
-      };
-    }
-
-    function hasRequiredSignupTerms() {
-      return Array.from(document.querySelectorAll('.signup-required-term')).every(input => input.checked);
-    }
-
-    function requireSignupTerms() {
-      if (!hasRequiredSignupTerms()) {
-        alert('회원가입 전에 필수 약관을 모두 확인하고 동의해주세요.');
-        const box = document.querySelector('.terms-box');
-        if (box) box.scrollIntoView({ behavior:'smooth', block:'start' });
-        return false;
-      }
-      return true;
-    }
-
-    function toggleAllSignupTerms(checked) {
-      document.querySelectorAll('.signup-term').forEach(input => { input.checked = checked; });
-      updateSignupTermsUi();
-    }
-
-    function updateSignupTermsUi() {
-      const all = Array.from(document.querySelectorAll('.signup-term'));
-      const allBox = document.getElementById('agreeAllTerms');
-      if (allBox) allBox.checked = all.length > 0 && all.every(input => input.checked);
-      const note = document.getElementById('termsOkNote');
-      if (note) note.classList.toggle('show', hasRequiredSignupTerms());
-    }
-
-
-    function submitSocialLoginTest(provider) {
-      const providerLabel = provider === '네이버' ? '네이버' : provider;
-      const member = {
-        name: providerLabel + ' 사용자',
-        phone: '',
-        provider,
-        providerId: provider + '-LOGIN-' + Date.now(),
-        signupMethod: providerLabel + ' 계정 로그인'
-      };
-      saveMemberTest(member);
-      completeMemberLoginTest(member, providerLabel + ' 계정으로 로그인되었습니다.\nSitePass 메인 화면으로 이동합니다.');
-    }
-
-    const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_189';
-
-    function getOAuthRedirectUrl() {
-      return location.origin + location.pathname;
     }
 
     function hasSupabaseKakaoReturnParams() {
@@ -5164,6 +5114,7 @@ async function saveMemberToSupabase(member) {
         const user = data?.session?.user;
         if (!user) return false;
         const member = makeMemberFromSupabaseKakaoUser(user, pending || { mode:'login' });
+        await syncCurrentSupabaseAuthMemberToServer();
         const withdrawnRecord = findWithdrawnMemberRecord(member);
         const serverStatus = await getSupabaseMemberStatus(member);
         if (withdrawnRecord || serverStatus === 'withdrawn') {
