@@ -29,7 +29,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.201 admin-members-rpc-visible-fix -->
+  <!-- SitePass deploy-check: v23.7.204 admin-members-server-source-clean-fix -->
   <!-- SitePass screen-fix: clean package only, no guide/patch/text files required -->
   <style>
     :root {
@@ -4913,41 +4913,92 @@ async function saveMemberToSupabase(member) {
       return member;
     }
 
+    function getAdminLocalMemberKeys(member) {
+      return [
+        member?.supabaseLoginId,
+        member?.providerId,
+        member?.signupId,
+        member?.id,
+        member?.phone
+      ].map(normalizeSupabaseLoginKeyForMember).filter(Boolean);
+    }
+
+    function getAdminMemberNameProviderKey(member) {
+      const name = normalizeSupabaseLoginKeyForMember(member?.name || member?.displayName || '');
+      const providerType = getMemberSignupProviderType(member);
+      if (!name || name === '이름없음') return '';
+      return providerType + ':name:' + name;
+    }
+
     function mergeSupabaseMembersIntoLocal(rows) {
-      const incoming = (rows || []).map(makeLocalMemberFromSupabaseRow).filter(member => member.supabaseLoginId || member.providerId || member.signupId || member.phone || member.name);
+      const incoming = (rows || [])
+        .map(makeLocalMemberFromSupabaseRow)
+        .filter(member => member.supabaseLoginId || member.providerId || member.signupId || member.phone || member.name);
       if (!incoming.length) return 0;
-      const members = ensureMemberIds();
-      let added = 0;
-      incoming.forEach(member => {
-        const loginKey = normalizeSupabaseLoginKeyForMember(member.supabaseLoginId || member.providerId || member.signupId || member.id);
-        const phoneKey = String(member.phone || '').replace(/[^0-9]/g, '');
-        const idx = members.findIndex(existing => {
-          const existingKeys = [
-            existing.supabaseLoginId,
-            existing.providerId,
-            existing.signupId,
-            existing.id
-          ].map(normalizeSupabaseLoginKeyForMember).filter(Boolean);
-          const existingPhone = String(existing.phone || '').replace(/[^0-9]/g, '');
-          return (loginKey && existingKeys.includes(loginKey)) || (phoneKey && existingPhone && phoneKey === existingPhone);
+
+      const localMembers = ensureMemberIds();
+      const localByKey = new Map();
+      const localByNameProvider = new Map();
+
+      localMembers.forEach(local => {
+        getAdminLocalMemberKeys(local).forEach(key => {
+          if (key && !localByKey.has(key)) localByKey.set(key, local);
         });
-        if (idx >= 0) {
-          const keepLocal = members[idx];
-          members[idx] = {
-            ...keepLocal,
-            ...member,
-            id: keepLocal.id || member.id,
-            adminRole: keepLocal.adminRole || member.adminRole || '',
-            adminRoleUpdatedAt: keepLocal.adminRoleUpdatedAt || '',
-            adminRoleUpdatedBy: keepLocal.adminRoleUpdatedBy || '',
-            updatedAt: new Date().toISOString()
-          };
-        } else {
-          members.unshift(member);
-          added += 1;
-        }
+        const npKey = getAdminMemberNameProviderKey(local);
+        if (npKey && !localByNameProvider.has(npKey)) localByNameProvider.set(npKey, local);
       });
-      setMembers(members);
+
+      const serverKeySet = new Set();
+      const serverNameProviderSet = new Set();
+      const mergedServerMembers = incoming.map(server => {
+        const keys = getAdminLocalMemberKeys(server);
+        keys.forEach(key => serverKeySet.add(key));
+        const npKey = getAdminMemberNameProviderKey(server);
+        if (npKey) serverNameProviderSet.add(npKey);
+
+        const sameLocal = keys.map(key => localByKey.get(key)).find(Boolean) || (npKey ? localByNameProvider.get(npKey) : null);
+        if (!sameLocal) return server;
+        return {
+          ...sameLocal,
+          ...server,
+          id: server.id || sameLocal.id,
+          adminRole: sameLocal.adminRole || server.adminRole || '',
+          adminRoleUpdatedAt: sameLocal.adminRoleUpdatedAt || server.adminRoleUpdatedAt || '',
+          adminRoleUpdatedBy: sameLocal.adminRoleUpdatedBy || server.adminRoleUpdatedBy || '',
+          testPassword: sameLocal.testPassword || server.testPassword || '',
+          passwordSet: sameLocal.passwordSet || server.passwordSet || false,
+          updatedAt: new Date().toISOString()
+        };
+      });
+
+      // v23.7.204: 서버에서 회원 3명이 확인되면 화면/저장도 서버 3명을 기준으로 정리합니다.
+      // 예전 localStorage에 남은 카카오/KAKAo/카카오계정회원가입 중복 행은 표시하지 않습니다.
+      const keepLocalMembers = localMembers.filter(local => {
+        const role = local?.adminRole || supabaseRoleToAdminRole(local?.role || '');
+        const isAdmin = [SUPER_ADMIN_ROLE_NAME, '관리자', '운영관리자', '조회관리자'].includes(role);
+        if (isAdmin || local?.isSuperAdminVirtual) return true;
+
+        const providerType = getMemberSignupProviderType(local);
+        const keys = getAdminLocalMemberKeys(local);
+        const sameKey = keys.some(key => serverKeySet.has(key));
+        const npKey = getAdminMemberNameProviderKey(local);
+        const sameNameProvider = npKey && serverNameProviderSet.has(npKey);
+
+        if (providerType === 'kakao' || providerType === 'naver') {
+          return false;
+        }
+        if (sameKey || sameNameProvider) return false;
+        return true;
+      });
+
+      const finalMap = new Map();
+      const putFinal = member => {
+        const key = getAdminLocalMemberKeys(member)[0] || getAdminMemberNameProviderKey(member) || ('row:' + (member?.id || Math.random()));
+        if (!finalMap.has(key)) finalMap.set(key, member);
+      };
+      mergedServerMembers.forEach(putFinal);
+      keepLocalMembers.forEach(putFinal);
+      setMembers(Array.from(finalMap.values()));
       return incoming.length;
     }
 
@@ -5021,7 +5072,7 @@ async function saveMemberToSupabase(member) {
         const count = mergeSupabaseMembersIntoLocal(rows || []);
         adminSupabaseMemberSyncedAt = Date.now();
         adminSupabaseMemberSyncMessage = rows.length
-          ? '인터넷 서버 회원목록 동기화 완료: ' + rows.length + '명 수신 / 화면 반영 ' + count + '명'
+          ? '인터넷 서버 회원목록 동기화 완료: 서버 ' + rows.length + '명 기준으로 화면/중복저장 정리 완료'
           : '서버 회원 0명 수신. RPC 확인: ' + (rpcErrorMessage || '오류 없음') + (directErrorMessage ? ' / 직접조회: ' + directErrorMessage : '');
         if (forceAlert) alert(adminSupabaseMemberSyncMessage);
       } catch (e) {

@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.201",
+  "version": "v23.7.204",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Force admin member list to call Supabase RPC first and keep RPC rows visible in the live admin screen, even when localStorage merge/display is delayed.",
+  "note": "Use Supabase server/RPC member rows as the admin member source of truth and remove old localStorage Kakao duplicate rows so SQL 3 members shows as 3 in the live admin screen.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T20:05:00+09:00"
+  "updatedAt": "2026-06-29T20:25:00+09:00"
 }
