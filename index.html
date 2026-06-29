@@ -3911,7 +3911,7 @@
           <div class="login-divider normal-login-area"><span>또는</span></div>
           <div class="login-social-grid normal-login-area">
             <button type="button" class="login-social-button kakao" onclick="handleKakaoLogin()">💬 카카오톡 계정으로 계속하기</button>
-            <button type="button" class="login-social-button naver" onclick="submitSocialLoginTest('네이버')">N 네이버 계정으로 계속하기</button>
+            <button type="button" class="login-social-button naver" onclick="handleNaverLogin()">N 네이버 계정으로 계속하기</button>
           </div>
           <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link" onclick="startJoinFlow()">가입</button></div>
           <div class="company-channel-note normal-login-area">
@@ -4420,7 +4420,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     supabaseUrl: 'https://fipbgzvdwgjsmazmswaj.supabase.co',
     supabaseAnonKey: 'sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO',
     storageBucket: 'sitepass-documents',
-    appVersion: 'v23.7.201'
+    appVersion: 'v23.7.206'
   };
 
   window.sitepassSupabase = window.supabase.createClient(
@@ -5001,6 +5001,57 @@ async function saveMemberToSupabase(member) {
     }
 
 
+    // v23.7.206 - 복구: 회원가입/소셜로그인 버튼이 쓰는 회원 저장 함수입니다.
+    function saveMemberTest(member) {
+      if (!member) return;
+      if (findWithdrawnMemberRecord(member) && !member?.rejoinConfirmedAt) {
+        console.warn('탈퇴 처리된 회원 저장 차단:', member?.providerId || member?.signupId || member?.id || member?.name);
+        return;
+      }
+      const members = ensureMemberIds();
+      const memberPhone = String(member.phone || '').replace(/[^0-9]/g, '');
+      const memberSignupId = String(member.signupId || '').toLowerCase();
+      const memberProviderId = String(member.providerId || '').toLowerCase();
+      const memberKakaoId = String(member.kakaoUserId || '').toLowerCase();
+      const memberNaverId = String(member.naverUserId || '').toLowerCase();
+      const memberEmail = String(member.email || '').toLowerCase();
+      const memberName = String(member.name || '').toLowerCase();
+      const memberProvider = normalizeSignupProviderKey(member.signupMethod || member.provider || '');
+      const existing = members.find(m => {
+        const mPhone = String(m.phone || '').replace(/[^0-9]/g, '');
+        const mSignupId = String(m.signupId || '').toLowerCase();
+        const mProviderId = String(m.providerId || '').toLowerCase();
+        const mKakaoId = String(m.kakaoUserId || '').toLowerCase();
+        const mNaverId = String(m.naverUserId || '').toLowerCase();
+        const mEmail = String(m.email || '').toLowerCase();
+        const mName = String(m.name || '').toLowerCase();
+        const mProvider = normalizeSignupProviderKey(m.signupMethod || m.provider || '');
+        return (member.id && m.id === member.id) ||
+          (memberPhone && mPhone === memberPhone) ||
+          (memberSignupId && mSignupId === memberSignupId) ||
+          (memberProviderId && mProviderId === memberProviderId) ||
+          (memberKakaoId && mKakaoId === memberKakaoId) ||
+          (memberNaverId && mNaverId === memberNaverId) ||
+          (memberEmail && mEmail === memberEmail && memberProvider && mProvider === memberProvider) ||
+          (memberName && mName === memberName && memberProvider && mProvider === memberProvider);
+      });
+      const normalizedMember = { ...member, updatedAt:new Date().toISOString() };
+      if (existing) {
+        const keepAdminRole = existing.adminRole;
+        const keepAdminRoleUpdatedAt = existing.adminRoleUpdatedAt;
+        const keepAdminRoleUpdatedBy = existing.adminRoleUpdatedBy;
+        Object.assign(existing, normalizedMember);
+        if (keepAdminRole && !member.adminRole) existing.adminRole = keepAdminRole;
+        if (keepAdminRoleUpdatedAt && !member.adminRoleUpdatedAt) existing.adminRoleUpdatedAt = keepAdminRoleUpdatedAt;
+        if (keepAdminRoleUpdatedBy && !member.adminRoleUpdatedBy) existing.adminRoleUpdatedBy = keepAdminRoleUpdatedBy;
+      } else {
+        members.unshift({ id:'MEM-' + Date.now(), createdAt:new Date().toISOString(), status:'실사용베타', ...normalizedMember });
+      }
+      setMembers(members);
+      try { saveMemberToSupabase(member); } catch (e) { console.warn('회원 서버 저장은 나중에 다시 시도합니다:', e); }
+    }
+
+
     async function syncCurrentSupabaseAuthMemberToServer() {
       try {
         if (!window.sitepassSupabase || !window.sitepassSupabase.rpc) return false;
@@ -5083,6 +5134,17 @@ async function saveMemberToSupabase(member) {
       }
     }
 
+
+    const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_206';
+
+    function getOAuthRedirectUrl() {
+      try {
+        const configured = window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.appUrl;
+        if (configured && /^https?:\/\//i.test(configured)) return configured.split('#')[0].split('?')[0];
+      } catch (e) {}
+      return location.origin + location.pathname;
+    }
+
     function hasSupabaseKakaoReturnParams() {
       const qs = new URLSearchParams(location.search || '');
       const hash = window.location.hash || '';
@@ -5099,21 +5161,54 @@ async function saveMemberToSupabase(member) {
         if (mode === 'signup' && !requireSignupTerms()) return;
         await signOutSupabaseAuthQuietly();
         setSessionValue(SITEPASS_OAUTH_PENDING_KEY, JSON.stringify({ provider:'kakao', mode:mode || 'login', startedAt:new Date().toISOString() }));
-        // KOE205 방지: scope를 직접 보내지 않습니다.
-        // 카카오 디벨로퍼스 동의항목에 설정된 기본값만 사용하게 합니다.
-        const { error } = await window.sitepassSupabase.auth.signInWithOAuth({
+        const { data, error } = await window.sitepassSupabase.auth.signInWithOAuth({
           provider:'kakao',
           options:{
-            redirectTo:getOAuthRedirectUrl()
+            redirectTo:getOAuthRedirectUrl(),
+            skipBrowserRedirect:true
           }
         });
         if (error) {
           removeSessionValue(SITEPASS_OAUTH_PENDING_KEY);
           alert('카카오 로그인 시작에 실패했습니다.\n' + (error.message || 'Supabase/Kakao 설정을 확인해주세요.'));
+          return;
         }
+        if (data && data.url) {
+          window.location.assign(data.url);
+          return;
+        }
+        removeSessionValue(SITEPASS_OAUTH_PENDING_KEY);
+        alert('카카오 인증 주소를 받지 못했습니다. Supabase 카카오 설정을 확인해주세요.');
       } catch (e) {
         removeSessionValue(SITEPASS_OAUTH_PENDING_KEY);
-        alert('카카오 로그인 연결 중 오류가 났습니다. Supabase Kakao 설정을 확인해주세요.');
+        alert('카카오 로그인 연결 중 오류가 났습니다.\n' + (e?.message || 'Supabase Kakao 설정을 확인해주세요.'));
+      }
+    }
+
+    async function startSupabaseNaverOAuth(mode) {
+      try {
+        if (mode === 'signup' && !requireSignupTerms()) return;
+        if (!window.sitepassSupabase || !window.sitepassSupabase.auth) {
+          submitSocialLoginTest('네이버');
+          return;
+        }
+        setSessionValue(SITEPASS_OAUTH_PENDING_KEY, JSON.stringify({ provider:'naver', mode:mode || 'login', startedAt:new Date().toISOString() }));
+        const { data, error } = await window.sitepassSupabase.auth.signInWithOAuth({
+          provider:'naver',
+          options:{
+            redirectTo:getOAuthRedirectUrl(),
+            skipBrowserRedirect:true
+          }
+        });
+        if (error || !(data && data.url)) {
+          removeSessionValue(SITEPASS_OAUTH_PENDING_KEY);
+          submitSocialLoginTest('네이버');
+          return;
+        }
+        window.location.assign(data.url);
+      } catch (e) {
+        removeSessionValue(SITEPASS_OAUTH_PENDING_KEY);
+        submitSocialLoginTest('네이버');
       }
     }
 
@@ -5121,9 +5216,29 @@ async function saveMemberToSupabase(member) {
       startSupabaseKakaoOAuth('login');
     }
 
+    function handleNaverLogin() {
+      startSupabaseNaverOAuth('login');
+    }
+
+    function handleNaverSignup() {
+      startSupabaseNaverOAuth('signup');
+    }
+
     function handleKakaoSignup() {
       startSupabaseKakaoOAuth('signup');
     }
+
+
+    // v23.7.206 - 휴대폰 inline onclick 안전 연결
+    window.handleKakaoLogin = handleKakaoLogin;
+    window.handleKakaoSignup = handleKakaoSignup;
+    window.handleNaverLogin = handleNaverLogin;
+    window.handleNaverSignup = handleNaverSignup;
+    window.submitSocialLoginTest = submitSocialLoginTest;
+    window.startJoinFlow = startJoinFlow;
+    window.openSitePassSignup = openSitePassSignup;
+    window.toggleAllSignupTerms = toggleAllSignupTerms;
+    window.updateSignupTermsUi = updateSignupTermsUi;
 
     function makeMemberFromSupabaseKakaoUser(user, pending) {
       const meta = user?.user_metadata || {};
@@ -5146,20 +5261,56 @@ async function saveMemberToSupabase(member) {
       };
     }
 
+
+    function makeMemberFromSupabaseNaverUser(user, pending) {
+      const meta = user?.user_metadata || {};
+      const identities = Array.isArray(user?.identities) ? user.identities : [];
+      const naverIdentity = identities.find(item => item.provider === 'naver') || identities[0] || {};
+      const providerId = 'NAVER-' + (naverIdentity.id || user?.id || Date.now());
+      const nickname = meta.name || meta.full_name || meta.nickname || meta.preferred_username || '네이버 사용자';
+      return {
+        name:nickname,
+        phone:'',
+        email:user?.email || '',
+        provider:'네이버',
+        providerId,
+        signupId:'',
+        naverUserId:naverIdentity.id || user?.id || '',
+        signupMethod:(pending?.mode === 'signup' ? '네이버 계정 회원가입' : '네이버 계정 로그인'),
+        agreements:pending?.mode === 'signup' ? getSignupAgreements() : undefined,
+        oauthLinkedAt:new Date().toISOString(),
+        needsSitePassProfile:true
+      };
+    }
+
     async function handleSupabaseKakaoOAuthReturn() {
       if (!window.sitepassSupabase || !window.sitepassSupabase.auth) return false;
       let pending = null;
       try { pending = JSON.parse(getSessionValue(SITEPASS_OAUTH_PENDING_KEY) || 'null'); } catch (e) { pending = null; }
       if (!pending && !hasSupabaseKakaoReturnParams()) return false;
       try {
+        let sessionData = null;
+        const qs = new URLSearchParams(location.search || '');
+        const code = qs.get('code');
+        if (code && window.sitepassSupabase.auth.exchangeCodeForSession) {
+          try {
+            const exchanged = await window.sitepassSupabase.auth.exchangeCodeForSession(code);
+            if (exchanged && exchanged.data) sessionData = exchanged.data;
+          } catch (exchangeError) {
+            console.warn('OAuth code 세션 교환은 이미 처리되었거나 실패했습니다:', exchangeError?.message || exchangeError);
+          }
+        }
         const { data, error } = await window.sitepassSupabase.auth.getSession();
         if (error) {
-          alert('카카오 로그인 확인 중 오류가 났습니다.\n' + (error.message || ''));
+          alert('소셜 로그인 확인 중 오류가 났습니다.\n' + (error.message || ''));
           return false;
         }
-        const user = data?.session?.user;
+        const user = data?.session?.user || sessionData?.session?.user;
         if (!user) return false;
-        const member = makeMemberFromSupabaseKakaoUser(user, pending || { mode:'login' });
+        const providerName = String(pending?.provider || (Array.isArray(user.identities) && user.identities[0]?.provider) || 'kakao').toLowerCase();
+        const member = providerName === 'naver'
+          ? makeMemberFromSupabaseNaverUser(user, pending || { mode:'login' })
+          : makeMemberFromSupabaseKakaoUser(user, pending || { mode:'login' });
         await syncCurrentSupabaseAuthMemberToServer();
         const withdrawnRecord = findWithdrawnMemberRecord(member);
         const serverStatus = await getSupabaseMemberStatus(member);
@@ -5171,14 +5322,14 @@ async function saveMemberToSupabase(member) {
             try { history.replaceState({}, document.title, location.origin + location.pathname); } catch (e) {}
           }
           await signOutSupabaseAuthQuietly();
-          const rejoinOk = confirm('탈퇴 처리된 카카오 계정입니다.\n바로 로그인할 수 없습니다.\n\n기존 서류와 보관함은 복구되지 않고 새 계정으로 재가입하시겠습니까?');
+          const rejoinOk = confirm('탈퇴 처리된 계정입니다.\n바로 로그인할 수 없습니다.\n\n기존 서류와 보관함은 복구되지 않고 새 계정으로 재가입하시겠습니까?');
           if (!rejoinOk) {
             alert('로그인을 취소했습니다.');
             showScreen('signupScreen');
             return true;
           }
           removeWithdrawnMemberRecord(member);
-          member.signupMethod = '카카오 계정 재가입';
+          member.signupMethod = (member.provider || '소셜') + ' 계정 재가입';
           member.rejoinConfirmedAt = new Date().toISOString();
           member.agreements = getSignupAgreements();
         }
@@ -5187,10 +5338,10 @@ async function saveMemberToSupabase(member) {
         if (hasSupabaseKakaoReturnParams()) {
           try { history.replaceState({}, document.title, location.origin + location.pathname); } catch (e) {}
         }
-        completeMemberLoginTest(member, '카카오 로그인이 완료되었습니다.\n처음 이용하는 경우 SitePass 추가정보는 회원정보/본인확인 단계에서 이어서 보완합니다.');
+        completeMemberLoginTest(member, (member.provider || '소셜') + ' 로그인이 완료되었습니다.\n처음 이용하는 경우 SitePass 추가정보는 회원정보/본인확인 단계에서 이어서 보완합니다.');
         return true;
       } catch (e) {
-        alert('카카오 로그인 처리 중 오류가 났습니다.');
+        alert('소셜 로그인 처리 중 오류가 났습니다.\n' + (e?.message || ''));
         return false;
       }
     }
