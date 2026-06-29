@@ -29,7 +29,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.190 kakao-scope-fix -->
+  <!-- SitePass deploy-check: v23.7.191 kakao-no-scope-fix -->
   <style>
     :root {
       --bg:#f3f6fb;
@@ -4929,13 +4929,12 @@ async function saveMemberToSupabase(member) {
         }
         if (mode === 'signup' && !requireSignupTerms()) return;
         setSessionValue(SITEPASS_OAUTH_PENDING_KEY, JSON.stringify({ provider:'kakao', mode:mode || 'login', startedAt:new Date().toISOString() }));
+        // KOE205 방지: scope를 직접 보내지 않습니다.
+        // 카카오 디벨로퍼스 동의항목에 설정된 기본값만 사용하게 합니다.
         const { error } = await window.sitepassSupabase.auth.signInWithOAuth({
           provider:'kakao',
           options:{
-            redirectTo:getOAuthRedirectUrl(),
-            // KOE205 방지: 현재 카카오 앱에서 권한이 열린 닉네임/프로필 이미지만 요청합니다.
-            // 이메일(account_email)은 비즈 앱 권한이 열릴 때까지 요청하지 않습니다.
-            scopes:'profile_nickname profile_image'
+            redirectTo:getOAuthRedirectUrl()
           }
         });
         if (error) {
@@ -9732,7 +9731,7 @@ async function saveMemberToSupabase(member) {
       const nowIso = new Date().toISOString();
       const existing = getRegistrationDraft();
       return {
-        version:'v23.7.190',
+        version:'v23.7.191',
         editingCode:editingCode || '',
         equipmentNo:(equipmentNoEl?.value || '').trim(),
         equipmentName:(equipmentNameEl?.value || '').trim(),
@@ -13624,7 +13623,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       return true;
     }
 
-    const SITEPASS_APP_VERSION = 'v23.7.190';
+    const SITEPASS_APP_VERSION = 'v23.7.191';
     const SITEPASS_FIXED_APP_URL = 'https://sitepass-js.github.io/sitepass/';
     const SITEPASS_VERSION_KEY = 'sitepass_current_app_version';
     const SITEPASS_UPDATE_RELOAD_KEY = 'sitepass_last_update_reload_version';
