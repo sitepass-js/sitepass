@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.189",
+  "version": "v23.7.190",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Kakao OAuth login connected and all document uploads ask whether to add another page.",
+  "note": "Kakao OAuth KOE205 fix: request only profile_nickname and profile_image scopes until email permission is available.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T22:30:00+09:00"
+  "updatedAt": "2026-06-29T23:10:00+09:00"
 }
