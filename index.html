@@ -23,13 +23,13 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.195" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.193" />
 <!-- v23.7.186: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.195 admin-live-refresh -->
+  <!-- SitePass deploy-check: v23.7.193 admin-single-role-no-reset -->
   <style>
     :root {
       --bg:#f3f6fb;
@@ -4387,7 +4387,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     supabaseUrl: 'https://fipbgzvdwgjsmazmswaj.supabase.co',
     supabaseAnonKey: 'sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO',
     storageBucket: 'sitepass-documents',
-    appVersion: 'v23.7.195'
+    appVersion: 'v23.7.193'
   };
 
   window.sitepassSupabase = window.supabase.createClient(
@@ -4896,154 +4896,7 @@ async function saveMemberToSupabase(member) {
     }
 
 
-    /* SitePass v23.7.194 - 강제탈퇴 재로그인 차단 + 회원목록 가입경로 분류
-   적용 위치: v23.7.193 HTML의 기존 <script> 내부, 로그인/관리자 함수들과 함께 사용합니다. */
-
-function sp194Text(value) {
-  return String(value || '').trim();
-}
-
-function sp194Lower(value) {
-  return sp194Text(value).toLowerCase();
-}
-
-function sp194Digits(value) {
-  return String(value || '').replace(/[^0-9]/g, '');
-}
-
-function sp194ProviderKind(memberOrProvider) {
-  const raw = typeof memberOrProvider === 'string'
-    ? memberOrProvider
-    : [
-        memberOrProvider?.provider,
-        memberOrProvider?.signupMethod,
-        memberOrProvider?.providerId,
-        memberOrProvider?.kakaoUserId,
-        memberOrProvider?.naverUserId,
-        memberOrProvider?.email
-      ].join(' ');
-  const text = sp194Lower(raw);
-  if (text.includes('kakao') || text.includes('카카오')) return 'kakao';
-  if (text.includes('naver') || text.includes('네이버')) return 'naver';
-  if (text.includes('sitepass') || text.includes('자체') || text.includes('일반') || text.includes('휴대폰')) return 'sitepass';
-  if (memberOrProvider && typeof memberOrProvider === 'object' && (memberOrProvider.signupId || memberOrProvider.testPassword)) return 'sitepass';
-  return 'sitepass';
-}
-
-function sp194IsKakaoMember(member) {
-  return sp194ProviderKind(member) === 'kakao';
-}
-
-function sp194IsNaverMember(member) {
-  return sp194ProviderKind(member) === 'naver';
-}
-
-function sp194IsSitePassMember(member) {
-  const kind = sp194ProviderKind(member);
-  return kind !== 'kakao' && kind !== 'naver';
-}
-
-function sp194StableKeys(member) {
-  const out = [];
-  if (!member) return out;
-  const id = sp194Lower(member.id);
-  const signupId = sp194Lower(member.signupId);
-  const providerId = sp194Lower(member.providerId);
-  const email = sp194Lower(member.email);
-  const phone = sp194Digits(member.phone);
-  const kakaoId = sp194Lower(member.kakaoUserId);
-  const naverId = sp194Lower(member.naverUserId);
-  if (id) out.push('id:' + id);
-  if (signupId) out.push('signup:' + signupId);
-  if (providerId) out.push('provider:' + providerId);
-  if (email) out.push('email:' + email);
-  if (phone) out.push('phone:' + phone);
-  if (kakaoId) out.push('kakao:' + kakaoId);
-  if (naverId) out.push('naver:' + naverId);
-  return Array.from(new Set(out));
-}
-
-function sp194LoginKeysFromText(value) {
-  const text = sp194Lower(value);
-  const digits = sp194Digits(value);
-  const out = [];
-  if (text) {
-    out.push('id:' + text, 'signup:' + text, 'provider:' + text, 'email:' + text);
-  }
-  if (digits) out.push('phone:' + digits);
-  return Array.from(new Set(out));
-}
-
-function sp194IsGenericSocialMember(member) {
-  if (!member) return false;
-  const providerId = sp194Lower(member.providerId);
-  const name = sp194Lower(member.name);
-  const hasStable = !!(sp194Lower(member.email) || sp194Digits(member.phone) || sp194Lower(member.kakaoUserId) || sp194Lower(member.naverUserId));
-  return /-(login|beta|test)-\d+/.test(providerId) || (!hasStable && (name.includes('사용자') || name.includes('임시')) && (sp194IsKakaoMember(member) || sp194IsNaverMember(member)));
-}
-
-function sp194GetWithdrawnRows() {
-  try {
-    return (typeof getWithdrawnMembers === 'function' ? getWithdrawnMembers() : JSON.parse(localStorage.getItem(ADMIN_WITHDRAWN_MEMBERS_KEY) || '[]')) || [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function sp194FindWithdrawnMember(member, options) {
-  options = options || {};
-  if (!member) return null;
-  const memberKeys = sp194StableKeys(member);
-  const providerKind = sp194ProviderKind(member);
-  const generic = sp194IsGenericSocialMember(member);
-  const withdrawn = sp194GetWithdrawnRows();
-  for (const row of withdrawn) {
-    const w = { ...row, withdrawn:true, status:row.status || '강제탈퇴' };
-    const wKeys = sp194StableKeys(w);
-    if (memberKeys.some(key => wKeys.includes(key))) return w;
-    const sameProvider = sp194ProviderKind(w) === providerKind;
-    if (sameProvider && (w.withdrawnProviderLock || w.providerOnlyBlock) && options.blockGenericProvider) return w;
-    if (sameProvider && generic && sp194IsGenericSocialMember(w) && sp194Lower(w.name) === sp194Lower(member.name)) return w;
-  }
-  return null;
-}
-
-function sp194FindWithdrawnByLoginText(loginText) {
-  const keys = sp194LoginKeysFromText(loginText);
-  if (!keys.length) return null;
-  return sp194GetWithdrawnRows().find(row => {
-    const rowKeys = sp194StableKeys(row);
-    return keys.some(key => rowKeys.includes(key));
-  }) || null;
-}
-
-function sp194ProviderHasGenericWithdrawn(provider) {
-  const kind = sp194ProviderKind(provider);
-  return sp194GetWithdrawnRows().some(row => sp194ProviderKind(row) === kind && (row.withdrawnProviderLock || row.providerOnlyBlock || sp194IsGenericSocialMember(row)));
-}
-
-function sp194BlockedAlert(row, label) {
-  const name = row ? (row.name || row.signupId || row.providerId || '해당 회원') : '해당 회원';
-  alert((label || '로그인') + '이 차단되었습니다.\n\n' + name + ' 계정은 최고관리자가 강제탈퇴 처리한 기록이 있습니다.\n최고관리자가 복구하기 전에는 같은 계정으로 다시 접속할 수 없습니다.');
-}
-
-function sp194BlockIfWithdrawn(member, label, options) {
-  const hit = sp194FindWithdrawnMember(member, options || {});
-  if (hit) {
-    sp194BlockedAlert(hit, label);
-    return true;
-  }
-  return false;
-}
-
-function sp194MemberSocialLabel(member) {
-  if (sp194IsKakaoMember(member)) return '카카오가입자';
-  if (sp194IsNaverMember(member)) return '네이버가입자';
-  return '일반/SitePass회원';
-}
-
-
-function submitSocialLoginTest(provider) {
+    function submitSocialLoginTest(provider) {
       const providerLabel = provider === '네이버' ? '네이버' : provider;
       const member = {
         name: providerLabel + ' 사용자',
@@ -5052,13 +4905,7 @@ function submitSocialLoginTest(provider) {
         providerId: provider + '-LOGIN-' + Date.now(),
         signupMethod: providerLabel + ' 계정 로그인'
       };
-      if (sp194ProviderHasGenericWithdrawn(provider)) {
-        alert(providerLabel + ' 계정 강제탈퇴 기록이 있습니다.\n\n임시 테스트 소셜 로그인은 실제 계정 식별값을 확인할 수 없어 자동 접속을 막았습니다.\n정식 OAuth 계정 확인 또는 최고관리자 복구 후 다시 진행해주세요.');
-        return;
-      }
-      if (sp194BlockIfWithdrawn(member, providerLabel + ' 로그인', { blockGenericProvider:true })) return;
       saveMemberTest(member);
-      if (sp194BlockIfWithdrawn(member, providerLabel + ' 로그인', { blockGenericProvider:true })) return;
       completeMemberLoginTest(member, providerLabel + ' 계정으로 로그인되었습니다.\nSitePass 메인 화면으로 이동합니다.');
     }
 
@@ -5083,18 +4930,12 @@ function submitSocialLoginTest(provider) {
         }
         if (mode === 'signup' && !requireSignupTerms()) return;
         setSessionValue(SITEPASS_OAUTH_PENDING_KEY, JSON.stringify({ provider:'kakao', mode:mode || 'login', startedAt:new Date().toISOString() }));
-
-        // v23.7.194: 강제탈퇴 직후 기존 카카오/Supabase 세션이 남아 자동 재접속되는 것을 막습니다.
-        try { await window.sitepassSupabase.auth.signOut({ scope:'local' }); } catch (signOutError) {
-          try { await window.sitepassSupabase.auth.signOut(); } catch (e) {}
-        }
-
+        // KOE205 방지: scope를 직접 보내지 않습니다.
+        // 카카오 디벨로퍼스 동의항목에 설정된 기본값만 사용하게 합니다.
         const { error } = await window.sitepassSupabase.auth.signInWithOAuth({
           provider:'kakao',
           options:{
-            redirectTo:getOAuthRedirectUrl(),
-            // 카카오 계정 선택/로그인 화면을 다시 띄워 “묻지도 않고 접속”되는 현상을 줄입니다.
-            queryParams:{ prompt:'login' }
+            redirectTo:getOAuthRedirectUrl()
           }
         });
         if (error) {
@@ -5150,18 +4991,6 @@ function submitSocialLoginTest(provider) {
         const user = data?.session?.user;
         if (!user) return false;
         const member = makeMemberFromSupabaseKakaoUser(user, pending || { mode:'login' });
-        const blocked = sp194FindWithdrawnMember(member, { blockGenericProvider:false });
-        if (blocked) {
-          try { await window.sitepassSupabase.auth.signOut({ scope:'local' }); } catch (e) { try { await window.sitepassSupabase.auth.signOut(); } catch (ignore) {} }
-          removeSessionValue(SITEPASS_OAUTH_PENDING_KEY);
-          removeSessionValue(CURRENT_MEMBER_KEY);
-          if (hasSupabaseKakaoReturnParams()) {
-            try { history.replaceState({}, document.title, location.origin + location.pathname); } catch (e) {}
-          }
-          sp194BlockedAlert(blocked, '카카오 로그인');
-          showScreen('signupScreen');
-          return true;
-        }
         saveMemberTest(member);
         removeSessionValue(SITEPASS_OAUTH_PENDING_KEY);
         if (hasSupabaseKakaoReturnParams()) {
@@ -9901,7 +9730,7 @@ function submitSocialLoginTest(provider) {
       const nowIso = new Date().toISOString();
       const existing = getRegistrationDraft();
       return {
-        version:'v23.7.194',
+        version:'v23.7.193',
         editingCode:editingCode || '',
         equipmentNo:(equipmentNoEl?.value || '').trim(),
         equipmentName:(equipmentNameEl?.value || '').trim(),
@@ -11553,445 +11382,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       const expireScript = '<script>(function(){var expireAt=' + JSON.stringify(expireAt) + ';if(Date.now()>expireAt){document.body.innerHTML="<div style=\\"font-family:Arial,sans-serif;margin:30px;padding:20px;border:1px solid #ffd591;border-radius:14px;background:#fff7e6;color:#694000\\"><b>만료된 담당자 서류파일입니다.</b><br>발급 후 7일이 지나 열람할 수 없습니다. 새 QR·링크를 다시 받아주세요.</div>";return;}var bar=document.createElement("div");bar.style.cssText="position:sticky;top:0;background:#f3f6fb;border-bottom:1px solid #d7dfed;padding:10px;text-align:center;z-index:10";bar.innerHTML="<button onclick=\\"window.print()\\" style=\\"min-height:42px;padding:10px 18px;border:0;border-radius:12px;background:#2457d6;color:white;font-weight:900\\">프린트</button> <span style=\\"font-size:13px;color:#667085;margin-left:8px\\">담당자 서류 다운로드본 · 7일 유효</span>";document.body.insertBefore(bar,document.body.firstChild);})();</scr' + 'ipt>';
       return printHtml
         .replace('<body onload="setTimeout(function(){window.focus();window.print();},450)">','<body>')
-        .replace('
-<script>
-/* SitePass v23.7.195 - 최고관리자 화면 자동 업데이트 패치
-   - 기존 회원/localStorage 초기화 없음
-   - 같은 브라우저/다른 탭 localStorage 변경 감지
-   - 관리자 화면 진입/복귀/새로고침 시 자동 재렌더
-   - Supabase Realtime 사용 가능 시 회원/서류 테이블 변경 감지
-*/
-(function sitepassAdminLiveRefreshPatch(){
-  'use strict';
-
-  if (window.__SITEPASS_ADMIN_LIVE_REFRESH_V237195__) return;
-  window.__SITEPASS_ADMIN_LIVE_REFRESH_V237195__ = true;
-
-  const PATCH_VERSION = 'v23.7.195';
-  const POLL_MS = 5000;
-  const DEBOUNCE_MS = 450;
-  const WATCH_TABLES = [
-    'sitepass_members',
-    'sitepass_document_boxes',
-    'sitepass_documents',
-    'sitepass_document_versions',
-    'sitepass_share_links',
-    'sitepass_public_shares',
-    'sitepass_public_shares'
-  ];
-
-  let liveTimer = null;
-  let debounceTimer = null;
-  let lastSnapshot = '';
-  let lastRenderedAt = 0;
-  let supabaseChannel = null;
-  let lastReason = '초기화';
-  let inHydration = false;
-  let pendingHydration = false;
-
-  function getConst(name, fallback) {
-    try { return window[name] || fallback; } catch (e) { return fallback; }
-  }
-
-  function getKeyNames() {
-    const storageKey = getConst('STORAGE_KEY', 'sitePass_v23_7_7_update_original_corrected');
-    return {
-      dataKey: storageKey,
-      memberKey: getConst('MEMBER_STORAGE_KEY', storageKey + '_members'),
-      withdrawnKey: getConst('ADMIN_WITHDRAWN_MEMBERS_KEY', storageKey + '_withdrawn_members'),
-      adminRoleKey: getConst('ADMIN_ROLE_MAP_KEY', storageKey + '_admin_role_map')
-    };
-  }
-
-  function safeJsonParse(text, fallback) {
-    try { return JSON.parse(text || ''); } catch (e) { return fallback; }
-  }
-
-  function safeString(value) {
-    if (value == null) return '';
-    return String(value);
-  }
-
-  function normalizePhone(value) {
-    return safeString(value).replace(/[^0-9]/g, '');
-  }
-
-  function normalizeLoginId(value) {
-    return safeString(value).trim().toLowerCase();
-  }
-
-  function nowTimeText() {
-    try { return new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }); }
-    catch (e) { return new Date().toTimeString().slice(0, 8); }
-  }
-
-  function getCurrentScreenIdSafe() {
-    try {
-      if (window.sitePassCurrentScreenId) return window.sitePassCurrentScreenId;
-      const visible = Array.from(document.querySelectorAll('.screen')).find(el => !el.classList.contains('hidden'));
-      return visible ? visible.id : '';
-    } catch (e) { return ''; }
-  }
-
-  function isAdminScreenVisible() {
-    const screen = document.getElementById('adminScreen');
-    if (!screen) return false;
-    return !screen.classList.contains('hidden') || getCurrentScreenIdSafe() === 'adminScreen';
-  }
-
-  function isAdminLoggedInSafe() {
-    try {
-      if (typeof window.isAdminLoggedIn === 'function') return !!window.isAdminLoggedIn();
-      const keys = getKeyNames();
-      const sessionKey = keys.dataKey + '_admin_session';
-      return sessionStorage.getItem(sessionKey) === 'yes' || localStorage.getItem(sessionKey) === 'yes';
-    } catch (e) { return false; }
-  }
-
-  function makeSnapshot() {
-    const keys = getKeyNames();
-    const parts = [keys.dataKey, keys.memberKey, keys.withdrawnKey, keys.adminRoleKey].map(key => {
-      let value = '';
-      try { value = localStorage.getItem(key) || ''; } catch (e) { value = ''; }
-      return key + ':' + value.length + ':' + hashText(value);
-    });
-    return parts.join('|');
-  }
-
-  function hashText(text) {
-    let hash = 0;
-    const source = String(text || '');
-    for (let i = 0; i < source.length; i += Math.max(1, Math.floor(source.length / 1800))) {
-      hash = ((hash << 5) - hash + source.charCodeAt(i)) | 0;
-    }
-    hash = ((hash << 5) - hash + source.length) | 0;
-    return String(hash >>> 0);
-  }
-
-  function ensurePanel() {
-    const adminScreen = document.getElementById('adminScreen');
-    if (!adminScreen) return null;
-    let panel = document.getElementById('sitepassAdminLiveRefreshPanel');
-    if (panel) return panel;
-
-    panel = document.createElement('div');
-    panel.id = 'sitepassAdminLiveRefreshPanel';
-    panel.className = 'card sitepass-admin-live-card';
-    panel.innerHTML = [
-      '<div class="sitepass-admin-live-head">',
-        '<div>',
-          '<b>관리자 화면 자동 업데이트</b>',
-          '<p>가입자·강제탈퇴·신규서류 변경을 감지하면 화면을 다시 불러옵니다.</p>',
-        '</div>',
-        '<span id="sitepassAdminLiveBadge" class="badge done">자동 업데이트 켜짐</span>',
-      '</div>',
-      '<div class="sitepass-admin-live-row">',
-        '<span id="sitepassAdminLiveText">마지막 확인: -</span>',
-        '<button type="button" class="mini-button" onclick="sitepassAdminLiveRefreshNow && sitepassAdminLiveRefreshNow(\'수동 새로고침\')">지금 새로고침</button>',
-      '</div>'
-    ].join('');
-
-    const firstCard = adminScreen.querySelector('.card');
-    if (firstCard && firstCard.parentNode) {
-      firstCard.parentNode.insertBefore(panel, firstCard.nextSibling);
-    } else {
-      adminScreen.insertBefore(panel, adminScreen.firstChild);
-    }
-    injectStyle();
-    return panel;
-  }
-
-  function injectStyle() {
-    if (document.getElementById('sitepassAdminLiveRefreshStyle')) return;
-    const style = document.createElement('style');
-    style.id = 'sitepassAdminLiveRefreshStyle';
-    style.textContent = `
-      .sitepass-admin-live-card{border-color:#cfe0ff;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%)}
-      .sitepass-admin-live-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-      .sitepass-admin-live-head b{display:block;font-size:16px;margin-bottom:3px;color:#173f9f}
-      .sitepass-admin-live-head p{margin:0;font-size:13px;line-height:1.45;color:#667085}
-      .sitepass-admin-live-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid #edf0f5;font-size:13px;color:#667085;font-weight:850}
-      .sitepass-admin-live-row .mini-button{max-width:150px;background:#eef4ff;color:#173f9f;border-color:#b9c9f3}
-      @media(max-width:560px){.sitepass-admin-live-head,.sitepass-admin-live-row{flex-direction:column;align-items:stretch}.sitepass-admin-live-row .mini-button{max-width:none;width:100%}}
-    `;
-    document.head.appendChild(style);
-  }
-
-  function setPanelState(message, state) {
-    ensurePanel();
-    const text = document.getElementById('sitepassAdminLiveText');
-    const badge = document.getElementById('sitepassAdminLiveBadge');
-    if (text) text.textContent = message || ('마지막 확인: ' + nowTimeText());
-    if (badge) {
-      badge.className = 'badge ' + (state === 'warn' ? 'need' : state === 'checking' ? '' : 'done');
-      badge.textContent = state === 'checking' ? '확인 중' : state === 'warn' ? '확인 필요' : '자동 업데이트 켜짐';
-    }
-  }
-
-  function debounceRefresh(reason) {
-    lastReason = reason || '변경 감지';
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => refreshAdminNow(lastReason), DEBOUNCE_MS);
-  }
-
-  async function refreshAdminNow(reason) {
-    if (!isAdminLoggedInSafe()) return;
-    if (!isAdminScreenVisible()) return;
-
-    setPanelState('변경 확인 중: ' + nowTimeText() + ' · ' + (reason || '자동'), 'checking');
-
-    // 서버 회원 목록을 읽을 수 있는 환경이면 먼저 병합합니다. 실패해도 기존 화면은 유지합니다.
-    await hydrateMembersFromSupabaseIfPossible();
-
-    try {
-      if (typeof window.renderAdmin === 'function') window.renderAdmin();
-      if (typeof window.refreshAdminUi === 'function') window.refreshAdminUi();
-    } catch (e) {
-      console.warn('관리자 화면 자동 업데이트 중 렌더 실패:', e);
-      setPanelState('자동 업데이트 중 오류가 있었습니다. 수동 새로고침을 눌러주세요.', 'warn');
-      return;
-    }
-
-    lastRenderedAt = Date.now();
-    lastSnapshot = makeSnapshot();
-    ensurePanel();
-    setPanelState('마지막 업데이트: ' + nowTimeText() + ' · ' + (reason || '자동 확인'), 'ok');
-  }
-
-  async function hydrateMembersFromSupabaseIfPossible() {
-    if (inHydration) { pendingHydration = true; return; }
-    const client = window.sitepassSupabase;
-    if (!client || !client.from) return;
-    inHydration = true;
-    try {
-      const { data, error } = await client
-        .from('sitepass_members')
-        .select('login_id,name,phone,signup_method,role,status,plan_label,plan_ends_at,last_login_at,created_at,updated_at,admin_memo')
-        .order('created_at', { ascending:false })
-        .limit(500);
-
-      if (error || !Array.isArray(data)) {
-        if (error) console.warn('관리자 회원 서버 동기화 생략:', error.message || error);
-        return;
-      }
-      mergeSupabaseMembersIntoLocal(data);
-    } catch (e) {
-      console.warn('관리자 회원 서버 동기화 예외:', e);
-    } finally {
-      inHydration = false;
-      if (pendingHydration) {
-        pendingHydration = false;
-        setTimeout(hydrateMembersFromSupabaseIfPossible, 300);
-      }
-    }
-  }
-
-  function mergeSupabaseMembersIntoLocal(rows) {
-    const keys = getKeyNames();
-    let localMembers = safeJsonParse(localStorage.getItem(keys.memberKey) || '[]', []);
-    if (!Array.isArray(localMembers)) localMembers = [];
-
-    const byKey = new Map();
-    localMembers.forEach((member, idx) => {
-      getMemberKeys(member).forEach(key => {
-        if (key && !byKey.has(key)) byKey.set(key, idx);
-      });
-    });
-
-    let changed = false;
-    rows.forEach(row => {
-      const member = supabaseRowToMember(row);
-      const keysForMember = getMemberKeys(member);
-      let foundIdx = -1;
-      for (const key of keysForMember) {
-        if (byKey.has(key)) { foundIdx = byKey.get(key); break; }
-      }
-
-      if (foundIdx >= 0) {
-        const prev = localMembers[foundIdx] || {};
-        const merged = Object.assign({}, member, prev, {
-          name: prev.name || member.name,
-          phone: prev.phone || member.phone,
-          signupId: prev.signupId || member.signupId,
-          providerId: prev.providerId || member.providerId,
-          signupMethod: member.signupMethod || prev.signupMethod,
-          provider: member.provider || prev.provider,
-          status: member.status || prev.status,
-          dbSyncedAt: new Date().toISOString()
-        });
-        const oldText = JSON.stringify(prev);
-        const newText = JSON.stringify(merged);
-        if (oldText !== newText) {
-          localMembers[foundIdx] = merged;
-          changed = true;
-        }
-      } else {
-        localMembers.unshift(member);
-        const newIdx = 0;
-        getMemberKeys(member).forEach(key => { if (key) byKey.set(key, newIdx); });
-        changed = true;
-      }
-    });
-
-    if (changed) {
-      localStorage.setItem(keys.memberKey, JSON.stringify(localMembers));
-    }
-  }
-
-  function supabaseRowToMember(row) {
-    const loginId = safeString(row.login_id).trim();
-    const signupMethodRaw = safeString(row.signup_method || 'sitepass').toLowerCase();
-    const provider = signupMethodRaw.includes('kakao') ? 'kakao' : signupMethodRaw.includes('naver') ? 'naver' : 'sitepass';
-    const statusRaw = safeString(row.status || 'active').toLowerCase();
-    return {
-      id: loginId ? 'DB-' + loginId : 'DB-' + Math.random().toString(36).slice(2),
-      signupId: provider === 'sitepass' ? loginId : '',
-      providerId: provider !== 'sitepass' ? loginId : '',
-      name: safeString(row.name || '이름없음'),
-      phone: normalizePhone(row.phone || ''),
-      provider,
-      signupMethod: provider,
-      role: safeString(row.role || 'member'),
-      status: statusRaw === 'active' ? '정상' : statusRaw === 'withdrawn' ? '탈퇴' : statusRaw === 'suspended' ? '정지' : safeString(row.status || '정상'),
-      memberPlan: safeString(row.plan_label || '실사용베타'),
-      paymentPlanLabel: safeString(row.plan_label || '실사용베타'),
-      paymentEndsAt: row.plan_ends_at || '',
-      lastLoginAt: row.last_login_at || row.updated_at || '',
-      createdAt: row.created_at || row.updated_at || new Date().toISOString(),
-      updatedAt: row.updated_at || row.last_login_at || new Date().toISOString(),
-      adminMemo: safeString(row.admin_memo || ''),
-      source: 'supabase',
-      dbSyncedAt: new Date().toISOString()
-    };
-  }
-
-  function getMemberKeys(member) {
-    if (!member) return [];
-    const out = [
-      normalizeLoginId(member.id),
-      normalizeLoginId(member.signupId),
-      normalizeLoginId(member.providerId),
-      normalizeLoginId(member.phone),
-      normalizePhone(member.phone),
-      normalizeLoginId(safeString(member.id).replace(/^DB-/i, '')),
-      normalizeLoginId(safeString(member.providerId).replace(/^DB-/i, ''))
-    ].filter(Boolean);
-    return out.filter((value, index, arr) => arr.indexOf(value) === index);
-  }
-
-  function installLocalStorageHooks() {
-    if (localStorage.__sitepassAdminLiveHookedV237195) return;
-    try { Object.defineProperty(localStorage, '__sitepassAdminLiveHookedV237195', { value:true, enumerable:false }); } catch (e) {}
-    const originalSetItem = Storage.prototype.setItem;
-    const originalRemoveItem = Storage.prototype.removeItem;
-    Storage.prototype.setItem = function(key, value) {
-      const result = originalSetItem.apply(this, arguments);
-      try { handlePossibleDataChange(key, '저장 변경'); } catch (e) {}
-      return result;
-    };
-    Storage.prototype.removeItem = function(key) {
-      const result = originalRemoveItem.apply(this, arguments);
-      try { handlePossibleDataChange(key, '삭제 변경'); } catch (e) {}
-      return result;
-    };
-  }
-
-  function isWatchedKey(key) {
-    const keys = getKeyNames();
-    return [keys.dataKey, keys.memberKey, keys.withdrawnKey, keys.adminRoleKey].includes(String(key || ''));
-  }
-
-  function handlePossibleDataChange(key, reason) {
-    if (!isWatchedKey(key)) return;
-    const currentSnapshot = makeSnapshot();
-    if (currentSnapshot !== lastSnapshot) debounceRefresh(reason || '데이터 변경');
-  }
-
-  function installWindowEvents() {
-    window.addEventListener('storage', event => {
-      if (isWatchedKey(event.key)) debounceRefresh('다른 탭 변경');
-    });
-    window.addEventListener('focus', () => debounceRefresh('화면 복귀'));
-    window.addEventListener('pageshow', () => debounceRefresh('페이지 표시'));
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) debounceRefresh('화면 복귀');
-    });
-    document.addEventListener('sitepass:data-changed', () => debounceRefresh('SitePass 변경'));
-  }
-
-  function startPolling() {
-    if (liveTimer) clearInterval(liveTimer);
-    liveTimer = setInterval(() => {
-      if (!isAdminLoggedInSafe() || !isAdminScreenVisible()) return;
-      const currentSnapshot = makeSnapshot();
-      const tooOld = Date.now() - lastRenderedAt > POLL_MS * 2.5;
-      if (currentSnapshot !== lastSnapshot || tooOld) debounceRefresh(currentSnapshot !== lastSnapshot ? '자동 감지' : '주기 확인');
-    }, POLL_MS);
-  }
-
-  function installSupabaseRealtime() {
-    const client = window.sitepassSupabase;
-    if (!client || !client.channel || supabaseChannel) return;
-    try {
-      supabaseChannel = client.channel('sitepass-admin-live-refresh-v237195');
-      WATCH_TABLES.filter((value, index, arr) => arr.indexOf(value) === index).forEach(table => {
-        supabaseChannel.on('postgres_changes', { event:'*', schema:'public', table }, payload => {
-          console.log('SitePass 관리자 자동 업데이트 감지:', table, payload && payload.eventType);
-          debounceRefresh('서버 변경: ' + table);
-        });
-      });
-      supabaseChannel.subscribe(status => {
-        if (status === 'SUBSCRIBED') {
-          setPanelState('서버 자동 업데이트 연결됨: ' + nowTimeText(), 'ok');
-        }
-      });
-    } catch (e) {
-      console.warn('Supabase Realtime 연결 생략:', e);
-    }
-  }
-
-  function wrapShowScreen() {
-    if (typeof window.showScreen !== 'function' || window.showScreen.__sitepassAdminLiveWrapped) return;
-    const original = window.showScreen;
-    window.showScreen = function(id, options) {
-      const result = original.apply(this, arguments);
-      if (id === 'adminScreen') {
-        ensurePanel();
-        debounceRefresh('관리자 화면 진입');
-      }
-      return result;
-    };
-    window.showScreen.__sitepassAdminLiveWrapped = true;
-  }
-
-  function boot() {
-    try {
-      installLocalStorageHooks();
-      installWindowEvents();
-      wrapShowScreen();
-      startPolling();
-      installSupabaseRealtime();
-      lastSnapshot = makeSnapshot();
-      if (isAdminScreenVisible()) {
-        ensurePanel();
-        debounceRefresh('초기 표시');
-      }
-      window.sitepassAdminLiveRefreshNow = function(reason) { return refreshAdminNow(reason || '수동 새로고침'); };
-      window.sitepassAdminLiveRefreshVersion = PATCH_VERSION;
-    } catch (e) {
-      console.warn('SitePass 관리자 자동 업데이트 패치 초기화 실패:', e);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
-})();
-
-</script>
-</body></html>', expireScript + '</body></html>');
+        .replace('</body></html>', expireScript + '</body></html>');
     }
 
     function renderPublicDocLine(doc, code, index) {
@@ -13236,23 +12627,15 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       const counts = {
         all: activeMembers.length,
         normal: activeMembers.filter(m => !m.adminRole && !m.suspended).length,
-        sitepassSelf: activeMembers.filter(m => !m.adminRole && !m.suspended && sp194IsSitePassMember(m)).length,
-        kakaoMembers: activeMembers.filter(m => !m.adminRole && !m.suspended && sp194IsKakaoMember(m)).length,
-        naverMembers: activeMembers.filter(m => !m.adminRole && !m.suspended && sp194IsNaverMember(m)).length,
         newSignup: countTodaySignups(activeMembers),
         free: activeMembers.filter(m => String(getMemberPlanInfo(m).label).includes('무료')).length,
         monthly: activeMembers.filter(m => String(getMemberPlanInfo(m).label).includes('1개월') || String(getMemberPlanInfo(m).label).includes('monthly')).length,
         due: activeMembers.filter(isMemberPaymentDueSoon).length,
         grace14: activeMembers.filter(isMemberGrace14Over).length,
         super: activeMembers.filter(m => m.adminRole === SUPER_ADMIN_ROLE_NAME).length,
-        admin: activeMembers.filter(m => m.adminRole === '관리자').length,
-        operator: activeMembers.filter(m => m.adminRole === '운영관리자').length,
-        viewer: activeMembers.filter(m => m.adminRole === '조회관리자').length,
+        admin: activeMembers.filter(m => ['관리자','운영관리자','조회관리자'].includes(m.adminRole)).length,
         suspended: activeMembers.filter(m => m.suspended || m.status === '정지').length,
         withdrawn: withdrawnMembers.length,
-        withdrawnKakao: withdrawnMembers.filter(sp194IsKakaoMember).length,
-        withdrawnNaver: withdrawnMembers.filter(sp194IsNaverMember).length,
-        withdrawnSitePass: withdrawnMembers.filter(sp194IsSitePassMember).length,
         newPay: activeMembers.filter(m => String(m.paymentStatus || m.status || '').includes('신규결제')).length,
         extensionPay: activeMembers.filter(m => String(m.paymentStatus || m.status || '').includes('연장결제')).length,
         refundRequest: activeMembers.filter(m => m.refundRequestPending || String(m.paymentStatus || '').includes('환불요청')).length,
@@ -13265,9 +12648,6 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       const labels = {
         all:'전체회원',
         normal:'일반회원',
-        sitepassSelf:'일반/SitePass',
-        kakaoMembers:'카카오가입자',
-        naverMembers:'네이버가입자',
         newSignup:'신규회원',
         free:'베타',
         monthly:'1개월권',
@@ -13275,41 +12655,28 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
         grace14:'유예14일 이상',
         super:'최고관리자',
         admin:'관리자',
-        operator:'운영관리자',
-        viewer:'조회관리자',
         suspended:'정지회원',
         newPay:'신규결제',
         extensionPay:'연장결제',
         refundRequest:'환불요청',
         refund:'환불처리',
-        withdrawn:'강제탈퇴',
-        withdrawnKakao:'강제탈퇴-카카오',
-        withdrawnNaver:'강제탈퇴-네이버',
-        withdrawnSitePass:'강제탈퇴-일반'
+        withdrawn:'강제탈퇴'
       };
       return labels[key] || '전체회원';
     }
 
     function filterAdminMembersByFolder(member, folder) {
       if (folder === 'withdrawn') return !!member.withdrawn;
-      if (folder === 'withdrawnKakao') return !!member.withdrawn && sp194IsKakaoMember(member);
-      if (folder === 'withdrawnNaver') return !!member.withdrawn && sp194IsNaverMember(member);
-      if (folder === 'withdrawnSitePass') return !!member.withdrawn && sp194IsSitePassMember(member);
       if (member.withdrawn) return false;
       if (folder === 'all') return true;
       if (folder === 'normal') return !member.adminRole && !member.suspended;
-      if (folder === 'sitepassSelf') return !member.adminRole && !member.suspended && sp194IsSitePassMember(member);
-      if (folder === 'kakaoMembers') return !member.adminRole && !member.suspended && sp194IsKakaoMember(member);
-      if (folder === 'naverMembers') return !member.adminRole && !member.suspended && sp194IsNaverMember(member);
       if (folder === 'newSignup') return getLocalDateKey(member?.createdAt) === getLocalDateKey();
       if (folder === 'free') return String(getMemberPlanInfo(member).label).includes('무료');
       if (folder === 'monthly') return String(getMemberPlanInfo(member).label).includes('1개월') || String(getMemberPlanInfo(member).label).includes('monthly');
       if (folder === 'due') return isMemberPaymentDueSoon(member);
       if (folder === 'grace14') return isMemberGrace14Over(member);
       if (folder === 'super') return member.adminRole === SUPER_ADMIN_ROLE_NAME;
-      if (folder === 'admin') return member.adminRole === '관리자';
-      if (folder === 'operator') return member.adminRole === '운영관리자';
-      if (folder === 'viewer') return member.adminRole === '조회관리자';
+      if (folder === 'admin') return ['관리자','운영관리자','조회관리자'].includes(member.adminRole);
       if (folder === 'suspended') return member.suspended || member.status === '정지';
       if (folder === 'newPay') return String(member.paymentStatus || member.status || '').includes('신규결제');
       if (folder === 'extensionPay') return String(member.paymentStatus || member.status || '').includes('연장결제');
@@ -13797,20 +13164,15 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       }
       const targetName = getMemberDisplayName(target);
       if (!confirm(targetName + '님을 강제탈퇴 처리할까요?\n\n회원 목록에서 삭제되고 관리자 권한도 함께 해제됩니다.')) return;
-      if (!confirm('정말 삭제할까요?\n강제탈퇴 기록은 관리자관리의 강제탈퇴 폴더에 남기고, 같은 계정의 재로그인을 차단합니다.')) return;
+      if (!confirm('정말 삭제할까요?\n강제탈퇴 기록은 관리자관리의 강제탈퇴 폴더에 남깁니다.')) return;
 
       syncMemberAdminRoleMap(target, '');
       const withdrawnList = getWithdrawnMembers();
-      const providerKind = sp194ProviderKind(target);
-      const loginKeys = sp194StableKeys(target);
       withdrawnList.unshift({
         ...target,
         withdrawn:true,
         status:'강제탈퇴',
         adminRole:'',
-        providerKind,
-        withdrawnLoginKeys:loginKeys,
-        withdrawnProviderLock:sp194IsGenericSocialMember(target),
         withdrawnAt:new Date().toISOString(),
         withdrawnBy:getSessionValue(ADMIN_SESSION_KEY + '_id') || SUPER_ADMIN_ROLE_NAME
       });
@@ -13830,14 +13192,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
         if (sameCurrent) removeSessionValue(CURRENT_MEMBER_KEY);
       } catch (e) {}
 
-      // 같은 브라우저에서 테스트 중이면 남아있는 Kakao/Supabase 세션도 끊어 자동 재접속을 막습니다.
-      try {
-        if (window.sitepassSupabase && window.sitepassSupabase.auth && (providerKind === 'kakao' || providerKind === 'naver')) {
-          window.sitepassSupabase.auth.signOut({ scope:'local' }).catch(function(){ try { window.sitepassSupabase.auth.signOut(); } catch (e) {} });
-        }
-      } catch (e) {}
-
-      alert(targetName + '님을 강제탈퇴 처리했습니다.\n같은 계정의 자동 재로그인도 차단했습니다.');
+      alert(targetName + '님을 강제탈퇴 처리했습니다.');
       refreshMemberUi();
       renderAdmin();
     }
@@ -13995,7 +13350,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       const withdrawnMembers = getWithdrawnMembers().map(item => ({ ...item, withdrawn:true, status:'강제탈퇴' }));
       const activeMembers = getAdminAllMemberRows();
       const counts = getAdminMemberCounts(activeMembers, withdrawnMembers);
-      const folders = ['super','admin','all','normal','sitepassSelf','kakaoMembers','naverMembers','newSignup','monthly','due','grace14','suspended','newPay','extensionPay','refundRequest','refund','withdrawn','withdrawnKakao','withdrawnNaver','withdrawnSitePass'];
+      const folders = ['super','admin','all','normal','newSignup','monthly','due','grace14','suspended','newPay','extensionPay','refundRequest','refund','withdrawn'];
       const folderButtons = folders.map(key =>
         '<button type="button" class="' + (adminMemberFolder === key ? 'active' : '') + '" onclick="setAdminMemberFolder(\'' + escapeJs(key) + '\')">' +
           escapeHtml(getAdminFolderLabel(key)) + ' ' + (counts[key] || 0) +
@@ -14013,9 +13368,6 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
         '<div class="admin-summary-row">' +
           '<div class="line"><b>전체회원</b><span>' + counts.all + '명</span></div>' +
           '<div class="line"><b>일반회원</b><span>' + counts.normal + '명</span></div>' +
-          '<div class="line"><b>일반/SitePass</b><span>' + counts.sitepassSelf + '명</span></div>' +
-          '<div class="line"><b>카카오가입자</b><span>' + counts.kakaoMembers + '명</span></div>' +
-          '<div class="line"><b>네이버가입자</b><span>' + counts.naverMembers + '명</span></div>' +
           '<div class="line"><b>관리자</b><span>' + ((counts.super || 0) + (counts.admin || 0)) + '명</span></div>' +
           '<div class="line"><b>강제탈퇴</b><span>' + counts.withdrawn + '명</span></div>' +
         '</div>' +
@@ -14372,7 +13724,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       return true;
     }
 
-    const SITEPASS_APP_VERSION = 'v23.7.194';
+    const SITEPASS_APP_VERSION = 'v23.7.193';
     const SITEPASS_FIXED_APP_URL = 'https://sitepass-js.github.io/sitepass/';
     const SITEPASS_VERSION_KEY = 'sitepass_current_app_version';
     const SITEPASS_UPDATE_RELOAD_KEY = 'sitepass_last_update_reload_version';
@@ -14901,7 +14253,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
     }
 
     function resetSitePassTestDataOnce() {
-      // v23.7.194부터 수정본 배포 시 실제 가입 회원/카카오 회원/localStorage 데이터를 자동 삭제하지 않습니다.
+      // v23.7.193부터 수정본 배포 시 실제 가입 회원/카카오 회원/localStorage 데이터를 자동 삭제하지 않습니다.
       // 이전 베타 초기화 키가 없더라도 아무 데이터도 지우지 않고 방문자수만 기록합니다.
       return false;
     }
@@ -15017,33 +14369,6 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
         if (input.matches('input[type="date"]')) setTimeout(function(){ try { input.blur(); } catch(e) {} }, 0);
       });
     })();
-  
-
-    // v23.7.194 defensive wrappers: any route that tries to save/login a withdrawn member is stopped.
-    if (typeof saveMemberTest === 'function' && !saveMemberTest.__sp194Wrapped) {
-      const __sp194SaveMemberTest = saveMemberTest;
-      saveMemberTest = function(member) {
-        if (sp194BlockIfWithdrawn(member, '회원 저장', { blockGenericProvider:false })) {
-          window.__SITEPASS_SP194_SAVE_BLOCKED = true;
-          return null;
-        }
-        window.__SITEPASS_SP194_SAVE_BLOCKED = false;
-        return __sp194SaveMemberTest(member);
-      };
-      saveMemberTest.__sp194Wrapped = true;
-    }
-    if (typeof completeMemberLoginTest === 'function' && !completeMemberLoginTest.__sp194Wrapped) {
-      const __sp194CompleteMemberLoginTest = completeMemberLoginTest;
-      completeMemberLoginTest = function(member, message) {
-        if (window.__SITEPASS_SP194_SAVE_BLOCKED || sp194BlockIfWithdrawn(member, '로그인', { blockGenericProvider:false })) {
-          window.__SITEPASS_SP194_SAVE_BLOCKED = false;
-          removeSessionValue(CURRENT_MEMBER_KEY);
-          return;
-        }
-        return __sp194CompleteMemberLoginTest(member, message);
-      };
-      completeMemberLoginTest.__sp194Wrapped = true;
-    }
-</script>
+  </script>
 </body>
 </html>
