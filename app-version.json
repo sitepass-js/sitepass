@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.214",
+  "version": "v23.7.215",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix withdrawal not disappearing from admin list by blocking all social/Auth keys, add social signup terms modal for first Kakao/Naver login, and improve saved password autofill/visibility on mobile.",
+  "note": "Fix login first-screen password manager/autofill issue on mobile: use a real login form, stop clearing saved password on screen refresh, and keep ID/password fields compact with right-side login button.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T23:25:00+09:00"
+  "updatedAt": "2026-06-29T23:55:00+09:00"
 }
