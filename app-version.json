@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.197",
+  "version": "v23.7.198",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Admin dashboard now shows signup counts by method: Kakao, Naver, and SitePass regular signup, while keeping Supabase member sync.",
+  "note": "Withdrawn Kakao accounts no longer auto-login. Member withdrawal signs out Supabase, marks account withdrawn, blocks immediate login, and asks for rejoin confirmation.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T20:30:00+09:00"
+  "updatedAt": "2026-06-29T20:55:00+09:00"
 }
