@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.229",
+  "version": "v23.7.230",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "회원탈퇴 즉시 관리자 현재회원에서 제외, 현재 Supabase 로그인 사용자 기준 탈퇴 RPC 추가, 카카오/네이버 첫 가입 소셜약관 표시 강화.",
+  "note": "휴대폰 카카오/네이버 계정으로 계속하기를 누르면 소셜가입 약관동의를 먼저 받고, 외부 인증 후에도 동의값이 사라지지 않게 보존합니다. 기존 회원은 중복 생성하지 않고 로그인만 처리합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T00:00:00+09:00"
+  "updatedAt": "2026-06-30T00:30:00+09:00"
 }
