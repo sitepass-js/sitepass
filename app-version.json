@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.228",
+  "version": "v23.7.229",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Add optional email and SMS advertising consent checkboxes to SitePass and social signup terms, save consent to Supabase RPC, and show advertising consent counts on the admin summary board.",
+  "note": "회원탈퇴 즉시 관리자 현재회원에서 제외, 현재 Supabase 로그인 사용자 기준 탈퇴 RPC 추가, 카카오/네이버 첫 가입 소셜약관 표시 강화.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T05:20:00+09:00"
+  "updatedAt": "2026-06-30T00:00:00+09:00"
 }
