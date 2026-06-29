@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.200",
+  "version": "v23.7.201",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix live-site admin member list when Supabase sitepass_members has rows but GitHub Pages cannot read them due to RLS/permissions. Requires running the v23.7.200 admin member read RPC SQL once in Supabase.",
+  "note": "Force admin member list to call Supabase RPC first and keep RPC rows visible in the live admin screen, even when localStorage merge/display is delayed.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T19:50:00+09:00"
+  "updatedAt": "2026-06-29T20:05:00+09:00"
 }
