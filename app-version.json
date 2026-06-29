@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.208",
+  "version": "v23.7.209",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Add common My Account screen and password change for normal members, operator admins, and super admin.",
+  "note": "Stabilize My Account: phone edit/save, step-by-step password change with clear success/failure alerts, and prevent Kakao/Naver social login from creating duplicate members after first signup.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T21:15:00+09:00"
+  "updatedAt": "2026-06-29T21:35:00+09:00"
 }
