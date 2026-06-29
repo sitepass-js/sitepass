@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.204",
+  "version": "v23.7.205",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Use Supabase server/RPC member rows as the admin member source of truth and remove old localStorage Kakao duplicate rows so SQL 3 members shows as 3 in the live admin screen.",
+  "note": "Fix mobile signup/login buttons: restore missing terms functions, restore Naver continue handler, remove duplicate Kakao/Naver signup buttons inside the join panel, and keep SitePass signup behind required terms agreement.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T20:25:00+09:00"
+  "updatedAt": "2026-06-29T20:45:00+09:00"
 }
