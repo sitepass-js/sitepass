@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.213",
+  "version": "v23.7.214",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix member self-withdrawal not disappearing from admin list by adding withdrawn block keys and preventing Kakao/Naver Auth profiles from recreating active members. Also keeps v23.7.212 login UI/session behavior.",
+  "note": "Fix withdrawal not disappearing from admin list by blocking all social/Auth keys, add social signup terms modal for first Kakao/Naver login, and improve saved password autofill/visibility on mobile.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T22:55:00+09:00"
+  "updatedAt": "2026-06-29T23:25:00+09:00"
 }
