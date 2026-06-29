@@ -1,4 +1,4 @@
-const SITEPASS_SW_VERSION = 'v23.7.217';
+const SITEPASS_SW_VERSION = 'v23.7.218';
 const SITEPASS_CACHE = 'sitepass-cache-v23-7-217';
 const SITEPASS_CORE = [
   './',

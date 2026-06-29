@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.217",
+  "version": "v23.7.218",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Login screen layout fix: keep password-manager autofill, make password show checkbox small and aligned under password input, prevent label wrapping.",
+  "note": "Test-mode rejoin fix: withdrawn Kakao/Naver/SitePass accounts can withdraw and sign up again repeatedly during testing; admin current member list still excludes withdrawn users until they rejoin.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T00:45:00+09:00"
+  "updatedAt": "2026-06-29T23:50:00+09:00"
 }
