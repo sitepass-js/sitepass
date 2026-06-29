@@ -23,7 +23,7 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.201" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.212" />
 <!-- v23.7.186: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
@@ -1797,26 +1797,34 @@
     }
     .login-auth-form {
       display:grid;
-      grid-template-columns:1fr;
-      gap:10px;
+      grid-template-columns:minmax(0, 1fr) 104px;
+      grid-template-rows:44px 44px;
+      gap:8px;
       margin:0 auto;
-      max-width:454px;
+      max-width:430px;
+      align-items:stretch;
     }
     .login-auth-form input {
-      min-height:52px;
-      border-radius:12px;
-      font-size:16px;
+      min-height:44px;
+      height:44px;
+      border-radius:10px;
+      font-size:15px;
       background:#fff;
     }
+    .login-auth-form input:first-child { grid-column:1; grid-row:1; }
+    .login-auth-form input:nth-child(2) { grid-column:1; grid-row:2; }
     .login-continue-button {
-      min-height:52px;
+      grid-column:2;
+      grid-row:1 / span 2;
+      min-height:96px;
+      height:96px;
       border-radius:12px;
-      background:#d0d5dd;
+      background:#26334d;
       color:#ffffff;
-      font-size:18px;
+      font-size:17px;
       font-weight:950;
     }
-    .login-continue-button:hover { background:#bfc5cf; }
+    .login-continue-button:hover { background:#172033; }
     .login-divider {
       display:flex;
       align-items:center;
@@ -2227,6 +2235,22 @@
       .login-auth-title { font-size:26px; }
       .login-auth-subtitle { font-size:14px; }
       .login-link-row { font-size:14px; }
+      .login-auth-form {
+        max-width:100%;
+        grid-template-columns:minmax(0, 1fr) 92px;
+        grid-template-rows:42px 42px;
+        gap:7px;
+      }
+      .login-auth-form input {
+        min-height:42px;
+        height:42px;
+        font-size:14px;
+      }
+      .login-continue-button {
+        min-height:91px;
+        height:91px;
+        font-size:15px;
+      }
       .join-choice-head h3 { font-size:20px; }
     }
 
@@ -3907,8 +3931,8 @@
           <p class="login-auth-subtitle">SitePass 계정을 계속 사용하려면</p>
           <div id="normalLoginFormArea" class="login-auth-form normal-login-area">
             <input id="sitepassLoginIdentifier" type="text" placeholder="사용자 아이디" autocomplete="username" onkeydown="if(event.key==='Enter') submitSitePassLoginTest()" />
-            <input id="sitepassLoginPassword" class="hidden" type="password" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitSitePassLoginTest()" />
-            <button id="sitepassLoginContinueButton" type="button" class="login-continue-button" onclick="submitSitePassLoginTest()">계속</button>
+            <input id="sitepassLoginPassword" type="password" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitSitePassLoginTest()" />
+            <button id="sitepassLoginContinueButton" type="button" class="login-continue-button" onclick="submitSitePassLoginTest()">로그인</button>
           </div>
           <div class="login-help-row normal-login-area">
             <button type="button" class="login-text-link" onclick="openAccountFindPanel('id')">아이디 찾기</button>
@@ -4504,7 +4528,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     supabaseUrl: 'https://fipbgzvdwgjsmazmswaj.supabase.co',
     supabaseAnonKey: 'sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO',
     storageBucket: 'sitepass-documents',
-    appVersion: 'v23.7.211'
+    appVersion: 'v23.7.212'
   };
 
   window.sitepassSupabase = window.supabase.createClient(
@@ -4583,11 +4607,12 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     const QUICK_AUTH_KEY = STORAGE_KEY + '_quick_auth_v23_7_141';
     const QUICK_SETUP_SKIP_SESSION_KEY = STORAGE_KEY + '_quick_setup_skip_v23_7_144';
     function shouldPersistAdminSessionKey(key) {
-      return String(key || '').indexOf(ADMIN_SESSION_KEY) === 0;
+      const normalizedKey = String(key || '');
+      return normalizedKey.indexOf(ADMIN_SESSION_KEY) === 0 || normalizedKey === CURRENT_MEMBER_KEY;
     }
     function setSessionValue(key, value) {
       try { sessionStorage.setItem(key, value); } catch (e) {}
-      // v23.7.211: 휴대폰 브라우저/PWA 새로고침 때 최고관리자 화면이 로그아웃처럼 풀리는 문제 방지.
+      // v23.7.212: 휴대폰 브라우저/PWA 새로고침 때 최고관리자 화면이 로그아웃처럼 풀리는 문제 방지.
       // 일반회원 세션은 기존처럼 세션 저장만 쓰고, 관리자 세션만 명시적 로그아웃 전까지 보존합니다.
       try { if (shouldPersistAdminSessionKey(key)) localStorage.setItem(key, value); } catch (e) {}
     }
@@ -4612,9 +4637,9 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
       try { localStorage.removeItem(key); } catch (e) {}
     }
     function clearLegacyAutoLoginState() {
+      // v23.7.212: 새로고침 때 로그인 세션을 지우지 않습니다.
+      // 명시적으로 로그아웃을 누를 때만 CURRENT_MEMBER_KEY / ADMIN_SESSION_KEY를 삭제합니다.
       removeSessionValue('__unused__');
-      try { removeSessionValue(CURRENT_MEMBER_KEY); } catch (e) {}
-      try { removeSessionValue(ADMIN_SESSION_KEY); removeSessionValue(ADMIN_SESSION_KEY + '_role'); removeSessionValue(ADMIN_SESSION_KEY + '_id'); removeSessionValue(ADMIN_SESSION_KEY + '_name'); } catch (e) {}
     }
 
     const DOC_GROUPS = [
@@ -4814,7 +4839,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
       if (withdrawBtn) withdrawBtn.classList.toggle('hidden', !loggedIn || adminLoggedIn);
     }
 
-    // v23.7.211 - 삭제/탈퇴 확정, 중복표시 차단, 새로고침 세션 유지 보강 화면입니다.
+    // v23.7.212 - 삭제/탈퇴 확정, 중복표시 차단, 새로고침 세션 유지 보강 화면입니다.
     let myAccountPasswordVerified = false;
 
     function getCurrentAccountContext() {
@@ -5170,7 +5195,7 @@ async function saveMemberToSupabase(member) {
         const cleanPhone = String(member.phone || '').replace(/[^0-9]/g, '');
         let finalRole = adminRoleToSupabaseRole(member.adminRole || '', loginId);
 
-        // v23.7.211: 최고관리자는 sitepass@kakao.com 1명만 허용합니다.
+        // v23.7.212: 최고관리자는 sitepass@kakao.com 1명만 허용합니다.
         // 기존 서버에 남은 super_admin 권한은 여기서 보존하지 않고, 명시된 현재 권한값으로 다시 저장합니다.
         if (finalRole === 'super_admin' && !isSuperAdminLoginId(loginId)) finalRole = 'member';
 
@@ -5421,7 +5446,7 @@ async function saveMemberToSupabase(member) {
       return saved;
     }
 
-    // v23.7.211 - 회원 저장 함수입니다. 기존 회원이면 신규 생성하지 않고, 최고관리자는 sitepass@kakao.com 1명만 유지합니다.
+    // v23.7.212 - 회원 저장 함수입니다. 기존 회원이면 신규 생성하지 않고, 최고관리자는 sitepass@kakao.com 1명만 유지합니다.
     function saveMemberTest(member) {
       if (!member) return;
       if (findWithdrawnMemberRecord(member) && !member?.rejoinConfirmedAt) {
@@ -5525,7 +5550,7 @@ async function saveMemberToSupabase(member) {
         let rpcErrorMessage = '';
         let directErrorMessage = '';
 
-        // v23.7.201: 인터넷 배포에서는 RLS 때문에 직접 SELECT가 막힐 수 있으므로 RPC를 1순위로 호출합니다.
+        // v23.7.212: 인터넷 배포에서는 RLS 때문에 직접 SELECT가 막힐 수 있으므로 RPC를 1순위로 호출합니다.
         if (window.sitepassSupabase.rpc) {
           try {
             const { data: rpcRows, error: rpcError } = await window.sitepassSupabase.rpc('sitepass_admin_sync_members');
@@ -6841,19 +6866,9 @@ async function saveMemberToSupabase(member) {
       }
 
       if (pwInput && pwInput.classList.contains('hidden')) {
-        const foundMember = findMemberForLogin(loginId);
-        const mappedRole = getMappedAdminRoleForLogin(loginId);
-        const resolvedRole = getLocalAdminRoleForLogin(loginId, foundMember) || mappedRole;
         pwInput.classList.remove('hidden');
-        if (continueButton) continueButton.textContent = '로그인';
-        if (isSuperAdminLoginId(loginId) || resolvedRole === SUPER_ADMIN_ROLE_NAME) {
-          alert('최고관리자 계정입니다. 가입할 때 만든 비밀번호를 입력하면 관리자 화면으로 이동합니다.');
-        } else if (resolvedRole) {
-          alert(resolvedRole + ' 계정입니다. 비밀번호를 입력하면 관리자 화면으로 이동합니다.');
-        }
-        setTimeout(() => pwInput.focus(), 80);
-        return;
       }
+      if (continueButton) continueButton.textContent = '로그인';
 
       const password = normalizeLoginText(pwInput?.value);
       if (!password) {
@@ -7521,9 +7536,9 @@ async function saveMemberToSupabase(member) {
         const joinBox = document.getElementById('joinChoiceBox');
         if (joinBox) joinBox.classList.add('hidden');
         const pwInput = document.getElementById('sitepassLoginPassword');
-        if (pwInput) { pwInput.classList.add('hidden'); pwInput.value = ''; }
+        if (pwInput) { pwInput.classList.remove('hidden'); pwInput.value = ''; }
         const continueButton = document.getElementById('sitepassLoginContinueButton');
-        if (continueButton) continueButton.textContent = '계속';
+        if (continueButton) continueButton.textContent = '로그인';
         document.body.classList.remove('quick-first-mode', 'show-normal-login');
         resetSitePassSignupPhoneAuth();
       }
@@ -10644,7 +10659,7 @@ async function saveMemberToSupabase(member) {
       const nowIso = new Date().toISOString();
       const existing = getRegistrationDraft();
       return {
-        version:'v23.7.201',
+        version:'v23.7.212',
         editingCode:editingCode || '',
         equipmentNo:(equipmentNoEl?.value || '').trim(),
         equipmentName:(equipmentNameEl?.value || '').trim(),
@@ -13496,7 +13511,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
         const keys = getMemberLoginKeys(member);
         if (!keys.length) return 0;
 
-        // v23.7.211: DB에서도 확실히 withdrawn 처리합니다.
+        // v23.7.212: DB에서도 확실히 withdrawn 처리합니다.
         // 기존에는 대표 login_id 1개만 upsert해서 다른 login_id 행이 다시 살아나는 문제가 있었습니다.
         try {
           const { data, error } = await window.sitepassSupabase.rpc('sitepass_force_withdraw_member', {
@@ -13746,7 +13761,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
         });
       };
 
-      // v23.7.211: 서버 active 회원을 기준으로 표시합니다.
+      // v23.7.212: 서버 active 회원을 기준으로 표시합니다.
       // 예전 localStorage에 남은 카카오/네이버/중복 회원은 서버에 active로 없으면 다시 표시하지 않습니다.
       serverMembers.forEach(put);
       localMembers.forEach(local => {
@@ -14968,7 +14983,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       return true;
     }
 
-    const SITEPASS_APP_VERSION = 'v23.7.201';
+    const SITEPASS_APP_VERSION = 'v23.7.212';
     const SITEPASS_FIXED_APP_URL = 'https://sitepass-js.github.io/sitepass/';
     const SITEPASS_VERSION_KEY = 'sitepass_current_app_version';
     const SITEPASS_UPDATE_RELOAD_KEY = 'sitepass_last_update_reload_version';
@@ -15065,7 +15080,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
         setHomeInstallStatus('서비스워커와 설치창은 https 주소 또는 localhost에서만 정상 작동합니다.');
         return;
       }
-      navigator.serviceWorker.register('./sw.js?v=23.7.201').then(function(reg) {
+      navigator.serviceWorker.register('./sw.js?v=23.7.212').then(function(reg) {
         try { reg.update(); } catch (e) {}
         if (!deferredSitePassInstallPrompt && !isSitePassStandalone()) {
           setHomeInstallStatus('설치 준비 중입니다. 브라우저가 설치 가능하다고 판단하면 <b>홈화면에 설치하기</b> 버튼으로 설치창이 열립니다.');

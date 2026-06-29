@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.211",
+  "version": "v23.7.212",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix admin member deletion/withdrawal persistence: active list excludes withdrawn/deleted server rows, browser local duplicates no longer reappear, force-withdraw uses Supabase RPC, admin refresh keeps session.",
+  "note": "Login screen compact ID/password layout and refresh session persistence fix. Password field is always visible and login button is placed on the right.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T22:05:00+09:00"
+  "updatedAt": "2026-06-29T22:30:00+09:00"
 }
