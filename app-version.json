@@ -1,7 +1,11 @@
 {
-  "version": "v23.7.193",
-  "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Keep member data during updates, remove operator/viewer role choices, and keep admin account creation only in super-admin mode.",
-  "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T16:20:00+09:00"
+  "version": "v23.7.195",
+  "title": "강제탈퇴 차단 및 관리자 자동 업데이트",
+  "message": "강제탈퇴 회원의 카카오/네이버/일반 재접속을 차단하고, 최고관리자 화면에서 가입자·서류 변경을 자동 감지합니다.",
+  "force": false,
+  "createdAt": "2026-06-29T00:00:00+09:00",
+  "files": [
+    "index.html",
+    "app-version.json"
+  ]
 }
