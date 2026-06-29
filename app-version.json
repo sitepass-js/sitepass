@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.222",
+  "version": "v23.7.225",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Final social signup/member-list fix: Kakao/Naver signups are saved through a Supabase RPC, active server members are no longer hidden by old local withdrawn cache, and the admin member list stays deduplicated.",
+  "note": "Admin member statistics rebuild: counts active members by Kakao/Naver/SitePass terms-completed provider, today signups, and withdrawal totals without manual Table Editor edits.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T01:20:00+09:00"
+  "updatedAt": "2026-06-30T03:30:00+09:00"
 }
