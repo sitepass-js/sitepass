@@ -29,7 +29,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.218 login-password-show-layout-fix -->
+  <!-- SitePass deploy-check: v23.7.219 login-password-show-layout-fix -->
   <!-- SitePass screen-fix: clean package only, no guide/patch/text files required -->
   <style>
     :root {
@@ -4601,7 +4601,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     supabaseUrl: 'https://fipbgzvdwgjsmazmswaj.supabase.co',
     supabaseAnonKey: 'sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO',
     storageBucket: 'sitepass-documents',
-    appVersion: 'v23.7.218'
+    appVersion: 'v23.7.219'
   };
 
   window.sitepassSupabase = window.supabase.createClient(
@@ -4831,7 +4831,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     function completeMemberLoginTest(member, message) {
       const localWithdrawnRecord = findWithdrawnMemberRecord(member);
       if (localWithdrawnRecord) {
-        // v23.7.218 테스트기간: 탈퇴했던 계정도 다시 가입/로그인 테스트가 가능하게 local 차단기록을 해제합니다.
+        // v23.7.219 테스트기간: 탈퇴했던 계정도 다시 가입/로그인 테스트가 가능하게 local 차단기록을 해제합니다.
         removeWithdrawnMemberRecord(member);
         member.rejoinConfirmedAt = new Date().toISOString();
         member.withdrawn = false;
@@ -5257,20 +5257,47 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
       upsertAdminSampleMember(getAdminSampleExtensionMember());
     }
     
-async function saveMemberToSupabase(member) {
+
+    // v23.7.219 - 소셜 로그인 DB 저장키를 하나로 고정합니다.
+    // 카카오/네이버는 signupMethod 표기가 달라도 login_id를 kakao_고유ID / naver_고유ID 하나로만 씁니다.
+    function getStableProviderRawId(member, providerKey) {
+      if (!member) return '';
+      const identityData = member.identityData || member.identity_data || {};
+      const raw = providerKey === 'kakao'
+        ? (member.kakaoUserId || member.providerUserId || member.provider_id || member.providerId || identityData.provider_id || identityData.sub || member.supabaseAuthUserId || member.authUserId || member.userId || '')
+        : (member.naverUserId || member.providerUserId || member.provider_id || member.providerId || identityData.provider_id || identityData.sub || member.supabaseAuthUserId || member.authUserId || member.userId || '');
+      return String(raw || '')
+        .replace(/^KAKAO[-_:]/i, '')
+        .replace(/^NAVER[-_:]/i, '')
+        .trim();
+    }
+
+    function makeStableMemberLoginId(member) {
+      const providerKey = normalizeSignupProviderKey(member?.signupMethod || member?.provider || member?.signup_provider || '');
+      if (providerKey === 'kakao' || providerKey === 'naver') {
+        const rawId = getStableProviderRawId(member, providerKey);
+        if (rawId) return providerKey + '_' + rawId;
+      }
+      return String(
+        member?.signupId ||
+        member?.login_id ||
+        member?.loginId ||
+        member?.providerId ||
+        member?.supabaseAuthUserId ||
+        member?.authUserId ||
+        member?.userId ||
+        member?.phone ||
+        member?.id ||
+        ''
+      ).trim();
+    }
+
+    async function saveMemberToSupabase(member) {
       try {
         if (!window.sitepassSupabase || !member) return;
 
-        const loginId = String(
-          member.signupId ||
-          member.providerId ||
-          member.supabaseAuthUserId ||
-          member.authUserId ||
-          member.userId ||
-          member.phone ||
-          member.id ||
-          ''
-        ).trim();
+        const normalizedSignupMethod = normalizeSignupProviderKey(member.signupMethod || member.provider || 'sitepass') || 'sitepass';
+        const loginId = makeStableMemberLoginId({ ...member, signupMethod: normalizedSignupMethod });
 
         if (findWithdrawnMemberRecord(member) && !member.rejoinConfirmedAt) {
           console.warn('탈퇴 기록이 있는 회원은 Supabase active 저장을 차단합니다:', loginId);
@@ -5279,21 +5306,23 @@ async function saveMemberToSupabase(member) {
         const cleanPhone = String(member.phone || '').replace(/[^0-9]/g, '');
         let finalRole = adminRoleToSupabaseRole(member.adminRole || '', loginId);
 
-        // v23.7.216: 최고관리자는 sitepass@kakao.com 1명만 허용합니다.
+        // v23.7.219: 최고관리자는 sitepass@kakao.com 1명만 허용합니다.
         // 기존 서버에 남은 super_admin 권한은 여기서 보존하지 않고, 명시된 현재 권한값으로 다시 저장합니다.
         if (finalRole === 'super_admin' && !isSuperAdminLoginId(loginId)) finalRole = 'member';
 
-        const existingStatus = await getSupabaseMemberStatus(member);
+        const existingStatus = await getSupabaseMemberStatus({ ...member, signupId: loginId, login_id: loginId, signupMethod: normalizedSignupMethod });
         if (existingStatus === 'withdrawn' && !member.rejoinConfirmedAt) {
           console.warn('탈퇴 회원은 일반 저장으로 재활성화하지 않습니다:', loginId);
           return;
         }
 
-        const normalizedSignupMethod = normalizeSignupProviderKey(member.signupMethod || member.provider || 'sitepass') || 'sitepass';
         const row = {
           login_id: loginId || null,
           name: String(member.name || '').trim() || '이름없음',
           phone: cleanPhone || null,
+          email: String(member.email || '').trim() || null,
+          provider_id: getStableProviderRawId({ ...member, signupMethod: normalizedSignupMethod }, normalizedSignupMethod) || String(member.providerId || '').trim() || null,
+          auth_user_id: String(member.supabaseAuthUserId || member.authUserId || member.userId || '').trim() || null,
           signup_method: normalizedSignupMethod,
           role: finalRole,
           status: 'active',
@@ -5320,23 +5349,29 @@ async function saveMemberToSupabase(member) {
       }
     }
 
+
     function normalizeSupabaseLoginKeyForMember(value) {
       return String(value || '').trim().toLowerCase();
     }
 
     function makeLocalMemberFromSupabaseRow(row) {
       const loginId = String(row?.login_id || row?.loginId || row?.id || '').trim();
-      const method = String(row?.signup_method || row?.signupMethod || row?.provider || 'SitePass 로그인');
+      const rawMethod = String(row?.signup_method || row?.signupMethod || row?.provider || 'SitePass 로그인');
+      const methodKey = normalizeSignupProviderKey(rawMethod) || 'sitepass';
+      const method = methodKey === 'kakao' ? 'kakao' : (methodKey === 'naver' ? 'naver' : 'sitepass');
       let roleName = supabaseRoleToAdminRole(row?.role || '');
       if (roleName === SUPER_ADMIN_ROLE_NAME && !isSuperAdminLoginId(loginId)) roleName = '';
-      const isKakao = method.includes('카카오') || loginId.toUpperCase().includes('KAKAO');
+      const isKakao = methodKey === 'kakao' || loginId.toLowerCase().startsWith('kakao_');
+      const isNaver = methodKey === 'naver' || loginId.toLowerCase().startsWith('naver_');
       const member = {
         id: 'SB-' + (loginId || row?.id || Date.now()),
         name: row?.name || row?.display_name || row?.nickname || '이름없음',
         phone: row?.phone || '',
-        signupId: isKakao ? '' : loginId,
-        provider: isKakao ? '카카오톡' : (method || 'SitePass'),
-        providerId: isKakao ? loginId : (row?.provider_id || ''),
+        signupId: (isKakao || isNaver) ? '' : loginId,
+        provider: isKakao ? '카카오톡' : (isNaver ? '네이버' : 'SitePass'),
+        providerId: (isKakao || isNaver) ? (row?.provider_id || loginId) : (row?.provider_id || ''),
+        kakaoUserId: isKakao ? (row?.provider_id || '') : '',
+        naverUserId: isNaver ? (row?.provider_id || '') : '',
         signupMethod: method,
         status: row?.status === 'active' ? '정상' : (row?.status === 'withdrawn' ? '회원탈퇴' : (row?.status || '정상')),
         withdrawn: row?.status === 'withdrawn',
@@ -5376,9 +5411,26 @@ async function saveMemberToSupabase(member) {
     }
 
     function mergeSupabaseMembersIntoLocal(rows) {
-      const incoming = filterActiveRowsOnly(rows || [])
+      const rawIncoming = filterActiveRowsOnly(rows || [])
         .map(makeLocalMemberFromSupabaseRow)
         .filter(member => (member.supabaseLoginId || member.providerId || member.signupId || member.phone || member.name) && !isMemberWithdrawnOrBlocked(member));
+      const incomingMap = new Map();
+      rawIncoming.forEach(member => {
+        const providerType = getMemberSignupProviderType(member);
+        const key = (providerType === 'kakao' || providerType === 'naver')
+          ? (getAdminMemberNameProviderKey(member) || getAdminLocalMemberKeys(member)[0])
+          : (getAdminLocalMemberKeys(member)[0] || getAdminMemberNameProviderKey(member));
+        if (!key) return;
+        const prev = incomingMap.get(key);
+        if (!prev) {
+          incomingMap.set(key, member);
+          return;
+        }
+        const prevTime = Date.parse(prev.lastLoginAt || prev.updatedAt || prev.createdAt || '') || 0;
+        const nextTime = Date.parse(member.lastLoginAt || member.updatedAt || member.createdAt || '') || 0;
+        if (nextTime >= prevTime) incomingMap.set(key, { ...prev, ...member, id: prev.id || member.id });
+      });
+      const incoming = Array.from(incomingMap.values());
       if (!incoming.length) return 0;
 
       const localMembers = ensureMemberIds().filter(member => !isMemberWithdrawnOrBlocked(member));
@@ -5564,7 +5616,7 @@ async function saveMemberToSupabase(member) {
       if (!member) return;
       const saveBlockedRecord = findWithdrawnMemberRecord(member);
       if (saveBlockedRecord) {
-        // v23.7.218 테스트기간: 같은 계정으로 탈퇴→재가입을 반복할 수 있게 저장 차단을 해제합니다.
+        // v23.7.219 테스트기간: 같은 계정으로 탈퇴→재가입을 반복할 수 있게 저장 차단을 해제합니다.
         removeWithdrawnMemberRecord(member);
         member.rejoinConfirmedAt = member.rejoinConfirmedAt || new Date().toISOString();
         member.withdrawn = false;
@@ -5833,8 +5885,10 @@ async function saveMemberToSupabase(member) {
       const meta = user?.user_metadata || {};
       const identities = Array.isArray(user?.identities) ? user.identities : [];
       const kakaoIdentity = identities.find(item => item.provider === 'kakao') || identities[0] || {};
-      const providerId = 'KAKAO-' + (kakaoIdentity.id || user?.id || Date.now());
-      const nickname = meta.name || meta.full_name || meta.nickname || meta.preferred_username || '카카오 사용자';
+      const identityData = kakaoIdentity.identity_data || kakaoIdentity.identityData || {};
+      const rawProviderId = kakaoIdentity.provider_id || identityData.provider_id || identityData.sub || kakaoIdentity.id || user?.id || Date.now();
+      const providerId = String(rawProviderId || '').trim();
+      const nickname = meta.name || meta.full_name || meta.nickname || meta.preferred_username || identityData.name || identityData.nickname || '카카오 사용자';
       return {
         name:nickname,
         phone:'',
@@ -5845,8 +5899,8 @@ async function saveMemberToSupabase(member) {
         provider:'카카오톡',
         providerId,
         signupId:'',
-        kakaoUserId:kakaoIdentity.id || user?.id || '',
-        signupMethod:(pending?.mode === 'signup' ? '카카오 계정 회원가입' : '카카오 계정 로그인'),
+        kakaoUserId:providerId,
+        signupMethod:'kakao',
         agreements:pending?.mode === 'signup' ? getSignupAgreements() : undefined,
         oauthLinkedAt:new Date().toISOString(),
         needsSitePassProfile:true
@@ -5858,8 +5912,10 @@ async function saveMemberToSupabase(member) {
       const meta = user?.user_metadata || {};
       const identities = Array.isArray(user?.identities) ? user.identities : [];
       const naverIdentity = identities.find(item => item.provider === 'naver') || identities[0] || {};
-      const providerId = 'NAVER-' + (naverIdentity.id || user?.id || Date.now());
-      const nickname = meta.name || meta.full_name || meta.nickname || meta.preferred_username || '네이버 사용자';
+      const identityData = naverIdentity.identity_data || naverIdentity.identityData || {};
+      const rawProviderId = naverIdentity.provider_id || identityData.provider_id || identityData.sub || naverIdentity.id || user?.id || Date.now();
+      const providerId = String(rawProviderId || '').trim();
+      const nickname = meta.name || meta.full_name || meta.nickname || meta.preferred_username || identityData.name || identityData.nickname || '네이버 사용자';
       return {
         name:nickname,
         phone:'',
@@ -5870,8 +5926,8 @@ async function saveMemberToSupabase(member) {
         provider:'네이버',
         providerId,
         signupId:'',
-        naverUserId:naverIdentity.id || user?.id || '',
-        signupMethod:(pending?.mode === 'signup' ? '네이버 계정 회원가입' : '네이버 계정 로그인'),
+        naverUserId:providerId,
+        signupMethod:'naver',
         agreements:pending?.mode === 'signup' ? getSignupAgreements() : undefined,
         oauthLinkedAt:new Date().toISOString(),
         needsSitePassProfile:true
@@ -5974,7 +6030,7 @@ async function saveMemberToSupabase(member) {
         const withdrawnRecord = findWithdrawnMemberRecord(member);
         const serverStatus = await getSupabaseMemberStatus(member);
         if (withdrawnRecord || serverStatus === 'withdrawn') {
-          // v23.7.218 테스트기간: 탈퇴했던 카카오/네이버 계정도 다시 약관동의 후 재가입 테스트가 가능하게 합니다.
+          // v23.7.219 테스트기간: 탈퇴했던 카카오/네이버 계정도 다시 약관동의 후 재가입 테스트가 가능하게 합니다.
           removeWithdrawnMemberRecord(member);
           member.rejoinConfirmedAt = new Date().toISOString();
           member.withdrawn = false;
@@ -6007,13 +6063,13 @@ async function saveMemberToSupabase(member) {
             return true;
           }
           member.agreements = socialAgreements;
-          member.signupMethod = (providerName === 'naver' ? '네이버' : '카카오') + ' 계정 회원가입';
+          member.signupMethod = providerName === 'naver' ? 'naver' : 'kakao';
         }
 
         await syncCurrentSupabaseAuthMemberToServer();
         const serverStatusAfterSync = await getSupabaseMemberStatus(member);
         if (serverStatusAfterSync === 'withdrawn') {
-          // v23.7.218 테스트기간: 서버에 남은 탈퇴 상태를 active 재가입으로 전환하고 계속 진행합니다.
+          // v23.7.219 테스트기간: 서버에 남은 탈퇴 상태를 active 재가입으로 전환하고 계속 진행합니다.
           await reactivateMemberForTestInSupabase(member);
           member.rejoinConfirmedAt = member.rejoinConfirmedAt || new Date().toISOString();
           member.withdrawn = false;
@@ -7280,7 +7336,7 @@ async function saveMemberToSupabase(member) {
         phone: '',
         provider: providerLabel,
         providerId,
-        signupMethod: providerLabel + ' 계속하기',
+        signupMethod: normalizeSignupProviderKey(providerLabel) || providerLabel + ' 계속하기',
         loginOnlyTest: true
       };
       if (findWithdrawnMemberRecord(candidate)) {
@@ -7305,7 +7361,7 @@ async function saveMemberToSupabase(member) {
           return;
         }
         candidate.agreements = agreements;
-        candidate.signupMethod = providerLabel + ' 신규가입';
+        candidate.signupMethod = normalizeSignupProviderKey(providerLabel) || providerLabel + ' 신규가입';
         candidate.createdAt = new Date().toISOString();
       }
       const loginMember = existing ? mergeSocialLoginMember(existing, candidate) : candidate;
@@ -7324,7 +7380,7 @@ async function saveMemberToSupabase(member) {
         phone: '',
         provider: providerLabel,
         providerId,
-        signupMethod: providerLabel + ' 로그인/회원가입',
+        signupMethod: normalizeSignupProviderKey(providerLabel) || providerLabel + ' 로그인/회원가입',
         agreements: getSignupAgreements()
       };
       const existing = findExistingMemberForSocialLogin(candidate);
@@ -10950,7 +11006,7 @@ async function saveMemberToSupabase(member) {
       const nowIso = new Date().toISOString();
       const existing = getRegistrationDraft();
       return {
-        version:'v23.7.218',
+        version:'v23.7.219',
         editingCode:editingCode || '',
         equipmentNo:(equipmentNoEl?.value || '').trim(),
         equipmentName:(equipmentNameEl?.value || '').trim(),
@@ -15321,7 +15377,7 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       return true;
     }
 
-    const SITEPASS_APP_VERSION = 'v23.7.218';
+    const SITEPASS_APP_VERSION = 'v23.7.219';
     const SITEPASS_FIXED_APP_URL = 'https://sitepass-js.github.io/sitepass/';
     const SITEPASS_VERSION_KEY = 'sitepass_current_app_version';
     const SITEPASS_UPDATE_RELOAD_KEY = 'sitepass_last_update_reload_version';

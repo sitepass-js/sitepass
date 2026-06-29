@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.218",
+  "version": "v23.7.219",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Test-mode rejoin fix: withdrawn Kakao/Naver/SitePass accounts can withdraw and sign up again repeatedly during testing; admin current member list still excludes withdrawn users until they rejoin.",
+  "note": "Normalize Kakao/Naver signup_method and stable social login_id to prevent duplicate members; admin list shows de-duplicated active members only during testing.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-29T23:50:00+09:00"
+  "updatedAt": "2026-06-30T00:10:00+09:00"
 }
