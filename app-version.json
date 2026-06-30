@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.249",
+  "version": "v23.7.247",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix Naver existing-member detection so already joined Naver users do not see SitePass terms again; save Naver terms members to server with provider/auth/email keys so admin detail list can show them.",
+  "note": "Remove the blocking login-check overlay during OAuth return and add hard timeouts to Naver/Kakao OAuth session checks so the page cannot get stuck on 로그인 확인 중입니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T20:35:00+09:00"
+  "updatedAt": "2026-06-30T20:05:00+09:00"
 }
