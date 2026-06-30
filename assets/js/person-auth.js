@@ -1,4 +1,4 @@
-// SitePass v23.7.270 split step 15 - 기사/인부 본인 동의·인증 보조 파일
+// SitePass v23.7.271 split step 15 - 기사/인부 본인 동의·인증 보조 파일
 // 기사/인부 개인정보 서류 등록 전 동의/인증에 필요한 순수 보조 기능입니다.
 // 실제 PASS/통신사 API 연동은 나중에 Supabase Edge Function + phone-verify.js로 붙입니다.
 (function(){
