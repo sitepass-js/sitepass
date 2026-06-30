@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.243",
+  "version": "v23.7.244",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix Naver Supabase custom provider call: use provider custom:naver instead of naver.",
+  "note": "Fix Naver custom OAuth return handling so SitePass reads the Supabase session after returning from Naver and proceeds to the SitePass Naver linked terms/login flow.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T14:45:00+09:00"
+  "updatedAt": "2026-06-30T18:20:00+09:00"
 }
