@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.249",
+  "version": "v23.7.250",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix Naver existing-member detection so already joined Naver users do not see SitePass terms again; save Naver terms members to server with provider/auth/email keys so admin detail list can show them.",
+  "note": "Fix Naver signup terms missing: OAuth linked markers no longer count as SitePass terms agreement; Naver/Kakao existing-member check now requires terms_agreed_at before skipping terms, and agreed Naver members remain visible in admin detail list while server sync catches up.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T20:35:00+09:00"
+  "updatedAt": "2026-06-30T21:05:00+09:00"
 }
