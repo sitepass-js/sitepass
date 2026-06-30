@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.254",
+  "version": "v23.7.255",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Split step 2: 약관/회원판단 함수를 assets/js/terms.js로 분리했습니다. 이번 단계는 신규/기존회원 판단, SitePass 약관동의창, 일반 회원가입 약관 체크만 나누고 로그인/관리자/QR/카메라 로직은 기존 app.bundle.js에 유지합니다.",
+  "note": "Split step 3: 서버 가입/탈퇴 통계와 관리자 상세 회원목록이 어긋날 때 탈퇴·비활성 카카오/네이버 회원이 전체회원 목록에 다시 보이지 않도록 보정했습니다. 약관/로그인/QR/카메라 로직은 기존 구조를 유지합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T22:10:00+09:00"
+  "updatedAt": "2026-06-30T22:55:00+09:00"
 }
