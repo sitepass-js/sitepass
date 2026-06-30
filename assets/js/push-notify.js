@@ -1,10 +1,10 @@
-// SitePass v23.7.276 - 푸시알림 기본 구조 분리
+// SitePass v23.7.277 - 푸시알림 기본 구조 분리
 // 이 파일에는 알림 권한 요청, 테스트 푸시, 알림 대상 계산, 구독정보 저장 준비 기능을 둡니다.
 (function(){
   'use strict';
 
-  const APP_VERSION = 'v23.7.276';
-  const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_276';
+  const APP_VERSION = 'v23.7.277';
+  const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_277';
   const SUBSCRIPTION_KEY = STORAGE_PREFIX + '_subscription';
   const PERMISSION_LOG_KEY = STORAGE_PREFIX + '_permission_log';
   const LAST_DRAFT_NOTICE_KEY = STORAGE_PREFIX + '_draft_notice_sent';
@@ -114,9 +114,37 @@
     return outputArray;
   }
 
+  let cachedVapidPublicKey = '';
+
+  function getPushFunctionName(){
+    const cfg = getConfig();
+    return String(cfg.pushFunctionName || 'send-push').trim() || 'send-push';
+  }
+
   function getVapidPublicKey(){
     const cfg = getConfig();
-    return String(cfg.vapidPublicKey || cfg.pushVapidPublicKey || '').trim();
+    return String(cfg.vapidPublicKey || cfg.pushVapidPublicKey || cachedVapidPublicKey || '').trim();
+  }
+
+  async function invokePushFunction(payload){
+    const client = window.sitepassSupabase || null;
+    if (!client || !client.functions || typeof client.functions.invoke !== 'function') {
+      return { data: null, error: { message: 'Supabase Functions 연결 없음' } };
+    }
+    try {
+      return await client.functions.invoke(getPushFunctionName(), { body: payload || {} });
+    } catch (e) {
+      return { data: null, error: e };
+    }
+  }
+
+  async function getVapidPublicKeyAsync(){
+    const direct = getVapidPublicKey();
+    if (direct) return direct;
+    const res = await invokePushFunction({ action: 'publicKey' });
+    const key = String((res && res.data && (res.data.publicKey || res.data.vapidPublicKey)) || '').trim();
+    if (key) cachedVapidPublicKey = key;
+    return key;
   }
 
   function getCurrentMemberForPush(){
@@ -166,7 +194,7 @@
     const reg = await getServiceWorkerRegistration();
     if (!reg) return { data: null, error: { message: '서비스워커 등록 없음' } };
 
-    const vapidKey = getVapidPublicKey();
+    const vapidKey = await getVapidPublicKeyAsync();
     if (!('PushManager' in window) || !vapidKey) {
       // VAPID 키가 아직 없으면 실제 서버 푸시 구독은 못 만들지만, 권한 허용 기기 기록은 남깁니다.
       return saveSubscriptionRow(null, { memo: 'VAPID 키 미설정 - 테스트 알림/권한 기록만 저장' });
@@ -415,6 +443,32 @@
     }
   }
 
+  async function sendServerTestPush(){
+    const permission = await requestPermission();
+    if (permission !== 'granted') return;
+    const saved = await saveSubscriptionIfPossible();
+    const localSub = readLocal(SUBSCRIPTION_KEY, null);
+    let subscription = null;
+    try { subscription = safeJsonParse(localSub && localSub.subscription_json, null); } catch (e) { subscription = null; }
+    if (!subscription || !subscription.endpoint) {
+      alert('서버 푸시 구독정보가 없습니다. VAPID public key와 Edge Function 연결을 먼저 확인해주세요.');
+      return;
+    }
+    const res = await invokePushFunction({
+      action: 'test',
+      endpoint: subscription.endpoint,
+      subscription,
+      title: 'SitePass 서버 푸시 테스트',
+      body: 'Supabase Edge Function + VAPID 연결이 정상입니다.'
+    });
+    if (res && res.error) {
+      alert('서버 푸시 테스트 실패: ' + (res.error.message || JSON.stringify(res.error)));
+      return;
+    }
+    alert('서버 푸시 테스트를 보냈습니다. 휴대폰 상단 알림을 확인하세요.');
+    refreshPanel();
+  }
+
   function getStatusText(){
     const st = getSupportStatus();
     if (!st.notification) return '이 브라우저는 알림을 지원하지 않습니다.';
@@ -437,14 +491,15 @@
         '<div class="small" style="margin:8px 0;"><b>상태:</b> ' + escapeHtmlForPush(getStatusText()) + ' · 권한: ' + escapeHtmlForPush(st.permission) + ' · 홈화면앱: ' + (st.standalone ? '예' : '아니오') + '</div>' +
         '<div class="actions" style="margin:8px 0 10px;">' +
           '<button type="button" class="primary" onclick="sitepassRequestPushPermission()">알림 권한 요청</button>' +
-          '<button type="button" class="secondary" onclick="sitepassSendTestPush()">테스트 푸시 보내기</button>' +
+          '<button type="button" class="secondary" onclick="sitepassSendTestPush()">기기 알림 테스트</button>' +
+          '<button type="button" class="secondary" onclick="sitepassSendServerTestPush()">서버 푸시 테스트</button>' +
           '<button type="button" class="ghost" onclick="sitepassShowPushDueAlerts()">현재 알림 대상 확인</button>' +
           '<button type="button" class="ghost" onclick="sitepassSendDuePushPreview()">대상 1건 테스트</button>' +
         '</div>' +
         '<div class="small">현재 계산된 알림 대상: <b>' + due.length + '건</b>' +
           (lastTest?.sentAt ? ' · 마지막 테스트: ' + escapeHtmlForPush(lastTest.sentAt) : '') +
           (localSub ? ' · 구독기록 저장됨' : ' · 구독기록 없음') +
-          (!vapid ? '<br>※ 실제 자동발송은 VAPID 키와 Supabase Edge Function 연결 후 가능합니다. 지금은 권한/테스트 알림 확인 단계입니다.' : '') +
+          (!vapid ? '<br>※ VAPID/Edge Function 연결 전이면 기기 알림 테스트만 가능합니다. 서버 푸시 테스트는 연결 후 확인하세요.' : '') +
         '</div>' +
       '</div>';
   }
@@ -487,6 +542,7 @@
 
   window.sitepassRequestPushPermission = requestPermission;
   window.sitepassSendTestPush = sendLocalTestNotification;
+  window.sitepassSendServerTestPush = sendServerTestPush;
   window.sitepassShowPushDueAlerts = showDueAlertsPreview;
   window.sitepassSendDuePushPreview = sendFirstDueAlertAsTest;
 
@@ -495,8 +551,10 @@
     getSupportStatus,
     requestPermission,
     sendLocalTestNotification,
+    sendServerTestPush,
     saveSubscriptionIfPossible,
     collectDueAlerts,
+    invokePushFunction,
     collectDocumentExpiryAlerts,
     collectPaymentExpiryAlerts,
     collectDraftReminderAlerts,
