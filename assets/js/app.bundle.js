@@ -1,5 +1,5 @@
-// SitePass v23.7.259 split step 7 - PWA 자동업데이트 분리
-// v23.7.259에서는 PWA 새 버전 확인/캐시 삭제/서비스워커 등록을 pwa-update.js로 분리했습니다.
+// SitePass v23.7.260 split step 8 - 브라우저 저장소 분리
+// v23.7.260에서는 세션/회원/연락처/PWA 자동로그인 저장 공통 기능을 storage.js로 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
     const PREV_STORAGE_KEY_6 = 'sitePass_v23_7_5_update_edit_pages';
@@ -96,19 +96,27 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
         || normalizedKey === CURRENT_MEMBER_KEY
         || normalizedKey.indexOf('_oauth_pending_') >= 0;
     }
+    // v23.7.260: 세션/로컬 저장 공통 기능은 assets/js/storage.js로 분리했습니다.
+    function getStorageModule() {
+      return window.SitePassStorage || {};
+    }
     function setSessionValue(key, value) {
+      const storage = getStorageModule();
+      const persist = shouldPersistAdminSessionKey(key);
+      if (storage.setSessionValue) return storage.setSessionValue(key, value, persist);
       try { sessionStorage.setItem(key, value); } catch (e) {}
-      // v23.7.216: 휴대폰 브라우저/PWA 새로고침 때 최고관리자 화면이 로그아웃처럼 풀리는 문제 방지.
-      // 일반회원 세션은 기존처럼 세션 저장만 쓰고, 관리자 세션만 명시적 로그아웃 전까지 보존합니다.
-      try { if (shouldPersistAdminSessionKey(key)) localStorage.setItem(key, value); } catch (e) {}
+      try { if (persist) localStorage.setItem(key, value); } catch (e) {}
     }
     function getSessionValue(key) {
+      const storage = getStorageModule();
+      const persist = shouldPersistAdminSessionKey(key);
+      if (storage.getSessionValue) return storage.getSessionValue(key, persist);
       try {
         const sessionValue = sessionStorage.getItem(key);
         if (sessionValue !== null && sessionValue !== undefined) return sessionValue;
       } catch (e) {}
       try {
-        if (shouldPersistAdminSessionKey(key)) {
+        if (persist) {
           const localValue = localStorage.getItem(key);
           if (localValue !== null && localValue !== undefined) {
             try { sessionStorage.setItem(key, localValue); } catch (e) {}
@@ -119,6 +127,8 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
       return null;
     }
     function removeSessionValue(key) {
+      const storage = getStorageModule();
+      if (storage.removeSessionValue) return storage.removeSessionValue(key);
       try { sessionStorage.removeItem(key); } catch (e) {}
       try { localStorage.removeItem(key); } catch (e) {}
     }
@@ -187,32 +197,37 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     }
 
     function getPwaAutoMemberTest() {
-      try {
-        return JSON.parse(localStorage.getItem(PWA_AUTO_MEMBER_KEY) || 'null');
-      } catch (e) {
-        return null;
-      }
+      const storage = getStorageModule();
+      if (storage.getJson) return storage.getJson(PWA_AUTO_MEMBER_KEY, null);
+      try { return JSON.parse(localStorage.getItem(PWA_AUTO_MEMBER_KEY) || 'null'); } catch (e) { return null; }
     }
 
     function setPwaAutoMemberTest(member) {
       if (!member) return;
-      try {
-        localStorage.setItem(PWA_AUTO_MEMBER_KEY, JSON.stringify({
-          name: member.name || member.signupId || 'SitePass 회원',
-          phone: member.phone || '',
-          id: member.id || '',
-          signupId: member.signupId || '',
-          providerId: member.providerId || '',
-          provider: member.provider || '',
-          signupMethod: member.signupMethod || member.provider || '',
-          securityMemo: '중요작업은 비밀번호 재확인',
-          loggedInAt: new Date().toISOString(),
-          autoLoginType: 'pwa_home_screen'
-        }));
-      } catch (e) {}
+      const payload = {
+        name: member.name || member.signupId || 'SitePass 회원',
+        phone: member.phone || '',
+        id: member.id || '',
+        signupId: member.signupId || '',
+        providerId: member.providerId || '',
+        provider: member.provider || '',
+        signupMethod: member.signupMethod || member.provider || '',
+        securityMemo: '중요작업은 비밀번호 재확인',
+        loggedInAt: new Date().toISOString(),
+        autoLoginType: 'pwa_home_screen'
+      };
+      const storage = getStorageModule();
+      if (storage.setJson) return storage.setJson(PWA_AUTO_MEMBER_KEY, payload);
+      try { localStorage.setItem(PWA_AUTO_MEMBER_KEY, JSON.stringify(payload)); } catch (e) {}
     }
 
     function clearPwaAutoMemberTest() {
+      const storage = getStorageModule();
+      if (storage.removeItem) {
+        storage.removeItem(PWA_AUTO_MEMBER_KEY);
+        storage.removeItem(QUICK_AUTH_KEY);
+        return;
+      }
       try { localStorage.removeItem(PWA_AUTO_MEMBER_KEY); } catch (e) {}
       try { localStorage.removeItem(QUICK_AUTH_KEY); } catch (e) {}
     }
@@ -572,15 +587,15 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     }
 
     function getMembers() {
-      try {
-        return JSON.parse(localStorage.getItem(MEMBER_STORAGE_KEY) || '[]');
-      } catch (e) {
-        return [];
-      }
+      const storage = getStorageModule();
+      if (storage.getList) return storage.getList(MEMBER_STORAGE_KEY);
+      try { return JSON.parse(localStorage.getItem(MEMBER_STORAGE_KEY) || '[]'); } catch (e) { return []; }
     }
 
     function setMembers(list) {
       const cleaned = enforceSingleSuperAdminOnMemberList(list || []);
+      const storage = getStorageModule();
+      if (storage.setList) return storage.setList(MEMBER_STORAGE_KEY, cleaned || []);
       localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(cleaned || []));
     }
 
@@ -3077,14 +3092,14 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     }
 
     function getContacts() {
-      try {
-        return JSON.parse(localStorage.getItem(CONTACT_STORAGE_KEY) || '[]');
-      } catch (error) {
-        return [];
-      }
+      const storage = getStorageModule();
+      if (storage.getList) return storage.getList(CONTACT_STORAGE_KEY);
+      try { return JSON.parse(localStorage.getItem(CONTACT_STORAGE_KEY) || '[]'); } catch (error) { return []; }
     }
 
     function setContacts(list) {
+      const storage = getStorageModule();
+      if (storage.setList) return storage.setList(CONTACT_STORAGE_KEY, list || []);
       localStorage.setItem(CONTACT_STORAGE_KEY, JSON.stringify(list || []));
     }
 

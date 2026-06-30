@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.259",
+  "version": "v23.7.260",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Split step 7: PWA 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 assets/js/pwa-update.js로 분리했습니다. 카카오/네이버 로그인, 약관, 관리자 회원목록/상세관리, QR/보관함/장비등록/카메라 로직은 건드리지 않았습니다.",
+  "note": "Split step 8: 세션 저장, 회원목록 저장, 연락처 저장, PWA 자동로그인 저장 등 브라우저 저장소 공통 기능을 assets/js/storage.js로 분리했습니다. 로그인, 약관, 관리자, QR/보관함/장비등록/카메라 로직은 건드리지 않았습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T23:35:00+09:00"
+  "updatedAt": "2026-06-30T23:55:00+09:00"
 }
