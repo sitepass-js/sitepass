@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.245",
+  "version": "v23.7.247",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Wait for Supabase OAuth session after returning from Naver custom OAuth and show detailed session exchange errors instead of staying on the login screen.",
+  "note": "Remove the blocking login-check overlay during OAuth return and add hard timeouts to Naver/Kakao OAuth session checks so the page cannot get stuck on 로그인 확인 중입니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T18:45:00+09:00"
+  "updatedAt": "2026-06-30T20:05:00+09:00"
 }

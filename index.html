@@ -23,13 +23,13 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.228" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.246" />
 <!-- v23.7.186: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.241 withdraw-hard-delete-fix -->
+  <!-- SitePass deploy-check: v23.7.247 oauth-check-screen-remove -->
   <!-- SitePass screen-fix: clean package only, no guide/patch/text files required -->
   <style>
     :root {
@@ -4651,21 +4651,12 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     supabaseUrl: 'https://fipbgzvdwgjsmazmswaj.supabase.co',
     supabaseAnonKey: 'sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO',
     storageBucket: 'sitepass-documents',
-    appVersion: 'v23.7.245'
+    appVersion: 'v23.7.241'
   };
 
   window.sitepassSupabase = window.supabase.createClient(
     window.SITEPASS_DB_CONFIG.supabaseUrl,
-    window.SITEPASS_DB_CONFIG.supabaseAnonKey,
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        flowType: 'pkce',
-        storage: window.localStorage
-      }
-    }
+    window.SITEPASS_DB_CONFIG.supabaseAnonKey
   );
 </script>
   
@@ -6354,43 +6345,27 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
       });
     }
 
-
-    // v23.7.245 - 네이버 custom OAuth 복귀 후 Supabase 세션 생성이 늦는 브라우저를 기다립니다.
-    function waitSitePass(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    function getOAuthReturnErrorText(extraParts) {
-      const qs = new URLSearchParams(location.search || '');
-      const hashText = String(location.hash || '').replace(/^#/, '');
-      const hash = new URLSearchParams(hashText || '');
-      const parts = [];
-      const errorText = qs.get('error_description') || qs.get('error') || hash.get('error_description') || hash.get('error') || '';
-      if (errorText) parts.push('OAuth 오류: ' + errorText);
-      (extraParts || []).filter(Boolean).forEach(item => parts.push(item));
-      return parts.join('\n');
-    }
-
-    async function waitForSupabaseOAuthUser(initialSessionData) {
-      let user = initialSessionData?.session?.user || initialSessionData?.user || null;
-      if (user) return user;
-      const delays = [120, 180, 250, 350, 500, 700, 900, 1100, 1300, 1500];
-      for (let i = 0; i < delays.length; i++) {
-        try {
-          const { data } = await window.sitepassSupabase.auth.getSession();
-          user = data?.session?.user || null;
-          if (user) return user;
-        } catch (e) {}
-        try {
-          if (window.sitepassSupabase.auth.getUser) {
-            const result = await window.sitepassSupabase.auth.getUser();
-            user = result?.data?.user || null;
-            if (user) return user;
-          }
-        } catch (e) {}
-        await waitSitePass(delays[i]);
-      }
-      return null;
+    // v23.7.247 - 네이버/카카오 OAuth 확인이 오래 걸려도 “로그인 확인 중입니다” 화면에 갇히지 않게 합니다.
+    function sitePassOAuthWithTimeout(promise, ms, label) {
+      return new Promise(function(resolve, reject) {
+        let done = false;
+        const timer = setTimeout(function(){
+          if (done) return;
+          done = true;
+          reject(new Error((label || 'OAuth 확인') + ' 시간이 초과되었습니다.'));
+        }, ms || 10000);
+        Promise.resolve(promise).then(function(value){
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(value);
+        }).catch(function(error){
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          reject(error);
+        });
+      });
     }
 
     async function handleSupabaseKakaoOAuthReturn() {
@@ -6398,37 +6373,38 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
       let pending = null;
       try { pending = JSON.parse(getSessionValue(SITEPASS_OAUTH_PENDING_KEY) || 'null'); } catch (e) { pending = null; }
       if (!pending && !hasSupabaseKakaoReturnParams()) return false;
+      // v23.7.247: 소셜 로그인 복귀 처리 중에도 화면을 막지 않습니다.
+      try { document.body.classList.remove('sitepass-booting'); } catch (e) {}
       try {
         let sessionData = null;
-        let exchangeErrorText = '';
-        let sessionErrorText = '';
         const qs = new URLSearchParams(location.search || '');
         const code = qs.get('code');
         if (code && window.sitepassSupabase.auth.exchangeCodeForSession) {
           try {
-            const exchanged = await window.sitepassSupabase.auth.exchangeCodeForSession(code);
-            if (exchanged?.error) exchangeErrorText = exchanged.error.message || String(exchanged.error);
+            const exchanged = await sitePassOAuthWithTimeout(window.sitepassSupabase.auth.exchangeCodeForSession(code), 12000, 'OAuth code 세션 교환');
             if (exchanged && exchanged.data) sessionData = exchanged.data;
           } catch (exchangeError) {
-            exchangeErrorText = exchangeError?.message || String(exchangeError || '세션 교환 실패');
-            console.warn('OAuth code 세션 교환 실패:', exchangeErrorText);
+            console.warn('OAuth code 세션 교환은 이미 처리되었거나 실패했습니다:', exchangeError?.message || exchangeError);
           }
         }
-        try {
-          const { data, error } = await window.sitepassSupabase.auth.getSession();
-          if (error) sessionErrorText = error.message || String(error);
-          if (!sessionData && data) sessionData = data;
-        } catch (sessionError) {
-          sessionErrorText = sessionError?.message || String(sessionError || '세션 확인 실패');
+        const { data, error } = await sitePassOAuthWithTimeout(window.sitepassSupabase.auth.getSession(), 8000, 'OAuth 세션 확인');
+        if (error) {
+          alert('소셜 로그인 확인 중 오류가 났습니다.\n' + (error.message || ''));
+          return false;
         }
-        let user = await waitForSupabaseOAuthUser(sessionData);
+        let user = sessionData?.session?.user || data?.session?.user;
+        if (!user && window.sitepassSupabase.auth.getUser) {
+          try {
+            const userResult = await sitePassOAuthWithTimeout(window.sitepassSupabase.auth.getUser(), 8000, 'OAuth 사용자 확인');
+            user = userResult?.data?.user || null;
+          } catch (getUserError) {
+            console.warn('OAuth getUser 확인 실패:', getUserError?.message || getUserError);
+          }
+        }
         if (!user) {
-          const debugText = getOAuthReturnErrorText([
-            exchangeErrorText ? '세션 교환 오류: ' + exchangeErrorText : '',
-            sessionErrorText ? '세션 확인 오류: ' + sessionErrorText : ''
-          ]);
-          if (debugText || hasSupabaseKakaoReturnParams()) {
-            alert('네이버/카카오 로그인은 완료됐지만 SitePass 세션을 확인하지 못했습니다.\n\n대부분 Supabase 네이버 Provider의 Client ID/Secret 또는 네이버 Callback URL이 맞지 않을 때 생깁니다.\n\n' + (debugText || '브라우저에 세션이 생성되지 않았습니다.'));
+          const qsError = new URLSearchParams(location.search || '').get('error_description') || new URLSearchParams(location.search || '').get('error');
+          if (qsError || hasSupabaseKakaoReturnParams()) {
+            alert('네이버/카카오 로그인은 완료됐지만 SitePass 세션을 확인하지 못했습니다.\n\nSupabase custom provider 설정의 Client ID/Secret, Callback URL, Userinfo URL을 다시 확인해주세요.\n' + (qsError ? '\n오류: ' + qsError : ''));
             try { history.replaceState({}, document.title, location.origin + location.pathname); } catch (e) {}
             removeSessionValue(SITEPASS_OAUTH_PENDING_KEY);
             showScreen('signupScreen');
@@ -6469,6 +6445,9 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
         if (needsServerSignup) {
           let socialAgreements = hasPendingSocialAgreements ? pending.agreements : null;
           if (!socialAgreements) {
+            // v23.7.246: 신규 네이버/카카오 회원은 약관창을 보여줘야 하므로
+            // 부팅 오버레이(로그인 확인 중입니다)를 먼저 제거합니다.
+            document.body.classList.remove('sitepass-booting');
             socialAgreements = await showSocialSignupTermsModal(providerLabel);
           }
           if (!socialAgreements) {
@@ -6514,8 +6493,14 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
           : (savedMember.provider || '소셜') + ' 신규가입이 완료되었습니다.\n다음부터는 같은 계정으로 로그인만 됩니다.');
         return true;
       } catch (e) {
-        alert('소셜 로그인 처리 중 오류가 났습니다.\n' + (e?.message || ''));
-        return false;
+        try { document.body.classList.remove('sitepass-booting'); } catch (ignore) {}
+        try { removeSessionValue(SITEPASS_OAUTH_PENDING_KEY); } catch (ignore) {}
+        if (hasSupabaseKakaoReturnParams()) {
+          try { history.replaceState({}, document.title, location.origin + location.pathname); } catch (ignore) {}
+        }
+        alert('소셜 로그인 처리 중 오류가 났습니다.\n' + (e?.message || '') + '\n\n다시 네이버 아이디로 계속하기를 눌러 새로 시작해주세요.');
+        showScreen('signupScreen', { replace:true });
+        return true;
       }
     }
 
@@ -16559,7 +16544,24 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
         refreshAdminUi();
         refreshMemberUi();
         updateQuickAuthUi();
+        // v23.7.247: “로그인 확인 중입니다” 차단 화면을 더 이상 오래 띄우지 않습니다.
+        // OAuth 확인은 뒤에서 진행하되, 사용자가 화면에 갇히지 않게 먼저 공개합니다.
+        try { document.body.classList.remove('sitepass-booting'); } catch (e) {}
+        // v23.7.246: 소셜 로그인 확인 과정이 외부 OAuth/Userinfo 응답 대기로 멈춰도
+        // 화면이 '로그인 확인 중입니다'에 갇히지 않게 안전 타이머를 먼저 걸어둡니다.
+        let sitePassBootWatchdogFired = false;
+        const sitePassBootWatchdog = setTimeout(function(){
+          if (document.body.classList.contains('sitepass-booting')) {
+            sitePassBootWatchdogFired = true;
+            try { removeSessionValue(SITEPASS_OAUTH_PENDING_KEY); } catch (e) {}
+            document.body.classList.remove('sitepass-booting');
+            alert('네이버 로그인 확인 시간이 길어져 중단했습니다.\n\nSupabase Edge Function의 Verify JWT가 OFF인지, 네이버 Provider의 Userinfo URL이 실제 함수 주소인지 확인해주세요.');
+            showScreen(isAdminLoggedIn() ? 'adminScreen' : (isMemberLoggedIn() ? 'homeScreen' : 'signupScreen'), { replace:true });
+          }
+        }, 18000);
         const handledOAuth = await handleSupabaseKakaoOAuthReturn();
+        clearTimeout(sitePassBootWatchdog);
+        if (sitePassBootWatchdogFired) return;
         if (!handledOAuth && !checkHash()) {
           const initialScreen = isAdminLoggedIn()
             ? 'adminScreen'
