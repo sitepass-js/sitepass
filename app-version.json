@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.256",
+  "version": "v23.7.257",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Split step 4: 관리자 상세관리 열기/닫기, 무료권, 신규/연장결제, 환불요청/환불처리, 회원정지, 메모저장, 관리자권한, 강제탈퇴 기능을 assets/js/admin-detail.js로 분리했습니다. QR/보관함/장비등록/카메라 로직은 건드리지 않았습니다.",
+  "note": "Split step 5: 관리자 회원목록, 검색, 필터, 페이지 이동, 회원 카드 렌더링 기준을 assets/js/admin-members.js로 분리했습니다. 약관/상세관리 분리는 유지했고 QR/보관함/장비등록/카메라 로직은 건드리지 않았습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T23:10:00+09:00"
+  "updatedAt": "2026-06-30T23:20:00+09:00"
 }

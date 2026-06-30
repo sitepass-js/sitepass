@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.256';
-const SITEPASS_CACHE = 'sitepass-v23.7.256';
+const SITEPASS_SW_VERSION = 'v23.7.257';
+const SITEPASS_CACHE = 'sitepass-v23.7.257';
 const SITEPASS_CORE = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const SITEPASS_CORE = [
   './assets/css/style.css',
   './assets/js/config.js',
   './assets/js/terms.js',
+  './assets/js/admin-members.js',
   './assets/js/admin-detail.js',
   './assets/js/app.bundle.js'
 ];
