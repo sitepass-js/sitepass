@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.238",
+  "version": "v23.7.239",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix admin reset counters: after resetting DB and keeping only sitepass@kakao.com, 전체회원/신규회원/일반회원 count excludes super/admin accounts and old local withdrawn records stay hidden.",
+  "note": "Fix withdrawal not immediately disappearing from admin member list by adding stable social keys and local immediate filtering while server RPC updates.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T05:20:00+09:00"
+  "updatedAt": "2026-06-30T13:20:00+09:00"
 }
