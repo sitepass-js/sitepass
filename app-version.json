@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.250",
+  "version": "v23.7.253",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix Naver signup terms missing: OAuth linked markers no longer count as SitePass terms agreement; Naver/Kakao existing-member check now requires terms_agreed_at before skipping terms, and agreed Naver members remain visible in admin detail list while server sync catches up.",
+  "note": "Split step 1: index.html에서 CSS와 기능 JS를 외부 파일로 분리했습니다. 기능 로직은 v23.7.252 그대로 유지하고, 디자인은 assets/css/style.css, 설정은 assets/js/config.js, 기존 전체 JS는 assets/js/app.bundle.js에서 관리합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T21:05:00+09:00"
+  "updatedAt": "2026-06-30T21:30:00+09:00"
 }

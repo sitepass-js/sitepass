@@ -1,9 +1,12 @@
-const SITEPASS_SW_VERSION = 'v23.7.250';
-const SITEPASS_CACHE = 'sitepass-v23.7.250';
+const SITEPASS_SW_VERSION = 'v23.7.253';
+const SITEPASS_CACHE = 'sitepass-v23.7.253';
 const SITEPASS_CORE = [
   './',
   './index.html',
-  './sitepass.webmanifest'
+  './sitepass.webmanifest',
+  './assets/css/style.css',
+  './assets/js/config.js',
+  './assets/js/app.bundle.js'
 ];
 
 self.addEventListener('install', event => {
