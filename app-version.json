@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.248",
+  "version": "v23.7.249",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix admin detail member list so Naver social terms members remain visible even when Supabase member RPC sync is delayed; show Kakao/Naver as social account in detail list.",
+  "note": "Fix Naver existing-member detection so already joined Naver users do not see SitePass terms again; save Naver terms members to server with provider/auth/email keys so admin detail list can show them.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T20:20:00+09:00"
+  "updatedAt": "2026-06-30T20:35:00+09:00"
 }

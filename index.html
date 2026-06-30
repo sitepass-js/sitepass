@@ -29,7 +29,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.248 oauth-check-screen-remove -->
+  <!-- SitePass deploy-check: v23.7.249 naver-existing-member-terms-admin-fix -->
   <!-- SitePass screen-fix: clean package only, no guide/patch/text files required -->
   <style>
     :root {
@@ -4651,7 +4651,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     supabaseUrl: 'https://fipbgzvdwgjsmazmswaj.supabase.co',
     supabaseAnonKey: 'sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO',
     storageBucket: 'sitepass-documents',
-    appVersion: 'v23.7.248'
+    appVersion: 'v23.7.249'
   };
 
   window.sitepassSupabase = window.supabase.createClient(
@@ -5406,6 +5406,34 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
           last_login_at: new Date().toISOString(),
           admin_memo: 'SitePass 웹 회원가입/로그인에서 자동 저장'
         };
+
+        // v23.7.249: 네이버/카카오 약관동의 완료 회원은 auth_user_id/provider_id/email까지 서버에 확정 저장합니다.
+        // 그래야 다른 기기에서도 약관창이 다시 뜨지 않고 관리자 상세목록에 표시됩니다.
+        if (window.sitepassSupabase.rpc && (normalizedSignupMethod === 'kakao' || normalizedSignupMethod === 'naver') && termsAgreedAt) {
+          try {
+            const { data: confirmLoginId, error: confirmError } = await window.sitepassSupabase.rpc('sitepass_confirm_social_terms_member', {
+              p_login_id: row.login_id,
+              p_name: row.name,
+              p_phone: row.phone,
+              p_email: row.email,
+              p_provider_id: row.provider_id,
+              p_auth_user_id: row.auth_user_id,
+              p_signup_method: row.signup_method,
+              p_marketing_agreed: anyMarketingAgreed,
+              p_email_marketing_agreed: emailMarketingAgreed,
+              p_sms_marketing_agreed: smsMarketingAgreed,
+              p_terms_agreed_at: termsAgreedAt
+            });
+            if (!confirmError) {
+              console.log('Supabase 소셜 약관회원 확정 저장 성공:', confirmLoginId || row.login_id);
+              member.supabaseLoginId = confirmLoginId || row.login_id;
+              return;
+            }
+            console.warn('Supabase 소셜 약관회원 확정 저장 실패, 기존 저장 재시도:', confirmError.message || confirmError);
+          } catch (confirmException) {
+            console.warn('Supabase 소셜 약관회원 확정 저장 예외, 기존 저장 재시도:', confirmException?.message || confirmException);
+          }
+        }
 
         // v23.7.225: GitHub Pages/휴대폰/PWA에서는 RLS 때문에 직접 upsert가 막힐 수 있습니다.
         // 그래서 security definer RPC로 먼저 저장하고, 실패할 때만 기존 직접 저장을 보조로 시도합니다.
@@ -6235,6 +6263,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
         provider:'카카오톡',
         providerId,
         signupId:'',
+        supabaseLoginId:'kakao_' + providerId,
         kakaoUserId:providerId,
         signupMethod:'kakao',
         agreements:pending?.mode === 'signup' ? getSignupAgreements() : undefined,
@@ -6265,6 +6294,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
         provider:'네이버',
         providerId,
         signupId:'',
+        supabaseLoginId:'naver_' + providerId,
         naverUserId:providerId,
         signupMethod:'naver',
         agreements:pending?.mode === 'signup' ? getSignupAgreements() : undefined,
@@ -6440,11 +6470,12 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 
         const existingSocialMemberBeforeSync = findExistingMemberForSocialLogin(member);
         const alreadyActiveServerMember = !!(serverStatus && !isWithdrawnStatusValue(serverStatus));
+        const localSocialTermsAgreed = !!(existingSocialMemberBeforeSync && hasLocalSocialTermsAgreement(existingSocialMemberBeforeSync));
         const isExplicitSignup = pending?.mode === 'signup';
         const hasPendingSocialAgreements = !!(pending && pending.agreements && pending.agreements.agreedAt);
-        // v23.7.231: 카카오/네이버 공식 로그인 후 돌아온 뒤 SitePass 약관동의 필요 여부를 판단합니다.
-        // 기존 active 회원이면 약관창 없이 로그인만 하고, 신규/재가입이면 여기서 소셜약관을 받은 뒤 회원으로 저장합니다.
-        const needsServerSignup = hasPendingSocialAgreements || !alreadyActiveServerMember;
+        // v23.7.249: 이미 가입/약관동의가 끝난 네이버·카카오 회원이면 휴대폰에서도 약관창을 다시 띄우지 않습니다.
+        // 서버 상태가 늦게 잡힐 때는 같은 브라우저의 local 약관동의 기록도 기존회원으로 봅니다.
+        const needsServerSignup = hasPendingSocialAgreements || !(alreadyActiveServerMember || localSocialTermsAgreed);
         if (needsServerSignup) {
           let socialAgreements = hasPendingSocialAgreements ? pending.agreements : null;
           if (!socialAgreements) {
@@ -6482,7 +6513,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
           member.plan_type = 'beta';
         }
 
-        const existingSocialMember = alreadyActiveServerMember ? (existingSocialMemberBeforeSync || findExistingMemberForSocialLogin(member)) : null;
+        const existingSocialMember = (alreadyActiveServerMember || localSocialTermsAgreed) ? (existingSocialMemberBeforeSync || findExistingMemberForSocialLogin(member)) : null;
         const loginMember = existingSocialMember ? mergeSocialLoginMember(existingSocialMember, member) : member;
         const savedMember = saveMemberTest(loginMember) || loginMember;
         // v23.7.225: 카카오/네이버 가입 직후 관리자 화면에 바로 보이도록 서버 저장을 한 번 더 기다립니다.
@@ -14295,18 +14326,69 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       }
     }
 
+    // v23.7.249 - 네이버/카카오 기존 약관회원 판별을 login_id뿐 아니라 provider_id/auth_user_id/email까지 확인합니다.
+    function getSocialMemberServerLookupPayload(member) {
+      const provider = normalizeSignupProviderKey(member?.signupMethod || member?.provider || '');
+      const providerId = String(member?.providerId || member?.naverUserId || member?.kakaoUserId || member?.provider_id || '').trim();
+      const authUserId = String(member?.supabaseAuthUserId || member?.authUserId || member?.userId || member?.auth_user_id || '').trim();
+      const email = String(member?.email || '').trim().toLowerCase();
+      const loginKeys = getMemberLoginKeys(member);
+      const rawProvider = providerId.replace(/^(kakao|naver)[-_:]/i, '').trim();
+      const extraKeys = [];
+      if (provider && rawProvider) extraKeys.push(provider + '_' + rawProvider);
+      if (provider && providerId) extraKeys.push(provider + '_' + providerId);
+      if (provider && authUserId) extraKeys.push(provider + '_' + authUserId);
+      if (member?.supabaseLoginId) extraKeys.push(member.supabaseLoginId);
+      if (member?.signupId) extraKeys.push(member.signupId);
+      return {
+        provider,
+        providerId: rawProvider || providerId,
+        authUserId,
+        email,
+        loginKeys: Array.from(new Set([...(loginKeys || []), ...extraKeys].map(normalizeMemberKey).filter(Boolean)))
+      };
+    }
+
+    async function getSupabaseSocialMemberStatusViaRpc(member) {
+      try {
+        if (!window.sitepassSupabase || !window.sitepassSupabase.rpc || !member) return '';
+        const payload = getSocialMemberServerLookupPayload(member);
+        if (!payload.loginKeys.length && !payload.providerId && !payload.authUserId && !payload.email) return '';
+        const { data, error } = await window.sitepassSupabase.rpc('sitepass_get_social_member_status', {
+          p_login_keys: payload.loginKeys,
+          p_provider_id: payload.providerId || null,
+          p_auth_user_id: payload.authUserId || null,
+          p_email: payload.email || null,
+          p_signup_method: payload.provider || null
+        });
+        if (error) {
+          console.warn('소셜 회원 상태 RPC 확인 실패:', error.message || error);
+          return '';
+        }
+        return String(data || '').trim().toLowerCase();
+      } catch (e) {
+        console.warn('소셜 회원 상태 RPC 확인 예외:', e?.message || e);
+        return '';
+      }
+    }
+
     async function getSupabaseMemberStatus(member) {
       try {
         if (!window.sitepassSupabase || !member) return '';
         const keys = getMemberLoginKeys(member);
-        if (!keys.length) return '';
+        const lookup = getSocialMemberServerLookupPayload(member);
+        if (!keys.length && !lookup.providerId && !lookup.authUserId && !lookup.email) return '';
+
+        // v23.7.249: 네이버는 login_id가 naver_고유ID / naver_authUUID 중 어느 쪽으로 저장됐는지 브라우저마다 달라질 수 있어
+        // 서버 RPC로 provider_id/auth_user_id/email까지 확인해서 기존 약관회원이면 약관창을 다시 띄우지 않습니다.
+        const rpcStatus = await getSupabaseSocialMemberStatusViaRpc(member);
+        if (rpcStatus) return rpcStatus;
 
         // v23.7.231: 탈퇴 여부는 서버 status/plan_type으로 판단합니다.
-        // 단, 테스트 기간에는 재가입을 해야 하므로 약관동의가 없는 소셜 로그인 기록은 회원가입 완료로 보지 않습니다.
         if (window.sitepassSupabase.rpc) {
           try {
             const { data: blocked, error: blockError } = await window.sitepassSupabase.rpc('sitepass_is_member_withdrawn', {
-              p_login_keys: keys
+              p_login_keys: lookup.loginKeys && lookup.loginKeys.length ? lookup.loginKeys : keys
             });
             if (!blockError && blocked === true) return 'withdrawn';
           } catch (rpcError) {
@@ -14314,13 +14396,64 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
           }
         }
 
-        const { data, error } = await window.sitepassSupabase
-          .from('sitepass_members')
-          .select('login_id, status, plan_type, role, terms_agreed_at')
-          .in('login_id', keys)
-          .limit(1);
-        if (error || !data || !data[0]) return '';
-        const row = data[0];
+        const selectCols = 'login_id, status, plan_type, role, terms_agreed_at, provider_id, auth_user_id, email, signup_method';
+        const candidates = [];
+        const pushRows = rows => {
+          (Array.isArray(rows) ? rows : []).forEach(row => {
+            if (row && !candidates.some(item => String(item.login_id || '') === String(row.login_id || ''))) candidates.push(row);
+          });
+        };
+
+        try {
+          const { data } = await window.sitepassSupabase
+            .from('sitepass_members')
+            .select(selectCols)
+            .in('login_id', lookup.loginKeys && lookup.loginKeys.length ? lookup.loginKeys : keys)
+            .limit(3);
+          pushRows(data);
+        } catch (ignore) {}
+
+        if (lookup.providerId) {
+          try {
+            const { data } = await window.sitepassSupabase
+              .from('sitepass_members')
+              .select(selectCols)
+              .eq('signup_method', lookup.provider || normalizeSignupProviderKey(member.signupMethod || member.provider || ''))
+              .eq('provider_id', lookup.providerId)
+              .limit(3);
+            pushRows(data);
+          } catch (ignore) {}
+        }
+
+        if (lookup.authUserId) {
+          try {
+            const { data } = await window.sitepassSupabase
+              .from('sitepass_members')
+              .select(selectCols)
+              .eq('auth_user_id', lookup.authUserId)
+              .limit(3);
+            pushRows(data);
+          } catch (ignore) {}
+        }
+
+        if (lookup.email) {
+          try {
+            const { data } = await window.sitepassSupabase
+              .from('sitepass_members')
+              .select(selectCols)
+              .eq('signup_method', lookup.provider || normalizeSignupProviderKey(member.signupMethod || member.provider || ''))
+              .eq('email', lookup.email)
+              .limit(3);
+            pushRows(data);
+          } catch (ignore) {}
+        }
+
+        if (!candidates.length) return '';
+        const row = candidates.sort((a,b) => {
+          const aActive = !isWithdrawnStatusValue(a.status) && !isWithdrawnStatusValue(a.plan_type) && !!a.terms_agreed_at;
+          const bActive = !isWithdrawnStatusValue(b.status) && !isWithdrawnStatusValue(b.plan_type) && !!b.terms_agreed_at;
+          return Number(bActive) - Number(aActive);
+        })[0];
         const status = String(row.status || '').trim().toLowerCase();
         const planType = String(row.plan_type || '').trim().toLowerCase();
         const role = String(row.role || '').trim().toLowerCase();
