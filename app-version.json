@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.258",
+  "version": "v23.7.259",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Split step 6: 카카오/네이버 OAuth 시작, 복귀 처리, 소셜 회원 변환 기능을 assets/js/auth-social.js로 분리했습니다. 약관/관리자 회원목록/상세관리 분리는 유지했고 QR/보관함/장비등록/카메라 로직은 건드리지 않았습니다.",
+  "note": "Split step 7: PWA 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 assets/js/pwa-update.js로 분리했습니다. 카카오/네이버 로그인, 약관, 관리자 회원목록/상세관리, QR/보관함/장비등록/카메라 로직은 건드리지 않았습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T23:20:00+09:00"
+  "updatedAt": "2026-06-30T23:35:00+09:00"
 }

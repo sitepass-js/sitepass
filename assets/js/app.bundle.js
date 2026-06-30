@@ -1,5 +1,5 @@
-// SitePass v23.7.258 split step 6 - 소셜 로그인 분리
-// v23.7.258에서는 카카오/네이버 OAuth 처리를 auth-social.js로 분리하고, 기존 약관/관리자 분리는 유지했습니다.
+// SitePass v23.7.259 split step 7 - PWA 자동업데이트 분리
+// v23.7.259에서는 PWA 새 버전 확인/캐시 삭제/서비스워커 등록을 pwa-update.js로 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
     const PREV_STORAGE_KEY_6 = 'sitePass_v23_7_5_update_edit_pages';
@@ -10548,116 +10548,44 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
       return true;
     }
 
-    const SITEPASS_APP_VERSION = 'v23.7.244';
+    // v23.7.259: PWA 자동업데이트/서비스워커 등록은 assets/js/pwa-update.js로 분리했습니다.
+    const SITEPASS_APP_VERSION = (window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.appVersion) || 'v23.7.259';
     const SITEPASS_FIXED_APP_URL = 'https://sitepass-js.github.io/sitepass/';
-    const SITEPASS_VERSION_KEY = 'sitepass_current_app_version';
-    const SITEPASS_UPDATE_RELOAD_KEY = 'sitepass_last_update_reload_version';
 
-    function isOfficialSitePassGithubUrl() {
-      return location.hostname === 'sitepass-js.github.io' && location.pathname.indexOf('/sitepass') === 0;
-    }
+    window.SitePassPwaRuntime = window.SitePassPwaRuntime || {};
+    Object.assign(window.SitePassPwaRuntime, {
+      getAppVersion: function(){ return SITEPASS_APP_VERSION; },
+      getFixedAppUrl: function(){ return SITEPASS_FIXED_APP_URL; },
+      setHomeInstallStatus: function(message){ return setHomeInstallStatus(message); },
+      isStandalone: function(){ return isSitePassStandalone(); },
+      hasDeferredInstallPrompt: function(){ return !!deferredSitePassInstallPrompt; }
+    });
 
-    function normalizeSitePassFixedUrl() {
-      if (!isOfficialSitePassGithubUrl()) return;
-      const needsCleanUrl = /\/index\.html$/i.test(location.pathname) || /[?&]v=/.test(location.search || '');
-      if (!needsCleanUrl) return;
-      try {
-        history.replaceState(history.state || {}, document.title, '/sitepass/');
-      } catch (e) {}
-    }
-
-    async function clearSitePassBrowserCache() {
-      try {
-        if ('caches' in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.filter(key => /^sitepass/i.test(key) || /sitepass/i.test(key)).map(key => caches.delete(key)));
-        }
-      } catch (e) {}
-      try {
-        if ('serviceWorker' in navigator) {
-          const regs = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.map(reg => reg.update().catch(() => null)));
-        }
-      } catch (e) {}
-    }
-
-    async function forceSitePassUpdateReload(nextVersion) {
-      try { localStorage.setItem(SITEPASS_VERSION_KEY, nextVersion || SITEPASS_APP_VERSION); } catch (e) {}
-      await clearSitePassBrowserCache();
-      try {
-        const cleanUrl = isOfficialSitePassGithubUrl() ? SITEPASS_FIXED_APP_URL : (location.origin + location.pathname.replace(/index\.html$/i, ''));
-        location.replace(cleanUrl + '?updated=' + encodeURIComponent(nextVersion || SITEPASS_APP_VERSION) + '&t=' + Date.now());
-      } catch (e) {
-        location.reload();
-      }
+    function getPwaUpdateModule() {
+      return window.SitePassPwaUpdate || {};
     }
 
     async function checkSitePassAutoUpdate() {
-      normalizeSitePassFixedUrl();
-      let storedVersion = '';
-      try { storedVersion = localStorage.getItem(SITEPASS_VERSION_KEY) || ''; } catch (e) {}
+      const mod = getPwaUpdateModule();
+      if (mod.checkAutoUpdate) return mod.checkAutoUpdate();
+    }
 
-      if (storedVersion && storedVersion !== SITEPASS_APP_VERSION) {
-        const reloadKey = SITEPASS_APP_VERSION + ':local';
-        try {
-          if (localStorage.getItem(SITEPASS_UPDATE_RELOAD_KEY) !== reloadKey) {
-            localStorage.setItem(SITEPASS_UPDATE_RELOAD_KEY, reloadKey);
-            await forceSitePassUpdateReload(SITEPASS_APP_VERSION);
-            return;
-          }
-        } catch (e) {}
-      }
-      try { localStorage.setItem(SITEPASS_VERSION_KEY, SITEPASS_APP_VERSION); } catch (e) {}
-
-      try {
-        const res = await fetch('./app-version.json?ts=' + Date.now(), { cache:'no-store' });
-        if (!res.ok) return;
-        const info = await res.json();
-        const latestVersion = String(info.version || '').trim();
-        if (!latestVersion || latestVersion === SITEPASS_APP_VERSION) return;
-        const reloadKey = latestVersion + ':remote';
-        try {
-          if (localStorage.getItem(SITEPASS_UPDATE_RELOAD_KEY) === reloadKey) return;
-          localStorage.setItem(SITEPASS_UPDATE_RELOAD_KEY, reloadKey);
-        } catch (e) {}
-        alert('현장서류패스 새 버전이 있습니다.\n최신 화면으로 업데이트합니다.');
-        await forceSitePassUpdateReload(latestVersion);
-      } catch (e) {
-        // app-version.json이 아직 없으면 현재 HTML 버전만 사용합니다.
-      }
+    function registerSitePassServiceWorker() {
+      const mod = getPwaUpdateModule();
+      if (mod.registerServiceWorker) return mod.registerServiceWorker();
+      setHomeInstallStatus('PWA 업데이트 파일을 불러오지 못했습니다. assets/js/pwa-update.js 업로드를 확인해주세요.');
     }
 
     window.forceSitePassUpdateReload = function() {
-      forceSitePassUpdateReload(SITEPASS_APP_VERSION);
+      const mod = getPwaUpdateModule();
+      if (mod.forceUpdateReload) return mod.forceUpdateReload(SITEPASS_APP_VERSION);
+      location.reload();
     };
 
     window.addEventListener('load', function() {
       setTimeout(checkSitePassAutoUpdate, 600);
       setTimeout(openRecommendInstallLanding, 1100);
     });
-
-    function registerSitePassServiceWorker() {
-      if (!('serviceWorker' in navigator)) {
-        setHomeInstallStatus('이 브라우저는 서비스워커를 지원하지 않아 앱 설치 기능이 제한될 수 있습니다.');
-        return;
-      }
-      if (!(window.isSecureContext || location.hostname === 'localhost')) {
-        setHomeInstallStatus('서비스워커와 설치창은 https 주소 또는 localhost에서만 정상 작동합니다.');
-        return;
-      }
-      navigator.serviceWorker.register('./sw.js?v=23.7.215').then(function(reg) {
-        try { reg.update(); } catch (e) {}
-        if (!deferredSitePassInstallPrompt && !isSitePassStandalone()) {
-          setHomeInstallStatus('설치 준비 중입니다. 브라우저가 설치 가능하다고 판단하면 <b>홈화면에 설치하기</b> 버튼으로 설치창이 열립니다.');
-        }
-      }).catch(function() {
-        setHomeInstallStatus('서비스워커 등록이 되지 않았습니다. 정식 배포 시 sw.js 파일이 같은 폴더에 있어야 합니다.');
-      });
-    }
-
-    window.addSitePassToHomeScreen = addSitePassToHomeScreen;
-    window.showHomeInstallGuide = showHomeInstallGuide;
-    window.copyRecommendInstallLink = copyRecommendInstallLink;
 
     const DEMO_MANAGER_CODE = 'SP-DEMO-00BO0000';
 
