@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.233",
+  "version": "v23.7.235",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Samsung Internet/default mobile browser OAuth redirect fix: Kakao/Naver official login opens first in the same tab, then SitePass linked-account terms appear after return for new/rejoin users.",
+  "note": "Fix SitePass linked social terms checkbox size and alignment. Kakao/Naver official login redirect behavior from v23.7.234 is preserved.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T03:33:00+09:00"
+  "updatedAt": "2026-06-30T04:45:00+09:00"
 }
