@@ -1,5 +1,5 @@
-// SitePass v23.7.260 split step 8 - 브라우저 저장소 분리
-// v23.7.260에서는 세션/회원/연락처/PWA 자동로그인 저장 공통 기능을 storage.js로 분리했습니다.
+// SitePass v23.7.261 split step 9 - Supabase 서버통신 분리
+// v23.7.261에서는 Supabase RPC/SELECT/UPSERT 공통 기능을 supabase-api.js로 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
     const PREV_STORAGE_KEY_6 = 'sitePass_v23_7_5_update_edit_pages';
@@ -99,6 +99,10 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     // v23.7.260: 세션/로컬 저장 공통 기능은 assets/js/storage.js로 분리했습니다.
     function getStorageModule() {
       return window.SitePassStorage || {};
+    }
+    // v23.7.261: Supabase 서버통신 공통 기능은 assets/js/supabase-api.js로 분리했습니다.
+    function getSupabaseApiModule() {
+      return window.SitePassSupabaseApi || {};
     }
     function setSessionValue(key, value) {
       const storage = getStorageModule();
@@ -727,7 +731,8 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
 
     async function saveMemberToSupabase(member) {
       try {
-        if (!window.sitepassSupabase || !member) return;
+        const supabaseApi = getSupabaseApiModule();
+        if (!(supabaseApi.hasClient && supabaseApi.hasClient()) || !member) return;
 
         const normalizedSignupMethod = normalizeSignupProviderKey(member.signupMethod || member.provider || 'sitepass') || 'sitepass';
         const loginId = makeStableMemberLoginId({ ...member, signupMethod: normalizedSignupMethod });
@@ -786,9 +791,9 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
 
         // v23.7.250: 네이버/카카오 약관동의 완료 회원은 auth_user_id/provider_id/email까지 서버에 확정 저장합니다.
         // 그래야 다른 기기에서도 약관창이 다시 뜨지 않고 관리자 상세목록에 표시됩니다.
-        if (window.sitepassSupabase.rpc && (normalizedSignupMethod === 'kakao' || normalizedSignupMethod === 'naver') && termsAgreedAt) {
+        if (supabaseApi.hasRpc && supabaseApi.hasRpc() && (normalizedSignupMethod === 'kakao' || normalizedSignupMethod === 'naver') && termsAgreedAt) {
           try {
-            const { data: confirmLoginId, error: confirmError } = await window.sitepassSupabase.rpc('sitepass_confirm_social_terms_member', {
+            const { data: confirmLoginId, error: confirmError } = await supabaseApi.rpc('sitepass_confirm_social_terms_member', {
               p_login_id: row.login_id,
               p_name: row.name,
               p_phone: row.phone,
@@ -816,9 +821,9 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
         // 아래 RPC와 직접 upsert 모두 약관동의 시각을 같이 보내서 카카오/네이버가 같은 기준으로 표시되게 합니다.
         // v23.7.225: GitHub Pages/휴대폰/PWA에서는 RLS 때문에 직접 upsert가 막힐 수 있습니다.
         // 그래서 security definer RPC로 먼저 저장하고, 실패할 때만 기존 직접 저장을 보조로 시도합니다.
-        if (window.sitepassSupabase.rpc) {
+        if (supabaseApi.hasRpc && supabaseApi.hasRpc()) {
           try {
-            const { data: rpcSavedLoginId, error: rpcSaveError } = await window.sitepassSupabase.rpc('sitepass_upsert_member_public', {
+            const { data: rpcSavedLoginId, error: rpcSaveError } = await supabaseApi.rpc('sitepass_upsert_member_public', {
               p_login_id: row.login_id,
               p_name: row.name,
               p_phone: row.phone,
@@ -843,9 +848,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
           }
         }
 
-        const { error } = await window.sitepassSupabase
-          .from('sitepass_members')
-          .upsert(row, { onConflict: 'login_id' });
+        const { error } = await supabaseApi.upsert('sitepass_members', row, { onConflict: 'login_id' });
 
         if (error) {
           console.warn('Supabase 회원 저장 실패:', error.message);
@@ -1320,8 +1323,9 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
 
     async function syncCurrentSupabaseAuthMemberToServer() {
       try {
-        if (!window.sitepassSupabase || !window.sitepassSupabase.rpc) return false;
-        const { error } = await window.sitepassSupabase.rpc('sitepass_sync_current_user_member');
+        const supabaseApi = getSupabaseApiModule();
+        if (!(supabaseApi.hasRpc && supabaseApi.hasRpc())) return false;
+        const { error } = await supabaseApi.rpc('sitepass_sync_current_user_member');
         if (error) {
           console.warn('현재 Supabase Auth 회원 서버 동기화 RPC 실패:', error.message);
           return false;
@@ -1337,7 +1341,8 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
       if (!isAdminLoggedIn()) return;
       if (adminSupabaseMemberSyncing) return;
       if (!forceAlert && adminSupabaseMemberSyncedAt && Date.now() - adminSupabaseMemberSyncedAt < 15000) return;
-      if (!window.sitepassSupabase) {
+      const supabaseApi = getSupabaseApiModule();
+      if (!(supabaseApi.hasClient && supabaseApi.hasClient())) {
         adminSupabaseMemberSyncMessage = 'Supabase 연결 없음: 이 브라우저에 저장된 회원만 표시 중';
         if (forceAlert) alert(adminSupabaseMemberSyncMessage);
         renderAdmin();
@@ -1353,9 +1358,9 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
 
         // v23.7.225: 관리자 새로고침 전 Auth 소셜 가입자를 members로 먼저 보강 동기화합니다.
         // 이 단계가 실패해도 아래 회원목록 조회는 계속 진행합니다.
-        if (window.sitepassSupabase.rpc) {
+        if (supabaseApi.hasRpc && supabaseApi.hasRpc()) {
           try {
-            const { data: authSyncCount, error: authSyncError } = await window.sitepassSupabase.rpc('sitepass_sync_auth_social_users_to_members');
+            const { data: authSyncCount, error: authSyncError } = await supabaseApi.rpc('sitepass_sync_auth_social_users_to_members');
             if (authSyncError) {
               console.warn('Auth 소셜 회원 보강 동기화 실패:', authSyncError.message || authSyncError);
             } else {
@@ -1368,10 +1373,10 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
 
         // v23.7.216: 인터넷 배포에서는 RLS 때문에 직접 SELECT가 막힐 수 있으므로 RPC를 1순위로 호출합니다.
         let triedRpc = false;
-        if (window.sitepassSupabase.rpc) {
+        if (supabaseApi.hasRpc && supabaseApi.hasRpc()) {
           triedRpc = true;
           try {
-            const { data: rpcRows, error: rpcError } = await window.sitepassSupabase.rpc('sitepass_admin_sync_members');
+            const { data: rpcRows, error: rpcError } = await supabaseApi.rpc('sitepass_admin_sync_members');
             if (rpcError) {
               rpcErrorMessage = rpcError.message || 'sitepass_admin_sync_members RPC 실패';
             } else {
@@ -1386,11 +1391,9 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
         // RPC 실패 때 직접조회로 우회하면 탈퇴회원이 다시 보일 수 있어 직접조회는 RPC가 없는 경우에만 씁니다.
         if (!rows.length && !triedRpc) {
           try {
-            const { data, error } = await window.sitepassSupabase
-              .from('sitepass_members')
-              .select('*')
-              .order('last_login_at', { ascending:false, nullsFirst:false })
-              .limit(1000);
+            const { data, error } = await supabaseApi.select('sitepass_members', '*', function(query){
+              return query.order('last_login_at', { ascending:false, nullsFirst:false }).limit(1000);
+            });
             if (error) {
               directErrorMessage = error.message || 'sitepass_members 직접 조회 실패';
             } else {
@@ -1402,9 +1405,9 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
         }
 
         // v23.7.225: 관리자 통계는 회원 행 수가 아니라 약관동의 완료/active/탈퇴 이벤트 기준 RPC를 우선 사용합니다.
-        if (window.sitepassSupabase.rpc) {
+        if (supabaseApi.hasRpc && supabaseApi.hasRpc()) {
           try {
-            const { data: summaryData, error: summaryError } = await window.sitepassSupabase.rpc('sitepass_admin_member_summary');
+            const { data: summaryData, error: summaryError } = await supabaseApi.rpc('sitepass_admin_member_summary');
             if (summaryError) {
               console.warn('관리자 가입/탈퇴 통계 RPC 실패:', summaryError.message || summaryError);
             } else {

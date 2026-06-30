@@ -1,11 +1,12 @@
-const SITEPASS_SW_VERSION = 'v23.7.260';
-const SITEPASS_CACHE = 'sitepass-v23.7.260';
+const SITEPASS_SW_VERSION = 'v23.7.261';
+const SITEPASS_CACHE = 'sitepass-v23.7.261';
 const SITEPASS_CORE = [
   './',
   './index.html',
   './sitepass.webmanifest',
   './assets/css/style.css',
   './assets/js/config.js',
+  './assets/js/supabase-api.js',
   './assets/js/storage.js',
   './assets/js/terms.js',
   './assets/js/admin-members.js',

@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.260",
+  "version": "v23.7.261",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Split step 8: 세션 저장, 회원목록 저장, 연락처 저장, PWA 자동로그인 저장 등 브라우저 저장소 공통 기능을 assets/js/storage.js로 분리했습니다. 로그인, 약관, 관리자, QR/보관함/장비등록/카메라 로직은 건드리지 않았습니다.",
+  "note": "Split step 9: Supabase RPC, SELECT, UPSERT, UPDATE, signOut 같은 서버 통신 공통 기능을 assets/js/supabase-api.js로 분리했습니다. 회원 저장/관리자 회원 동기화 일부를 새 공통 API로 연결했습니다. QR/보관함/장비등록/카메라는 건드리지 않았습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T23:55:00+09:00"
+  "updatedAt": "2026-07-01T00:20:00+09:00"
 }
