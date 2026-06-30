@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.274",
+  "version": "v23.7.275",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "담당자/수신자 조회화면 보조 기능을 recipient-view.js로 분리했습니다.",
+  "note": "문서 미리보기/프린트/다운로드 보조 기능을 document-output.js로 분리했습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-07-01T00:00:00+09:00"
 }
