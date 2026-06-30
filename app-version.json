@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.235",
+  "version": "v23.7.238",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix SitePass linked social terms checkbox size and alignment. Kakao/Naver official login redirect behavior from v23.7.234 is preserved.",
+  "note": "Fix admin reset counters: after resetting DB and keeping only sitepass@kakao.com, 전체회원/신규회원/일반회원 count excludes super/admin accounts and old local withdrawn records stay hidden.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T04:45:00+09:00"
+  "updatedAt": "2026-06-30T05:20:00+09:00"
 }
