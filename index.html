@@ -23,15 +23,15 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.269" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.270" />
 <!-- v23.7.186: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.269 person-auth-split -->
+  <!-- SitePass deploy-check: v23.7.270 person-auth-ui-fix -->
   <!-- SitePass screen-fix: clean package only, no guide/patch/text files required -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.269" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.270" />
 </head>
 <body class="sitepass-booting">
   <main class="app">
@@ -836,7 +836,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
             </div>
             <div class="field">
               <label for="sitepassSignupJuminMasked">주민번호</label>
-              <input id="sitepassSignupJuminMasked" type="text" placeholder="예: 840507-1******" maxlength="14" inputmode="text" autocomplete="off" oninput="resetSitePassSignupPhoneAuth()" onblur="formatSitePassSignupJuminDisplay()" />
+              <input id="sitepassSignupJuminMasked" type="text" placeholder="예: 840507-1" maxlength="8" inputmode="numeric" autocomplete="off" oninput="limitSitePassSignupJuminInput()" onblur="formatSitePassSignupJuminDisplay()" />
             </div>
             <div class="field">
               <label for="sitepassSignupPhone">휴대폰번호</label>
@@ -857,7 +857,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
             <div class="verify-row">
               <div class="field">
                 <label>휴대폰 본인확인</label>
-                <div id="sitepassSignupVerifyStatus" class="auth-mini-note">이름, 주민번호, 휴대폰번호, 통신사를 입력한 뒤 인증요청을 눌러주세요. 주민번호는 840507-1****** 형식입니다. 현재 임시 인증번호는 123456입니다.</div>
+                <div id="sitepassSignupVerifyStatus" class="auth-mini-note">이름, 주민번호, 휴대폰번호, 통신사를 입력한 뒤 인증요청을 눌러주세요. 주민번호는 840507-1까지만 입력하면 840507-1******로 표시됩니다. 현재 임시 인증번호는 123456입니다.</div>
               </div>
               <button type="button" id="sitepassSignupRequestButton" class="ghost" onclick="sendSitePassSignupPhoneCodeTest()">인증요청</button>
             </div>
@@ -1098,18 +1098,18 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     </div>
   </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./assets/js/config.js?v=23.7.269"></script>
-<script src="./assets/js/supabase-api.js?v=23.7.269"></script>
-<script src="./assets/js/storage.js?v=23.7.269"></script>
-<script src="./assets/js/terms.js?v=23.7.269"></script>
-<script src="./assets/js/admin-members.js?v=23.7.269"></script>
-<script src="./assets/js/admin-detail.js?v=23.7.269"></script>
-<script src="./assets/js/auth-social.js?v=23.7.269"></script>
-<script src="./assets/js/pwa-update.js?v=23.7.269"></script>
-<script src="./assets/js/qr-share.js?v=23.7.269"></script>
-<script src="./assets/js/archive.js?v=23.7.269"></script>
-<script src="./assets/js/equipment-register.js?v=23.7.269"></script>
-<script src="./assets/js/person-auth.js?v=23.7.269"></script>
-<script src="./assets/js/app.bundle.js?v=23.7.269"></script>
+<script src="./assets/js/config.js?v=23.7.270"></script>
+<script src="./assets/js/supabase-api.js?v=23.7.270"></script>
+<script src="./assets/js/storage.js?v=23.7.270"></script>
+<script src="./assets/js/terms.js?v=23.7.270"></script>
+<script src="./assets/js/admin-members.js?v=23.7.270"></script>
+<script src="./assets/js/admin-detail.js?v=23.7.270"></script>
+<script src="./assets/js/auth-social.js?v=23.7.270"></script>
+<script src="./assets/js/pwa-update.js?v=23.7.270"></script>
+<script src="./assets/js/qr-share.js?v=23.7.270"></script>
+<script src="./assets/js/archive.js?v=23.7.270"></script>
+<script src="./assets/js/equipment-register.js?v=23.7.270"></script>
+<script src="./assets/js/person-auth.js?v=23.7.270"></script>
+<script src="./assets/js/app.bundle.js?v=23.7.270"></script>
 </body>
 </html>

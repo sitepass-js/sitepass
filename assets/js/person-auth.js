@@ -1,4 +1,4 @@
-// SitePass v23.7.269 split step 15 - 기사/인부 본인 동의·인증 보조 파일
+// SitePass v23.7.270 split step 15 - 기사/인부 본인 동의·인증 보조 파일
 // 기사/인부 개인정보 서류 등록 전 동의/인증에 필요한 순수 보조 기능입니다.
 // 실제 PASS/통신사 API 연동은 나중에 Supabase Edge Function + phone-verify.js로 붙입니다.
 (function(){
@@ -71,7 +71,7 @@
     const safeValues = values || {};
     if (!normalizeText(safeValues.name)) return { ok:false, message:label + ' 이름을 입력해주세요.', focusSelector:'[data-person-auth-name]' };
     if (!safeValues.birth6 || !/^\d{6}$/.test(String(safeValues.birth6)) || !safeValues.genderDigit || !/^[1-8]$/.test(String(safeValues.genderDigit))) {
-      return { ok:false, message:label + ' 주민번호는 840507-1****** 형식으로 입력해주세요.', focusSelector:'[data-person-auth-jumin]' };
+      return { ok:false, message:label + ' 주민번호는 840507-1까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.', focusSelector:'[data-person-auth-jumin]' };
     }
     if (!normalizeText(safeValues.carrier)) return { ok:false, message:label + ' 통신사를 선택해주세요.', focusSelector:'[data-person-auth-carrier]' };
     if (!normalizeText(safeValues.phone)) return { ok:false, message:label + ' 휴대폰번호를 입력해주세요.', focusSelector:'[data-person-auth-phone]' };
