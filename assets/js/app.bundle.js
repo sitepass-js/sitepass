@@ -1,5 +1,5 @@
-// SitePass v23.7.272 - 카메라/문서스캔 보조 분리
-// v23.7.272에서는 camera-scan.js로 촬영모드/스캔파일명 보조 기능을 분리했습니다.
+// SitePass v23.7.273 - 결제/이용권 보조 기능 분리
+// v23.7.273에서는 admin-payments.js로 요금제/만료/QR 차단 판단 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
     const PREV_STORAGE_KEY_6 = 'sitePass_v23_7_5_update_edit_pages';
@@ -125,6 +125,10 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     // v23.7.271: 기사/인부 본인동의 인증 보조 기능은 assets/js/person-auth.js로 분리했습니다.
     function getPersonAuthModule() {
       return window.SitePassPersonAuth || {};
+    }
+    // v23.7.273: 결제/이용권/QR 일시정지 판단 보조 기능은 assets/js/admin-payments.js로 분리했습니다.
+    function getAdminPaymentsModule() {
+      return window.SitePassAdminPayments || {};
     }
     function setSessionValue(key, value) {
       const storage = getStorageModule();
@@ -7408,6 +7412,8 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
     }
 
     function getServiceOverdueDays(item) {
+      const payments = getAdminPaymentsModule();
+      if (payments.getServiceOverdueDays) return payments.getServiceOverdueDays(item);
       if (!item || !item.trialEndsAt) return null;
       const end = new Date(item.trialEndsAt);
       if (Number.isNaN(end.getTime())) return null;
@@ -7419,6 +7425,8 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
     }
 
     function isServiceGrace14Over(item) {
+      const payments = getAdminPaymentsModule();
+      if (payments.isServiceGrace14Over) return payments.isServiceGrace14Over(item);
       const overdueDays = getServiceOverdueDays(item);
       return overdueDays !== null && overdueDays >= 14;
     }
@@ -8721,6 +8729,8 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
     }
 
     function getPlanInfo(plan, options) {
+      const payments = getAdminPaymentsModule();
+      if (payments.getPlanInfo) return payments.getPlanInfo(plan, options);
       const additional = typeof options === 'boolean' ? options : !!(options && options.additional);
       if (plan === 'annual') {
         const price = additional ? '연 9,900원' : '연 19,900원';
@@ -8946,6 +8956,8 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
     }
 
     function getPaymentDueDays(item) {
+      const payments = getAdminPaymentsModule();
+      if (payments.getPaymentDueDays) return payments.getPaymentDueDays(item);
       if (!item || !item.trialEndsAt) return null;
       const end = new Date(item.trialEndsAt).getTime();
       if (Number.isNaN(end)) return null;
@@ -8953,11 +8965,15 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
     }
 
     function isPaymentDueSoon(item) {
+      const payments = getAdminPaymentsModule();
+      if (payments.isPaymentDueSoon) return payments.isPaymentDueSoon(item, 7);
       const diff = getPaymentDueDays(item);
       return diff !== null && diff <= 7;
     }
 
     function getPaymentDueText(item) {
+      const payments = getAdminPaymentsModule();
+      if (payments.getPaymentDueText) return payments.getPaymentDueText(item);
       if (!item || !item.trialEndsAt) return '종료일 미설정';
       const diff = Math.ceil((new Date(item.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24));
       if (diff < 0) return Math.abs(diff) + '일 지남';
@@ -9088,12 +9104,16 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
     }
 
     function addDaysIso(baseIso, days) {
+      const payments = getAdminPaymentsModule();
+      if (payments.addDaysIso) return payments.addDaysIso(baseIso, days);
       const d = new Date(baseIso);
       d.setDate(d.getDate() + days);
       return d.toISOString();
     }
 
     function isQrPaused(item) {
+      const payments = getAdminPaymentsModule();
+      if (payments.isQrPaused) return payments.isQrPaused(item);
       if (!item) return false;
       if (item.serviceStatus === '정지') return true;
       if (!item.trialEndsAt) return false;
@@ -9102,10 +9122,14 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
 
 
     function isServiceShareBlocked(item) {
+      const payments = getAdminPaymentsModule();
+      if (payments.isServiceShareBlocked) return payments.isServiceShareBlocked(item);
       return isQrPaused(item);
     }
 
     function getServiceBlockReason(item) {
+      const payments = getAdminPaymentsModule();
+      if (payments.getServiceBlockReason) return payments.getServiceBlockReason(item);
       if (!item) return '서류함 없음';
       if (item.serviceStatus === '정지') return '관리자 정지';
       if (!item.trialEndsAt) return '결제기간 미설정';
@@ -9115,6 +9139,8 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
     }
 
     function getShareBlockedItems(items) {
+      const payments = getAdminPaymentsModule();
+      if (payments.getShareBlockedItems) return payments.getShareBlockedItems(items);
       return (items || []).filter(item => item && isServiceShareBlocked(item));
     }
 
@@ -9138,6 +9164,8 @@ ${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생�
     }
 
     function getServiceStatusText(item) {
+      const payments = getAdminPaymentsModule();
+      if (payments.getServiceStatusText) return payments.getServiceStatusText(item);
       if (!item) return '상태 없음';
       if (isQrPaused(item)) {
         const overdueDays = getServiceOverdueDays(item);
