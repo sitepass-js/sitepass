@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.273",
+  "version": "v23.7.274",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "결제/이용권/QR 일시정지 판단 보조 기능을 admin-payments.js로 분리했습니다.",
+  "note": "담당자/수신자 조회화면 보조 기능을 recipient-view.js로 분리했습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-07-01T00:00:00+09:00"
 }
