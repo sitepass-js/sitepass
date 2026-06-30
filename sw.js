@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.275';
-const SITEPASS_CACHE = 'sitepass-v23.7.275';
+const SITEPASS_SW_VERSION = 'v23.7.276';
+const SITEPASS_CACHE = 'sitepass-v23.7.276';
 const SITEPASS_CORE = [
   './',
   './index.html',
@@ -21,6 +21,7 @@ const SITEPASS_CORE = [
   './assets/js/admin-payments.js',
   './assets/js/recipient-view.js',
   './assets/js/document-output.js',
+  './assets/js/push-notify.js',
   './assets/js/app.bundle.js'
 ];
 
@@ -76,5 +77,44 @@ self.addEventListener('fetch', event => {
     } catch (e) {
       return (await caches.match(req)) || Response.error();
     }
+  })());
+});
+
+
+self.addEventListener('push', event => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (e) {
+    try { payload = { body: event.data ? event.data.text() : '' }; } catch (err) { payload = {}; }
+  }
+  const title = payload.title || 'SitePass 알림';
+  const options = {
+    body: payload.body || 'SitePass에서 확인할 알림이 있습니다.',
+    icon: payload.icon || './icons/sitepass-icon-192.png',
+    badge: payload.badge || './icons/sitepass-icon-192.png',
+    tag: payload.tag || 'sitepass-push',
+    data: payload.data || { url: payload.url || './', createdAt: new Date().toISOString() },
+    renotify: payload.renotify !== false
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const data = event.notification.data || {};
+  const targetUrl = data.url || './';
+  event.waitUntil((async () => {
+    const clientsList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientsList) {
+      if ('focus' in client) {
+        try {
+          await client.focus();
+          if ('navigate' in client) await client.navigate(targetUrl);
+          return;
+        } catch (e) {}
+      }
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
   })());
 });

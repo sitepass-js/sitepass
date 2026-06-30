@@ -1,4 +1,4 @@
-// SitePass v23.7.271 PWA update notice fix - PWA 자동업데이트/서비스워커 전용 파일
+// SitePass v23.7.276 PWA update notice/push base - PWA 자동업데이트/서비스워커 전용 파일
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';
@@ -6,7 +6,7 @@
   function runtime(){ return window.SitePassPwaRuntime || {}; }
   function getAppVersion(){
     const rt = runtime();
-    return String((rt.getAppVersion && rt.getAppVersion()) || window.SITEPASS_DB_CONFIG?.appVersion || 'v23.7.271').trim() || 'v23.7.271';
+    return String((rt.getAppVersion && rt.getAppVersion()) || window.SITEPASS_DB_CONFIG?.appVersion || 'v23.7.276').trim() || 'v23.7.276';
   }
   function getFixedAppUrl(){
     const rt = runtime();

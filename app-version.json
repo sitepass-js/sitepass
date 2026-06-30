@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.275",
+  "version": "v23.7.276",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "문서 미리보기/프린트/다운로드 보조 기능을 document-output.js로 분리했습니다.",
+  "note": "푸시알림 기본 구조를 push-notify.js로 분리했습니다. 서류/이용권 만료 7일 전과 만료일, 작성중 서류 다음날 1회 기준을 추가했습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-07-01T00:00:00+09:00"
 }
