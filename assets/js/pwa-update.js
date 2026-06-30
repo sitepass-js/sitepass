@@ -1,4 +1,4 @@
-// SitePass v23.7.259 split step 7 - PWA 자동업데이트/서비스워커 전용 파일
+// SitePass v23.7.267 PWA update notice fix - PWA 자동업데이트/서비스워커 전용 파일
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';
@@ -6,7 +6,7 @@
   function runtime(){ return window.SitePassPwaRuntime || {}; }
   function getAppVersion(){
     const rt = runtime();
-    return String((rt.getAppVersion && rt.getAppVersion()) || window.SITEPASS_DB_CONFIG?.appVersion || 'v23.7.259').trim() || 'v23.7.259';
+    return String((rt.getAppVersion && rt.getAppVersion()) || window.SITEPASS_DB_CONFIG?.appVersion || 'v23.7.267').trim() || 'v23.7.267';
   }
   function getFixedAppUrl(){
     const rt = runtime();
@@ -27,6 +27,7 @@
 
   const VERSION_KEY = 'sitepass_current_app_version';
   const UPDATE_RELOAD_KEY = 'sitepass_last_update_reload_version';
+  const UPDATE_NOTICE_KEY = 'sitepass_last_update_notice_version';
 
   function isOfficialGithubUrl(){
     return location.hostname === 'sitepass-js.github.io' && location.pathname.indexOf('/sitepass') === 0;
@@ -71,17 +72,11 @@
     let storedVersion = '';
     try { storedVersion = localStorage.getItem(VERSION_KEY) || ''; } catch (e) {}
 
-    if (storedVersion && storedVersion !== appVersion) {
-      const reloadKey = appVersion + ':local';
-      try {
-        if (localStorage.getItem(UPDATE_RELOAD_KEY) !== reloadKey) {
-          localStorage.setItem(UPDATE_RELOAD_KEY, reloadKey);
-          await forceUpdateReload(appVersion);
-          return;
-        }
-      } catch (e) {}
+    // v23.7.267: 브라우저 저장 버전과 현재 실행 버전이 다른 것만으로 자동 새로고침하지 않습니다.
+    // 이전 방식은 config/app-version 캐시가 한 박자 어긋날 때 "새 버전" 알림이 반복될 수 있었습니다.
+    if (storedVersion !== appVersion) {
+      try { localStorage.setItem(VERSION_KEY, appVersion); } catch (e) {}
     }
-    try { localStorage.setItem(VERSION_KEY, appVersion); } catch (e) {}
 
     try {
       const res = await fetch('./app-version.json?ts=' + Date.now(), { cache:'no-store' });
@@ -91,10 +86,14 @@
       if (!latestVersion || latestVersion === appVersion) return;
       const reloadKey = latestVersion + ':remote';
       try {
-        if (localStorage.getItem(UPDATE_RELOAD_KEY) === reloadKey) return;
+        // 같은 최신버전으로 이미 새로고침을 시도했다면 알림을 반복하지 않습니다.
+        if (localStorage.getItem(UPDATE_RELOAD_KEY) === reloadKey) {
+          return;
+        }
         localStorage.setItem(UPDATE_RELOAD_KEY, reloadKey);
+        localStorage.setItem(UPDATE_NOTICE_KEY, latestVersion);
       } catch (e) {}
-      alert('현장서류패스 새 버전이 있습니다.\n최신 화면으로 업데이트합니다.');
+      alert('SitePass 새 버전이 있습니다.\n최신 화면으로 업데이트합니다.');
       await forceUpdateReload(latestVersion);
     } catch (e) {
       // app-version.json이 아직 없거나 네트워크가 막힌 경우 현재 HTML 버전을 사용합니다.

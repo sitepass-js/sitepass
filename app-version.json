@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.266",
+  "version": "v23.7.267",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Split step 13: 장비/기사/인부 등록 서류 정의와 장비 기본정보 검증 보조 기능을 assets/js/equipment-register.js로 분리했습니다. 사진/저장/결제 흐름은 기존 app.bundle.js 유지.",
+  "note": "PWA 자동업데이트 반복 알림 보정: config/app-version/sw 버전을 맞추고 같은 버전 업데이트 알림이 반복되지 않도록 조정했습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-07-01T00:00:00+09:00"
 }
