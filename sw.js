@@ -1,11 +1,12 @@
-const SITEPASS_SW_VERSION = 'v23.7.253';
-const SITEPASS_CACHE = 'sitepass-v23.7.253';
+const SITEPASS_SW_VERSION = 'v23.7.254';
+const SITEPASS_CACHE = 'sitepass-v23.7.254';
 const SITEPASS_CORE = [
   './',
   './index.html',
   './sitepass.webmanifest',
   './assets/css/style.css',
   './assets/js/config.js',
+  './assets/js/terms.js',
   './assets/js/app.bundle.js'
 ];
 
