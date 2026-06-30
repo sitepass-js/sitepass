@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.239",
+  "version": "v23.7.241",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Fix withdrawal not immediately disappearing from admin member list by adding stable social keys and local immediate filtering while server RPC updates.",
+  "note": "Make withdrawal a hard delete from current active member list for test period; keep only anonymous withdrawal counts and allow rejoin after terms agreement.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-06-30T13:20:00+09:00"
+  "updatedAt": "2026-06-30T13:55:00+09:00"
 }
