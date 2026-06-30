@@ -1,9 +1,9 @@
-// SitePass v23.7.284 - 푸시알림 버튼/테스트 동작 보정
+// SitePass v23.7.286 - 푸시알림 대상/구독상태 오진단 보정
 // 이 파일에는 알림 권한 요청, 테스트 푸시, 알림 대상 계산, 구독정보 저장 준비 기능을 둡니다.
 (function(){
   'use strict';
 
-  const APP_VERSION = 'v23.7.284';
+  const APP_VERSION = 'v23.7.286';
   const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_283';
   const SUBSCRIPTION_KEY = STORAGE_PREFIX + '_subscription';
   const PERMISSION_LOG_KEY = STORAGE_PREFIX + '_permission_log';
@@ -464,23 +464,81 @@
     return [];
   }
 
+  function normalizePushText(value){
+    return String(value ?? '').trim().toLowerCase();
+  }
+
+  function isInactiveStatusText(value){
+    const text = normalizePushText(value);
+    if (!text) return false;
+    return [
+      'withdrawn','deleted','force_withdrawn','orphan_deleted','inactive','removed','blocked','stopped','disabled','cancelled','canceled',
+      '탈퇴','회원탈퇴','강제탈퇴','삭제','정리','정지','차단','고아장비','고아자료'
+    ].some(word => text.includes(word));
+  }
+
+  function isSampleOrAdminOnly(member){
+    const id = normalizePushText(member?.id || member?.signupId || member?.loginId || member?.providerId || '');
+    const role = normalizePushText(member?.role || member?.adminRole || member?.signupMethod || '');
+    if (!member) return true;
+    if (member.isSuperAdminVirtual) return true;
+    if (id === 'super-admin' || id.includes('mem-sample')) return true;
+    if (role.includes('최고관리자') || role.includes('super_admin')) return true;
+    return false;
+  }
+
+  function isActiveMemberForPush(member){
+    if (!member || isSampleOrAdminOnly(member)) return false;
+    if (member.withdrawn || member.deleted || member.isDeleted || member.forceWithdrawn || member.isWithdrawn) return false;
+    const fields = [member.status, member.plan_type, member.paymentStatus, member.serviceStatus, member.memberStatus, member.adminLastAction];
+    if (fields.some(isInactiveStatusText)) return false;
+    return true;
+  }
+
+  function isActiveEquipmentForPush(item, activeMembers){
+    if (!item || typeof item !== 'object') return false;
+    if (item.isDeleted || item.deleted || item.withdrawn || item.forceWithdrawn || item.isOrphan) return false;
+    const fields = [item.status, item.payment_status, item.paymentStatus, item.service_status, item.serviceStatus, item.save_reason, item.saveReason];
+    if (fields.some(isInactiveStatusText)) return false;
+    const activeKeys = new Set((activeMembers || []).flatMap(m => [
+      m.id, m.signupId, m.loginId, m.providerId, m.authUserId, m.phone, m.name
+    ]).filter(Boolean).map(x => normalizePushText(x).replace(/[^0-9a-z가-힣@._-]/g,'')));
+    if (!activeKeys.size) return false;
+    const ownerValues = [
+      item.owner_member_id, item.ownerMemberId, item.owner_signup_id, item.ownerSignupId, item.owner_provider_id, item.ownerProviderId,
+      item.member_id, item.memberId, item.signup_id, item.signupId, item.userId, item.createdBy,
+      item.owner_phone, item.ownerPhone, item.phone, item.owner_name, item.ownerName
+    ].filter(Boolean).map(x => normalizePushText(x).replace(/[^0-9a-z가-힣@._-]/g,''));
+    if (!ownerValues.length) return false;
+    return ownerValues.some(v => activeKeys.has(v));
+  }
+
+  function getAlertBreakdown(){
+    const rawMembers = getMembersSafe();
+    const members = rawMembers.filter(isActiveMemberForPush);
+    const rawItems = getItemsSafe();
+    const items = rawItems.filter(item => isActiveEquipmentForPush(item, members));
+    const docs = collectDocumentExpiryAlerts(items);
+    const payments = collectPaymentExpiryAlerts(items, members);
+    const drafts = (members.length || items.length) ? collectDraftReminderAlerts() : [];
+    return { rawMembers, members, rawItems, items, docs, payments, drafts, all: [].concat(docs, payments, drafts) };
+  }
+
   function collectDueAlerts(){
-    const items = getItemsSafe();
-    const members = getMembersSafe();
-    return []
-      .concat(collectDocumentExpiryAlerts(items))
-      .concat(collectPaymentExpiryAlerts(items, members))
-      .concat(collectDraftReminderAlerts());
+    return getAlertBreakdown().all;
   }
 
   async function showDueAlertsPreview(){
-    const list = collectDueAlerts();
+    const bd = getAlertBreakdown();
+    const list = bd.all;
+    const summary = '활성회원 ' + bd.members.length + '명 / 활성장비 ' + bd.items.length + '대\n' +
+      '서류만료 ' + bd.docs.length + '건 / 이용권만료 ' + bd.payments.length + '건 / 작성중 ' + bd.drafts.length + '건';
     if (!list.length) {
-      alert('현재 기준으로 발송 대상 푸시알림이 없습니다.\n서류/이용권은 만료 7일 전 또는 만료일 당일만 대상입니다.\n작성중 서류는 다음날 1회만 대상입니다.');
+      alert('현재 기준으로 발송 대상 푸시알림이 없습니다.\n\n' + summary + '\n\n서류/이용권은 만료 7일 전 또는 만료일 당일만 대상입니다.\n작성중 서류는 다음날 1회만 대상입니다.');
       return;
     }
     const text = list.slice(0, 10).map((x, i) => (i + 1) + '. [' + x.due + '] ' + x.title + '\n' + x.body).join('\n\n');
-    alert('현재 발송 대상 알림 ' + list.length + '건\n\n' + text + (list.length > 10 ? '\n\n외 ' + (list.length - 10) + '건' : ''));
+    alert('현재 발송 대상 알림 ' + list.length + '건\n' + summary + '\n\n' + text + (list.length > 10 ? '\n\n외 ' + (list.length - 10) + '건' : ''));
   }
 
   async function sendFirstDueAlertAsTest(){
@@ -504,6 +562,20 @@
     } catch (e) {
       alert('대상 알림 테스트 표시 중 오류가 났습니다.');
     }
+  }
+
+  async function resavePushSubscription(){
+    const permission = await ensurePermissionForPush({ silentIfGranted:true });
+    if (permission !== 'granted') { alert('알림 권한이 허용되어야 구독을 저장할 수 있습니다.'); return; }
+    const res = await saveSubscriptionIfPossible();
+    const localSub = readLocal(SUBSCRIPTION_KEY, null);
+    const err = res && res.error ? (res.error.message || JSON.stringify(res.error)) : '';
+    if (localSub && localSub.endpoint) {
+      alert('푸시 구독기록을 저장했습니다.\n이제 서버 푸시 테스트를 눌러보세요.');
+    } else {
+      alert('푸시 구독기록 저장을 확인하지 못했습니다.\n\n마지막 오류: ' + (err || readLocalText(STORAGE_PREFIX + '_last_error', '') || '알 수 없음'));
+    }
+    refreshPanel();
   }
 
   async function sendServerTestPush(){
@@ -547,7 +619,8 @@
 
   function renderPanelHtml(){
     const st = getSupportStatus();
-    const due = collectDueAlerts();
+    const bd = getAlertBreakdown();
+    const due = bd.all;
     const lastTest = readLocal(LAST_TEST_KEY, null);
     const localSub = readLocal(SUBSCRIPTION_KEY, null);
     const vapid = getVapidPublicKey();
@@ -561,12 +634,15 @@
           '<button type="button" class="primary" data-push-action="permission" onclick="sitepassRequestPushPermission()">알림 권한 요청</button>' +
           '<button type="button" class="secondary" data-push-action="local-test" onclick="sitepassSendTestPush()">기기 알림 테스트</button>' +
           '<button type="button" class="secondary" data-push-action="server-test" onclick="sitepassSendServerTestPush()">서버 푸시 테스트</button>' +
+          '<button type="button" class="ghost" data-push-action="resubscribe" onclick="sitepassResavePushSubscription()">구독 다시 저장</button>' +
           '<button type="button" class="ghost" data-push-action="due-list" onclick="sitepassShowPushDueAlerts()">현재 알림 대상 확인</button>' +
           '<button type="button" class="ghost" data-push-action="due-test" onclick="sitepassSendDuePushPreview()">대상 1건 테스트</button>' +
         '</div>' +
         '<div class="small">현재 계산된 알림 대상: <b>' + due.length + '건</b>' +
+          ' <span style="color:#64748b;">(서류 ' + bd.docs.length + ' / 이용권 ' + bd.payments.length + ' / 작성중 ' + bd.drafts.length + ')</span>' +
+          '<br>활성회원: ' + bd.members.length + '명 · 활성장비: ' + bd.items.length + '대' +
           (lastTest?.sentAt ? ' · 마지막 테스트: ' + escapeHtmlForPush(lastTest.sentAt) : '') +
-          (localSub ? ' · 구독기록 저장됨' : ' · 구독기록 없음') +
+          (localSub && localSub.endpoint ? ' · 구독기록 저장됨' : ' · 구독기록 없음') +
           (!vapid ? '<br>※ VAPID/Edge Function 연결 전이면 기기 알림 테스트만 가능합니다. 서버 푸시 테스트는 연결 후 확인하세요.' : '') +
           (lastError ? '<br><span style="color:#b91c1c;font-weight:900;">마지막 오류: ' + escapeHtmlForPush(lastError) + '</span>' : '') +
         '</div>' +
@@ -601,8 +677,8 @@
   }
 
   function setupPushButtonDelegates(){
-    if (window.__sitepassPushButtonDelegatesV283) return;
-    window.__sitepassPushButtonDelegatesV283 = true;
+    if (window.__sitepassPushButtonDelegatesV286) return;
+    window.__sitepassPushButtonDelegatesV286 = true;
     document.addEventListener('click', function(event){
       const btn = event.target && event.target.closest ? event.target.closest('[data-push-action]') : null;
       if (!btn) return;
@@ -612,6 +688,7 @@
       if (action === 'permission') return requestPermission();
       if (action === 'local-test') return sendLocalTestNotification();
       if (action === 'server-test') return sendServerTestPush();
+      if (action === 'resubscribe') return resavePushSubscription();
       if (action === 'due-list') return showDueAlertsPreview();
       if (action === 'due-test') return sendFirstDueAlertAsTest();
     }, true);
@@ -631,6 +708,7 @@
   window.sitepassSendTestPush = sendLocalTestNotification;
   window.sitepassSendServerTestPush = sendServerTestPush;
   window.sitepassShowPushDueAlerts = showDueAlertsPreview;
+  window.sitepassResavePushSubscription = resavePushSubscription;
   window.sitepassSendDuePushPreview = sendFirstDueAlertAsTest;
 
   window.SitePassPushNotify = {
@@ -640,6 +718,8 @@
     sendLocalTestNotification,
     sendServerTestPush,
     saveSubscriptionIfPossible,
+    resavePushSubscription,
+    getAlertBreakdown,
     collectDueAlerts,
     invokePushFunction,
     invokePushFunctionDirect,

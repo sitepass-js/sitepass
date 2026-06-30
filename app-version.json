@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.284",
+  "version": "v23.7.286",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "회원이 없는 고아 장비/QR을 관리자 전체장비등록수에서 제외하고 정리 보조를 추가했습니다.",
+  "note": "푸시알림 대상 계산과 구독기록 표시를 보정했습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-07-01T00:00:00+09:00"
 }
