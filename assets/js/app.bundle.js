@@ -1,4 +1,4 @@
-// SitePass v23.7.282 - 푸시/결제화면 보정
+// SitePass v23.7.283 - 탈퇴 장비/QR 정리 및 푸시버튼 보정
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
@@ -25,7 +25,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const CONTACT_STORAGE_KEY = STORAGE_KEY + '_contacts';
     const SELECTED_PAYMENT_PLAN_KEY = STORAGE_KEY + '_selectedPaymentPlan';
     const PENDING_REGISTRATION_KEY = STORAGE_KEY + '_pending_registration_payment_v23_7_150';
-    const SERVER_EQUIPMENT_CACHE_KEY = STORAGE_KEY + '_server_equipment_cache_v23_7_282';
+    const SERVER_EQUIPMENT_CACHE_KEY = STORAGE_KEY + '_server_equipment_cache_v23_7_283';
     const REGISTRATION_DRAFT_KEY = STORAGE_KEY + '_registration_draft_v23_7_159';
     const REGISTRATION_DRAFT_PROMPT_SESSION_KEY = STORAGE_KEY + '_registration_draft_prompt_seen_v23_7_159';
     const VISIT_STATS_KEY = STORAGE_KEY + '_visit_stats';
@@ -400,6 +400,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
       adminMemberSummaryStats = null;
       adminSupabaseMemberSyncedAt = 0;
       const removedDocs = deleteOwnedItemsForMember(current);
+      const serverCleanup = await deleteOwnedServerItemsForMember(current);
       await signOutSupabaseAuthQuietly();
       [SELECTED_PAYMENT_PLAN_KEY, PENDING_REGISTRATION_KEY, REGISTRATION_DRAFT_KEY, REGISTRATION_DRAFT_PROMPT_SESSION_KEY].forEach(key => {
         try { if (key) localStorage.removeItem(key); } catch (e) {}
@@ -408,7 +409,10 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
       clearPwaAutoMemberTest();
       refreshMemberUi();
       resetForm();
-      alert('회원탈퇴가 완료되었습니다.\n현재 가입자/관리자 회원목록에서는 바로 제외됩니다.\n연결된 서류/코드 ' + removedDocs + '건과 회원정보를 삭제했고, 같은 계정의 바로 로그인을 차단했습니다.\n서버 탈퇴처리 ' + (serverUpdated || 0) + '건 반영했습니다.');
+      const serverCleanupText = serverCleanup && serverCleanup.ok
+        ? '\n서버 장비 ' + (serverCleanup.equipmentDeleted || 0) + '건, QR링크 ' + (serverCleanup.sharesDeleted || 0) + '건 정리했습니다.'
+        : '\n서버 장비/QR 정리는 확인이 필요합니다: ' + escapePlainTextForAlert(serverCleanup?.error?.message || serverCleanup?.error || 'RPC 미연결');
+      alert('회원탈퇴가 완료되었습니다.\n현재 가입자/관리자 회원목록에서는 바로 제외됩니다.\n연결된 서류/코드 ' + removedDocs + '건과 회원정보를 삭제했고, 같은 계정의 바로 로그인을 차단했습니다.\n서버 탈퇴처리 ' + (serverUpdated || 0) + '건 반영했습니다.' + serverCleanupText);
       showScreen('signupScreen');
     }
 
@@ -10043,6 +10047,63 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       });
       return removedCount;
     }
+
+    function buildWithdrawCleanupPayload(member) {
+      const keys = getMemberAdminIdentifiers(member).concat(getMemberLoginKeys(member)).map(normalizeAdminRoleKey).filter(Boolean);
+      return {
+        id: member?.id || '',
+        signup_id: member?.signupId || member?.signup_id || '',
+        provider_id: member?.providerId || member?.provider_id || '',
+        phone: member?.phone || '',
+        name: member?.name || '',
+        email: member?.email || '',
+        provider: member?.provider || member?.signupMethod || '',
+        keys: Array.from(new Set(keys))
+      };
+    }
+
+    function removeServerEquipmentCacheForMember(member) {
+      try {
+        const cache = getServerEquipmentCache();
+        if (!Array.isArray(cache) || !cache.length) return 0;
+        const remained = cache.filter(item => !memberOwnsItemForDeletion(member, item));
+        const removed = cache.length - remained.length;
+        if (removed > 0) setServerEquipmentCache(remained);
+        return removed;
+      } catch (e) { return 0; }
+    }
+
+    async function deleteOwnedServerItemsForMember(member) {
+      if (!member || member.isSuperAdminVirtual || isDesignatedSuperAdminMember(member)) return { ok:true, skipped:true, equipmentDeleted:0, sharesDeleted:0 };
+      const localCacheRemoved = removeServerEquipmentCacheForMember(member);
+      const api = window.SitePassSupabaseApi;
+      const payload = buildWithdrawCleanupPayload(member);
+      let result = { ok:false, equipmentDeleted:0, sharesDeleted:0, localCacheRemoved, error:null };
+      try {
+        if (api && api.rpc) {
+          const rpcResult = await api.rpc('sitepass_withdraw_member_cleanup', { p_member: payload });
+          if (rpcResult && rpcResult.error) throw rpcResult.error;
+          let data = rpcResult ? rpcResult.data : null;
+          if (typeof data === 'string') { try { data = JSON.parse(data); } catch (e) {} }
+          result = { ok:true, equipmentDeleted:Number(data?.equipment_deleted || data?.equipmentDeleted || 0), sharesDeleted:Number(data?.shares_deleted || data?.sharesDeleted || 0), localCacheRemoved };
+        } else if (window.sitepassSupabase && window.sitepassSupabase.rpc) {
+          const { data, error } = await window.sitepassSupabase.rpc('sitepass_withdraw_member_cleanup', { p_member: payload });
+          if (error) throw error;
+          result = { ok:true, equipmentDeleted:Number(data?.equipment_deleted || data?.equipmentDeleted || 0), sharesDeleted:Number(data?.shares_deleted || data?.sharesDeleted || 0), localCacheRemoved };
+        } else {
+          result = { ok:false, skipped:true, equipmentDeleted:0, sharesDeleted:0, localCacheRemoved, error:'Supabase RPC 연결 없음' };
+        }
+      } catch (e) {
+        console.warn('회원탈퇴 장비/QR 서버정리 실패:', e);
+        result = { ok:false, equipmentDeleted:0, sharesDeleted:0, localCacheRemoved, error:e };
+      }
+      try { await syncSupabaseEquipmentItems(true); } catch (e) {}
+      sitePassEquipmentSyncMessage = result.ok
+        ? '회원탈퇴 서버정리 완료: 장비 ' + result.equipmentDeleted + '건 / QR링크 ' + result.sharesDeleted + '건'
+        : '회원탈퇴 서버정리 확인 필요: ' + (result.error?.message || result.error || '알 수 없음');
+      return result;
+    }
+    window.deleteOwnedServerItemsForMember = deleteOwnedServerItemsForMember;
 
     function getMemberEquipmentItems(member) {
       if (!member || member.isSuperAdminVirtual || member.withdrawn) return [];

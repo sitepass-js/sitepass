@@ -1,10 +1,10 @@
-// SitePass v23.7.282 - 푸시알림 테스트/서버연결 보정
+// SitePass v23.7.283 - 푸시알림 버튼/테스트 동작 보정
 // 이 파일에는 알림 권한 요청, 테스트 푸시, 알림 대상 계산, 구독정보 저장 준비 기능을 둡니다.
 (function(){
   'use strict';
 
-  const APP_VERSION = 'v23.7.282';
-  const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_282';
+  const APP_VERSION = 'v23.7.283';
+  const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_283';
   const SUBSCRIPTION_KEY = STORAGE_PREFIX + '_subscription';
   const PERMISSION_LOG_KEY = STORAGE_PREFIX + '_permission_log';
   const LAST_DRAFT_NOTICE_KEY = STORAGE_PREFIX + '_draft_notice_sent';
@@ -82,9 +82,10 @@
     }
   }
 
-  async function requestPermission(){
+  async function ensurePermissionForPush(options){
+    const silentIfGranted = !!(options && options.silentIfGranted);
     if (!('Notification' in window)) {
-      alert('이 브라우저는 휴대폰 푸시알림을 지원하지 않습니다.');
+      if (!silentIfGranted) alert('이 브라우저는 휴대폰 푸시알림을 지원하지 않습니다.');
       return 'unsupported';
     }
     let result = Notification.permission;
@@ -94,15 +95,24 @@
     writeLocal(PERMISSION_LOG_KEY, { permission: result, checkedAt: nowIso(), appVersion: APP_VERSION });
     if (result === 'granted') {
       await getServiceWorkerRegistration();
-      await saveSubscriptionIfPossible();
-      alert('푸시알림 권한이 허용되었습니다.\n이제 테스트 알림을 보내서 휴대폰 상단에 뜨는지 확인하세요.');
+      const saved = await saveSubscriptionIfPossible();
+      if (!silentIfGranted) {
+        const msg = saved && saved.error
+          ? '푸시알림 권한은 허용되었습니다.\n다만 서버 구독 저장은 아직 확인이 필요합니다.\n아래 마지막 오류 문구를 확인해주세요.'
+          : '푸시알림 권한이 허용되었습니다.\n이제 테스트 알림을 보내서 휴대폰 상단에 뜨는지 확인하세요.';
+        alert(msg);
+      }
     } else if (result === 'denied') {
-      alert('푸시알림이 차단되어 있습니다.\n휴대폰 브라우저 또는 SitePass 앱 설정에서 알림 허용으로 바꿔야 합니다.');
+      if (!silentIfGranted) alert('푸시알림이 차단되어 있습니다.\n휴대폰 브라우저 또는 SitePass 앱 설정에서 알림 허용으로 바꿔야 합니다.');
     } else {
-      alert('푸시알림 권한이 아직 허용되지 않았습니다.');
+      if (!silentIfGranted) alert('푸시알림 권한이 아직 허용되지 않았습니다.');
     }
     refreshPanel();
     return result;
+  }
+
+  async function requestPermission(){
+    return ensurePermissionForPush({ silentIfGranted:false });
   }
 
   function urlBase64ToUint8Array(base64String){
@@ -266,8 +276,8 @@
   }
 
   async function sendLocalTestNotification(){
-    const permission = await requestPermission();
-    if (permission !== 'granted') return;
+    const permission = await ensurePermissionForPush({ silentIfGranted:true });
+    if (permission !== 'granted') { alert('알림 권한이 허용되어야 테스트할 수 있습니다.'); return; }
     const reg = await getServiceWorkerRegistration();
     const title = 'SitePass 푸시알림 테스트';
     const body = '휴대폰 상단에 이 알림이 보이면 기본 알림 권한은 정상입니다.';
@@ -284,7 +294,9 @@
       else new Notification(title, options);
       writeLocal(LAST_TEST_KEY, { sentAt: nowIso(), appVersion: APP_VERSION });
     } catch (e) {
-      alert('테스트 알림 표시 중 오류가 났습니다.\n브라우저 알림 권한과 홈화면 설치 상태를 확인해주세요.');
+      const msg = e && e.message ? e.message : String(e || '알 수 없는 오류');
+      writeLocalText(STORAGE_PREFIX + '_last_error', '기기 알림 테스트 실패: ' + msg);
+      alert('테스트 알림 표시 중 오류가 났습니다.\n' + msg + '\n\n브라우저 알림 권한과 홈화면 설치 상태를 확인해주세요.');
     }
     refreshPanel();
   }
@@ -477,8 +489,8 @@
       alert('현재 발송 대상 알림이 없습니다. 먼저 테스트 푸시를 보내서 권한을 확인하세요.');
       return;
     }
-    const permission = await requestPermission();
-    if (permission !== 'granted') return;
+    const permission = await ensurePermissionForPush({ silentIfGranted:true });
+    if (permission !== 'granted') { alert('알림 권한이 허용되어야 테스트할 수 있습니다.'); return; }
     const reg = await getServiceWorkerRegistration();
     const first = list[0];
     try {
@@ -495,8 +507,8 @@
   }
 
   async function sendServerTestPush(){
-    const permission = await requestPermission();
-    if (permission !== 'granted') return;
+    const permission = await ensurePermissionForPush({ silentIfGranted:true });
+    if (permission !== 'granted') { alert('알림 권한이 허용되어야 서버 푸시를 테스트할 수 있습니다.'); return; }
     const saved = await saveSubscriptionIfPossible();
     const localSub = readLocal(SUBSCRIPTION_KEY, null);
     let subscription = null;
@@ -546,11 +558,11 @@
         '<div class="notice blue-note">휴대폰 상단에 뜨는 PWA 푸시알림입니다. 기준은 <b>서류 만료 7일 전/만료일</b>, <b>이용권 만료 7일 전/만료일</b>, <b>작성중 서류 다음날 1회</b>입니다. 14일 전 알림과 반복 알림, 기사/인부 인증요청 푸시는 제외했습니다.</div>' +
         '<div class="small" style="margin:8px 0;"><b>상태:</b> ' + escapeHtmlForPush(getStatusText()) + ' · 권한: ' + escapeHtmlForPush(st.permission) + ' · 홈화면앱: ' + (st.standalone ? '예' : '아니오') + '</div>' +
         '<div class="actions" style="margin:8px 0 10px;">' +
-          '<button type="button" class="primary" onclick="sitepassRequestPushPermission()">알림 권한 요청</button>' +
-          '<button type="button" class="secondary" onclick="sitepassSendTestPush()">기기 알림 테스트</button>' +
-          '<button type="button" class="secondary" onclick="sitepassSendServerTestPush()">서버 푸시 테스트</button>' +
-          '<button type="button" class="ghost" onclick="sitepassShowPushDueAlerts()">현재 알림 대상 확인</button>' +
-          '<button type="button" class="ghost" onclick="sitepassSendDuePushPreview()">대상 1건 테스트</button>' +
+          '<button type="button" class="primary" data-push-action="permission" onclick="sitepassRequestPushPermission()">알림 권한 요청</button>' +
+          '<button type="button" class="secondary" data-push-action="local-test" onclick="sitepassSendTestPush()">기기 알림 테스트</button>' +
+          '<button type="button" class="secondary" data-push-action="server-test" onclick="sitepassSendServerTestPush()">서버 푸시 테스트</button>' +
+          '<button type="button" class="ghost" data-push-action="due-list" onclick="sitepassShowPushDueAlerts()">현재 알림 대상 확인</button>' +
+          '<button type="button" class="ghost" data-push-action="due-test" onclick="sitepassSendDuePushPreview()">대상 1건 테스트</button>' +
         '</div>' +
         '<div class="small">현재 계산된 알림 대상: <b>' + due.length + '건</b>' +
           (lastTest?.sentAt ? ' · 마지막 테스트: ' + escapeHtmlForPush(lastTest.sentAt) : '') +
@@ -588,7 +600,25 @@
     setTimeout(injectPanel, 80);
   }
 
+  function setupPushButtonDelegates(){
+    if (window.__sitepassPushButtonDelegatesV283) return;
+    window.__sitepassPushButtonDelegatesV283 = true;
+    document.addEventListener('click', function(event){
+      const btn = event.target && event.target.closest ? event.target.closest('[data-push-action]') : null;
+      if (!btn) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const action = btn.getAttribute('data-push-action');
+      if (action === 'permission') return requestPermission();
+      if (action === 'local-test') return sendLocalTestNotification();
+      if (action === 'server-test') return sendServerTestPush();
+      if (action === 'due-list') return showDueAlertsPreview();
+      if (action === 'due-test') return sendFirstDueAlertAsTest();
+    }, true);
+  }
+
   function boot(){
+    setupPushButtonDelegates();
     refreshPanel();
     setInterval(refreshPanel, 2500);
     try {

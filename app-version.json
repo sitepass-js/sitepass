@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.282",
+  "version": "v23.7.283",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "푸시알림 테스트 오류 표시를 보강하고 결제창 카드/휴대폰/계좌 입력 화면과 결제정보 유지 문제를 수정했습니다.",
+  "note": "회원탈퇴 시 연결 장비/QR 서버정리와 푸시알림 관리 버튼 동작을 보강했습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-07-01T00:00:00+09:00"
 }

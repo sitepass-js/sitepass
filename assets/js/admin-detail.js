@@ -477,6 +477,7 @@
     const targetKeys = getMemberLoginKeys(target);
     addWithdrawnMemberRecord(target, getSessionValue(ADMIN_SESSION_KEY + '_id') || SUPER_ADMIN_ROLE_NAME, '강제탈퇴');
     const removedDocs = deleteOwnedItemsForMember(target);
+    const serverCleanup = window.deleteOwnedServerItemsForMember ? await window.deleteOwnedServerItemsForMember(target) : { ok:false, error:'서버정리 함수 없음' };
     const serverUpdated = await markMemberWithdrawnInSupabase(target, '최고관리자가 강제탈퇴 처리했습니다. SitePass 회원정보와 연결서류 삭제 처리');
     setAdminDetailServerMemberRows(removeRowsByMemberKeys(getAdminDetailServerMemberRows(), target));
 
@@ -498,7 +499,10 @@
       if (sameCurrent) removeSessionValue(CURRENT_MEMBER_KEY);
     } catch (e) {}
 
-    alert(targetName + '님을 강제탈퇴 처리했습니다.\n연결된 서류/코드 ' + removedDocs + '건도 함께 삭제했습니다.\n서버 탈퇴처리 ' + (serverUpdated || 0) + '건 반영했습니다.\n이제 새로고침해도 가입자 수에 다시 포함되지 않습니다.');
+    const serverCleanupText = serverCleanup && serverCleanup.ok
+      ? '\n서버 장비 ' + (serverCleanup.equipmentDeleted || 0) + '건, QR링크 ' + (serverCleanup.sharesDeleted || 0) + '건 정리했습니다.'
+      : '\n서버 장비/QR 정리는 확인이 필요합니다: ' + escapeHtml(serverCleanup?.error?.message || serverCleanup?.error || 'RPC 미연결');
+    alert(targetName + '님을 강제탈퇴 처리했습니다.\n연결된 서류/코드 ' + removedDocs + '건도 함께 삭제했습니다.\n서버 탈퇴처리 ' + (serverUpdated || 0) + '건 반영했습니다.' + serverCleanupText + '\n이제 새로고침해도 가입자 수에 다시 포함되지 않습니다.');
     refreshMemberUi();
     renderAdmin();
   }
