@@ -1,5 +1,5 @@
-// SitePass v23.7.262 split step 10 - QR/7일 공유링크 분리
-// v23.7.262에서는 QR 생성, 담당자 공유링크 서명, Supabase 공유 저장/조회 보조 기능을 qr-share.js로 분리했습니다.
+// SitePass v23.7.264 split step 11 - 테스트 회원/서류 생성 제거
+// v23.7.264에서는 직전 버전의 테스트 회원/서류 생성 기능을 제거했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
     const PREV_STORAGE_KEY_6 = 'sitePass_v23_7_5_update_edit_pages';
@@ -104,7 +104,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     function getSupabaseApiModule() {
       return window.SitePassSupabaseApi || {};
     }
-    // v23.7.262: QR/7일 담당자 공유링크 공통 기능은 assets/js/qr-share.js로 분리했습니다.
+    // v23.7.264: QR/7일 담당자 공유링크 공통 기능은 assets/js/qr-share.js로 분리했습니다.
     function getQrShareModule() {
       return window.SitePassQrShare || {};
     }

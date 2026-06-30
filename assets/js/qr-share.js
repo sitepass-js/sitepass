@@ -1,4 +1,4 @@
-// SitePass v23.7.262 split step 10 - QR/7일 담당자 공유링크 공통 파일
+// SitePass v23.7.264 split step 11 - QR/7일 담당자 공유링크 공통 파일
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';

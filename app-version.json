@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.262",
+  "version": "v23.7.264",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Split step 10: QR 생성, 담당자 7일 공유링크 서명, sitepass_public_shares 저장/조회 보조 기능을 assets/js/qr-share.js로 분리했습니다. 보관함/장비등록/카메라는 건드리지 않았습니다.",
+  "note": "Split step 11: 직전 버전에서 추가했던 테스트 회원/테스트 서류 생성 기능을 제거했습니다. QR/7일 공유링크 분리 구조는 유지합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-01T00:40:00+09:00"
+  "updatedAt": "2026-07-01T00:55:00+09:00"
 }
