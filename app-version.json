@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.267",
+  "version": "v23.7.268",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "PWA 자동업데이트 반복 알림 보정: config/app-version/sw 버전을 맞추고 같은 버전 업데이트 알림이 반복되지 않도록 조정했습니다.",
+  "note": "장비등록 실제 저장 흐름 일부를 equipment-register.js로 분리했습니다. 장비 저장 전 필수서류 검증, 등록 item 생성, 결제대기, 결제완료 보관함 저장 item 생성을 보조 모듈에서 처리합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-07-01T00:00:00+09:00"
 }

@@ -1,4 +1,4 @@
-// SitePass v23.7.267 PWA update notice fix - PWA 자동업데이트/서비스워커 전용 파일
+// SitePass v23.7.268 PWA update notice fix - PWA 자동업데이트/서비스워커 전용 파일
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';
@@ -6,7 +6,7 @@
   function runtime(){ return window.SitePassPwaRuntime || {}; }
   function getAppVersion(){
     const rt = runtime();
-    return String((rt.getAppVersion && rt.getAppVersion()) || window.SITEPASS_DB_CONFIG?.appVersion || 'v23.7.267').trim() || 'v23.7.267';
+    return String((rt.getAppVersion && rt.getAppVersion()) || window.SITEPASS_DB_CONFIG?.appVersion || 'v23.7.268').trim() || 'v23.7.268';
   }
   function getFixedAppUrl(){
     const rt = runtime();
@@ -72,7 +72,7 @@
     let storedVersion = '';
     try { storedVersion = localStorage.getItem(VERSION_KEY) || ''; } catch (e) {}
 
-    // v23.7.267: 브라우저 저장 버전과 현재 실행 버전이 다른 것만으로 자동 새로고침하지 않습니다.
+    // v23.7.268: 브라우저 저장 버전과 현재 실행 버전이 다른 것만으로 자동 새로고침하지 않습니다.
     // 이전 방식은 config/app-version 캐시가 한 박자 어긋날 때 "새 버전" 알림이 반복될 수 있었습니다.
     if (storedVersion !== appVersion) {
       try { localStorage.setItem(VERSION_KEY, appVersion); } catch (e) {}

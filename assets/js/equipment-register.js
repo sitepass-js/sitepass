@@ -1,6 +1,7 @@
-// SitePass v23.7.266 split step 13 - 장비서류 등록 전용 보조 파일
-// 이 파일에는 장비/기사/인부 등록 서류 정의, 기본 입력 검증, 통합서류함 메타데이터 생성을 둡니다.
-// 실제 사진 보정/저장/결제 이동은 아직 app.bundle.js에 남겨두고, 다음 단계에서 더 나눕니다.
+// SitePass v23.7.268 split step 14 - 장비등록 저장 흐름 보조 파일
+// 이 파일에는 장비/기사/인부 등록 서류 정의, 기본 입력 검증, 필수서류 확인,
+// 등록 item 생성, 결제대기 생성, 결제완료 보관함 저장 item 생성 보조 기능을 둡니다.
+// 실제 사진 보정/파일선택/화면 이동은 아직 app.bundle.js에 남겨두고, 다음 단계에서 더 나눕니다.
 (function(){
   'use strict';
 
@@ -114,6 +115,100 @@
     return getDocs().filter(doc => (!groupKey || doc.groupKey === groupKey) && doc.expiry).map(doc => doc.groupTitle + ' - ' + doc.title);
   }
 
+
+
+  function validateRegistrationDocuments(activeDefs, docs, workerValidation) {
+    const defs = Array.isArray(activeDefs) ? activeDefs : [];
+    const docMap = docs && typeof docs === 'object' ? docs : {};
+    const missingFiles = defs
+      .filter(def => def && def.required && !(docMap[def.key] && docMap[def.key].fileName))
+      .map(def => (def.groupTitle || '') + ' - ' + (def.title || '서류'));
+    const missingDates = defs
+      .filter(def => def && def.required && def.expiry && !(docMap[def.key] && docMap[def.key].expireDate))
+      .map(def => (def.groupTitle || '') + ' - ' + (def.title || '서류') + ' 날짜');
+    defs.filter(def => def && def.optionalExpiry).forEach(def => {
+      const doc = docMap[def.key];
+      if (doc && doc.fileName && !doc.expireDate) {
+        missingDates.push((def.groupTitle || '') + ' - ' + (def.title || '서류') + ' 날짜');
+      }
+    });
+    if (workerValidation && Array.isArray(workerValidation.missingFiles)) {
+      missingFiles.push(...workerValidation.missingFiles);
+    }
+    return {
+      ok: missingFiles.length === 0 && missingDates.length === 0,
+      missingFiles,
+      missingDates
+    };
+  }
+
+  function buildRegistrationItem(options) {
+    const oldItem = options && options.oldItem ? options.oldItem : null;
+    const currentMember = options && options.currentMember ? options.currentMember : null;
+    const selectedPlan = options && options.selectedPlan ? options.selectedPlan : {};
+    const nowIso = String((options && options.nowIso) || new Date().toISOString());
+    const isAdditionalRegistration = !!(options && options.isAdditionalRegistration);
+    return {
+      ...(oldItem || {}),
+      code: String((options && options.code) || oldItem?.code || ''),
+      type:'BUNDLE',
+      equipmentNo: normalizeEquipmentNo(options && options.equipmentNo),
+      equipmentName: normalizeText(options && options.equipmentName),
+      bundleMeta: (options && options.bundleMeta) || {},
+      workerPeople: ((options && options.bundleMeta) && Array.isArray(options.bundleMeta.workerPeople)) ? options.bundleMeta.workerPeople : [],
+      qrLink: String((options && options.qrLink) || oldItem?.qrLink || ''),
+      docs: (options && options.docs) || {},
+      createdAt: oldItem?.createdAt || nowIso,
+      updatedAt: nowIso,
+      ownerMemberId: oldItem?.ownerMemberId || currentMember?.id || '',
+      ownerSignupId: oldItem?.ownerSignupId || currentMember?.signupId || '',
+      ownerProviderId: oldItem?.ownerProviderId || currentMember?.providerId || '',
+      ownerName: oldItem?.ownerName || currentMember?.name || '',
+      ownerPhone: oldItem?.ownerPhone || currentMember?.phone || '',
+      trialEndsAt: oldItem?.trialEndsAt || '',
+      serviceStatus: oldItem?.serviceStatus || '결제대기',
+      paymentPlan: oldItem?.paymentPlan || selectedPlan.key,
+      basicPlan: oldItem?.basicPlan || ('결제대기 · ' + (selectedPlan.planText || '요금제 선택 대기')),
+      alertPlan: oldItem?.alertPlan || '보험·검사 만료 알림 포함 준비',
+      forwardPolicy: oldItem?.forwardPolicy || '담당자용 QR·링크 7일 접속 가능',
+      managerExpireAt: oldItem?.managerExpireAt || '',
+      paymentStatus: oldItem?.paymentStatus || '결제대기',
+      paymentAmount: oldItem?.paymentAmount || selectedPlan.price || '',
+      paymentTier: oldItem?.paymentTier || (isAdditionalRegistration ? 'additional' : 'first')
+    };
+  }
+
+  function buildPendingRegistration(item, paymentTier, nowIso) {
+    return {
+      item,
+      paymentTier: paymentTier === 'additional' ? 'additional' : 'first',
+      createdAt: String(nowIso || new Date().toISOString())
+    };
+  }
+
+  function buildPaidRegistrationItem(options) {
+    const item = options && options.item ? options.item : {};
+    const info = options && options.info ? options.info : {};
+    const nowIso = String((options && options.nowIso) || new Date().toISOString());
+    const paidItem = {
+      ...item,
+      serviceStatus: info.serviceStatus || '유료사용',
+      paymentPlan: info.key || item.paymentPlan || 'monthly',
+      basicPlan: info.planText || item.basicPlan || '',
+      paidAt: nowIso,
+      trialEndsAt: String((options && options.trialEndsAt) || item.trialEndsAt || ''),
+      managerExpireAt: String((options && options.managerExpireAt) || item.managerExpireAt || ''),
+      managerShareToken: String((options && options.managerShareToken) || item.managerShareToken || ''),
+      paymentStatus: '등록결제완료',
+      paymentAmount: info.price || item.paymentAmount || '',
+      paymentMethod: '등록 결제 테스트 처리',
+      paymentTier: (options && options.paymentTier) || item.paymentTier || 'first',
+      updatedAt: nowIso
+    };
+    if (paidItem.bundleMeta) paidItem.bundleMeta.paymentText = (info.planText || '선택 요금제') + ' 결제완료';
+    return paidItem;
+  }
+
   window.SitePassEquipmentRegister = {
     getDocGroups,
     getDocs,
@@ -124,6 +219,10 @@
     collectBasicFields,
     validateBasicFields,
     buildBundleMeta,
+    validateRegistrationDocuments,
+    buildRegistrationItem,
+    buildPendingRegistration,
+    buildPaidRegistrationItem,
     getRequiredDocTitles,
     getExpiryDocTitles
   };
