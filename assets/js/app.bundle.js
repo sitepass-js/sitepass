@@ -1,5 +1,5 @@
-// SitePass v23.7.271 - 기사 인증 UI 보정
-// v23.7.271에서는 기사등록 인증칸에서 다시입력 버튼을 제거했습니다.
+// SitePass v23.7.272 - 카메라/문서스캔 보조 분리
+// v23.7.272에서는 camera-scan.js로 촬영모드/스캔파일명 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
     const PREV_STORAGE_KEY_6 = 'sitePass_v23_7_5_update_edit_pages';
@@ -77,6 +77,9 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     let cameraStableSince = 0;
     let cameraAutoCaptureBusy = false;
     const CAMERA_AUTO_CAPTURE_DELAY_MS = 780;
+    function getCameraScanApi() {
+      return window.SitePassCameraScan || {};
+    }
     let workerPersonSeq = 0;
     let editingCode = '';
     let pageEditState = null;
@@ -3778,7 +3781,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
       const video = document.getElementById('cameraVideo');
       const status = document.getElementById('cameraScanStatus');
       const guide = document.getElementById('cameraGuide');
-      activeCameraScanMode = isCardQuarterDoc(docKey) ? 'card' : 'a4';
+      activeCameraScanMode = (getCameraScanApi().getDefaultScanMode ? getCameraScanApi().getDefaultScanMode(docKey) : (isCardQuarterDoc(docKey) ? 'card' : 'a4'));
       updateCameraScanModeUi(docKey);
       modal.classList.remove('hidden');
       cameraAutoCaptureBusy = false;
@@ -3825,6 +3828,9 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
       const docTitle = activeCameraCard?.dataset?.docTitle || '서류';
       const cardAllowed = isCardQuarterDoc(docKey);
       const isCard = cardAllowed && activeCameraScanMode === 'card';
+      const cameraTexts = getCameraScanApi().getModeTexts
+        ? getCameraScanApi().getModeTexts(docKey, activeCameraScanMode, docTitle)
+        : null;
 
       if (guide) {
         guide.classList.toggle('card-mode', isCard);
@@ -3835,22 +3841,12 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
       if (a4Btn) a4Btn.classList.toggle('active', !isCard);
       if (cardBtn) cardBtn.classList.toggle('active', isCard);
 
-      if (label) label.textContent = '현재 촬영모드: ' + (isCard ? '카드/이수증 A4 상단 1/2 배치' : 'A4 서류 전체 맞춤') + ' · ' + docTitle;
-      if (help) {
-        help.textContent = isCard
-          ? '카드를 가로 노란틀에 크게 맞추세요. 촬영 후 A4 상단 1/2 칸에 크게 배치됩니다.'
-          : '서류를 세로 노란틀에 크게 맞추세요. 촬영 후 A4 한 장 크기로 맞춥니다.';
-      }
-      if (guideText) {
-        guideText.textContent = isCard
-          ? '카드/이수증만 이 모드를 씁니다 · 밝기보정 없음'
-          : '장비서류는 A4 모드입니다 · 밝기보정 없음';
-      }
-      if (status) status.textContent = isCard ? '카드를 가로 노란틀에 맞춰주세요' : 'A4 서류를 세로 노란틀에 맞춰주세요';
+      if (label) label.textContent = cameraTexts?.label || ('현재 촬영모드: ' + (isCard ? '카드/이수증 A4 상단 1/2 배치' : 'A4 서류 전체 맞춤') + ' · ' + docTitle);
+      if (help) help.textContent = cameraTexts?.help || (isCard ? '카드를 가로 노란틀에 크게 맞추세요. 촬영 후 A4 상단 1/2 칸에 크게 배치됩니다.' : '서류를 세로 노란틀에 크게 맞추세요. 촬영 후 A4 한 장 크기로 맞춥니다.');
+      if (guideText) guideText.textContent = cameraTexts?.note || (isCard ? '카드/이수증만 이 모드를 씁니다 · 밝기보정 없음' : '장비서류는 A4 모드입니다 · 밝기보정 없음');
+      if (status) status.textContent = cameraTexts?.status || (isCard ? '카드를 가로 노란틀에 맞춰주세요' : 'A4 서류를 세로 노란틀에 맞춰주세요');
       const note = document.getElementById('cameraRuntimeNote');
-      if (note) note.textContent = isCard
-        ? '카드형 문서만 A4 상단 1/2 영역에 크게 배치합니다. 색상/밝기는 그대로 둡니다.'
-        : '사업자등록증·장비등록증·검사증·보험증권은 항상 A4 서류로 저장합니다. 색상/밝기는 그대로 둡니다.';
+      if (note) note.textContent = cameraTexts?.note || (isCard ? '카드형 문서만 A4 상단 1/2 영역에 크게 배치합니다. 색상/밝기는 그대로 둡니다.' : '사업자등록증·장비등록증·검사증·보험증권은 항상 A4 서류로 저장합니다. 색상/밝기는 그대로 둡니다.');
     }
 
     function closeCameraGuide() {
@@ -3936,7 +3932,8 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
         const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/jpeg', 0.82));
         closeCameraGuide();
         if (!blob) return;
-        const file = new File([blob], 'sitepass_scan_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+        const fileName = getCameraScanApi().buildScanFileName ? getCameraScanApi().buildScanFileName('sitepass_scan') : ('sitepass_scan_' + Date.now() + '.jpg');
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
         await applySelectedFile(targetCard, file, finalLabel);
         promptAdditionalDocPage(targetCard, '사진찍기');
       } finally {
