@@ -1,10 +1,10 @@
-// SitePass v23.7.277 - 푸시알림 기본 구조 분리
+// SitePass v23.7.282 - 푸시알림 테스트/서버연결 보정
 // 이 파일에는 알림 권한 요청, 테스트 푸시, 알림 대상 계산, 구독정보 저장 준비 기능을 둡니다.
 (function(){
   'use strict';
 
-  const APP_VERSION = 'v23.7.277';
-  const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_277';
+  const APP_VERSION = 'v23.7.282';
+  const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_282';
   const SUBSCRIPTION_KEY = STORAGE_PREFIX + '_subscription';
   const PERMISSION_LOG_KEY = STORAGE_PREFIX + '_permission_log';
   const LAST_DRAFT_NOTICE_KEY = STORAGE_PREFIX + '_draft_notice_sent';
@@ -126,22 +126,71 @@
     return String(cfg.vapidPublicKey || cfg.pushVapidPublicKey || cachedVapidPublicKey || '').trim();
   }
 
+  function getFunctionEndpoint(){
+    const cfg = getConfig();
+    const base = String(cfg.supabaseUrl || '').replace(/\/$/, '');
+    if (!base) return '';
+    return base + '/functions/v1/' + encodeURIComponent(getPushFunctionName());
+  }
+
+  function getAnonKey(){
+    const cfg = getConfig();
+    return String(cfg.supabaseAnonKey || cfg.anonKey || '').trim();
+  }
+
+  async function invokePushFunctionDirect(payload){
+    const url = getFunctionEndpoint();
+    if (!url) return { data:null, error:{ message:'Supabase 함수 주소 없음' } };
+    const anon = getAnonKey();
+    try {
+      const res = await fetch(url, {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          ...(anon ? { 'apikey': anon, 'Authorization': 'Bearer ' + anon } : {})
+        },
+        body: JSON.stringify(payload || {})
+      });
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch (e) { data = { raw:text }; }
+      if (!res.ok || (data && data.ok === false)) {
+        return { data, error:{ message:(data && (data.error || data.message)) || ('HTTP ' + res.status), status:res.status } };
+      }
+      return { data, error:null };
+    } catch (e) {
+      return { data:null, error:e };
+    }
+  }
+
   async function invokePushFunction(payload){
     const client = window.sitepassSupabase || null;
-    if (!client || !client.functions || typeof client.functions.invoke !== 'function') {
-      return { data: null, error: { message: 'Supabase Functions 연결 없음' } };
+    let firstError = null;
+    if (client && client.functions && typeof client.functions.invoke === 'function') {
+      try {
+        const res = await client.functions.invoke(getPushFunctionName(), { body: payload || {} });
+        if (!res || !res.error) return res;
+        firstError = res.error;
+      } catch (e) {
+        firstError = e;
+      }
     }
-    try {
-      return await client.functions.invoke(getPushFunctionName(), { body: payload || {} });
-    } catch (e) {
-      return { data: null, error: e };
+    const direct = await invokePushFunctionDirect(payload || {});
+    if (direct && !direct.error) return direct;
+    if (firstError && direct && direct.error) {
+      return { data:direct.data, error:{ message:'Functions invoke 실패: ' + (firstError.message || JSON.stringify(firstError)) + ' / 직접호출 실패: ' + (direct.error.message || JSON.stringify(direct.error)) } };
     }
+    return direct || { data:null, error:{ message:'Supabase Functions 연결 없음' } };
   }
 
   async function getVapidPublicKeyAsync(){
     const direct = getVapidPublicKey();
     if (direct) return direct;
     const res = await invokePushFunction({ action: 'publicKey' });
+    if (res && res.error) {
+      writeLocalText(STORAGE_PREFIX + '_last_error', 'VAPID public key 요청 실패: ' + (res.error.message || JSON.stringify(res.error)));
+      return '';
+    }
     const key = String((res && res.data && (res.data.publicKey || res.data.vapidPublicKey)) || '').trim();
     if (key) cachedVapidPublicKey = key;
     return key;
@@ -197,7 +246,9 @@
     const vapidKey = await getVapidPublicKeyAsync();
     if (!('PushManager' in window) || !vapidKey) {
       // VAPID 키가 아직 없으면 실제 서버 푸시 구독은 못 만들지만, 권한 허용 기기 기록은 남깁니다.
-      return saveSubscriptionRow(null, { memo: 'VAPID 키 미설정 - 테스트 알림/권한 기록만 저장' });
+      const msg = !('PushManager' in window) ? 'PushManager 미지원' : 'VAPID public key를 Edge Function에서 받지 못함';
+      writeLocalText(STORAGE_PREFIX + '_last_error', msg);
+      return saveSubscriptionRow(null, { memo: msg + ' - 테스트 알림/권한 기록만 저장' });
     }
 
     try {
@@ -451,7 +502,8 @@
     let subscription = null;
     try { subscription = safeJsonParse(localSub && localSub.subscription_json, null); } catch (e) { subscription = null; }
     if (!subscription || !subscription.endpoint) {
-      alert('서버 푸시 구독정보가 없습니다. VAPID public key와 Edge Function 연결을 먼저 확인해주세요.');
+      const last = readLocalText(STORAGE_PREFIX + '_last_error', '');
+      alert('서버 푸시 구독정보가 없습니다.\n\n확인할 것:\n1) send-push Edge Function Verify JWT OFF\n2) VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY Secrets 저장\n3) 알림 권한 허용\n4) HTTPS 또는 홈화면 PWA에서 실행\n\n마지막 상태: ' + (last || '구독 생성 전'));
       return;
     }
     const res = await invokePushFunction({
@@ -462,7 +514,10 @@
       body: 'Supabase Edge Function + VAPID 연결이 정상입니다.'
     });
     if (res && res.error) {
-      alert('서버 푸시 테스트 실패: ' + (res.error.message || JSON.stringify(res.error)));
+      const msg = res.error.message || JSON.stringify(res.error);
+      writeLocalText(STORAGE_PREFIX + '_last_error', '서버 푸시 테스트 실패: ' + msg);
+      alert('서버 푸시 테스트 실패:\n' + msg + '\n\nSupabase Edge Function 로그에서 send-push 오류도 같이 확인해주세요.');
+      refreshPanel();
       return;
     }
     alert('서버 푸시 테스트를 보냈습니다. 휴대폰 상단 알림을 확인하세요.');
@@ -484,6 +539,7 @@
     const lastTest = readLocal(LAST_TEST_KEY, null);
     const localSub = readLocal(SUBSCRIPTION_KEY, null);
     const vapid = getVapidPublicKey();
+    const lastError = readLocalText(STORAGE_PREFIX + '_last_error', '');
     return '' +
       '<div id="sitepassPushPanel" class="card" style="box-shadow:none;margin-top:14px;border:1px solid #d9e5ff;">' +
         '<h3>푸시알림 관리</h3>' +
@@ -500,6 +556,7 @@
           (lastTest?.sentAt ? ' · 마지막 테스트: ' + escapeHtmlForPush(lastTest.sentAt) : '') +
           (localSub ? ' · 구독기록 저장됨' : ' · 구독기록 없음') +
           (!vapid ? '<br>※ VAPID/Edge Function 연결 전이면 기기 알림 테스트만 가능합니다. 서버 푸시 테스트는 연결 후 확인하세요.' : '') +
+          (lastError ? '<br><span style="color:#b91c1c;font-weight:900;">마지막 오류: ' + escapeHtmlForPush(lastError) + '</span>' : '') +
         '</div>' +
       '</div>';
   }
@@ -555,6 +612,7 @@
     saveSubscriptionIfPossible,
     collectDueAlerts,
     invokePushFunction,
+    invokePushFunctionDirect,
     collectDocumentExpiryAlerts,
     collectPaymentExpiryAlerts,
     collectDraftReminderAlerts,

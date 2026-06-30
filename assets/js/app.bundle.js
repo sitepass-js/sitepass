@@ -1,4 +1,4 @@
-// SitePass v23.7.281 - 장비등록 목록/관리자수 반영 보정
+// SitePass v23.7.282 - 푸시/결제화면 보정
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
@@ -25,7 +25,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const CONTACT_STORAGE_KEY = STORAGE_KEY + '_contacts';
     const SELECTED_PAYMENT_PLAN_KEY = STORAGE_KEY + '_selectedPaymentPlan';
     const PENDING_REGISTRATION_KEY = STORAGE_KEY + '_pending_registration_payment_v23_7_150';
-    const SERVER_EQUIPMENT_CACHE_KEY = STORAGE_KEY + '_server_equipment_cache_v23_7_281';
+    const SERVER_EQUIPMENT_CACHE_KEY = STORAGE_KEY + '_server_equipment_cache_v23_7_282';
     const REGISTRATION_DRAFT_KEY = STORAGE_KEY + '_registration_draft_v23_7_159';
     const REGISTRATION_DRAFT_PROMPT_SESSION_KEY = STORAGE_KEY + '_registration_draft_prompt_seen_v23_7_159';
     const VISIT_STATS_KEY = STORAGE_KEY + '_visit_stats';
@@ -7022,12 +7022,52 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
         btn.classList.toggle('active', active);
         btn.setAttribute('aria-pressed', active ? 'true' : 'false');
       });
-      const identityBox = document.getElementById('paymentOwnerIdentityBox');
+      const ownerBox = document.getElementById('paymentOwnerCommonBox');
+      const cardBox = document.getElementById('paymentOwnerCardBox');
+      const phoneBox = document.getElementById('paymentOwnerPhoneBox');
       const accountBox = document.getElementById('paymentOwnerAccountBox');
-      if (identityBox) identityBox.classList.toggle('hidden', method === 'account');
+      if (ownerBox) ownerBox.classList.toggle('hidden', method === 'account');
+      if (cardBox) cardBox.classList.toggle('hidden', method !== 'card');
+      if (phoneBox) phoneBox.classList.toggle('hidden', method !== 'phone');
       if (accountBox) accountBox.classList.toggle('hidden', method !== 'account');
       const title = document.getElementById('paymentOwnerMethodTitle');
-      if (title) title.textContent = method === 'phone' ? '휴대폰 결제 명의자 확인' : (method === 'account' ? '계좌이체 확인' : '카드 명의자 확인');
+      if (title) title.textContent = method === 'phone' ? '휴대폰결제 본인확인' : (method === 'account' ? '계좌이체 확인' : '카드결제 정보 입력');
+      const status = document.getElementById('paymentOwnerVerifyStatus');
+      if (status) {
+        status.textContent = method === 'card'
+          ? '카드사를 선택하고 카드번호/유효기간을 입력하세요. 현재는 실제 승인 없는 테스트 결제입니다.'
+          : (method === 'phone'
+              ? '통신사를 선택하고 휴대폰 본인확인 인증번호 123456을 입력하세요.'
+              : '계좌이체는 현재 테스트 확인번호 1234로 임시 처리합니다.');
+        status.classList.remove('ok', 'warn');
+      }
+    }
+
+    function normalizeCardDigits(value) {
+      return String(value || '').replace(/[^0-9]/g, '').slice(0, 19);
+    }
+
+    function formatPaymentCardNumberInput(input) {
+      if (!input) input = document.getElementById('paymentCardNumber');
+      if (!input) return;
+      const digits = normalizeCardDigits(input.value);
+      input.value = digits.replace(/(.{4})/g, '$1 ').trim();
+    }
+
+    function limitPaymentCardExpiryInput(input) {
+      if (!input) input = document.getElementById('paymentCardExpiry');
+      if (!input) return;
+      const digits = String(input.value || '').replace(/[^0-9]/g, '').slice(0, 4);
+      input.value = digits.length > 2 ? digits.slice(0,2) + '/' + digits.slice(2) : digits;
+    }
+
+    function getPaymentCardValues() {
+      return {
+        company: (document.getElementById('paymentCardCompany')?.value || '').trim(),
+        numberDigits: normalizeCardDigits(document.getElementById('paymentCardNumber')?.value || ''),
+        expiry: (document.getElementById('paymentCardExpiry')?.value || '').trim(),
+        password2: (document.getElementById('paymentCardPassword2')?.value || '').replace(/[^0-9]/g, '').slice(0,2)
+      };
     }
 
     function limitPaymentOwnerJuminInput() {
@@ -7046,12 +7086,17 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
       const method = getPaymentOwnerMethod();
       const member = getCurrentMemberTest() || {};
       const jumin = parseMaskedJuminText(document.getElementById('paymentOwnerJuminMasked')?.value || '', member.birth6 || '', member.genderDigit || '');
+      const card = getPaymentCardValues();
       return {
         method,
         name: (document.getElementById('paymentOwnerName')?.value || member.name || '').trim(),
         birth6: jumin.birth6,
         genderDigit: jumin.genderDigit,
         juminMasked: jumin.masked,
+        cardCompany: card.company,
+        cardNumberDigits: card.numberDigits,
+        cardExpiry: card.expiry,
+        cardPassword2: card.password2,
         carrier: (document.getElementById('paymentOwnerCarrier')?.value || '').trim(),
         phone: (document.getElementById('paymentOwnerPhone')?.value || member.phone || '').trim(),
         code: (document.getElementById('paymentOwnerCode')?.value || '').trim(),
@@ -7090,6 +7135,14 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
         document.getElementById('paymentOwnerJuminMasked')?.focus();
         return false;
       }
+      if (values.method === 'card') {
+        if (!values.cardCompany) { setPaymentOwnerStatus('카드사를 선택해주세요.', 'warn'); document.getElementById('paymentCardCompany')?.focus(); return false; }
+        if (!/^\d{13,19}$/.test(values.cardNumberDigits || '')) { setPaymentOwnerStatus('카드번호를 정확히 입력해주세요. 테스트는 숫자 13~19자리로 확인합니다.', 'warn'); document.getElementById('paymentCardNumber')?.focus(); return false; }
+        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(values.cardExpiry || '')) { setPaymentOwnerStatus('카드 유효기간을 MM/YY 형식으로 입력해주세요.', 'warn'); document.getElementById('paymentCardExpiry')?.focus(); return false; }
+        if (!/^\d{2}$/.test(values.cardPassword2 || '')) { setPaymentOwnerStatus('카드 비밀번호 앞 2자리를 입력해주세요. 현재는 실제 승인 없는 테스트입니다.', 'warn'); document.getElementById('paymentCardPassword2')?.focus(); return false; }
+        setPaymentOwnerStatus(label + ' 카드결제 테스트 확인이 완료되었습니다. 실제 카드승인은 아직 연결하지 않았고, 결제완료 상태만 저장합니다.', 'ok');
+        return true;
+      }
       if (!values.carrier) { setPaymentOwnerStatus('통신사를 선택해주세요.', 'warn'); document.getElementById('paymentOwnerCarrier')?.focus(); return false; }
       if (!/^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/.test(String(values.phone || ''))) {
         setPaymentOwnerStatus('휴대폰번호를 정확히 입력해주세요.', 'warn');
@@ -7102,9 +7155,17 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
         return false;
       }
       if (values.code !== '123456') { setPaymentOwnerStatus('본인확인 인증번호 123456을 입력해주세요.', 'warn'); document.getElementById('paymentOwnerCode')?.focus(); return false; }
-      setPaymentOwnerStatus(label + ' 본인확인이 완료되었습니다. 정식 서비스에서는 카드사/통신사/결제대행사 본인확인 결과값을 서버에 저장합니다.', 'ok');
+      setPaymentOwnerStatus(label + ' 휴대폰결제 본인확인이 완료되었습니다. 정식 서비스에서는 통신사/결제대행사 결과값을 서버에 저장합니다.', 'ok');
       return true;
     }
+
+
+    // v23.7.282: inline onclick 안전 연결
+    window.setPaymentOwnerMethod = setPaymentOwnerMethod;
+    window.limitPaymentOwnerJuminInput = limitPaymentOwnerJuminInput;
+    window.formatPaymentOwnerJuminDisplay = formatPaymentOwnerJuminDisplay;
+    window.formatPaymentCardNumberInput = formatPaymentCardNumberInput;
+    window.limitPaymentCardExpiryInput = limitPaymentCardExpiryInput;
 
     async function saveEquipment() {
       const equipmentRegister = getEquipmentRegisterModule();
@@ -8970,28 +9031,44 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       box.innerHTML = '<div class="pending-pay-head"><b>결제 대기 중인 등록서류</b><span>' + escapeHtml(tierText) + '</span></div>' +
         '<div class="pay-pending-summary"><b>' + escapeHtml(item.equipmentName || '장비명 없음') + '</b><span>' + escapeHtml(item.equipmentNo || '번호 없음') + '</span></div>' +
         '<div class="payment-owner-verify-box" id="paymentOwnerVerifyBox">' +
-          '<div class="payment-owner-title"><b id="paymentOwnerMethodTitle">카드 명의자 확인</b><span>테스트 인증번호 123456</span></div>' +
+          '<div class="payment-owner-title"><b id="paymentOwnerMethodTitle">카드결제 정보 입력</b><span>현재 테스트 결제</span></div>' +
           '<div class="payment-method-buttons" role="group" aria-label="결제수단 선택">' +
             '<button type="button" class="active" data-payment-owner-method="card" onclick="setPaymentOwnerMethod(\'card\')">카드결제</button>' +
             '<button type="button" data-payment-owner-method="phone" onclick="setPaymentOwnerMethod(\'phone\')">휴대폰결제</button>' +
             '<button type="button" data-payment-owner-method="account" onclick="setPaymentOwnerMethod(\'account\')">계좌이체</button>' +
           '</div>' +
-          '<div id="paymentOwnerIdentityBox">' +
-            '<div class="person-auth-grid three">' +
+          '<div id="paymentOwnerCommonBox">' +
+            '<div class="person-auth-grid">' +
               '<input id="paymentOwnerName" type="text" placeholder="명의자 이름" value="' + escapeHtml(member.name || '') + '" autocomplete="name" />' +
-              '<input id="paymentOwnerJuminMasked" type="text" placeholder="주민번호 예: 840507-1" maxlength="8" inputmode="numeric" autocomplete="off" oninput="limitPaymentOwnerJuminInput()" onblur="formatPaymentOwnerJuminDisplay()" />' +
-              '<select id="paymentOwnerCarrier"><option value="">통신사 선택</option><option value="SKT">SKT</option><option value="KT">KT</option><option value="LG U+">LG U+</option><option value="SKT 알뜰폰">SKT 알뜰폰</option><option value="KT 알뜰폰">KT 알뜰폰</option><option value="LG U+ 알뜰폰">LG U+ 알뜰폰</option></select>' +
+              '<input id="paymentOwnerJuminMasked" type="text" placeholder="주민번호 예: 840507-1" maxlength="8" inputmode="numeric" autocomplete="off" oninput="limitPaymentOwnerJuminInput()" onpaste="setTimeout(limitPaymentOwnerJuminInput,0)" onblur="formatPaymentOwnerJuminDisplay()" />' +
+            '</div>' +
+          '</div>' +
+          '<div id="paymentOwnerCardBox">' +
+            '<div class="person-auth-grid">' +
+              '<select id="paymentCardCompany"><option value="">카드사 선택</option><option value="신한카드">신한카드</option><option value="삼성카드">삼성카드</option><option value="국민카드">국민카드</option><option value="현대카드">현대카드</option><option value="롯데카드">롯데카드</option><option value="하나카드">하나카드</option><option value="우리카드">우리카드</option><option value="BC카드">BC카드</option><option value="농협카드">농협카드</option></select>' +
+              '<input id="paymentCardNumber" type="text" placeholder="카드번호 0000 0000 0000 0000" inputmode="numeric" autocomplete="cc-number" oninput="formatPaymentCardNumberInput(this)" />' +
             '</div>' +
             '<div class="person-auth-grid">' +
-              '<input id="paymentOwnerPhone" type="tel" placeholder="휴대폰번호 예: 010-0000-0000" value="' + escapeHtml(member.phone || '') + '" inputmode="tel" autocomplete="tel" />' +
-              '<input id="paymentOwnerCode" type="text" placeholder="인증번호 123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code" />' +
+              '<input id="paymentCardExpiry" type="text" placeholder="유효기간 MM/YY" inputmode="numeric" maxlength="5" autocomplete="cc-exp" oninput="limitPaymentCardExpiryInput(this)" />' +
+              '<input id="paymentCardPassword2" type="password" placeholder="비밀번호 앞 2자리" inputmode="numeric" maxlength="2" autocomplete="off" />' +
             '</div>' +
+            '<div class="auth-mini-note">실제 카드 승인 전 단계입니다. 지금 입력값은 테스트 확인용이며 정식 결제는 PG사 연결 후 처리합니다.</div>' +
+          '</div>' +
+          '<div id="paymentOwnerPhoneBox" class="hidden">' +
+            '<div class="person-auth-grid">' +
+              '<select id="paymentOwnerCarrier"><option value="">통신사 선택</option><option value="SKT">SKT</option><option value="KT">KT</option><option value="LG U+">LG U+</option><option value="SKT 알뜰폰">SKT 알뜰폰</option><option value="KT 알뜰폰">KT 알뜰폰</option><option value="LG U+ 알뜰폰">LG U+ 알뜰폰</option></select>' +
+              '<input id="paymentOwnerPhone" type="tel" placeholder="휴대폰번호 예: 010-0000-0000" value="' + escapeHtml(member.phone || '') + '" inputmode="tel" autocomplete="tel" />' +
+            '</div>' +
+            '<input id="paymentOwnerCode" type="text" placeholder="휴대폰 인증번호 123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code" />' +
           '</div>' +
           '<div id="paymentOwnerAccountBox" class="hidden">' +
             '<div class="notice blue-note">계좌이체는 정식 서비스에서 PG/은행 인증으로 확인합니다. 현재 테스트 확인번호는 1234입니다.</div>' +
-            '<input id="paymentOwnerAccountCode" type="text" placeholder="계좌이체 확인번호 1234" inputmode="numeric" maxlength="4" />' +
+            '<div class="person-auth-grid">' +
+              '<select id="paymentOwnerBank"><option value="">은행 선택</option><option value="국민은행">국민은행</option><option value="신한은행">신한은행</option><option value="우리은행">우리은행</option><option value="하나은행">하나은행</option><option value="농협은행">농협은행</option><option value="기업은행">기업은행</option></select>' +
+              '<input id="paymentOwnerAccountCode" type="text" placeholder="계좌이체 확인번호 1234" inputmode="numeric" maxlength="4" />' +
+            '</div>' +
           '</div>' +
-          '<div id="paymentOwnerVerifyStatus" class="auth-mini-note">결제수단을 선택하고 본인확인 정보를 입력한 뒤 아래 등록 버튼을 누르세요. 주민번호는 840507-1까지만 입력됩니다.</div>' +
+          '<div id="paymentOwnerVerifyStatus" class="auth-mini-note">카드사를 선택하고 카드번호/유효기간을 입력하세요. 현재는 실제 승인 없는 테스트 결제입니다.</div>' +
         '</div>' +
         '<div class="small">결제를 완료하면 이 장비는 보관함과 전체 장비등록수에 활성 장비로 표시됩니다. 현재는 테스트 결제 화면입니다.</div>';
       setPaymentOwnerMethod('card');
@@ -9233,12 +9310,14 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
     }
 
     function startRegistrationWithSelectedPlan() {
-      updateSelectedPaymentPlan();
       const pending = getPendingRegistration();
       if (pending && pending.item) {
+        // v23.7.282: 결제하기 직전에 결제 입력칸을 다시 그리면 주민번호/통신사/카드정보가 사라집니다.
+        // 그래서 결제대기 상태에서는 입력값을 유지한 채 바로 결제완료 검증으로 들어갑니다.
         completePendingRegistrationPayment(getSelectedPaymentPlan());
         return;
       }
+      updateSelectedPaymentPlan();
       startNewRegistration();
     }
 
@@ -10913,7 +10992,7 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
     }
 
     // v23.7.259: PWA 자동업데이트/서비스워커 등록은 assets/js/pwa-update.js로 분리했습니다.
-    const SITEPASS_APP_VERSION = (window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.appVersion) || 'v23.7.281';
+    const SITEPASS_APP_VERSION = (window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.appVersion) || 'v23.7.282';
     const SITEPASS_FIXED_APP_URL = 'https://sitepass-js.github.io/sitepass/';
 
     window.SitePassPwaRuntime = window.SitePassPwaRuntime || {};
