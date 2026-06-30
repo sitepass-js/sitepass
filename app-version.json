@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.277",
+  "version": "v23.7.278",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "푸시알림 Edge Function/VAPID 연결 준비: send-push 함수, 푸시 구독 테이블, 서버 푸시 테스트 버튼을 추가했습니다.",
+  "note": "장비등록 직후 결제대기 장비가 보관함/관리자 장비수에 표시되도록 보정하고, 결제 본인확인 화면을 버튼/선택형 UI로 개선했습니다. 주민번호 입력은 840507-1까지만 제한합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-07-01T00:00:00+09:00"
 }

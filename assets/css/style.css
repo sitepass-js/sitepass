@@ -3546,3 +3546,20 @@
       .quick-auth-head { flex-direction:column; }
       .quick-mode-badge { align-self:flex-start; }
     }
+
+
+/* v23.7.278 결제 본인확인 화면 보정 */
+.pending-pay-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.pending-pay-head b{font-size:16px}
+.pending-pay-head span{font-size:13px;color:#64748b;font-weight:800}
+.pay-pending-summary{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;background:#fff;border:1px solid #dbeafe;border-radius:14px;margin:8px 0}
+.pay-pending-summary b{font-size:16px}.pay-pending-summary span{color:#475569;font-weight:800}
+.payment-owner-verify-box{margin-top:12px;padding:12px;border:1px solid #d7e3f7;border-radius:16px;background:#f8fbff}
+.payment-owner-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.payment-owner-title b{font-size:16px}.payment-owner-title span{font-size:13px;color:#2563eb;font-weight:900}
+.payment-method-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0 12px}
+.payment-method-buttons button{border:1px solid #cbd5e1;background:#fff;border-radius:12px;padding:11px 8px;font-weight:950;color:#334155;cursor:pointer}
+.payment-method-buttons button.active{background:#0f172a;color:#fff;border-color:#0f172a;box-shadow:0 8px 18px rgba(15,23,42,.16)}
+#paymentOwnerVerifyStatus.ok{background:#ecfdf5;border-color:#bbf7d0;color:#166534}
+#paymentOwnerVerifyStatus.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+@media(max-width:520px){.payment-method-buttons{grid-template-columns:1fr}.person-auth-grid.three{grid-template-columns:1fr}}
