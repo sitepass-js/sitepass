@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.265';
-const SITEPASS_CACHE = 'sitepass-v23.7.265';
+const SITEPASS_SW_VERSION = 'v23.7.266';
+const SITEPASS_CACHE = 'sitepass-v23.7.266';
 const SITEPASS_CORE = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const SITEPASS_CORE = [
   './assets/js/pwa-update.js',
   './assets/js/qr-share.js',
   './assets/js/archive.js',
+  './assets/js/equipment-register.js',
   './assets/js/app.bundle.js'
 ];
 

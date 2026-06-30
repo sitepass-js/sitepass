@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.265",
+  "version": "v23.7.266",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Split step 12: 장비/기사/인부 보관함 목록, 선택 공유, 삭제 화면 기능을 assets/js/archive.js로 분리했습니다. QR 생성과 서버통신은 기존 분리 파일을 유지합니다.",
+  "note": "Split step 13: 장비/기사/인부 등록 서류 정의와 장비 기본정보 검증 보조 기능을 assets/js/equipment-register.js로 분리했습니다. 사진/저장/결제 흐름은 기존 app.bundle.js 유지.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-01T01:20:00+09:00"
+  "updatedAt": "2026-07-01T00:00:00+09:00"
 }
