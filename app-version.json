@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.257",
+  "version": "v23.7.258",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "Split step 5: 관리자 회원목록, 검색, 필터, 페이지 이동, 회원 카드 렌더링 기준을 assets/js/admin-members.js로 분리했습니다. 약관/상세관리 분리는 유지했고 QR/보관함/장비등록/카메라 로직은 건드리지 않았습니다.",
+  "note": "Split step 6: 카카오/네이버 OAuth 시작, 복귀 처리, 소셜 회원 변환 기능을 assets/js/auth-social.js로 분리했습니다. 약관/관리자 회원목록/상세관리 분리는 유지했고 QR/보관함/장비등록/카메라 로직은 건드리지 않았습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-06-30T23:20:00+09:00"
 }
