@@ -1,4 +1,4 @@
-// SitePass v23.7.255 split step 2 - 약관/회원판단 전용 파일
+// SitePass v23.7.256 split step 2 - 약관/회원판단 전용 파일
 // 이 파일에는 일반 회원가입 약관 체크, 카카오/네이버 소셜 가입 약관 모달,
 // 소셜 약관동의 완료 판별 함수만 둡니다.
 // 주의: 이 파일은 app.bundle.js보다 먼저 불러와야 합니다.
@@ -157,7 +157,7 @@
 
 
 
-// v23.7.255 - app.bundle.js와 HTML onclick에서 사용할 수 있게 명시적으로 공개합니다.
+// v23.7.256 - app.bundle.js와 HTML onclick에서 사용할 수 있게 명시적으로 공개합니다.
 window.showSocialSignupTermsModal = showSocialSignupTermsModal;
 window.getSignupTermInputs = getSignupTermInputs;
 window.getSignupRequiredTermInputs = getSignupRequiredTermInputs;
