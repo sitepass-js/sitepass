@@ -1,4 +1,4 @@
-// SitePass v23.7.265 split step 12 - 보관함/장비서류 목록 전용 파일
+// SitePass v23.7.284 - 보관함/장비서류 목록 전용 파일
 // 이 파일에는 장비/기사/인부 보관함 목록, 선택 공유, 삭제, 관리자 보관함 표시 기능을 둡니다.
 // QR 링크 생성 자체는 qr-share.js, 서버통신은 supabase-api.js를 계속 사용합니다.
 (function(){
@@ -16,7 +16,9 @@ function clearAdminListQuickFilter() {
 
 function renderList() {
   const isAdminMode = isAdminLoggedIn();
-  const allItems = getItems();
+  const allItems = isAdminMode && typeof getAdminVisibleEquipmentItems === 'function'
+    ? getAdminVisibleEquipmentItems()
+    : getItems();
   const box = document.getElementById('equipmentList');
   const title = document.getElementById('listScreenTitle');
   const bottomActions = document.getElementById('listScreenBottomActions');

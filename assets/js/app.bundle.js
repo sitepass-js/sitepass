@@ -1,4 +1,4 @@
-// SitePass v23.7.283 - 탈퇴 장비/QR 정리 및 푸시버튼 보정
+// SitePass v23.7.284 - 탈퇴/고아 장비 집계 제외 보정
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
@@ -10120,6 +10120,78 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       });
     }
 
+
+    // v23.7.284: 관리자 전체장비등록수는 “활성 회원과 연결된 장비”만 계산합니다.
+    // 회원이 탈퇴했거나, 회원 행이 사라졌는데 브라우저/localStorage/서버 캐시에 장비만 남은 경우는
+    // 전체장비등록수와 관리자 장비목록에서 제외합니다.
+    function getEquipmentOwnerAdminKeys(item) {
+      if (!item) return [];
+      return [
+        item.ownerMemberId,
+        item.ownerSignupId,
+        item.ownerProviderId,
+        item.ownerPhone,
+        item.ownerName,
+        item.ownerPhone ? String(item.ownerPhone || '').replace(/[^0-9]/g, '') : ''
+      ].map(normalizeAdminRoleKey).filter(Boolean).filter((value, index, arr) => arr.indexOf(value) === index);
+    }
+
+    function getActiveEquipmentOwnerKeySet() {
+      const set = new Set();
+      try {
+        const activeMembers = getAdminAllMemberRows().filter(member => {
+          if (!member || member.withdrawn || member.isSuperAdminVirtual) return false;
+          if (isDesignatedSuperAdminMember(member)) return false;
+          return true;
+        });
+        activeMembers.forEach(member => {
+          getMemberAdminIdentifiers(member).forEach(key => { if (key) set.add(key); });
+        });
+      } catch (e) {
+        console.warn('활성 회원 장비 소유키 계산 실패:', e);
+      }
+      return set;
+    }
+
+    function isEquipmentOwnedByActiveMember(item, activeOwnerKeySet) {
+      if (!item || item.isDeleted || item.deletedAt || item.is_deleted) return false;
+      const ownerKeys = getEquipmentOwnerAdminKeys(item);
+      if (!ownerKeys.length) return false;
+      const set = activeOwnerKeySet || getActiveEquipmentOwnerKeySet();
+      if (!set || !set.size) return false;
+      return ownerKeys.some(key => set.has(key));
+    }
+
+    function getAdminVisibleEquipmentItems() {
+      const activeOwnerKeySet = getActiveEquipmentOwnerKeySet();
+      return getItems().filter(item => isEquipmentOwnedByActiveMember(item, activeOwnerKeySet));
+    }
+
+    async function cleanupOrphanEquipmentForAdmin() {
+      if (!confirm('현재 회원과 연결되지 않은 장비/QR을 관리자 집계에서 정리할까요?\n\n탈퇴회원 또는 회원 없는 고아 장비가 전체장비등록수에 남는 문제를 정리합니다.')) return;
+      let serverText = '서버정리: 실행 안 됨';
+      try {
+        const api = window.SitePassSupabaseApi;
+        if (api && api.rpc) {
+          const result = await api.rpc('sitepass_cleanup_orphan_equipment', {});
+          if (result?.error) throw result.error;
+          const data = result?.data || {};
+          serverText = '서버정리: 장비 ' + Number(data.equipment_deleted || 0) + '건 / QR ' + Number(data.shares_deleted || 0) + '건 정리';
+        } else {
+          serverText = '서버정리: Supabase RPC 연결 없음';
+        }
+      } catch (e) {
+        serverText = '서버정리 실패: ' + (e?.message || e);
+      }
+
+      try {
+        setServerEquipmentCache([]);
+        await syncSupabaseEquipmentItems(true);
+      } catch (e) {}
+      try { renderAdmin(); } catch (e) {}
+      alert(serverText + '\n\n화면 집계는 활성 회원과 연결된 장비만 다시 계산했습니다.');
+    }
+
     function getItemOwnerText(item) {
       const parts = [
         item?.ownerName,
@@ -10765,8 +10837,9 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       if (!sitePassEquipmentSyncing && (!sitePassEquipmentSyncedAt || Date.now() - sitePassEquipmentSyncedAt > 30000)) {
         try { syncSupabaseEquipmentItems(true); } catch (e) {}
       }
-      const items = getItems();
+      const items = getAdminVisibleEquipmentItems();
       const members = ensureMemberIds();
+      const rawEquipmentCount = getItems().length;
       const total = items.length;
       const paused = items.filter(isQrPaused).length;
       const expiringDocs = items.reduce((sum, item) => sum + Object.values(item.docs || {}).filter(doc => (doc.status || getDocStatus(doc)) === '만료임박').length, 0);
@@ -10787,7 +10860,8 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       const totalEquipmentCount = total;
       const topSummary = '<div class="card" style="box-shadow:none;margin-top:12px;">' +
         '<h3>관리자 요약 현황</h3>' +
-        '<div class="small">장비 서버동기화: ' + escapeHtml(sitePassEquipmentSyncMessage || (sitePassEquipmentSyncedAt ? '마지막 확인 ' + formatNullableDateTime(new Date(sitePassEquipmentSyncedAt).toISOString()) : '대기 중')) + '</div>' +
+        '<div class="small">장비 서버동기화: ' + escapeHtml(sitePassEquipmentSyncMessage || (sitePassEquipmentSyncedAt ? '마지막 확인 ' + formatNullableDateTime(new Date(sitePassEquipmentSyncedAt).toISOString()) : '대기 중')) + ' · 원본장비 ' + rawEquipmentCount + '대 / 활성회원 연결장비 ' + totalEquipmentCount + '대</div>' +
+        '<div class="actions" style="margin:8px 0 4px;"><button type="button" class="ghost" onclick="cleanupOrphanEquipmentForAdmin()">회원 없는 장비/QR 정리</button></div>' +
         '<div class="admin-summary-rows">' +
           '<div class="admin-summary-row">' +
             '<div class="line"><b>오늘방문자수</b><span>' + todayVisitors + '명</span></div>' +
