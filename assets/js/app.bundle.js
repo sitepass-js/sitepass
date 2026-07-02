@@ -1,4 +1,4 @@
-// SitePass v23.7.287 - 브라우저 저장공간 부족 시 서버저장 우선 보정
+// SitePass v23.7.288 - 결제대기/작성중 복귀 및 추가결제 오판 보정
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
@@ -6714,6 +6714,24 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
       if (registrationDraftPromptOpen) return false;
       if (isSitePassHashRouteActive()) return false;
       if (!isMemberLoggedIn() && !isAdminLoggedIn()) return false;
+      const pendingPay = getPendingRegistration();
+      if (pendingPay && pendingPay.item) {
+        const activePending = Array.from(document.querySelectorAll('.screen:not(.hidden)')).map(el => el.id)[0] || '';
+        if (activePending !== 'pricingScreen' && activePending !== 'detailScreen' && activePending !== 'publicScreen' && activePending !== 'managerPrintScreen') {
+          registrationDraftPromptOpen = true;
+          const label = pendingPay.item.equipmentNo || pendingPay.item.equipmentName || '결제 대기 중인 장비';
+          const tier = getPendingRegistrationTierText(pendingPay);
+          const message = '결제 대기 중인 장비등록이 있습니다.\n\n' + label + '\n' + tier + '\n\n확인: 결제화면으로 이동\n취소: 결제대기 삭제하고 새로 시작';
+          setTimeout(function(){
+            try {
+              if (!isMemberLoggedIn() && !isAdminLoggedIn()) return;
+              if (confirm(message)) openPendingRegistrationPaymentScreen(pendingPay);
+              else { clearPendingRegistration(); clearRegistrationDraft(); resetForm(false); }
+            } finally { registrationDraftPromptOpen = false; }
+          }, reason === 'login' ? 250 : 450);
+          return true;
+        }
+      }
       if (!hasRegistrationDraft()) return false;
       const active = Array.from(document.querySelectorAll('.screen:not(.hidden)')).map(el => el.id)[0] || '';
       if (active === 'registerScreen' || active === 'pricingScreen' || active === 'detailScreen' || active === 'publicScreen' || active === 'managerPrintScreen') return false;
@@ -6740,6 +6758,16 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     }
 
     function startNewRegistration() {
+      const pendingPay = getPendingRegistration();
+      if (pendingPay && pendingPay.item) {
+        const label = pendingPay.item.equipmentNo || pendingPay.item.equipmentName || '결제 대기 중인 장비';
+        if (confirm('결제 대기 중인 장비등록이 있습니다.\n\n' + label + '\n' + getPendingRegistrationTierText(pendingPay) + '\n\n확인: 결제화면으로 이동\n취소: 결제대기 삭제하고 새 등록 시작')) {
+          openPendingRegistrationPaymentScreen(pendingPay);
+          return;
+        }
+        clearPendingRegistration();
+        clearRegistrationDraft();
+      }
       const draft = getRegistrationDraft();
       if (hasMeaningfulRegistrationDraftData(draft)) {
         const label = draft.equipmentNo || draft.equipmentName || '작성 중인 장비';
@@ -7235,7 +7263,9 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       const editIndex = editingCode ? items.findIndex(x => x.code === editingCode) : -1;
       const oldItem = editIndex >= 0 ? items[editIndex] : null;
       const isNewRegistration = !oldItem;
-      const isAdditionalRegistration = isNewRegistration && items.length > 0;
+      // v23.7.288: 결제대기/고아장비/탈퇴장비를 기존 장비로 세면 첫 장비도 추가결제로 오판됩니다.
+      // 추가결제 여부는 현재 회원의 활성 결제완료 장비만 기준으로 판단합니다.
+      const isAdditionalRegistration = isNewRegistration && getActivePaidRegistrationItemsForCurrentOwner(currentMember, '').length > 0;
       const selectedPlan = getPlanInfo(localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'monthly', { additional: isAdditionalRegistration });
       const bundleMeta = getBundleMeta();
       const code = oldItem ? oldItem.code : makeBundleCode(equipmentNo);
@@ -7322,6 +7352,9 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
         alert('결제 대기 정보를 임시 저장하지 못했습니다. 사진 용량을 줄이거나 기존 코드를 정리한 뒤 다시 시도해주세요.');
         return;
       }
+      // v23.7.288: 결제화면으로 넘어간 뒤 앱이 꺼지면 작성중 복귀가 아니라 결제대기 복귀가 맞습니다.
+      // 그래서 등록 초안은 결제대기 정보 저장 후 정리합니다.
+      clearRegistrationDraft();
       // v23.7.281: 장비등록 직후 결제대기 상태라도 보관함/관리자 장비수에 보이게 먼저 저장합니다.
       // 결제완료 시 같은 code를 찾아 유료 상태로 갱신합니다.
       const pendingItems = getItems();
@@ -8976,14 +9009,14 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
 
 
     function getPendingRegistration() {
-      if (pendingRegistrationItemMemory && pendingRegistrationItemMemory.item) return pendingRegistrationItemMemory;
+      if (pendingRegistrationItemMemory && pendingRegistrationItemMemory.item) return normalizePendingRegistrationTier(pendingRegistrationItemMemory);
       try {
         const raw = sessionStorage.getItem(PENDING_REGISTRATION_KEY) || localStorage.getItem(PENDING_REGISTRATION_KEY) || '';
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (parsed && parsed.item) {
-          pendingRegistrationItemMemory = parsed;
-          return parsed;
+          pendingRegistrationItemMemory = normalizePendingRegistrationTier(parsed);
+          return pendingRegistrationItemMemory;
         }
       } catch (e) {}
       return null;
@@ -9038,8 +9071,50 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       }, 80);
     }
 
+    function isActivePaidEquipmentForRegistrationCount(item) {
+      if (!item || !item.code) return false;
+      const raw = [item.serviceStatus, item.paymentStatus, item.paymentPlan, item.basicPlan, item.saveReason].map(v => String(v || '').toLowerCase()).join(' ');
+      if (item.isDeleted || item.is_deleted || item.deletedAt || item.withdrawnAt) return false;
+      if (raw.indexOf('orphan_deleted') >= 0 || raw.indexOf('withdrawn') >= 0 || raw.indexOf('deleted') >= 0 || raw.indexOf('탈퇴') >= 0 || raw.indexOf('삭제') >= 0) return false;
+      if (raw.indexOf('결제대기') >= 0 || raw.indexOf('pending') >= 0 || raw.indexOf('미결제') >= 0) return false;
+      return raw.indexOf('등록결제완료') >= 0 || raw.indexOf('결제완료') >= 0 || raw.indexOf('유료사용') >= 0 || !!item.paidAt || !!item.trialEndsAt;
+    }
+
+    function isSameEquipmentOwnerForRegistrationCount(item, member) {
+      if (!member) return true;
+      const memberKeys = [member.id, member.signupId, member.providerId, member.supabaseLoginId, member.authUserId, member.phone, member.name]
+        .map(v => String(v || '').trim().toLowerCase()).filter(Boolean);
+      if (!memberKeys.length) return true;
+      const ownerKeys = [item.ownerMemberId, item.ownerSignupId, item.ownerProviderId, item.ownerName, item.ownerPhone]
+        .map(v => String(v || '').trim().toLowerCase()).filter(Boolean);
+      if (!ownerKeys.length) return true; // 기존 저장자료는 소유자 키가 없을 수 있어 기존 사용자를 위해 포함합니다.
+      return ownerKeys.some(k => memberKeys.includes(k));
+    }
+
+    function getActivePaidRegistrationItemsForCurrentOwner(member, excludeCode) {
+      const code = String(excludeCode || '');
+      return getItems().filter(item => {
+        if (code && String(item.code || '') === code) return false;
+        return isActivePaidEquipmentForRegistrationCount(item) && isSameEquipmentOwnerForRegistrationCount(item, member || null);
+      });
+    }
+
+    function normalizePendingRegistrationTier(pending) {
+      if (!pending || !pending.item) return pending;
+      const member = getEquipmentRegistrationOwnerMember ? getEquipmentRegistrationOwnerMember() : (getCurrentMemberTest() || null);
+      const paidCount = getActivePaidRegistrationItemsForCurrentOwner(member, pending.item.code).length;
+      const fixedTier = paidCount > 0 ? 'additional' : 'first';
+      if (pending.paymentTier !== fixedTier) {
+        pending = { ...pending, paymentTier: fixedTier, fixedAt: new Date().toISOString(), fixedReason: 'active_paid_equipment_count' };
+        pendingRegistrationItemMemory = pending;
+        try { sessionStorage.setItem(PENDING_REGISTRATION_KEY, JSON.stringify(pending)); } catch (e) {}
+        try { localStorage.setItem(PENDING_REGISTRATION_KEY, JSON.stringify(pending)); } catch (e) {}
+      }
+      return pending;
+    }
+
     function hasRegisteredEquipmentBundle() {
-      return getItems().length > 0;
+      return getActivePaidRegistrationItemsForCurrentOwner(getCurrentMemberTest() || null, '').length > 0;
     }
 
     function updateHomeRegistrationButton() {
@@ -9120,7 +9195,7 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
     function isAdditionalRegistrationContext() {
       const pending = getPendingRegistration();
       if (pending && pending.paymentTier) return pending.paymentTier === 'additional';
-      return getItems().length > 0;
+      return getActivePaidRegistrationItemsForCurrentOwner(getCurrentMemberTest() || null, '').length > 0;
     }
 
     function isAdditionalPaymentItem(item, list) {

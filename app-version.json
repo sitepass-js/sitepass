@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.287",
+  "version": "v23.7.288",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "브라우저 저장공간 부족 시 장비 서버저장과 사진 없는 목록 저장을 보강했습니다.",
+  "note": "결제대기 복귀 시 작성중/추가결제 오판 문제를 보정했습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-01T00:00:00+09:00"
+  "updatedAt": "2026-07-02T00:00:00+09:00"
 }
