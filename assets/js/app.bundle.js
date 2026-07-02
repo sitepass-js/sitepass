@@ -1,4 +1,4 @@
-// SitePass v23.7.284 - 탈퇴/고아 장비 집계 제외 보정
+// SitePass v23.7.287 - 브라우저 저장공간 부족 시 서버저장 우선 보정
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
@@ -66,6 +66,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     });
     let adminMemberSummaryStats = null;
     let pendingRegistrationItemMemory = null;
+    let runtimeEquipmentItems = []; // localStorage 용량 부족 시 현재 세션에서 장비를 계속 보이게 하는 메모리 목록
     let registrationDraftSaveTimer = null;
     let registrationDraftRestoreBusy = false;
     let registrationDraftPromptOpen = false;
@@ -7292,19 +7293,14 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
         if (!requirePrivateEditReverification(oldItem, item)) return;
         item.updateHistory.unshift({ at:nowIso, summary:buildUpdateSummary(oldItem, item).slice(0, 12) });
         items[editIndex] = item;
-        let saved = setItems(items);
-        let savedLight = false;
-        if (!saved) {
-          const lightItems = items.map(makeStorageLightItem);
-          saved = setItems(lightItems);
-          savedLight = saved;
-        }
-        if (!saved) {
-          alert('브라우저 임시 저장공간이 부족해서 저장하지 못했습니다. 기존 코드를 삭제하거나 사진 없이 다시 확인해주세요.');
+        const saveResult = setItemsWithFallback(items);
+        let editServerResult = null;
+        try { editServerResult = await saveEquipmentItemToSupabase(item, 'edit'); } catch (e) { console.warn('수정 장비 서버 저장 실패:', e); editServerResult = { ok:false, error:e }; }
+        if (!saveResult.ok && !(editServerResult && editServerResult.ok)) {
+          alert('브라우저 저장공간과 서버 저장이 모두 실패했습니다. 사진 용량을 줄이거나 기존 코드를 정리한 뒤 다시 시도해주세요.');
           return;
         }
-        try { await saveEquipmentItemToSupabase(item, 'edit'); } catch (e) { console.warn('수정 장비 서버 저장 실패:', e); }
-        const editSavedLightNote = savedLight ? (String.fromCharCode(10) + String.fromCharCode(10) + '용량을 줄이기 위해 원본/보정본 비교데이터는 제외하고 담당자용 사진 미리보기만 저장했습니다.') : '';
+        const editSavedLightNote = getStorageFallbackNote(saveResult);
         alert(`수정내용이 저장되었습니다.
 
 포함: ${bundleMeta.includedGroupNames.join(', ')}${editSavedLightNote}`);
@@ -7331,11 +7327,9 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       const pendingItems = getItems();
       if (!pendingItems.some(x => String(x.code || '') === String(item.code || ''))) {
         pendingItems.unshift(item);
-        let pendingSaved = setItems(pendingItems);
-        if (!pendingSaved) pendingSaved = setItems(pendingItems.map(makeStorageLightItem));
-        if (!pendingSaved) {
-          alert('서류 확인은 완료되었지만 브라우저 저장공간이 부족해서 장비등록 목록에 저장하지 못했습니다. 사진 용량을 줄이거나 기존 코드를 정리한 뒤 다시 시도해주세요.');
-          return;
+        const pendingSaveResult = setItemsWithFallback(pendingItems);
+        if (!pendingSaveResult.ok) {
+          console.warn('장비등록 목록 localStorage 저장 실패: 서버 저장으로 계속 진행합니다.');
         }
       }
       let pendingServerResult = null;
@@ -7385,25 +7379,20 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
       if (existingIndex >= 0) items[existingIndex] = paidItem;
       else items.unshift(paidItem);
-      let saved = setItems(items);
-      let savedLight = false;
-      if (!saved) {
-        const lightItems = items.map(makeStorageLightItem);
-        saved = setItems(lightItems);
-        savedLight = saved;
-      }
-      if (!saved) {
-        alert('결제는 확인되었지만 브라우저 저장공간이 부족해서 서류함을 저장하지 못했습니다. 기존 코드를 삭제하거나 사진 용량을 줄여주세요.');
-        return;
-      }
+      // 브라우저 저장공간이 부족해도 결제완료 장비는 서버 저장을 먼저 시도하고, 로컬 저장은 단계별로 가볍게 낮춰 저장합니다.
       let paidServerResult = null;
       try { paidServerResult = await saveEquipmentItemToSupabase(paidItem, 'payment_completed'); } catch (e) { console.warn('결제완료 장비 서버 저장 실패:', e); paidServerResult = { ok:false, error:e }; }
+      const saveResult = setItemsWithFallback(items);
+      if (!saveResult.ok && !(paidServerResult && paidServerResult.ok)) {
+        alert('결제는 확인되었지만 브라우저 저장공간과 서버 저장이 모두 실패했습니다. 기존 코드를 삭제하거나 사진 용량을 줄인 뒤 다시 시도해주세요.');
+        return;
+      }
       try { await syncSupabaseEquipmentItems(true); } catch (e) {}
       clearPendingRegistration();
       clearRegistrationDraft();
       updateHomeRegistrationButton();
       resetForm(false);
-      const paymentSavedLightNote = savedLight ? (String.fromCharCode(10) + String.fromCharCode(10) + '용량을 줄이기 위해 담당자용 사진 미리보기만 저장했습니다.') : '';
+      const paymentSavedLightNote = getStorageFallbackNote(saveResult);
       const paidServerText = paidServerResult && paidServerResult.ok ? '\n\n장비 서버저장: 완료' : '\n\n장비 서버저장: 확인 필요 - ' + escapePlainTextForAlert(sitePassEquipmentSyncMessage || (paidServerResult?.error?.message || paidServerResult?.error || '알 수 없음'));
       alert(`${info.label} 결제가 완료되었습니다.\n\n${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생성되고 보관함에 저장되었습니다.${paymentSavedLightNote}${paidServerText}`);
       renderDetail(paidItem.code);
@@ -7511,9 +7500,9 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
           readLocalJsonArray(PREV_STORAGE_KEY_7),
           readLocalJsonArray(STORAGE_KEY)
         ];
-        return mergePendingRegistrationIntoItems(mergeEquipmentItemLists.apply(null, localLists));
+        return mergePendingRegistrationIntoItems(mergeEquipmentItemLists.apply(null, localLists.concat([runtimeEquipmentItems])));
       }
-      catch (error) { return mergePendingRegistrationIntoItems([]); }
+      catch (error) { return mergePendingRegistrationIntoItems(runtimeEquipmentItems); }
     }
 
     function buildSupabaseEquipmentRow(item, reason) {
@@ -7640,6 +7629,51 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
         console.warn('저장 공간 부족 또는 브라우저 저장 오류:', error);
         return false;
       }
+    }
+
+    function rememberRuntimeEquipmentItems(items) {
+      try {
+        runtimeEquipmentItems = mergeEquipmentItemLists(runtimeEquipmentItems, Array.isArray(items) ? items : []);
+      } catch (e) {
+        runtimeEquipmentItems = Array.isArray(items) ? items.slice(0, 20) : [];
+      }
+    }
+
+    function makeStorageTinyItem(item) {
+      const light = JSON.parse(JSON.stringify(item || {}));
+      Object.values(light.docs || {}).forEach(doc => {
+        const count = Array.isArray(doc.pages) ? doc.pages.length : Number(doc.pageCount || 0);
+        doc.pages = [];
+        doc.pageCount = count;
+        doc.fileName = doc.fileName || (count ? ('첨부 ' + count + '장') : '첨부됨');
+        doc.previewDataUrl = '';
+        doc.editDataUrl = '';
+        doc.originalDataUrl = '';
+        doc.correctedDataUrl = '';
+        doc.previewChoice = '';
+        doc.storageNote = '브라우저 저장공간 부족으로 사진 미리보기는 서버/원본 등록 흐름에서 확인 필요';
+      });
+      light.storageNote = '브라우저 저장공간 부족으로 이 기기에는 사진 없는 목록정보만 저장됨. 서버 저장이 완료된 장비는 관리자/서버 목록에서 확인 가능';
+      light.localPhotoPreviewStripped = true;
+      return light;
+    }
+
+    function setItemsWithFallback(items) {
+      const list = Array.isArray(items) ? items : [];
+      rememberRuntimeEquipmentItems(list);
+      if (setItems(list)) return { ok:true, mode:'full' };
+      const lightItems = list.map(makeStorageLightItem);
+      if (setItems(lightItems)) return { ok:true, mode:'light' };
+      const tinyItems = list.map(makeStorageTinyItem);
+      if (setItems(tinyItems)) return { ok:true, mode:'tiny' };
+      return { ok:false, mode:'memory' };
+    }
+
+    function getStorageFallbackNote(result) {
+      if (!result || result.mode === 'full') return '';
+      if (result.mode === 'light') return String.fromCharCode(10) + String.fromCharCode(10) + '용량을 줄이기 위해 원본/보정본 비교데이터는 제외하고 담당자용 사진 미리보기만 저장했습니다.';
+      if (result.mode === 'tiny') return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 부족해서 이 기기에는 사진 없는 목록정보만 저장했습니다. 서버저장이 완료되면 관리자/서버 목록 기준으로 확인됩니다.';
+      return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 가득 차서 이 기기 저장은 생략했습니다. 서버저장 완료 여부를 꼭 확인해주세요.';
     }
 
     // v23.7.72 - 담당자 화면보기/QR/상세/프린트 공통 조회 함수 복구
