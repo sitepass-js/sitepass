@@ -1,4 +1,4 @@
-// SitePass v23.7.288 - 결제대기/작성중 복귀 및 추가결제 오판 보정
+// SitePass v23.7.289 - 푸시알림 장비 표시 보정
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
