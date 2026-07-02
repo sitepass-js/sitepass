@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.289",
+  "version": "v23.7.290",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "푸시알림 관리에서 등록된 장비가 표시되지 않는 문제를 보정했습니다.",
+  "note": "v23.7.287 이후 업로드 안정화 및 푸시알림 장비 표시 보정본입니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
   "updatedAt": "2026-07-02T00:00:00+09:00"
 }

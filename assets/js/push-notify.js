@@ -1,9 +1,9 @@
-// SitePass v23.7.289 - 푸시알림 장비 표시/대상계산 보정
+// SitePass v23.7.290 - 푸시알림 장비 표시/대상계산 보정
 // 이 파일에는 알림 권한 요청, 테스트 푸시, 알림 대상 계산, 구독정보 저장 준비 기능을 둡니다.
 (function(){
   'use strict';
 
-  const APP_VERSION = 'v23.7.289';
+  const APP_VERSION = 'v23.7.290';
   const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_283';
   const SUBSCRIPTION_KEY = STORAGE_PREFIX + '_subscription';
   const PERMISSION_LOG_KEY = STORAGE_PREFIX + '_permission_log';
