@@ -1,9 +1,9 @@
-// SitePass v23.7.290 - 푸시알림 장비 표시/대상계산 보정
+// SitePass v23.7.286 - 푸시알림 대상/구독상태 오진단 보정
 // 이 파일에는 알림 권한 요청, 테스트 푸시, 알림 대상 계산, 구독정보 저장 준비 기능을 둡니다.
 (function(){
   'use strict';
 
-  const APP_VERSION = 'v23.7.290';
+  const APP_VERSION = 'v23.7.286';
   const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_283';
   const SUBSCRIPTION_KEY = STORAGE_PREFIX + '_subscription';
   const PERMISSION_LOG_KEY = STORAGE_PREFIX + '_permission_log';
@@ -437,101 +437,31 @@
     return list;
   }
 
-  function normalizePushStorageKey(value){
-    return String(value || '');
-  }
-
-  function looksLikeEquipmentItem(value){
-    return !!(value && typeof value === 'object' && (value.code || value.equipmentNo || value.equipment_no || value.equipmentName || value.equipment_name || value.docs || value.documents));
-  }
-
-  function looksLikeMemberItem(value){
-    return !!(value && typeof value === 'object' && (value.signupId || value.loginId || value.providerId || value.authUserId || value.phone || value.name || value.termsAgreedAt || value.terms_agreed_at));
-  }
-
-  function mergeUniqueByPushKey(list, keyGetter){
-    const map = new Map();
-    (Array.isArray(list) ? list : []).forEach(item => {
-      if (!item || typeof item !== 'object') return;
-      const key = keyGetter(item) || JSON.stringify(item).slice(0, 120);
-      const existing = map.get(key) || {};
-      map.set(key, { ...existing, ...item });
-    });
-    return Array.from(map.values());
-  }
-
   function getItemsSafe(){
-    const lists = [];
-    try {
-      if (typeof window.getItems === 'function') {
-        const value = window.getItems();
-        if (Array.isArray(value)) lists.push(value);
-      }
-    } catch (e) {}
+    try { if (typeof window.getItems === 'function') return window.getItems(); } catch (e) {}
     try {
       const keys = Object.keys(localStorage || {});
-      keys.forEach(key => {
-        const normalized = normalizePushStorageKey(key);
-        const value = safeJsonParse(localStorage.getItem(key), null);
-        if (Array.isArray(value) && value.some(looksLikeEquipmentItem)) {
-          if (/server_equipment_cache|sitePass_v23_7_7_update_original_corrected$|_pending_registration_payment|sitePass_v23/i.test(normalized)) lists.push(value);
-        } else if (value && typeof value === 'object') {
-          const item = value.item || value.pendingItem || value.equipmentItem || null;
-          if (looksLikeEquipmentItem(item)) lists.push([item]);
+      for (const key of keys) {
+        if (/sitePass_v23_7_7_update_original_corrected$/.test(key) || /sitePass_v23/i.test(key)) {
+          const value = safeJsonParse(localStorage.getItem(key), null);
+          if (Array.isArray(value)) return value;
         }
-      });
+      }
     } catch (e) {}
-    return mergeUniqueByPushKey([].concat.apply([], lists), item => String(item.code || item.equipmentNo || item.equipment_no || '').trim());
-  }
-
-  function memberFromServerRow(row){
-    if (!row || typeof row !== 'object') return null;
-    return {
-      id: row.id || row.member_id || row.auth_user_id || '',
-      signupId: row.signup_id || row.signupId || row.login_id || '',
-      loginId: row.login_id || row.loginId || '',
-      providerId: row.provider_id || row.providerId || '',
-      authUserId: row.auth_user_id || row.authUserId || '',
-      email: row.email || '',
-      name: row.name || row.full_name || '',
-      phone: row.phone || '',
-      status: row.status || row.member_status || '',
-      memberStatus: row.member_status || row.status || '',
-      paymentStatus: row.payment_status || '',
-      serviceStatus: row.service_status || '',
-      termsAgreedAt: row.terms_agreed_at || row.termsAgreedAt || '',
-      role: row.role || '',
-      signupMethod: row.provider || row.signup_method || ''
-    };
+    return [];
   }
 
   function getMembersSafe(){
-    const lists = [];
-    try {
-      if (typeof window.getMembers === 'function') {
-        const value = window.getMembers();
-        if (Array.isArray(value)) lists.push(value);
-      }
-    } catch (e) {}
-    try {
-      const runtime = window.SitePassAdminRuntime || {};
-      if (typeof runtime.getServerMemberRows === 'function') {
-        const rows = runtime.getServerMemberRows();
-        if (Array.isArray(rows)) lists.push(rows.map(memberFromServerRow).filter(Boolean));
-      }
-    } catch (e) {}
+    try { if (typeof window.getMembers === 'function') return window.getMembers(); } catch (e) {}
     try {
       const keys = Object.keys(localStorage || {});
-      keys.forEach(key => {
-        const value = safeJsonParse(localStorage.getItem(key), null);
-        if (Array.isArray(value) && value.some(looksLikeMemberItem)) {
-          if (/_members$|sitepass_members|member/i.test(key)) lists.push(value);
-        } else if (looksLikeMemberItem(value) && /currentMember|pwa_auto_member|member/i.test(key)) {
-          lists.push([value]);
-        }
-      });
+      const key = keys.find(k => /_members$/.test(k));
+      if (key) {
+        const value = safeJsonParse(localStorage.getItem(key), []);
+        if (Array.isArray(value)) return value;
+      }
     } catch (e) {}
-    return mergeUniqueByPushKey([].concat.apply([], lists), member => String(member.id || member.signupId || member.loginId || member.providerId || member.authUserId || member.phone || member.name || '').trim());
+    return [];
   }
 
   function normalizePushText(value){
@@ -565,41 +495,22 @@
     return true;
   }
 
-  function pushKey(value){
-    return normalizePushText(value).replace(/[^0-9a-z가-힣@._-]/g,'');
-  }
-
-  function getActiveMemberKeysForPush(activeMembers){
-    return new Set((activeMembers || []).flatMap(m => [
-      m.id, m.signupId, m.signup_id, m.loginId, m.login_id, m.providerId, m.provider_id,
-      m.authUserId, m.auth_user_id, m.email, m.phone, m.name
-    ]).filter(Boolean).map(pushKey));
-  }
-
-  function getEquipmentOwnerValuesForPush(item){
-    return [
-      item.owner_member_id, item.ownerMemberId, item.owner_signup_id, item.ownerSignupId, item.owner_provider_id, item.ownerProviderId,
-      item.member_id, item.memberId, item.signup_id, item.signupId, item.userId, item.createdBy, item.created_by,
-      item.owner_phone, item.ownerPhone, item.phone, item.owner_name, item.ownerName, item.owner_login_id, item.ownerLoginId
-    ].filter(Boolean).map(pushKey);
-  }
-
   function isActiveEquipmentForPush(item, activeMembers){
     if (!item || typeof item !== 'object') return false;
-    if (item.isDeleted || item.deleted || item.withdrawn || item.forceWithdrawn || item.isOrphan || item.is_deleted) return false;
+    if (item.isDeleted || item.deleted || item.withdrawn || item.forceWithdrawn || item.isOrphan) return false;
     const fields = [item.status, item.payment_status, item.paymentStatus, item.service_status, item.serviceStatus, item.save_reason, item.saveReason];
     if (fields.some(isInactiveStatusText)) return false;
-    const members = Array.isArray(activeMembers) ? activeMembers : [];
-    if (!members.length) return false;
-    const activeKeys = getActiveMemberKeysForPush(members);
+    const activeKeys = new Set((activeMembers || []).flatMap(m => [
+      m.id, m.signupId, m.loginId, m.providerId, m.authUserId, m.phone, m.name
+    ]).filter(Boolean).map(x => normalizePushText(x).replace(/[^0-9a-z가-힣@._-]/g,'')));
     if (!activeKeys.size) return false;
-    const ownerValues = getEquipmentOwnerValuesForPush(item);
-    if (ownerValues.length && ownerValues.some(v => activeKeys.has(v))) return true;
-    // v23.7.289: 장비등록 직후 owner 키가 누락된 결제완료/결제대기 자료도
-    // 단일 활성 회원 테스트 환경에서는 푸시관리의 활성장비에 표시합니다.
-    // 회원이 0명이거나 여러 명일 때는 고아장비 오진입을 막기 위해 제외합니다.
-    if (!ownerValues.length && members.length === 1 && (item.code || item.equipmentNo || item.equipmentName)) return true;
-    return false;
+    const ownerValues = [
+      item.owner_member_id, item.ownerMemberId, item.owner_signup_id, item.ownerSignupId, item.owner_provider_id, item.ownerProviderId,
+      item.member_id, item.memberId, item.signup_id, item.signupId, item.userId, item.createdBy,
+      item.owner_phone, item.ownerPhone, item.phone, item.owner_name, item.ownerName
+    ].filter(Boolean).map(x => normalizePushText(x).replace(/[^0-9a-z가-힣@._-]/g,''));
+    if (!ownerValues.length) return false;
+    return ownerValues.some(v => activeKeys.has(v));
   }
 
   function getAlertBreakdown(){
@@ -620,8 +531,7 @@
   async function showDueAlertsPreview(){
     const bd = getAlertBreakdown();
     const list = bd.all;
-    const activeEquipmentNames = (bd.items || []).slice(0, 5).map(getEquipmentShortTextForPush).join(', ');
-    const summary = '활성회원 ' + bd.members.length + '명 / 활성장비 ' + bd.items.length + '대' + (activeEquipmentNames ? ' (' + activeEquipmentNames + ((bd.items || []).length > 5 ? ' 외 ' + ((bd.items || []).length - 5) + '대' : '') + ')' : '') + '\n' +
+    const summary = '활성회원 ' + bd.members.length + '명 / 활성장비 ' + bd.items.length + '대\n' +
       '서류만료 ' + bd.docs.length + '건 / 이용권만료 ' + bd.payments.length + '건 / 작성중 ' + bd.drafts.length + '건';
     if (!list.length) {
       alert('현재 기준으로 발송 대상 푸시알림이 없습니다.\n\n' + summary + '\n\n서류/이용권은 만료 7일 전 또는 만료일 당일만 대상입니다.\n작성중 서류는 다음날 1회만 대상입니다.');
@@ -707,18 +617,6 @@
     return '알림 권한 대기중 - 권한 요청 필요';
   }
 
-  function getEquipmentShortTextForPush(item){
-    const name = item?.equipmentName || item?.equipment_name || '장비';
-    const no = item?.equipmentNo || item?.equipment_no || item?.code || '';
-    return String(name || '장비') + (no ? ' ' + String(no) : '');
-  }
-
-  function getActiveEquipmentSummaryText(items){
-    const list = (Array.isArray(items) ? items : []).slice(0, 3).map(getEquipmentShortTextForPush).filter(Boolean);
-    if (!list.length) return '';
-    return ' · 장비: ' + escapeHtmlForPush(list.join(', ')) + ((items || []).length > 3 ? ' 외 ' + ((items || []).length - 3) + '대' : '');
-  }
-
   function renderPanelHtml(){
     const st = getSupportStatus();
     const bd = getAlertBreakdown();
@@ -742,9 +640,8 @@
         '</div>' +
         '<div class="small">현재 계산된 알림 대상: <b>' + due.length + '건</b>' +
           ' <span style="color:#64748b;">(서류 ' + bd.docs.length + ' / 이용권 ' + bd.payments.length + ' / 작성중 ' + bd.drafts.length + ')</span>' +
-          '<br>활성회원: ' + bd.members.length + '명 · 활성장비: ' + bd.items.length + '대' + getActiveEquipmentSummaryText(bd.items) +
-          '<br><span style="color:#64748b;">※ 장비가 있어도 만료일이 7일 전/당일이 아니면 알림 대상은 0건으로 보일 수 있습니다.</span>' +
-          (lastTest?.sentAt ? '<br>마지막 테스트: ' + escapeHtmlForPush(lastTest.sentAt) : '') +
+          '<br>활성회원: ' + bd.members.length + '명 · 활성장비: ' + bd.items.length + '대' +
+          (lastTest?.sentAt ? ' · 마지막 테스트: ' + escapeHtmlForPush(lastTest.sentAt) : '') +
           (localSub && localSub.endpoint ? ' · 구독기록 저장됨' : ' · 구독기록 없음') +
           (!vapid ? '<br>※ VAPID/Edge Function 연결 전이면 기기 알림 테스트만 가능합니다. 서버 푸시 테스트는 연결 후 확인하세요.' : '') +
           (lastError ? '<br><span style="color:#b91c1c;font-weight:900;">마지막 오류: ' + escapeHtmlForPush(lastError) + '</span>' : '') +
