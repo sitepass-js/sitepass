@@ -1,10 +1,10 @@
-// SitePass v23.7.306 - speed optimized medium chunk (app-core-auth-speed 01/04)
+// SitePass v23.7.307 - speed optimized medium chunk (app-core-auth-speed 01/04)
 // ---- merged from app-core-auth-01.js ----
-// SitePass v23.7.306 - app-core-auth finer split (01/19)
-// SitePass v23.7.306 - app.bundle.js remaining split (01 core/auth/member)
-window.__SITEPASS_APP_SPLIT_VERSION = 'v23.7.306';
-window.SITEPASS_TEST_NO_PAYMENT_MODE = true; // v23.7.306 테스트 기간에는 결제단계를 건너뜁니다.
-// SitePass v23.7.306 - v23.7.290 기준 남은 파일 쪼개기 / 배포 안정화
+// SitePass v23.7.307 - app-core-auth finer split (01/19)
+// SitePass v23.7.307 - app.bundle.js remaining split (01 core/auth/member)
+window.__SITEPASS_APP_SPLIT_VERSION = 'v23.7.307';
+window.SITEPASS_TEST_NO_PAYMENT_MODE = true; // v23.7.307 테스트 기간에는 결제단계를 건너뜁니다.
+// SitePass v23.7.307 - v23.7.290 기준 남은 파일 쪼개기 / 배포 안정화
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
@@ -72,7 +72,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     });
     let adminMemberSummaryStats = null;
     let pendingRegistrationItemMemory = null;
-    let sitePassRegistrationCompletionBusy = false; // v23.7.306: 테스트 등록완료 처리 중 결제대기/임시저장 안내가 반복으로 뜨는 것을 막습니다.
+    let sitePassRegistrationCompletionBusy = false; // v23.7.307: 테스트 등록완료 처리 중 결제대기/임시저장 안내가 반복으로 뜨는 것을 막습니다.
     let runtimeEquipmentItems = []; // localStorage 용량 부족 시 현재 세션에서 장비를 계속 보이게 하는 메모리 목록
     let registrationDraftSaveTimer = null;
     let registrationDraftRestoreBusy = false;
@@ -203,7 +203,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     }
 
 // ---- merged from app-core-auth-02.js ----
-// SitePass v23.7.306 - app-core-auth finer split (02/19)
+// SitePass v23.7.307 - app-core-auth finer split (02/19)
 const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
     const DOC_GROUPS = EQUIPMENT_REGISTER_MODULE.getDocGroups ? EQUIPMENT_REGISTER_MODULE.getDocGroups() : [
       {
@@ -368,7 +368,7 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
     }
 
 // ---- merged from app-core-auth-03.js ----
-// SitePass v23.7.306 - app-core-auth finer split (03/19)
+// SitePass v23.7.307 - app-core-auth finer split (03/19)
 function memberLogout() {
       removeSessionValue(CURRENT_MEMBER_KEY);
       clearPwaAutoMemberTest();
@@ -567,7 +567,7 @@ function memberLogout() {
     }
 
 // ---- merged from app-core-auth-04.js ----
-// SitePass v23.7.306 - app-core-auth finer split (04/19)
+// SitePass v23.7.307 - app-core-auth finer split (04/19)
 function getOrCreateMyAccountMember(ctx) {
       let member = ctx?.member;
       if (member && member.id) return member;
@@ -691,7 +691,7 @@ function getOrCreateMyAccountMember(ctx) {
     }
 
 // ---- merged from app-core-auth-05.js ----
-// SitePass v23.7.306 - app-core-auth finer split (05/19)
+// SitePass v23.7.307 - app-core-auth finer split (05/19)
 function getAdminSampleEquipmentOwner() {
       return {
         id:'MEM-SAMPLE-EQUIPMENT-OWNER',

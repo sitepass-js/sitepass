@@ -1,7 +1,7 @@
-// SitePass v23.7.306 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
+// SitePass v23.7.307 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
 // ---- merged from app-register-share-payment-01.js ----
-// SitePass v23.7.306 - app-register-share-payment finer split (01/15)
-// SitePass v23.7.306 - app.bundle.js remaining split (03 register/share/payment)
+// SitePass v23.7.307 - app-register-share-payment finer split (01/15)
+// SitePass v23.7.307 - app.bundle.js remaining split (03 register/share/payment)
 
 
     function getDisplayDocs(item) {
@@ -266,7 +266,7 @@
     }
 
 // ---- merged from app-register-share-payment-02.js ----
-// SitePass v23.7.306 - app-register-share-payment finer split (02/15)
+// SitePass v23.7.307 - app-register-share-payment finer split (02/15)
 function promptRegistrationDraftIfNeeded(reason) {
       if (sitePassRegistrationCompletionBusy) return false;
       if (registrationDraftPromptOpen) return false;
@@ -420,7 +420,7 @@ function promptRegistrationDraftIfNeeded(reason) {
     }
 
 // ---- merged from app-register-share-payment-03.js ----
-// SitePass v23.7.306 - app-register-share-payment finer split (03/15)
+// SitePass v23.7.307 - app-register-share-payment finer split (03/15)
 function fillDocsForEdit(item) {
       const docs = item.docs || {};
       Object.values(docs).forEach(doc => {
@@ -710,7 +710,7 @@ function fillDocsForEdit(item) {
     }
 
 // ---- merged from app-register-share-payment-04.js ----
-// SitePass v23.7.306 - app-register-share-payment finer split (04/15)
+// SitePass v23.7.307 - app-register-share-payment finer split (04/15)
 function requirePaymentOwnerVerification(actionLabel) {
       const member = getCurrentMemberTest() || {};
       const label = actionLabel || '결제';
@@ -914,7 +914,7 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
             createdAt: nowIso
           };
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        // v23.7.306: 테스트 기간에는 결제대기 상태를 localStorage/sessionStorage에 남기지 않습니다.
+        // v23.7.307: 테스트 기간에는 결제대기 상태를 localStorage/sessionStorage에 남기지 않습니다.
         // 결제대기 저장 → 테스트완료 처리 사이에 안내창이 반복되고 보관함 저장이 꼬이는 문제를 막기 위해
         // 현재 메모리에만 임시 등록정보를 두고 곧바로 테스트 완료 저장으로 진행합니다.
         pendingRegistrationItemMemory = pending;

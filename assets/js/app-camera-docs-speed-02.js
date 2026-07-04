@@ -1,6 +1,6 @@
-// SitePass v23.7.306 - speed optimized medium chunk (app-camera-docs-speed 02/04)
+// SitePass v23.7.307 - speed optimized medium chunk (app-camera-docs-speed 02/04)
 // ---- merged from app-camera-docs-05.js ----
-// SitePass v23.7.306 - app-camera-docs finer split (05/16)
+// SitePass v23.7.307 - app-camera-docs finer split (05/16)
 function renderWorkerPeopleSection() {
       return '<div class="worker-control-box">' +
         '<div class="small">인부는 여러 명이 될 수 있으므로 인부 1명마다 문자 동의안내와 6자리 번호를 먼저 확인합니다. 인증 완료 후에만 아래 추가 버튼이 열리고, 추가된 그 인부의 서류는 한 번에 업로드할 수 있습니다. 단, 이 인증은 해당 인부 서류 등록 동의용이고, 현장 담당자에게 공유 링크를 보낼 때마다 다시 인증받는 구조가 아닙니다.</div>' +
@@ -176,7 +176,7 @@ function renderWorkerPeopleSection() {
     }
 
 // ---- merged from app-camera-docs-06.js ----
-// SitePass v23.7.306 - app-camera-docs finer split (06/16)
+// SitePass v23.7.307 - app-camera-docs finer split (06/16)
 function renderDocCards() {
       const box = document.getElementById('docCards');
       if (!box) return;
@@ -242,8 +242,10 @@ function renderDocCards() {
           openCameraGuide(docKey);
           return;
         }
-        const fileInput = card.querySelector('input[data-role="file"]');
-        if (fileInput) fileInput.click();
+        // v23.7.307: 브라우저 보안상 setTimeout/confirm 뒤 자동 fileInput.click()은
+        // 사용자 직접 클릭으로 인정되지 않아 콘솔 오류가 납니다.
+        // 추가 파일은 사용자가 같은 카드의 파일선택 버튼을 직접 누르도록 안내합니다.
+        alert('추가 파일은 같은 서류 카드의 파일선택 버튼을 한 번 더 눌러 첨부해주세요.');
       }, 250);
     }
 
@@ -350,7 +352,7 @@ function renderDocCards() {
     }
 
 // ---- merged from app-camera-docs-07.js ----
-// SitePass v23.7.306 - app-camera-docs finer split (07/16)
+// SitePass v23.7.307 - app-camera-docs finer split (07/16)
 async function buildDocPage(card, file, sourceText) {
       const base = {
         id:'p' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
@@ -546,7 +548,7 @@ async function buildDocPage(card, file, sourceText) {
     }
 
 // ---- merged from app-camera-docs-08.js ----
-// SitePass v23.7.306 - app-camera-docs finer split (08/16)
+// SitePass v23.7.307 - app-camera-docs finer split (08/16)
 function selectDocPageVersion(docKey, index, mode) {
       const card = findDocCardByKey(docKey);
       if (!card) return;

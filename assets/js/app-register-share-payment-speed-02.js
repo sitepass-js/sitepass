@@ -1,6 +1,6 @@
-// SitePass v23.7.306 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
+// SitePass v23.7.307 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
 // ---- merged from app-register-share-payment-05.js ----
-// SitePass v23.7.306 - app-register-share-payment finer split (05/15)
+// SitePass v23.7.307 - app-register-share-payment finer split (05/15)
 async function completePendingRegistrationPayment(plan) {
       if (sitePassRegistrationCompletionBusy) return;
       sitePassRegistrationCompletionBusy = true;
@@ -46,7 +46,7 @@ async function completePendingRegistrationPayment(plan) {
       if (existingIndex >= 0) items[existingIndex] = paidItem;
       else items.unshift(paidItem);
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        // v23.7.306: 테스트 완료 저장 중에는 더 이상 결제대기 자료가 getItems()/동기화에 섞이지 않게 먼저 정리합니다.
+        // v23.7.307: 테스트 완료 저장 중에는 더 이상 결제대기 자료가 getItems()/동기화에 섞이지 않게 먼저 정리합니다.
         clearPendingRegistration();
       }
       // 브라우저 저장공간이 부족해도 결제완료 장비는 서버 저장을 먼저 시도하고, 로컬 저장은 단계별로 가볍게 낮춰 저장합니다.
@@ -57,7 +57,13 @@ async function completePendingRegistrationPayment(plan) {
         alert('결제는 확인되었지만 브라우저 저장공간과 서버 저장이 모두 실패했습니다. 기존 코드를 삭제하거나 사진 용량을 줄인 뒤 다시 시도해주세요.');
         return;
       }
-      try { await syncSupabaseEquipmentItems(true); } catch (e) {}
+      if (!window.SITEPASS_TEST_NO_PAYMENT_MODE) {
+        try { await syncSupabaseEquipmentItems(true); } catch (e) {}
+      } else {
+        // v23.7.307: 테스트 등록완료 직후 전체 서버목록 RPC/SELECT가 timeout/RLS로 실패하면
+        // 보관함 이동까지 같이 꼬입니다. 개별 저장 후에는 현재 로컬/메모리 목록으로 먼저 보관함을 보여줍니다.
+        sitePassEquipmentSyncMessage = sitePassEquipmentSyncMessage || '테스트 모드: 전체 서버목록 재조회 생략';
+      }
       clearPendingRegistration();
       clearRegistrationDraft();
       updateHomeRegistrationButton();
@@ -86,7 +92,7 @@ async function completePendingRegistrationPayment(plan) {
     }
 
 // ---- merged from app-register-share-payment-06.js ----
-// SitePass v23.7.306 - app-register-share-payment finer split (06/15)
+// SitePass v23.7.307 - app-register-share-payment finer split (06/15)
 function resetForm(clearEdit = true) {
       if (clearEdit) editingCode = '';
       const no = document.getElementById('equipmentNo');
@@ -151,7 +157,7 @@ function resetForm(clearEdit = true) {
         localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(safeList));
         return true;
       } catch (e) {
-        // v23.7.306: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
+        // v23.7.307: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
         // 억지로 저장하지 않고 목록 표시용 축약 캐시로 대체합니다.
         try {
           const compactList = safeList.map(makeCompactServerEquipmentCacheItem).slice(0, 300);
@@ -235,7 +241,7 @@ function resetForm(clearEdit = true) {
     function buildSupabaseEquipmentRow(item, reason) {
       if (!item || !item.code) return null;
       let light = item;
-      try { light = makeStorageLightItem(item); } catch (e) { light = { ...item }; }
+      try { light = makeStorageTinyItem(item); } catch (e) { try { light = makeStorageLightItem(item); } catch (e2) { light = { ...item }; } }
       return {
         code: String(item.code || ''),
         equipment_no: String(item.equipmentNo || ''),
@@ -349,13 +355,13 @@ function resetForm(clearEdit = true) {
     }
 
 // ---- merged from app-register-share-payment-07.js ----
-// SitePass v23.7.306 - app-register-share-payment finer split (07/15)
+// SitePass v23.7.307 - app-register-share-payment finer split (07/15)
 function setItems(items) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
         return true;
       } catch (error) {
-        console.warn('저장 공간 부족 또는 브라우저 저장 오류:', error);
+        console.info('저장 공간 부족: 축약 저장으로 재시도합니다.');
         return false;
       }
     }
@@ -368,32 +374,94 @@ function setItems(items) {
       }
     }
 
-    function makeStorageTinyItem(item) {
-      const light = JSON.parse(JSON.stringify(item || {}));
-      Object.values(light.docs || {}).forEach(doc => {
-        const count = Array.isArray(doc.pages) ? doc.pages.length : Number(doc.pageCount || 0);
-        doc.pages = [];
-        doc.pageCount = count;
-        doc.fileName = doc.fileName || (count ? ('첨부 ' + count + '장') : '첨부됨');
-        doc.previewDataUrl = '';
-        doc.editDataUrl = '';
-        doc.originalDataUrl = '';
-        doc.correctedDataUrl = '';
-        doc.previewChoice = '';
-        doc.storageNote = '브라우저 저장공간 부족으로 사진 미리보기는 서버/원본 등록 흐름에서 확인 필요';
+    function makeTinyDocForStorage(doc) {
+      doc = (doc && typeof doc === 'object') ? doc : {};
+      const count = Array.isArray(doc.pages) ? doc.pages.length : Number(doc.pageCount || 0);
+      const tiny = {};
+      [
+        'key','title','groupKey','groupTitle','required','expiry','expireDate','dateLabel','fileName',
+        'workerUid','workerIndex','workerType','workerLabel','workerPhone','workerTask',
+        'driverPhone','personPhone','authPhone','authPersonName','authBirth6','authGenderDigit',
+        'authCarrier','authVerified','authVerifiedAt','juminMasked','authJuminMasked'
+      ].forEach(function(key) {
+        if (doc[key] !== undefined && doc[key] !== null && doc[key] !== '') tiny[key] = doc[key];
       });
-      light.storageNote = '브라우저 저장공간 부족으로 이 기기에는 사진 없는 목록정보만 저장됨. 서버 저장이 완료된 장비는 관리자/서버 목록에서 확인 가능';
-      light.localPhotoPreviewStripped = true;
-      return light;
+      tiny.pageCount = count;
+      tiny.pages = [];
+      tiny.previewDataUrl = '';
+      tiny.editDataUrl = '';
+      tiny.originalDataUrl = '';
+      tiny.correctedDataUrl = '';
+      tiny.previewChoice = '';
+      tiny.fileName = tiny.fileName || (count ? ('첨부 ' + count + '장') : '첨부됨');
+      tiny.storageNote = '브라우저 저장공간 부족으로 사진 미리보기는 저장하지 않고 서류명/만료일/QR정보만 저장됨';
+      return tiny;
+    }
+
+    function makeStorageTinyItem(item) {
+      item = (item && typeof item === 'object') ? item : {};
+      const tiny = {};
+      [
+        'id','code','type','kind','category','equipmentNo','equipmentName','name','title','qrLink',
+        'ownerMemberId','ownerSignupId','ownerProviderId','ownerName','ownerPhone','memberId','memberName','memberPhone',
+        'createdAt','updatedAt','expiresAt','expireDate','shareExpiresAt','managerExpireAt','managerShareToken',
+        'serviceStatus','paymentPlan','basicPlan','alertPlan','forwardPolicy','paymentStatus','paymentAmount','paymentMethod','paymentTier',
+        'paidAt','trialEndsAt','status','isDeleted','deletedAt'
+      ].forEach(function(key) {
+        if (item[key] !== undefined && item[key] !== null && item[key] !== '') tiny[key] = item[key];
+      });
+      tiny.docs = {};
+      Object.keys(item.docs || {}).forEach(function(key) {
+        tiny.docs[key] = makeTinyDocForStorage(item.docs[key]);
+      });
+      const meta = item.bundleMeta && typeof item.bundleMeta === 'object' ? item.bundleMeta : {};
+      tiny.bundleMeta = {};
+      ['includedGroups','includedGroupNames','equipmentDocCount','driverDocCount','workerDocCount','workerPeopleCount','normalWorkerCount','specialWorkerCount'].forEach(function(key) {
+        if (meta[key] !== undefined && meta[key] !== null && meta[key] !== '') tiny.bundleMeta[key] = meta[key];
+      });
+      if (Array.isArray(meta.workerPeople)) {
+        tiny.bundleMeta.workerPeople = meta.workerPeople.map(function(p) {
+          return { uid:p.uid || '', type:p.type || 'normal', phone:p.phone || '', task:p.task || '', name:p.name || '' };
+        });
+      }
+      if (Array.isArray(item.workerPeople)) {
+        tiny.workerPeople = item.workerPeople.map(function(p) {
+          return { uid:p.uid || '', type:p.type || 'normal', phone:p.phone || '', task:p.task || '', name:p.name || '' };
+        });
+      }
+      tiny.storageNote = '브라우저 저장공간 부족으로 이 기기에는 사진 없는 목록정보만 저장됨. QR/보관함 확인용으로 우선 보존됨';
+      tiny.localPhotoPreviewStripped = true;
+      return tiny;
     }
 
     function clearNonEssentialRegistrationStorageForSave() {
-      // v23.7.306: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
-      // 서버 캐시/임시등록/작성중 초안처럼 다시 만들 수 있는 보조자료만 비우고 재시도합니다.
+      // v23.7.307: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
+      // 서버 캐시/임시등록/작성중 초안처럼 다시 만들 수 있는 보조자료를 비우고 재시도합니다.
       try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
       try { localStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
       try { sessionStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
       try { localStorage.removeItem(REGISTRATION_DRAFT_KEY); } catch (e) {}
+    }
+
+    function clearLegacyEquipmentStorageForCompactSave() {
+      // 오래된 버전의 사진 포함 저장값이 남아 있으면 현재 등록 1건도 저장하지 못할 수 있습니다.
+      // 테스트 단계에서는 장비 원본 사진보다 QR/보관함 목록 저장이 우선이므로 구버전 장비 저장키만 비웁니다.
+      [PREV_STORAGE_KEY, PREV_STORAGE_KEY_2, PREV_STORAGE_KEY_3, PREV_STORAGE_KEY_4, PREV_STORAGE_KEY_5, PREV_STORAGE_KEY_6, PREV_STORAGE_KEY_7, STORAGE_KEY, SERVER_EQUIPMENT_CACHE_KEY].forEach(function(key) {
+        try { if (key) localStorage.removeItem(key); } catch (e) {}
+      });
+      clearNonEssentialRegistrationStorageForSave();
+    }
+
+    function tryStoreCompactEquipmentList(list, limit) {
+      const compact = (Array.isArray(list) ? list : []).slice(0, limit).map(makeStorageTinyItem);
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(compact));
+        return true;
+      } catch (e) {
+        console.info('장비 보관함 축약 저장 재시도 필요');
+        return false;
+      }
     }
 
     function setItemsWithFallback(items) {
@@ -406,14 +474,19 @@ function setItems(items) {
       clearNonEssentialRegistrationStorageForSave();
       const tinyItems = list.map(makeStorageTinyItem);
       if (setItems(tinyItems)) return { ok:true, mode:'tiny' };
+      clearLegacyEquipmentStorageForCompactSave();
+      if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
+      if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
+      if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
       return { ok:false, mode:'memory' };
     }
 
     function getStorageFallbackNote(result) {
       if (!result || result.mode === 'full') return '';
       if (result.mode === 'light') return String.fromCharCode(10) + String.fromCharCode(10) + '용량을 줄이기 위해 원본/보정본 비교데이터는 제외하고 담당자용 사진 미리보기만 저장했습니다.';
-      if (result.mode === 'tiny') return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 부족해서 이 기기에는 사진 없는 목록정보만 저장했습니다. 서버저장이 완료되면 관리자/서버 목록 기준으로 확인됩니다.';
-      return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 가득 차서 이 기기 저장은 생략했습니다. 서버저장 완료 여부를 꼭 확인해주세요.';
+      if (result.mode === 'tiny') return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 부족해서 이 기기에는 사진 없는 목록정보만 저장했습니다.';
+      if (String(result.mode || '').indexOf('compact') === 0) return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 가득 차서 구버전 사진 캐시를 정리하고 QR/보관함 목록정보만 저장했습니다.';
+      return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 가득 차서 이 기기 저장은 메모리로만 유지됩니다. 새로고침 전 보관함을 확인해주세요.';
     }
 
     // v23.7.72 - 담당자 화면보기/QR/상세/프린트 공통 조회 함수 복구
@@ -489,7 +562,7 @@ function setItems(items) {
     }
 
 // ---- merged from app-register-share-payment-08.js ----
-// SitePass v23.7.306 - app-register-share-payment finer split (08/15)
+// SitePass v23.7.307 - app-register-share-payment finer split (08/15)
 function makeQrUrl(link, size = 180) {
       const qrShare = getQrShareModule();
       if (qrShare.makeQrUrl) return qrShare.makeQrUrl(link, size);
