@@ -1,7 +1,7 @@
-// SitePass v23.7.294 - app.bundle.js remaining split (01 core/auth/member)
-window.__SITEPASS_APP_SPLIT_VERSION = 'v23.7.294';
-window.SITEPASS_TEST_NO_PAYMENT_MODE = true; // v23.7.294 테스트 기간에는 결제단계를 건너뜁니다.
-// SitePass v23.7.294 - v23.7.290 기준 남은 파일 쪼개기 / 배포 안정화
+// SitePass v23.7.295 - app.bundle.js remaining split (01 core/auth/member)
+window.__SITEPASS_APP_SPLIT_VERSION = 'v23.7.295';
+window.SITEPASS_TEST_NO_PAYMENT_MODE = true; // v23.7.295 테스트 기간에는 결제단계를 건너뜁니다.
+// SitePass v23.7.295 - v23.7.290 기준 남은 파일 쪼개기 / 배포 안정화
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';

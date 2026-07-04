@@ -48,6 +48,9 @@
         (Array.isArray(list) ? list : []).forEach(item => {
           if (!item || item.isDeleted || item.deletedAt) return;
           const code = String(item.code || '').trim() || ('NO-CODE-' + Math.random());
+          try {
+            if (window.SitePassArchive && typeof window.SitePassArchive.isArchiveDeletedCode === 'function' && window.SitePassArchive.isArchiveDeletedCode(code)) return;
+          } catch (e) {}
           const existing = map.get(code) || {};
           map.set(code, { ...existing, ...item });
         });
