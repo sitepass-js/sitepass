@@ -1,7 +1,7 @@
-// SitePass v23.7.304 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
+// SitePass v23.7.305 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
 // ---- merged from app-register-share-payment-01.js ----
-// SitePass v23.7.304 - app-register-share-payment finer split (01/15)
-// SitePass v23.7.304 - app.bundle.js remaining split (03 register/share/payment)
+// SitePass v23.7.305 - app-register-share-payment finer split (01/15)
+// SitePass v23.7.305 - app.bundle.js remaining split (03 register/share/payment)
 
 
     function getDisplayDocs(item) {
@@ -152,6 +152,7 @@
     }
 
     function saveRegistrationDraftNow() {
+      if (sitePassRegistrationCompletionBusy) return;
       if (registrationDraftRestoreBusy) return;
       const register = document.getElementById('registerScreen');
       if (!register || register.classList.contains('hidden')) return;
@@ -220,8 +221,9 @@
     }
 
 // ---- merged from app-register-share-payment-02.js ----
-// SitePass v23.7.304 - app-register-share-payment finer split (02/15)
+// SitePass v23.7.305 - app-register-share-payment finer split (02/15)
 function promptRegistrationDraftIfNeeded(reason) {
+      if (sitePassRegistrationCompletionBusy) return false;
       if (registrationDraftPromptOpen) return false;
       if (isSitePassHashRouteActive()) return false;
       if (!isMemberLoggedIn() && !isAdminLoggedIn()) return false;
@@ -302,7 +304,11 @@ function promptRegistrationDraftIfNeeded(reason) {
         banner.classList.toggle('hidden', !editingCode);
         if (editingCode) banner.innerHTML = '기존 통합 서류함 수정/갱신 중입니다. 장비는 그대로 두고 기사 교체, 보험증·검사증 날짜 갱신, 제원표·비파괴·특수건강검진 파일 교체가 가능합니다. <button type="button" class="mini-button" onclick="cancelEditMode()">수정취소</button>';
       }
-      if (saveButton) saveButton.textContent = editingCode ? '수정내용 저장' : (hasRegisteredEquipmentBundle() ? '추가등록 결제창으로 이동' : '첫장비 등록/결제');
+      if (saveButton) {
+        if (editingCode) saveButton.textContent = '수정내용 저장';
+        else if (window.SITEPASS_TEST_NO_PAYMENT_MODE) saveButton.textContent = hasRegisteredEquipmentBundle() ? '테스트 추가등록 완료' : '테스트 등록 완료';
+        else saveButton.textContent = hasRegisteredEquipmentBundle() ? '추가등록 결제창으로 이동' : '첫장비 등록/결제';
+      }
       if (noInput) noInput.readOnly = !!editingCode;
     }
 
@@ -369,7 +375,7 @@ function promptRegistrationDraftIfNeeded(reason) {
     }
 
 // ---- merged from app-register-share-payment-03.js ----
-// SitePass v23.7.304 - app-register-share-payment finer split (03/15)
+// SitePass v23.7.305 - app-register-share-payment finer split (03/15)
 function fillDocsForEdit(item) {
       const docs = item.docs || {};
       Object.values(docs).forEach(doc => {
@@ -659,7 +665,7 @@ function fillDocsForEdit(item) {
     }
 
 // ---- merged from app-register-share-payment-04.js ----
-// SitePass v23.7.304 - app-register-share-payment finer split (04/15)
+// SitePass v23.7.305 - app-register-share-payment finer split (04/15)
 function requirePaymentOwnerVerification(actionLabel) {
       const member = getCurrentMemberTest() || {};
       const label = actionLabel || '결제';
@@ -862,6 +868,18 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
             paymentTier: isAdditionalRegistration ? 'additional' : 'first',
             createdAt: nowIso
           };
+      if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
+        // v23.7.305: 테스트 기간에는 결제대기 상태를 localStorage/sessionStorage에 남기지 않습니다.
+        // 결제대기 저장 → 테스트완료 처리 사이에 안내창이 반복되고 보관함 저장이 꼬이는 문제를 막기 위해
+        // 현재 메모리에만 임시 등록정보를 두고 곧바로 테스트 완료 저장으로 진행합니다.
+        pendingRegistrationItemMemory = pending;
+        clearPendingRegistration();
+        pendingRegistrationItemMemory = pending;
+        clearRegistrationDraft();
+        console.info('SitePass 테스트 모드: 결제대기 저장 없이 등록완료 처리');
+        await completePendingRegistrationPayment('test-free');
+        return;
+      }
       if (!setPendingRegistration(pending)) {
         alert('결제 대기 정보를 임시 저장하지 못했습니다. 사진 용량을 줄이거나 기존 코드를 정리한 뒤 다시 시도해주세요.');
         return;

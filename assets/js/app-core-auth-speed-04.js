@@ -1,6 +1,6 @@
-// SitePass v23.7.304 - speed optimized medium chunk (app-core-auth-speed 04/04)
+// SitePass v23.7.305 - speed optimized medium chunk (app-core-auth-speed 04/04)
 // ---- merged from app-core-auth-16.js ----
-// SitePass v23.7.304 - app-core-auth finer split (16/19)
+// SitePass v23.7.305 - app-core-auth finer split (16/19)
 function submitSitePassSignupTest() {
       if (!requireSignupTerms()) return;
       formatSitePassSignupJuminDisplay();
@@ -175,7 +175,7 @@ function submitSitePassSignupTest() {
     }
 
 // ---- merged from app-core-auth-17.js ----
-// SitePass v23.7.304 - app-core-auth finer split (17/19)
+// SitePass v23.7.305 - app-core-auth finer split (17/19)
 function renderAdminContactManager() {
       const contacts = getContacts();
       const waiting = contacts.filter(x => x.status !== '답변완료').length;
@@ -355,7 +355,7 @@ function renderAdminContactManager() {
     }
 
 // ---- merged from app-core-auth-18.js ----
-// SitePass v23.7.304 - app-core-auth finer split (18/19)
+// SitePass v23.7.305 - app-core-auth finer split (18/19)
 function adminLogout() {
       removeSessionValue(ADMIN_SESSION_KEY);
       removeSessionValue(ADMIN_SESSION_KEY + '_role');
@@ -481,7 +481,7 @@ function adminLogout() {
     }
 
 // ---- merged from app-core-auth-19.js ----
-// SitePass v23.7.304 - app-core-auth finer split (19/19)
+// SitePass v23.7.305 - app-core-auth finer split (19/19)
 function setPersonAuthStatus(kind, text, mode) {
       const values = getPersonAuthValues(kind);
       const panel = values?.panel;
@@ -651,9 +651,16 @@ function setPersonAuthStatus(kind, text, mode) {
       values.panel.dataset.pendingPhone = values.phone;
       values.panel.dataset.pendingType = values.type || 'normal';
       values.panel.dataset.pendingVerifiedAt = meta.verifiedAt;
-      setPersonAuthStatus(kind, '인부 동의/인증 완료 · 이제 아래 버튼으로 이 인부의 서류함을 추가할 수 있습니다.', 'verified');
+      setPersonAuthStatus(kind, '인부 동의/인증 완료 · 선택한 인부 서류첨부창을 바로 추가합니다.', 'verified');
       setWorkerAddButtonsEnabled(true);
-      alert('인부 동의/인증이 완료되었습니다.\n이제 보통인부 추가 또는 특수인부 추가 버튼으로 서류함을 추가하세요.\n이 인증은 해당 인부 서류 등록 동의용이며, 현장 링크를 보낼 때마다 다시 받지 않습니다.');
+      // v23.7.305: 인부는 인증 완료 후 사용자가 보통/특수 추가 버튼을 다시 누르지 않도록
+      // 선택한 구분의 서류첨부창을 즉시 열어줍니다.
+      try {
+        addWorkerPerson(values.type || 'normal');
+      } catch (e) {
+        console.warn('인부 인증 후 서류첨부창 자동 추가 실패:', e);
+        alert('인부 동의/인증이 완료되었습니다.\n아래 추가 버튼으로 이 인부의 서류첨부창을 열어주세요.');
+      }
     }
 
     function rejectPersonAuth(kind) {

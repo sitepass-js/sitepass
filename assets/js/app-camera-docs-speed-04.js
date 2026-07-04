@@ -1,6 +1,6 @@
-// SitePass v23.7.304 - speed optimized medium chunk (app-camera-docs-speed 04/04)
+// SitePass v23.7.305 - speed optimized medium chunk (app-camera-docs-speed 04/04)
 // ---- merged from app-camera-docs-13.js ----
-// SitePass v23.7.304 - app-camera-docs finer split (13/16)
+// SitePass v23.7.305 - app-camera-docs finer split (13/16)
 function trimPaperBorder(canvas) {
       const ctx = canvas.getContext('2d', { willReadFrequently:true });
       const w = canvas.width, h = canvas.height;
@@ -67,16 +67,19 @@ function trimPaperBorder(canvas) {
 
     function isCardQuarterDoc(docKey) {
       const rawKey = String(docKey || '').toLowerCase();
-      const key = rawKey.replace(/_[a-z0-9-]+$/i, '');
-      // 중요: businessLicense(사업자등록증)에 license가 들어가므로 includes('license')를 쓰면 안 됩니다.
-      // 카드형은 실제 신분증/면허증/기초안전보건교육 이수증만 지정합니다.
-      return [
+      // v23.7.305: 인부 서류키는 workerIdCard_w..._1처럼 uid가 두 번 붙을 수 있습니다.
+      // 마지막 _1만 지우면 workeridcard_w...가 남아 카드형 판정이 실패하므로,
+      // 첫 언더바 앞 기본키와 알려진 접두어를 함께 확인합니다.
+      const baseKey = rawKey.split('_')[0];
+      const knownCardKeys = [
         'driveridcard',
         'driverlicense',
         'driverbasicsafetytraining',
         'workeridcard',
         'workersafetytraining'
-      ].includes(key);
+      ];
+      if (knownCardKeys.includes(baseKey)) return true;
+      return knownCardKeys.some(function(key){ return rawKey === key || rawKey.indexOf(key + '_') === 0; });
     }
 
     function shouldUseCardQuarterLayout(docKey, cropW, cropH, sourceW, sourceH) {
@@ -208,7 +211,7 @@ function trimPaperBorder(canvas) {
     }
 
 // ---- merged from app-camera-docs-14.js ----
-// SitePass v23.7.304 - app-camera-docs finer split (14/16)
+// SitePass v23.7.305 - app-camera-docs finer split (14/16)
 function findCardForegroundBox(canvas, regionRatio) {
       const ctx = canvas.getContext('2d', { willReadFrequently:true });
       const w = canvas.width, h = canvas.height;
@@ -412,7 +415,7 @@ function findCardForegroundBox(canvas, regionRatio) {
     }
 
 // ---- merged from app-camera-docs-15.js ----
-// SitePass v23.7.304 - app-camera-docs finer split (15/16)
+// SitePass v23.7.305 - app-camera-docs finer split (15/16)
 function guessCenteredPaperBBox(canvas) {
       const ctx = canvas.getContext('2d', { willReadFrequently:true });
       const w = canvas.width, h = canvas.height;
@@ -645,7 +648,7 @@ function guessCenteredPaperBBox(canvas) {
     }
 
 // ---- merged from app-camera-docs-16.js ----
-// SitePass v23.7.304 - app-camera-docs finer split (16/16)
+// SitePass v23.7.305 - app-camera-docs finer split (16/16)
 function resizeCanvasIfNeeded(canvas, maxSize) {
       if (Math.max(canvas.width, canvas.height) <= maxSize) return canvas;
       const scale = maxSize / Math.max(canvas.width, canvas.height);
