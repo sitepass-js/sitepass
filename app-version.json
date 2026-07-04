@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.292",
+  "version": "v23.7.294",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "v23.7.290 기준으로 남은 app.bundle 파일을 4개 청크로 쪼갠 배포 안정화본입니다.",
+  "note": "v23.7.293 쪼개기 완료본 기준 테스트 기간 결제단계를 우선 제외했습니다. 등록 완료 시 결제화면 없이 테스트 무료등록으로 QR/보관함 저장을 확인합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-04T19:00:00+09:00"
+  "updatedAt": "2026-07-04T21:40:00+09:00"
 }

@@ -1,13 +1,22 @@
-// SitePass v23.7.292 - compatibility loader for old index.html app.bundle.js references
+// SitePass v23.7.294 - compatibility loader for old index.html app.bundle.js references
 (function(){
-  if (window.__SITEPASS_APP_SPLIT_VERSION === 'v23.7.292' || window.__SITEPASS_APP_SPLIT_LOADER_ACTIVE) return;
+  if (window.__SITEPASS_APP_SPLIT_VERSION === 'v23.7.294' || window.__SITEPASS_APP_SPLIT_LOADER_ACTIVE) return;
   window.__SITEPASS_APP_SPLIT_LOADER_ACTIVE = true;
-  var version = '23.7.292';
+  var version = '23.7.294';
   var files = [
-    './assets/js/app-core-auth.js',
-    './assets/js/app-camera-docs.js',
-    './assets/js/app-register-share-payment.js',
-    './assets/js/app-admin-boot.js'
+    './assets/js/app-core-auth-01.js',
+    './assets/js/app-core-auth-02.js',
+    './assets/js/app-core-auth-03.js',
+    './assets/js/app-core-auth-04.js',
+    './assets/js/app-camera-docs-01.js',
+    './assets/js/app-camera-docs-02.js',
+    './assets/js/app-camera-docs-03.js',
+    './assets/js/app-register-share-payment-01.js',
+    './assets/js/app-register-share-payment-02.js',
+    './assets/js/app-register-share-payment-03.js',
+    './assets/js/app-admin-boot-01.js',
+    './assets/js/app-admin-boot-02.js',
+    './assets/js/app-admin-boot-03.js'
   ];
   function withVersion(src){ return src + '?v=' + version; }
   if (document.readyState === 'loading') {
