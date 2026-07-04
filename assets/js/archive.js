@@ -1,4 +1,4 @@
-// SitePass v23.7.284 - 보관함/장비서류 목록 전용 파일
+// SitePass v23.7.296 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
 // 이 파일에는 장비/기사/인부 보관함 목록, 선택 공유, 삭제, 관리자 보관함 표시 기능을 둡니다.
 // QR 링크 생성 자체는 qr-share.js, 서버통신은 supabase-api.js를 계속 사용합니다.
 (function(){
@@ -100,11 +100,21 @@ function archiveCodeMatches(item, code) {
   return [item.code, item.equipmentCode, item.qrCode].map(normalizeArchiveCode).some(function(value){ return value === target; });
 }
 
+function isArchiveDeletedItem(item) {
+  if (!item || typeof item !== 'object') return false;
+  if (item.isDeleted || item.is_deleted || item.deletedAt || item.deleted_at || item.withdrawnAt || item.withdrawn_at) return true;
+  const raw = [item.serviceStatus, item.paymentStatus, item.saveReason, item.save_reason, item.status]
+    .map(function(v){ return String(v || '').toLowerCase(); }).join(' ');
+  if (raw.indexOf('archive_delete') >= 0 || raw.indexOf('deleted') >= 0 || raw.indexOf('삭제') >= 0) return true;
+  return isArchiveDeletedCode(item.code || item.equipmentCode || item.qrCode || '');
+}
+
 function filterArchiveVisibleItems(items) {
   return (Array.isArray(items) ? items : []).filter(function(item){
-    return item && !isArchiveDeletedCode(item.code || item.equipmentCode || item.qrCode || '');
+    return item && !isArchiveDeletedItem(item);
   });
 }
+
 
 function removeArchiveCodeFromLocalArrayKey(key, code) {
   if (!key) return 0;
@@ -387,10 +397,18 @@ async function deleteItem(code) {
     const remained = filterArchiveVisibleItems(getItems()).filter(function(item){ return !archiveCodeMatches(item, target); });
     if (typeof setItems === 'function') setItems(remained);
   } catch (e) {}
+  try { if (typeof refreshMemberUi === 'function') refreshMemberUi(); } catch (e) {}
+  try { if (typeof refreshAdminUi === 'function') refreshAdminUi(); } catch (e) {}
+  try { if (typeof isAdminLoggedIn === 'function' && isAdminLoggedIn() && typeof renderAdmin === 'function') renderAdmin(); } catch (e) {}
   renderList();
 
   const serverResult = await markArchiveCodeDeletedOnServer(target);
   try { if (typeof syncSupabaseEquipmentItems === 'function') await syncSupabaseEquipmentItems(true); } catch (e) {}
+  // 서버 RPC/RLS가 아직 없어도, 동기화 직후 다시 들어온 서버캐시에서 삭제 코드를 한 번 더 제거합니다.
+  try { removeArchiveCodeEverywhereLocal(target); } catch (e) {}
+  try { if (typeof refreshMemberUi === 'function') refreshMemberUi(); } catch (e) {}
+  try { if (typeof refreshAdminUi === 'function') refreshAdminUi(); } catch (e) {}
+  try { if (typeof isAdminLoggedIn === 'function' && isAdminLoggedIn() && typeof renderAdmin === 'function') renderAdmin(); } catch (e) {}
   renderList();
 
   if (serverResult && serverResult.ok) {
@@ -435,6 +453,8 @@ async function clearAll() {
     buildManagerShareText,
     renderManagerSharePreviewPanel,
     isArchiveDeletedCode,
+    isArchiveDeletedItem,
+    getArchiveDeletedCodes,
     rememberArchiveDeletedCode,
     forgetArchiveDeletedCode,
     filterArchiveVisibleItems,

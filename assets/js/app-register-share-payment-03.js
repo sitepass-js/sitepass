@@ -602,7 +602,7 @@
     }
 
     function openPendingRegistrationPaymentScreen(pending) {
-      // v23.7.295: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
+      // v23.7.296: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
       if (pending && pending.item) pendingRegistrationItemMemory = pending;
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE && pending && pending.item) {
         try { completePendingRegistrationPayment('test-free'); } catch (e) { console.warn('테스트 무료등록 처리 실패:', e); }

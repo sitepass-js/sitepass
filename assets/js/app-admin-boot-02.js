@@ -41,10 +41,36 @@
     }
     window.deleteOwnedServerItemsForMember = deleteOwnedServerItemsForMember;
 
+    function isAdminArchiveDeletedItem(item) {
+      try {
+        if (window.SitePassArchive && typeof window.SitePassArchive.isArchiveDeletedItem === 'function') {
+          return window.SitePassArchive.isArchiveDeletedItem(item);
+        }
+        if (window.SitePassArchive && typeof window.SitePassArchive.isArchiveDeletedCode === 'function') {
+          const code = item && (item.code || item.equipmentCode || item.qrCode || '');
+          if (window.SitePassArchive.isArchiveDeletedCode(code)) return true;
+        }
+      } catch (e) {}
+      if (!item) return false;
+      const raw = [item.serviceStatus, item.paymentStatus, item.saveReason, item.save_reason, item.status]
+        .map(v => String(v || '').toLowerCase()).join(' ');
+      return !!(item.isDeleted || item.is_deleted || item.deletedAt || item.deleted_at || item.withdrawnAt || item.withdrawn_at || raw.indexOf('archive_delete') >= 0 || raw.indexOf('deleted') >= 0 || raw.indexOf('삭제') >= 0);
+    }
+
+    function filterAdminArchiveVisibleItems(items) {
+      const list = Array.isArray(items) ? items : [];
+      try {
+        if (window.SitePassArchive && typeof window.SitePassArchive.filterArchiveVisibleItems === 'function') {
+          return window.SitePassArchive.filterArchiveVisibleItems(list);
+        }
+      } catch (e) {}
+      return list.filter(item => !isAdminArchiveDeletedItem(item));
+    }
+
     function getMemberEquipmentItems(member) {
       if (!member || member.isSuperAdminVirtual || member.withdrawn) return [];
       const ids = getMemberAdminIdentifiers(member);
-      return getItems().filter(item => {
+      return filterAdminArchiveVisibleItems(getItems()).filter(item => {
         const ownerKeys = [
           item.ownerMemberId,
           item.ownerSignupId,
@@ -90,7 +116,7 @@
     }
 
     function isEquipmentOwnedByActiveMember(item, activeOwnerKeySet) {
-      if (!item || item.isDeleted || item.deletedAt || item.is_deleted) return false;
+      if (!item || item.isDeleted || item.deletedAt || item.is_deleted || isAdminArchiveDeletedItem(item)) return false;
       const ownerKeys = getEquipmentOwnerAdminKeys(item);
       if (!ownerKeys.length) return false;
       const set = activeOwnerKeySet || getActiveEquipmentOwnerKeySet();
@@ -100,7 +126,7 @@
 
     function getAdminVisibleEquipmentItems() {
       const activeOwnerKeySet = getActiveEquipmentOwnerKeySet();
-      return getItems().filter(item => isEquipmentOwnedByActiveMember(item, activeOwnerKeySet));
+      return filterAdminArchiveVisibleItems(getItems()).filter(item => isEquipmentOwnedByActiveMember(item, activeOwnerKeySet));
     }
 
     async function cleanupOrphanEquipmentForAdmin() {

@@ -1,4 +1,4 @@
-// SitePass v23.7.295 - app.bundle.js remaining split (03 register/share/payment)
+// SitePass v23.7.296 - app.bundle.js remaining split (03 register/share/payment)
 
 
     function getDisplayDocs(item) {

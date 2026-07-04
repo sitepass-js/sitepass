@@ -34,7 +34,13 @@
 
     function setServerEquipmentCache(list) {
       try {
-        localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+        let safeList = Array.isArray(list) ? list : [];
+        try {
+          if (window.SitePassArchive && typeof window.SitePassArchive.filterArchiveVisibleItems === 'function') {
+            safeList = window.SitePassArchive.filterArchiveVisibleItems(safeList);
+          }
+        } catch (e) {}
+        localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(safeList));
         return true;
       } catch (e) {
         console.warn('서버 장비 캐시 저장 실패:', e);
@@ -60,6 +66,7 @@
 
     function normalizeSupabaseEquipmentRow(row) {
       if (!row) return null;
+      if (row.is_deleted || row.deleted_at) return null;
       let item = row.item_json || row.payload || row.data || null;
       if (typeof item === 'string') {
         try { item = JSON.parse(item); } catch (e) { item = null; }

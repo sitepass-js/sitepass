@@ -5,7 +5,11 @@
       }
       const items = getAdminVisibleEquipmentItems();
       const members = ensureMemberIds();
-      const rawEquipmentCount = getItems().length;
+      let rawEquipmentItems = getItems();
+      try {
+        if (window.SitePassArchive && typeof window.SitePassArchive.filterArchiveVisibleItems === 'function') rawEquipmentItems = window.SitePassArchive.filterArchiveVisibleItems(rawEquipmentItems);
+      } catch (e) {}
+      const rawEquipmentCount = rawEquipmentItems.length;
       const total = items.length;
       const paused = items.filter(isQrPaused).length;
       const expiringDocs = items.reduce((sum, item) => sum + Object.values(item.docs || {}).filter(doc => (doc.status || getDocStatus(doc)) === '만료임박').length, 0);
