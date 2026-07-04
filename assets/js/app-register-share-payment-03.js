@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-register-share-payment split continue (03/09)
+// SitePass v23.7.299 - app-register-share-payment split continue (03/09)
 function requirePaymentOwnerVerification(actionLabel) {
       const member = getCurrentMemberTest() || {};
       const label = actionLabel || '결제';

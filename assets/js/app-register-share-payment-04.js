@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-register-share-payment split continue (04/09)
+// SitePass v23.7.299 - app-register-share-payment split continue (04/09)
 function resetForm(clearEdit = true) {
       if (clearEdit) editingCode = '';
       const no = document.getElementById('equipmentNo');

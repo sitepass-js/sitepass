@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-camera-docs split continue (07/08)
+// SitePass v23.7.299 - app-camera-docs split continue (07/08)
 function trimPaperBorder(canvas) {
       const ctx = canvas.getContext('2d', { willReadFrequently:true });
       const w = canvas.width, h = canvas.height;

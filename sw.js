@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.298';
-const SITEPASS_CACHE = 'sitepass-v23.7.298';
+const SITEPASS_SW_VERSION = 'v23.7.299';
+const SITEPASS_CACHE = 'sitepass-v23.7.299';
 const SITEPASS_CORE = [
   './',
   './index.html',
@@ -32,6 +32,7 @@ const SITEPASS_CORE = [
   './assets/js/app-core-auth-08.js',
   './assets/js/app-core-auth-09.js',
   './assets/js/app-core-auth-10.js',
+  './assets/js/app-core-auth-11.js',
   './assets/js/app-camera-docs-01.js',
   './assets/js/app-camera-docs-02.js',
   './assets/js/app-camera-docs-03.js',
@@ -56,6 +57,7 @@ const SITEPASS_CORE = [
   './assets/js/app-admin-boot-05.js',
   './assets/js/app-admin-boot-06.js',
   './assets/js/app-admin-boot-07.js',
+  './assets/js/app-admin-boot-08.js',
   './assets/js/app.bundle.js'
 ];
 

@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-register-share-payment split continue (05/09)
+// SitePass v23.7.299 - app-register-share-payment split continue (05/09)
 function makeQrUrl(link, size = 180) {
       const qrShare = getQrShareModule();
       if (qrShare.makeQrUrl) return qrShare.makeQrUrl(link, size);

@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-camera-docs split continue (02/08)
+// SitePass v23.7.299 - app-camera-docs split continue (02/08)
 function drawCameraAutoBox(box, sourceW, sourceH) {
       const guide = document.getElementById('cameraGuide');
       const rect = document.getElementById('autoDocumentBox');

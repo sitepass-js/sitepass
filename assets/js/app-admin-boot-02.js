@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-admin-boot split continue (02/07)
+// SitePass v23.7.299 - app-admin-boot split continue (02/08)
 function isQrPaused(item) {
       const payments = getAdminPaymentsModule();
       if (payments.isQrPaused) return payments.isQrPaused(item);

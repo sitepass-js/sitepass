@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-register-share-payment split continue (06/09)
+// SitePass v23.7.299 - app-register-share-payment split continue (06/09)
 function normalizePhoneForShare(phone) {
       const qrShare = getQrShareModule();
       if (qrShare.normalizePhoneForShare) return qrShare.normalizePhoneForShare(phone);

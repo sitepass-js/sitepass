@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-admin-boot split continue (04/07)
+// SitePass v23.7.299 - app-admin-boot split continue (04/08)
 function getMemberEquipmentCount(member) {
       return getMemberEquipmentItems(member).length;
     }

@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-camera-docs split continue (03/08)
+// SitePass v23.7.299 - app-camera-docs split continue (03/08)
 function renderWorkerPeopleSection() {
       return '<div class="worker-control-box">' +
         '<div class="small">인부는 여러 명이 될 수 있으므로 인부 1명마다 문자 동의안내와 6자리 번호를 먼저 확인합니다. 인증 완료 후에만 아래 추가 버튼이 열리고, 추가된 그 인부의 서류는 한 번에 업로드할 수 있습니다. 단, 이 인증은 해당 인부 서류 등록 동의용이고, 현장 담당자에게 공유 링크를 보낼 때마다 다시 인증받는 구조가 아닙니다.</div>' +

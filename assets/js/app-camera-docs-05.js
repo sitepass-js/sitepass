@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-camera-docs split continue (05/08)
+// SitePass v23.7.299 - app-camera-docs split continue (05/08)
 function removeDocPage(docKey, index) {
       const card = findDocCardByKey(docKey);
       if (!card) return;

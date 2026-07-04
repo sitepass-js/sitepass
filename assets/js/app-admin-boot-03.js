@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-admin-boot split continue (03/07)
+// SitePass v23.7.299 - app-admin-boot split continue (03/08)
 async function withdrawCurrentSupabaseAuthMember(reason) {
       try {
         if (!window.sitepassSupabase || !window.sitepassSupabase.rpc) return 0;

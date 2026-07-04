@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-camera-docs split continue (06/08)
+// SitePass v23.7.299 - app-camera-docs split continue (06/08)
 function fitDocumentImageToDataUrl(file, maxSize, quality, docKey) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();

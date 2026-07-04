@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-register-share-payment split continue (09/09)
+// SitePass v23.7.299 - app-register-share-payment split continue (09/09)
 function normalizePendingRegistrationTier(pending) {
       if (!pending || !pending.item) return pending;
       const member = getEquipmentRegistrationOwnerMember ? getEquipmentRegistrationOwnerMember() : (getCurrentMemberTest() || null);

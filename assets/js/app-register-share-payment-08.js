@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-register-share-payment split continue (08/09)
+// SitePass v23.7.299 - app-register-share-payment split continue (08/09)
 function cssEscapeValue(value) {
       if (window.CSS && CSS.escape) return CSS.escape(String(value || ''));
       return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -304,7 +304,7 @@ function cssEscapeValue(value) {
     }
 
     function openPendingRegistrationPaymentScreen(pending) {
-      // v23.7.298: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
+      // v23.7.299: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
       if (pending && pending.item) pendingRegistrationItemMemory = pending;
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE && pending && pending.item) {
         try { completePendingRegistrationPayment('test-free'); } catch (e) { console.warn('테스트 무료등록 처리 실패:', e); }

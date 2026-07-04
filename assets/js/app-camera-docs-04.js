@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-camera-docs split continue (04/08)
+// SitePass v23.7.299 - app-camera-docs split continue (04/08)
 async function buildDocPage(card, file, sourceText) {
       const base = {
         id:'p' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),

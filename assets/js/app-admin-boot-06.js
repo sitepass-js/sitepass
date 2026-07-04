@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-admin-boot split continue (06/07)
+// SitePass v23.7.299 - app-admin-boot split continue (06/08)
 function renderAdmin() {
       if (!isAdminLoggedIn()) { showScreen('signupScreen'); return; }
       if (!sitePassEquipmentSyncing && (!sitePassEquipmentSyncedAt || Date.now() - sitePassEquipmentSyncedAt > 30000)) {

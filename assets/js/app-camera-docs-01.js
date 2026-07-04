@@ -1,5 +1,5 @@
-// SitePass v23.7.298 - app-camera-docs split continue (01/08)
-// SitePass v23.7.298 - app.bundle.js remaining split (02 camera/document scan)
+// SitePass v23.7.299 - app-camera-docs split continue (01/08)
+// SitePass v23.7.299 - app.bundle.js remaining split (02 camera/document scan)
 
 
     function sendPrivateDocAuthCode(button) {

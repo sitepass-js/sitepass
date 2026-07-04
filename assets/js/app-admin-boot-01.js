@@ -1,5 +1,5 @@
-// SitePass v23.7.298 - app-admin-boot split continue (01/07)
-// SitePass v23.7.298 - app.bundle.js remaining split (04 admin/pwa/boot)
+// SitePass v23.7.299 - app-admin-boot split continue (01/08)
+// SitePass v23.7.299 - app.bundle.js remaining split (04 admin/pwa/boot)
 
 
     function completeAutoPaymentForItem(code, plan, sourceLabel, options) {

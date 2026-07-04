@@ -1,4 +1,4 @@
-// SitePass v23.7.298 - app-core-auth split continue (03/10)
+// SitePass v23.7.299 - app-core-auth split continue (03/11)
 function getAdminSampleEquipmentOwner() {
       return {
         id:'MEM-SAMPLE-EQUIPMENT-OWNER',
