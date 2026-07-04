@@ -1,6 +1,6 @@
-// SitePass v23.7.305 - speed optimized medium chunk (app-camera-docs-speed 02/04)
+// SitePass v23.7.306 - speed optimized medium chunk (app-camera-docs-speed 02/04)
 // ---- merged from app-camera-docs-05.js ----
-// SitePass v23.7.305 - app-camera-docs finer split (05/16)
+// SitePass v23.7.306 - app-camera-docs finer split (05/16)
 function renderWorkerPeopleSection() {
       return '<div class="worker-control-box">' +
         '<div class="small">인부는 여러 명이 될 수 있으므로 인부 1명마다 문자 동의안내와 6자리 번호를 먼저 확인합니다. 인증 완료 후에만 아래 추가 버튼이 열리고, 추가된 그 인부의 서류는 한 번에 업로드할 수 있습니다. 단, 이 인증은 해당 인부 서류 등록 동의용이고, 현장 담당자에게 공유 링크를 보낼 때마다 다시 인증받는 구조가 아닙니다.</div>' +
@@ -25,6 +25,51 @@ function renderWorkerPeopleSection() {
       return type === 'special' ? '특수인부' : '보통인부';
     }
 
+    function getWorkerPersonAttachmentCount(card) {
+      if (!card) return 0;
+      let count = 0;
+      card.querySelectorAll('[data-role="filename"]').forEach(box => {
+        if (box.dataset.fileName) count++;
+        try {
+          const pages = JSON.parse(box.dataset.pagesJson || '[]');
+          if (Array.isArray(pages)) count += pages.length;
+        } catch (e) {}
+      });
+      return count;
+    }
+
+    function findReusableWorkerPersonCard(type) {
+      const cards = Array.from(document.querySelectorAll('#workerPeopleList .worker-person-card'));
+      return cards.find(card => {
+        const cardType = card.dataset.workerType || 'normal';
+        const firstDoc = card.querySelector('.doc-card[data-group-key="worker"]');
+        const verified = firstDoc?.dataset.authVerified === 'true' || card.dataset.workerAuthPhone;
+        const hasInputText = Array.from(card.querySelectorAll('[data-extra-phone-key], [data-extra-task-key]')).some(input => String(input.value || '').trim());
+        return cardType === (type || 'normal') && !verified && !hasInputText && getWorkerPersonAttachmentCount(card) === 0;
+      }) || cards.find(card => {
+        const firstDoc = card.querySelector('.doc-card[data-group-key="worker"]');
+        const verified = firstDoc?.dataset.authVerified === 'true' || card.dataset.workerAuthPhone;
+        const hasInputText = Array.from(card.querySelectorAll('[data-extra-phone-key], [data-extra-task-key]')).some(input => String(input.value || '').trim());
+        return !verified && !hasInputText && getWorkerPersonAttachmentCount(card) === 0;
+      });
+    }
+
+    function applyWorkerAuthMetaToPersonCard(personCard, authMeta) {
+      if (!personCard) return;
+      personCard.dataset.workerAuthPhone = authMeta.authPhone || '';
+      personCard.dataset.workerAuthName = authMeta.authPersonName || '';
+      personCard.dataset.workerAuthVerifiedAt = authMeta.authVerifiedAt || '';
+      personCard.querySelectorAll('.doc-card[data-group-key="worker"]').forEach(card => {
+        card.dataset.authVerified = 'true';
+        card.dataset.authVerifiedAt = authMeta.authVerifiedAt || new Date().toISOString();
+        if (authMeta.authPhone) card.dataset.authPhone = authMeta.authPhone;
+        if (authMeta.authPersonName) card.dataset.authPersonName = authMeta.authPersonName;
+        if (typeof unlockPrivateDocUpload === 'function') unlockPrivateDocUpload(card);
+      });
+      const phoneInput = personCard.querySelector('[data-extra-phone-key="workerPhone"]');
+      if (phoneInput && !phoneInput.value) phoneInput.value = authMeta.authPhone || '';
+    }
+
     function addWorkerPerson(type) {
       const list = document.getElementById('workerPeopleList');
       if (!list) return;
@@ -37,27 +82,28 @@ function renderWorkerPeopleSection() {
       }
       const requestedType = panel.dataset.pendingType || panel.querySelector('[data-person-auth-type]')?.value || type || 'normal';
       const finalType = requestedType || type || 'normal';
-      const uid = 'w' + Date.now() + '_' + (++workerPersonSeq);
       const authMeta = {
         authVerified:true,
         authPhone:panel.dataset.pendingPhone || '',
         authPersonName:panel.dataset.pendingName || '',
         authVerifiedAt:panel.dataset.pendingVerifiedAt || new Date().toISOString()
       };
-      list.insertAdjacentHTML('beforeend', renderWorkerPersonCard(finalType, uid, authMeta));
-      const personCard = list.querySelector('.worker-person-card[data-worker-uid="' + uid + '"]');
-      if (personCard) {
-        personCard.dataset.workerAuthPhone = authMeta.authPhone;
-        personCard.dataset.workerAuthName = authMeta.authPersonName;
-        personCard.dataset.workerAuthVerifiedAt = authMeta.authVerifiedAt;
-        const phoneInput = personCard.querySelector('[data-extra-phone-key="workerPhone"]');
-        if (phoneInput && !phoneInput.value) phoneInput.value = authMeta.authPhone;
+      let uid = 'w' + Date.now() + '_' + (++workerPersonSeq);
+      const reusable = findReusableWorkerPersonCard(finalType);
+      if (reusable) {
+        uid = reusable.dataset.workerUid || uid;
+        reusable.outerHTML = renderWorkerPersonCard(finalType, uid, authMeta);
+      } else {
+        list.insertAdjacentHTML('beforeend', renderWorkerPersonCard(finalType, uid, authMeta));
       }
+      const personCard = list.querySelector('.worker-person-card[data-worker-uid="' + uid + '"]');
+      applyWorkerAuthMetaToPersonCard(personCard, authMeta);
       attachDocInputHandlers(list);
       refreshWorkerPersonNumbers();
       renderBundleSummary();
       resetPersonAuth('worker');
-      alert('인부 서류함이 추가되었습니다. 추가된 인부는 인증완료 상태로 저장됩니다. 다음 인부가 있으면 다음 인부만 새로 동의/인증 후 추가하세요.');
+      try { personCard?.scrollIntoView({ behavior:'smooth', block:'start' }); } catch (e) {}
+      alert('인부 서류첨부창이 열렸습니다. 이 인부의 신분증과 기초안전보건교육 이수증을 첨부해주세요. 다음 인부가 있으면 위 인증칸에서 새로 동의/인증 후 추가하세요.');
     }
 
     function renderWorkerPersonCard(type, uid, authMeta = {}) {
@@ -130,7 +176,7 @@ function renderWorkerPeopleSection() {
     }
 
 // ---- merged from app-camera-docs-06.js ----
-// SitePass v23.7.305 - app-camera-docs finer split (06/16)
+// SitePass v23.7.306 - app-camera-docs finer split (06/16)
 function renderDocCards() {
       const box = document.getElementById('docCards');
       if (!box) return;
@@ -304,7 +350,7 @@ function renderDocCards() {
     }
 
 // ---- merged from app-camera-docs-07.js ----
-// SitePass v23.7.305 - app-camera-docs finer split (07/16)
+// SitePass v23.7.306 - app-camera-docs finer split (07/16)
 async function buildDocPage(card, file, sourceText) {
       const base = {
         id:'p' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
@@ -500,7 +546,7 @@ async function buildDocPage(card, file, sourceText) {
     }
 
 // ---- merged from app-camera-docs-08.js ----
-// SitePass v23.7.305 - app-camera-docs finer split (08/16)
+// SitePass v23.7.306 - app-camera-docs finer split (08/16)
 function selectDocPageVersion(docKey, index, mode) {
       const card = findDocCardByKey(docKey);
       if (!card) return;

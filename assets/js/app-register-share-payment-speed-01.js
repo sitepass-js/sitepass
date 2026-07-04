@@ -1,7 +1,7 @@
-// SitePass v23.7.305 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
+// SitePass v23.7.306 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
 // ---- merged from app-register-share-payment-01.js ----
-// SitePass v23.7.305 - app-register-share-payment finer split (01/15)
-// SitePass v23.7.305 - app.bundle.js remaining split (03 register/share/payment)
+// SitePass v23.7.306 - app-register-share-payment finer split (01/15)
+// SitePass v23.7.306 - app.bundle.js remaining split (03 register/share/payment)
 
 
     function getDisplayDocs(item) {
@@ -97,38 +97,82 @@
       };
     }
 
-    function setRegistrationDraft(draft) {
+    function makeRegistrationDraftForLocalSave(draft, level) {
+      const light = JSON.parse(JSON.stringify(draft || {}));
+      Object.values(light.docs || {}).forEach(doc => {
+        if (!doc) return;
+        // 자동저장은 브라우저 저장공간을 넘기지 않도록 이미지/base64/PDF URL을 저장하지 않습니다.
+        // 실제 등록은 현재 화면의 첨부 상태로 진행하고, 자동저장은 글자/만료일/인증상태 중심으로만 남깁니다.
+        doc.pages = [];
+        doc.fileName = '';
+        doc.fileSource = '';
+        doc.fileType = '';
+        doc.previewDataUrl = '';
+        doc.originalDataUrl = '';
+        doc.correctedDataUrl = '';
+        doc.editDataUrl = '';
+        doc.fileObjectUrl = '';
+        doc.fileDataUrl = '';
+        doc.cameraAutoCropDataUrl = '';
+        if (level === 'meta') {
+          doc.fitText = '';
+          doc.ratioText = '';
+          doc.autoFit = '';
+          doc.previewChoice = '';
+        }
+      });
+      light.draftStorageMode = level || 'light-no-file-data';
+      return light;
+    }
+
+    function cleanupRegistrationDraftStorageForRetry() {
+      try { localStorage.removeItem(REGISTRATION_DRAFT_KEY); } catch (e) {}
       try {
-        localStorage.setItem(REGISTRATION_DRAFT_KEY, JSON.stringify(draft));
-        return true;
-      } catch (error) {
-        console.warn('등록중 자동저장 실패:', error);
+        const removablePatterns = [
+          'registration_draft',
+          'server_equipment_cache',
+          'pending_payment',
+          'payment_pending',
+          'cameraAutoCrop',
+          'sitePass_temp',
+          'sitePass_tmp'
+        ];
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+        keys.filter(Boolean).forEach(key => {
+          const lower = String(key).toLowerCase();
+          if (!lower.includes('sitepass')) return;
+          if (key === REGISTRATION_DRAFT_KEY) return;
+          if (removablePatterns.some(pattern => lower.includes(pattern.toLowerCase()))) {
+            try { localStorage.removeItem(key); } catch (e) {}
+          }
+        });
+      } catch (e) {}
+    }
+
+    function setRegistrationDraft(draft) {
+      if (window.__sitePassRegistrationDraftStorageFull) return false;
+      const candidates = [
+        makeRegistrationDraftForLocalSave(draft, 'light-no-file-data'),
+        makeRegistrationDraftForLocalSave(draft, 'meta')
+      ];
+      for (let i = 0; i < candidates.length; i++) {
         try {
-          const light = JSON.parse(JSON.stringify(draft));
-          Object.values(light.docs || {}).forEach(doc => {
-            doc.pages = (Array.isArray(doc.pages) ? doc.pages : []).map(page => ({
-              id:page.id || '',
-              fileName:page.fileName || '',
-              fileSource:page.fileSource || '',
-              fileType:page.fileType || '',
-              previewDataUrl:page.previewDataUrl || '',
-              editDataUrl:page.editDataUrl || page.previewDataUrl || '',
-              previewChoice:page.previewChoice || '',
-              autoFit:page.autoFit || '',
-              fitText:page.fitText || '',
-              ratioText:page.ratioText || '',
-              addedAt:page.addedAt || ''
-            }));
-            doc.originalDataUrl = '';
-            doc.correctedDataUrl = '';
-          });
-          localStorage.setItem(REGISTRATION_DRAFT_KEY, JSON.stringify(light));
+          if (i > 0) cleanupRegistrationDraftStorageForRetry();
+          localStorage.setItem(REGISTRATION_DRAFT_KEY, JSON.stringify(candidates[i]));
           return true;
-        } catch (e) {
-          console.warn('등록중 자동저장 경량 저장도 실패:', e);
+        } catch (error) {
+          if (i === 0) {
+            cleanupRegistrationDraftStorageForRetry();
+            continue;
+          }
+          console.warn('등록중 자동저장은 브라우저 저장공간 부족으로 이번 화면에서는 생략합니다. 실제 등록은 현재 화면에서 계속 진행할 수 있습니다.', error);
+          try { localStorage.removeItem(REGISTRATION_DRAFT_KEY); } catch (e) {}
+          window.__sitePassRegistrationDraftStorageFull = true;
           return false;
         }
       }
+      return false;
     }
 
     function updateRegistrationDraftNotice() {
@@ -166,6 +210,7 @@
 
     function scheduleRegistrationDraftSave() {
       if (registrationDraftRestoreBusy) return;
+      if (window.__sitePassRegistrationDraftStorageFull) return;
       window.clearTimeout(registrationDraftSaveTimer);
       registrationDraftSaveTimer = window.setTimeout(saveRegistrationDraftNow, 550);
     }
@@ -221,7 +266,7 @@
     }
 
 // ---- merged from app-register-share-payment-02.js ----
-// SitePass v23.7.305 - app-register-share-payment finer split (02/15)
+// SitePass v23.7.306 - app-register-share-payment finer split (02/15)
 function promptRegistrationDraftIfNeeded(reason) {
       if (sitePassRegistrationCompletionBusy) return false;
       if (registrationDraftPromptOpen) return false;
@@ -375,7 +420,7 @@ function promptRegistrationDraftIfNeeded(reason) {
     }
 
 // ---- merged from app-register-share-payment-03.js ----
-// SitePass v23.7.305 - app-register-share-payment finer split (03/15)
+// SitePass v23.7.306 - app-register-share-payment finer split (03/15)
 function fillDocsForEdit(item) {
       const docs = item.docs || {};
       Object.values(docs).forEach(doc => {
@@ -665,7 +710,7 @@ function fillDocsForEdit(item) {
     }
 
 // ---- merged from app-register-share-payment-04.js ----
-// SitePass v23.7.305 - app-register-share-payment finer split (04/15)
+// SitePass v23.7.306 - app-register-share-payment finer split (04/15)
 function requirePaymentOwnerVerification(actionLabel) {
       const member = getCurrentMemberTest() || {};
       const label = actionLabel || '결제';
@@ -869,7 +914,7 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
             createdAt: nowIso
           };
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        // v23.7.305: 테스트 기간에는 결제대기 상태를 localStorage/sessionStorage에 남기지 않습니다.
+        // v23.7.306: 테스트 기간에는 결제대기 상태를 localStorage/sessionStorage에 남기지 않습니다.
         // 결제대기 저장 → 테스트완료 처리 사이에 안내창이 반복되고 보관함 저장이 꼬이는 문제를 막기 위해
         // 현재 메모리에만 임시 등록정보를 두고 곧바로 테스트 완료 저장으로 진행합니다.
         pendingRegistrationItemMemory = pending;

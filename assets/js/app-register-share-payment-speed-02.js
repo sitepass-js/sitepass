@@ -1,6 +1,6 @@
-// SitePass v23.7.305 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
+// SitePass v23.7.306 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
 // ---- merged from app-register-share-payment-05.js ----
-// SitePass v23.7.305 - app-register-share-payment finer split (05/15)
+// SitePass v23.7.306 - app-register-share-payment finer split (05/15)
 async function completePendingRegistrationPayment(plan) {
       if (sitePassRegistrationCompletionBusy) return;
       sitePassRegistrationCompletionBusy = true;
@@ -46,7 +46,7 @@ async function completePendingRegistrationPayment(plan) {
       if (existingIndex >= 0) items[existingIndex] = paidItem;
       else items.unshift(paidItem);
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        // v23.7.305: 테스트 완료 저장 중에는 더 이상 결제대기 자료가 getItems()/동기화에 섞이지 않게 먼저 정리합니다.
+        // v23.7.306: 테스트 완료 저장 중에는 더 이상 결제대기 자료가 getItems()/동기화에 섞이지 않게 먼저 정리합니다.
         clearPendingRegistration();
       }
       // 브라우저 저장공간이 부족해도 결제완료 장비는 서버 저장을 먼저 시도하고, 로컬 저장은 단계별로 가볍게 낮춰 저장합니다.
@@ -86,7 +86,7 @@ async function completePendingRegistrationPayment(plan) {
     }
 
 // ---- merged from app-register-share-payment-06.js ----
-// SitePass v23.7.305 - app-register-share-payment finer split (06/15)
+// SitePass v23.7.306 - app-register-share-payment finer split (06/15)
 function resetForm(clearEdit = true) {
       if (clearEdit) editingCode = '';
       const no = document.getElementById('equipmentNo');
@@ -151,7 +151,7 @@ function resetForm(clearEdit = true) {
         localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(safeList));
         return true;
       } catch (e) {
-        // v23.7.305: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
+        // v23.7.306: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
         // 억지로 저장하지 않고 목록 표시용 축약 캐시로 대체합니다.
         try {
           const compactList = safeList.map(makeCompactServerEquipmentCacheItem).slice(0, 300);
@@ -349,7 +349,7 @@ function resetForm(clearEdit = true) {
     }
 
 // ---- merged from app-register-share-payment-07.js ----
-// SitePass v23.7.305 - app-register-share-payment finer split (07/15)
+// SitePass v23.7.306 - app-register-share-payment finer split (07/15)
 function setItems(items) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -388,7 +388,7 @@ function setItems(items) {
     }
 
     function clearNonEssentialRegistrationStorageForSave() {
-      // v23.7.305: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
+      // v23.7.306: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
       // 서버 캐시/임시등록/작성중 초안처럼 다시 만들 수 있는 보조자료만 비우고 재시도합니다.
       try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
       try { localStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
@@ -489,7 +489,7 @@ function setItems(items) {
     }
 
 // ---- merged from app-register-share-payment-08.js ----
-// SitePass v23.7.305 - app-register-share-payment finer split (08/15)
+// SitePass v23.7.306 - app-register-share-payment finer split (08/15)
 function makeQrUrl(link, size = 180) {
       const qrShare = getQrShareModule();
       if (qrShare.makeQrUrl) return qrShare.makeQrUrl(link, size);
