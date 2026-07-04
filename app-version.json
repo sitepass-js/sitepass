@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.299",
+  "version": "v23.7.302",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "쪼개기 계속 진행, 호환 로더 목록 보정, 테스트 결제 제외와 장비/큐알 정리 명칭을 유지한 안정화본입니다.",
+  "note": "v23.7.301의 중간 청크 구조를 유지하고, 스크립트 defer 병렬 다운로드/순서 실행과 접속 도메인 preconnect를 적용한 안전 로딩 보정본입니다. 테스트 결제 제외, 보관함 삭제 보정, 장비/큐알 정리 명칭은 유지합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-04T22:00:00+09:00"
+  "updatedAt": "2026-07-04T23:35:00+09:00"
 }
