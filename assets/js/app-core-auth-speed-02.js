@@ -1,6 +1,6 @@
-// SitePass v23.7.302 - speed optimized medium chunk (app-core-auth-speed 02/04)
+// SitePass v23.7.303 - speed optimized medium chunk (app-core-auth-speed 02/04)
 // ---- merged from app-core-auth-06.js ----
-// SitePass v23.7.302 - app-core-auth finer split (06/19)
+// SitePass v23.7.303 - app-core-auth finer split (06/19)
 function normalizeSupabaseLoginKeyForMember(value) {
       return String(value || '').trim().toLowerCase();
     }
@@ -108,7 +108,7 @@ function normalizeSupabaseLoginKeyForMember(value) {
     }
 
 // ---- merged from app-core-auth-07.js ----
-// SitePass v23.7.302 - app-core-auth finer split (07/19)
+// SitePass v23.7.303 - app-core-auth finer split (07/19)
 function getAdminMemberCanonicalPrimaryKey(member) {
       const tokens = getAdminMemberDedupeTokens(member);
       return tokens[0] || ('row:' + (member?.id || Math.random()));
@@ -388,7 +388,7 @@ function getAdminMemberCanonicalPrimaryKey(member) {
     // v23.7.216 - 회원 저장 함수입니다. 기존 회원이면 신규 생성하지 않고, 최고관리자는 sitepass@kakao.com 1명만 유지합니다.
 
 // ---- merged from app-core-auth-08.js ----
-// SitePass v23.7.302 - app-core-auth finer split (08/19)
+// SitePass v23.7.303 - app-core-auth finer split (08/19)
 function saveMemberTest(member) {
       if (!member) return;
       const saveBlockedRecord = findWithdrawnMemberRecord(member);
@@ -582,7 +582,7 @@ function saveMemberTest(member) {
     }
 
 // ---- merged from app-core-auth-09.js ----
-// SitePass v23.7.302 - app-core-auth finer split (09/19)
+// SitePass v23.7.303 - app-core-auth finer split (09/19)
 const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
 
     // v23.7.258: 카카오/네이버 OAuth 로그인 처리는 assets/js/auth-social.js로 분리했습니다.
@@ -761,7 +761,7 @@ const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
     }
 
 // ---- merged from app-core-auth-10.js ----
-// SitePass v23.7.302 - app-core-auth finer split (10/19)
+// SitePass v23.7.303 - app-core-auth finer split (10/19)
 function adminRoleToSupabaseRole(roleName, loginId) {
       if (isSuperAdminLoginId(loginId)) return 'super_admin';
       if (roleName === SUPER_ADMIN_ROLE_NAME) return 'member';

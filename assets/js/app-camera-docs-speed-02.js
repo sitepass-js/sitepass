@@ -1,6 +1,6 @@
-// SitePass v23.7.302 - speed optimized medium chunk (app-camera-docs-speed 02/04)
+// SitePass v23.7.303 - speed optimized medium chunk (app-camera-docs-speed 02/04)
 // ---- merged from app-camera-docs-05.js ----
-// SitePass v23.7.302 - app-camera-docs finer split (05/16)
+// SitePass v23.7.303 - app-camera-docs finer split (05/16)
 function renderWorkerPeopleSection() {
       return '<div class="worker-control-box">' +
         '<div class="small">인부는 여러 명이 될 수 있으므로 인부 1명마다 문자 동의안내와 6자리 번호를 먼저 확인합니다. 인증 완료 후에만 아래 추가 버튼이 열리고, 추가된 그 인부의 서류는 한 번에 업로드할 수 있습니다. 단, 이 인증은 해당 인부 서류 등록 동의용이고, 현장 담당자에게 공유 링크를 보낼 때마다 다시 인증받는 구조가 아닙니다.</div>' +
@@ -130,7 +130,7 @@ function renderWorkerPeopleSection() {
     }
 
 // ---- merged from app-camera-docs-06.js ----
-// SitePass v23.7.302 - app-camera-docs finer split (06/16)
+// SitePass v23.7.303 - app-camera-docs finer split (06/16)
 function renderDocCards() {
       const box = document.getElementById('docCards');
       if (!box) return;
@@ -304,7 +304,7 @@ function renderDocCards() {
     }
 
 // ---- merged from app-camera-docs-07.js ----
-// SitePass v23.7.302 - app-camera-docs finer split (07/16)
+// SitePass v23.7.303 - app-camera-docs finer split (07/16)
 async function buildDocPage(card, file, sourceText) {
       const base = {
         id:'p' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
@@ -500,7 +500,7 @@ async function buildDocPage(card, file, sourceText) {
     }
 
 // ---- merged from app-camera-docs-08.js ----
-// SitePass v23.7.302 - app-camera-docs finer split (08/16)
+// SitePass v23.7.303 - app-camera-docs finer split (08/16)
 function selectDocPageVersion(docKey, index, mode) {
       const card = findDocCardByKey(docKey);
       if (!card) return;

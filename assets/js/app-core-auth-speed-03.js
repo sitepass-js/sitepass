@@ -1,6 +1,6 @@
-// SitePass v23.7.302 - speed optimized medium chunk (app-core-auth-speed 03/04)
+// SitePass v23.7.303 - speed optimized medium chunk (app-core-auth-speed 03/04)
 // ---- merged from app-core-auth-11.js ----
-// SitePass v23.7.302 - app-core-auth finer split (11/19)
+// SitePass v23.7.303 - app-core-auth finer split (11/19)
 function applyQuickFirstLoginMode(appMode, hasPin, hasFingerprint) {
       const loggedOut = !isMemberLoggedIn() && !isAdminLoggedIn();
       const quickFirst = !!(appMode && loggedOut && isSignupScreenVisible());
@@ -180,7 +180,7 @@ function applyQuickFirstLoginMode(appMode, hasPin, hasFingerprint) {
     }
 
 // ---- merged from app-core-auth-12.js ----
-// SitePass v23.7.302 - app-core-auth finer split (12/19)
+// SitePass v23.7.303 - app-core-auth finer split (12/19)
 function openQuickPinRegisterPanel() {
       if (!isMemberLoggedIn()) {
         alert('먼저 로그인해주세요.');
@@ -289,7 +289,7 @@ function openQuickPinRegisterPanel() {
     }
 
 // ---- merged from app-core-auth-13.js ----
-// SitePass v23.7.302 - app-core-auth finer split (13/19)
+// SitePass v23.7.303 - app-core-auth finer split (13/19)
 function bufferToBase64Url(buffer) {
       const bytes = new Uint8Array(buffer);
       let binary = '';
@@ -634,7 +634,7 @@ function bufferToBase64Url(buffer) {
     }
 
 // ---- merged from app-core-auth-14.js ----
-// SitePass v23.7.302 - app-core-auth finer split (14/19)
+// SitePass v23.7.303 - app-core-auth finer split (14/19)
 function fillFoundLoginIdTest() {
       const result = document.getElementById('accountFindResult');
       if (!idFindVerifyState.verified || !idFindVerifyState.foundLoginId) {
@@ -993,7 +993,7 @@ function fillFoundLoginIdTest() {
     }
 
 // ---- merged from app-core-auth-15.js ----
-// SitePass v23.7.302 - app-core-auth finer split (15/19)
+// SitePass v23.7.303 - app-core-auth finer split (15/19)
 function formatSitePassSignupJuminDisplay() {
       const input = document.getElementById('sitepassSignupJuminMasked');
       if (!input) return;

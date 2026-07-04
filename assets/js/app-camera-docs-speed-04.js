@@ -1,6 +1,6 @@
-// SitePass v23.7.302 - speed optimized medium chunk (app-camera-docs-speed 04/04)
+// SitePass v23.7.303 - speed optimized medium chunk (app-camera-docs-speed 04/04)
 // ---- merged from app-camera-docs-13.js ----
-// SitePass v23.7.302 - app-camera-docs finer split (13/16)
+// SitePass v23.7.303 - app-camera-docs finer split (13/16)
 function trimPaperBorder(canvas) {
       const ctx = canvas.getContext('2d', { willReadFrequently:true });
       const w = canvas.width, h = canvas.height;
@@ -208,7 +208,7 @@ function trimPaperBorder(canvas) {
     }
 
 // ---- merged from app-camera-docs-14.js ----
-// SitePass v23.7.302 - app-camera-docs finer split (14/16)
+// SitePass v23.7.303 - app-camera-docs finer split (14/16)
 function findCardForegroundBox(canvas, regionRatio) {
       const ctx = canvas.getContext('2d', { willReadFrequently:true });
       const w = canvas.width, h = canvas.height;
@@ -412,7 +412,7 @@ function findCardForegroundBox(canvas, regionRatio) {
     }
 
 // ---- merged from app-camera-docs-15.js ----
-// SitePass v23.7.302 - app-camera-docs finer split (15/16)
+// SitePass v23.7.303 - app-camera-docs finer split (15/16)
 function guessCenteredPaperBBox(canvas) {
       const ctx = canvas.getContext('2d', { willReadFrequently:true });
       const w = canvas.width, h = canvas.height;
@@ -645,7 +645,7 @@ function guessCenteredPaperBBox(canvas) {
     }
 
 // ---- merged from app-camera-docs-16.js ----
-// SitePass v23.7.302 - app-camera-docs finer split (16/16)
+// SitePass v23.7.303 - app-camera-docs finer split (16/16)
 function resizeCanvasIfNeeded(canvas, maxSize) {
       if (Math.max(canvas.width, canvas.height) <= maxSize) return canvas;
       const scale = maxSize / Math.max(canvas.width, canvas.height);

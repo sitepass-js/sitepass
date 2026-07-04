@@ -1,7 +1,7 @@
-// SitePass v23.7.302 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
+// SitePass v23.7.303 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
 // ---- merged from app-register-share-payment-01.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (01/15)
-// SitePass v23.7.302 - app.bundle.js remaining split (03 register/share/payment)
+// SitePass v23.7.303 - app-register-share-payment finer split (01/15)
+// SitePass v23.7.303 - app.bundle.js remaining split (03 register/share/payment)
 
 
     function getDisplayDocs(item) {
@@ -220,7 +220,7 @@
     }
 
 // ---- merged from app-register-share-payment-02.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (02/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (02/15)
 function promptRegistrationDraftIfNeeded(reason) {
       if (registrationDraftPromptOpen) return false;
       if (isSitePassHashRouteActive()) return false;
@@ -369,7 +369,7 @@ function promptRegistrationDraftIfNeeded(reason) {
     }
 
 // ---- merged from app-register-share-payment-03.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (03/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (03/15)
 function fillDocsForEdit(item) {
       const docs = item.docs || {};
       Object.values(docs).forEach(doc => {
@@ -659,7 +659,7 @@ function fillDocsForEdit(item) {
     }
 
 // ---- merged from app-register-share-payment-04.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (04/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (04/15)
 function requirePaymentOwnerVerification(actionLabel) {
       const member = getCurrentMemberTest() || {};
       const label = actionLabel || '결제';

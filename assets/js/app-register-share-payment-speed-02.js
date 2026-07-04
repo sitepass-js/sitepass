@@ -1,6 +1,6 @@
-// SitePass v23.7.302 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
+// SitePass v23.7.303 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
 // ---- merged from app-register-share-payment-05.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (05/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (05/15)
 async function completePendingRegistrationPayment(plan) {
       const pending = getPendingRegistration();
       if (!pending || !pending.item) { alert('결제 대기 중인 등록서류가 없습니다.'); return; }
@@ -71,7 +71,7 @@ async function completePendingRegistrationPayment(plan) {
     }
 
 // ---- merged from app-register-share-payment-06.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (06/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (06/15)
 function resetForm(clearEdit = true) {
       if (clearEdit) editingCode = '';
       const no = document.getElementById('equipmentNo');
@@ -302,7 +302,7 @@ function resetForm(clearEdit = true) {
     }
 
 // ---- merged from app-register-share-payment-07.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (07/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (07/15)
 function setItems(items) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -431,7 +431,7 @@ function setItems(items) {
     }
 
 // ---- merged from app-register-share-payment-08.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (08/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (08/15)
 function makeQrUrl(link, size = 180) {
       const qrShare = getQrShareModule();
       if (qrShare.makeQrUrl) return qrShare.makeQrUrl(link, size);

@@ -1,6 +1,6 @@
-// SitePass v23.7.302 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
+// SitePass v23.7.303 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
 // ---- merged from app-register-share-payment-13.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (13/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (13/15)
 function cssEscapeValue(value) {
       if (window.CSS && CSS.escape) return CSS.escape(String(value || ''));
       return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -306,9 +306,9 @@ function cssEscapeValue(value) {
     }
 
 // ---- merged from app-register-share-payment-14.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (14/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (14/15)
 function openPendingRegistrationPaymentScreen(pending) {
-      // v23.7.302: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
+      // v23.7.303: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
       if (pending && pending.item) pendingRegistrationItemMemory = pending;
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE && pending && pending.item) {
         try { completePendingRegistrationPayment('test-free'); } catch (e) { console.warn('테스트 무료등록 처리 실패:', e); }
@@ -376,7 +376,7 @@ function openPendingRegistrationPaymentScreen(pending) {
     }
 
 // ---- merged from app-register-share-payment-15.js ----
-// SitePass v23.7.302 - app-register-share-payment finer split (15/15)
+// SitePass v23.7.303 - app-register-share-payment finer split (15/15)
 function normalizePendingRegistrationTier(pending) {
       if (!pending || !pending.item) return pending;
       const member = getEquipmentRegistrationOwnerMember ? getEquipmentRegistrationOwnerMember() : (getCurrentMemberTest() || null);
