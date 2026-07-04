@@ -1,6 +1,6 @@
-// SitePass v23.7.303 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
+// SitePass v23.7.304 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
 // ---- merged from app-register-share-payment-05.js ----
-// SitePass v23.7.303 - app-register-share-payment finer split (05/15)
+// SitePass v23.7.304 - app-register-share-payment finer split (05/15)
 async function completePendingRegistrationPayment(plan) {
       const pending = getPendingRegistration();
       if (!pending || !pending.item) { alert('결제 대기 중인 등록서류가 없습니다.'); return; }
@@ -71,7 +71,7 @@ async function completePendingRegistrationPayment(plan) {
     }
 
 // ---- merged from app-register-share-payment-06.js ----
-// SitePass v23.7.303 - app-register-share-payment finer split (06/15)
+// SitePass v23.7.304 - app-register-share-payment finer split (06/15)
 function resetForm(clearEdit = true) {
       if (clearEdit) editingCode = '';
       const no = document.getElementById('equipmentNo');
@@ -102,19 +102,51 @@ function resetForm(clearEdit = true) {
       return readLocalJsonArray(SERVER_EQUIPMENT_CACHE_KEY);
     }
 
+    function makeCompactServerEquipmentCacheItem(item) {
+      if (!item || typeof item !== 'object') return item;
+      const compact = {};
+      [
+        'id','code','type','kind','category','equipmentNo','equipmentName','name','title',
+        'ownerName','ownerPhone','memberId','memberName','memberPhone','createdAt','updatedAt',
+        'expiresAt','expireDate','shareExpiresAt','status','isDeleted','deletedAt'
+      ].forEach(function(key) {
+        if (item[key] !== undefined && item[key] !== null && item[key] !== '') compact[key] = item[key];
+      });
+      if (Array.isArray(item.documents)) {
+        compact.documents = item.documents.map(function(doc) {
+          if (!doc || typeof doc !== 'object') return doc;
+          const d = {};
+          ['id','type','name','title','label','expireDate','expiresAt','status','uploadedAt','updatedAt','required'].forEach(function(key) {
+            if (doc[key] !== undefined && doc[key] !== null && doc[key] !== '') d[key] = doc[key];
+          });
+          return d;
+        }).slice(0, 20);
+      }
+      return compact;
+    }
+
     function setServerEquipmentCache(list) {
+      let safeList = Array.isArray(list) ? list : [];
       try {
-        let safeList = Array.isArray(list) ? list : [];
-        try {
-          if (window.SitePassArchive && typeof window.SitePassArchive.filterArchiveVisibleItems === 'function') {
-            safeList = window.SitePassArchive.filterArchiveVisibleItems(safeList);
-          }
-        } catch (e) {}
+        if (window.SitePassArchive && typeof window.SitePassArchive.filterArchiveVisibleItems === 'function') {
+          safeList = window.SitePassArchive.filterArchiveVisibleItems(safeList);
+        }
+      } catch (e) {}
+      try {
         localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(safeList));
         return true;
       } catch (e) {
-        console.warn('서버 장비 캐시 저장 실패:', e);
-        return false;
+        // v23.7.304: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
+        // 억지로 저장하지 않고 목록 표시용 축약 캐시로 대체합니다.
+        try {
+          const compactList = safeList.map(makeCompactServerEquipmentCacheItem).slice(0, 300);
+          localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(compactList));
+          return true;
+        } catch (compactError) {
+          try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (removeError) {}
+          console.info('서버 장비 캐시는 용량 제한으로 이번 회차 저장을 생략했습니다. 서버 데이터 원본은 유지됩니다.');
+          return false;
+        }
       }
     }
 
@@ -302,7 +334,7 @@ function resetForm(clearEdit = true) {
     }
 
 // ---- merged from app-register-share-payment-07.js ----
-// SitePass v23.7.303 - app-register-share-payment finer split (07/15)
+// SitePass v23.7.304 - app-register-share-payment finer split (07/15)
 function setItems(items) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -431,7 +463,7 @@ function setItems(items) {
     }
 
 // ---- merged from app-register-share-payment-08.js ----
-// SitePass v23.7.303 - app-register-share-payment finer split (08/15)
+// SitePass v23.7.304 - app-register-share-payment finer split (08/15)
 function makeQrUrl(link, size = 180) {
       const qrShare = getQrShareModule();
       if (qrShare.makeQrUrl) return qrShare.makeQrUrl(link, size);

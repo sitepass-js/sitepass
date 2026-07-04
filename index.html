@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
@@ -28,15 +28,15 @@
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
 <link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
 <link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.303" />
-<!-- v23.7.303: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.304" />
+<!-- v23.7.304: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.303 split complete from v23.7.292 -->
+  <!-- SitePass deploy-check: v23.7.304 split complete from v23.7.292 -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.303" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.304" />
 </head>
 <body class="sitepass-booting">
   <main class="app">
@@ -145,8 +145,8 @@
             <button type="button" class="dangerBtn" onclick="removeQuickAuth()">간편로그인 해제</button>
           </div>
           <div id="quickPinRegisterPanel" class="quick-pin-panel hidden">
-            <input id="quickPinRegisterInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 간편번호 6자리" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" />
-            <input id="quickPinRegisterInput2" type="password" inputmode="numeric" maxlength="6" placeholder="간편번호 다시 입력" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" style="margin-top:8px" />
+            <input id="quickPinRegisterInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 간편번호 6자리" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)"  aria-label="새 간편번호 6자리" title="새 간편번호 6자리" name="quickPinRegisterInput" />
+            <input id="quickPinRegisterInput2" type="password" inputmode="numeric" maxlength="6" placeholder="간편번호 다시 입력" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" style="margin-top:8px"  aria-label="간편번호 다시 입력" title="간편번호 다시 입력" name="quickPinRegisterInput2" />
             <div class="actions">
               <button type="button" class="secondary" onclick="closeQuickPinRegisterPanel()">닫기</button>
               <button type="button" class="primary" onclick="saveQuickPinAuth()">등록하기</button>
@@ -188,7 +188,7 @@
           <p class="small">알림과 계정 확인에 사용할 휴대폰번호를 수정합니다.</p>
           <div class="field">
             <label for="myAccountPhoneInput">휴대폰번호</label>
-            <input id="myAccountPhoneInput" type="tel" placeholder="01012345678" inputmode="numeric" autocomplete="tel" />
+            <input id="myAccountPhoneInput" type="tel" placeholder="01012345678" inputmode="numeric" autocomplete="tel"  aria-label="01012345678" title="01012345678" name="myAccountPhoneInput" />
           </div>
           <div class="actions">
             <button type="button" class="primary" onclick="saveMyAccountPhone()">휴대폰번호 저장</button>
@@ -202,7 +202,7 @@
           <div id="myPasswordStepCurrent">
             <div class="field">
               <label for="myCurrentPassword">현재 비밀번호</label>
-              <input id="myCurrentPassword" type="password" placeholder="현재 비밀번호 입력" autocomplete="current-password" onkeydown="if(event.key==='Enter') verifyMyAccountCurrentPassword()" />
+              <input id="myCurrentPassword" type="password" placeholder="현재 비밀번호 입력" autocomplete="current-password" onkeydown="if(event.key==='Enter') verifyMyAccountCurrentPassword()"  aria-label="현재 비밀번호 입력" title="현재 비밀번호 입력" name="myCurrentPassword" />
             </div>
             <div class="actions">
               <button type="button" class="secondary" onclick="clearMyAccountPasswordInputs()">입력 지우기</button>
@@ -212,11 +212,11 @@
           <div id="myPasswordStepNew" class="hidden">
             <div class="field">
               <label for="myNewPassword">새 비밀번호</label>
-              <input id="myNewPassword" type="password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password" />
+              <input id="myNewPassword" type="password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password"  aria-label="새 비밀번호 6자 이상" title="새 비밀번호 6자 이상" name="myNewPassword" />
             </div>
             <div class="field">
               <label for="myNewPassword2">새 비밀번호 확인</label>
-              <input id="myNewPassword2" type="password" placeholder="새 비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') changeMyAccountPassword()" />
+              <input id="myNewPassword2" type="password" placeholder="새 비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') changeMyAccountPassword()"  aria-label="새 비밀번호 다시 입력" title="새 비밀번호 다시 입력" name="myNewPassword2" />
             </div>
             <div class="actions">
               <button type="button" class="secondary" onclick="resetMyAccountPasswordStep()">현재 비밀번호 다시 확인</button>
@@ -321,24 +321,24 @@
         <div class="form-grid">
           <div class="field">
             <label for="equipmentNo">장비 등록번호</label>
-            <input id="equipmentNo" type="text" placeholder="예: 12가3456 / 부산12가3456" autocomplete="off" />
+            <input id="equipmentNo" type="text" placeholder="예: 12가3456 / 부산12가3456" autocomplete="off"  aria-label="예: 12가3456 / 부산12가3456" title="예: 12가3456 / 부산12가3456" name="equipmentNo" />
           </div>
           <div class="field">
             <label for="equipmentName">장비명</label>
-            <input id="equipmentName" type="text" placeholder="예: 굴삭기 06W / 크레인 25톤" autocomplete="off" />
+            <input id="equipmentName" type="text" placeholder="예: 굴삭기 06W / 크레인 25톤" autocomplete="off"  aria-label="예: 굴삭기 06W / 크레인 25톤" title="예: 굴삭기 06W / 크레인 25톤" name="equipmentName" />
           </div>
         </div>
         <div class="bundle-toggle-grid">
           <label class="bundle-toggle">
-            <input type="checkbox" checked disabled />
+            <input type="checkbox" checked disabled  aria-label="SitePass 입력항목" title="SitePass 입력항목" />
             <div><b>장비서류</b><span>사업자등록증, 장비등록증, 장비검사증, 장비보험증권은 기본 필수입니다.</span></div>
           </label>
           <label class="bundle-toggle">
-            <input id="includeDriverDocs" type="checkbox" onchange="toggleBundleGroup('driver')" />
+            <input id="includeDriverDocs" type="checkbox" onchange="toggleBundleGroup('driver')"  aria-label="includeDriverDocs" title="includeDriverDocs" name="includeDriverDocs" />
             <div><b>기사서류</b><span>선택하면 기사 필수서류를 같은 QR에 넣습니다.</span></div>
           </label>
           <label class="bundle-toggle">
-            <input id="includeWorkerDocs" type="checkbox" onchange="toggleBundleGroup('worker')" />
+            <input id="includeWorkerDocs" type="checkbox" onchange="toggleBundleGroup('worker')"  aria-label="includeWorkerDocs" title="includeWorkerDocs" name="includeWorkerDocs" />
             <div><b>인부서류</b><span>선택하면 인부/신호수/유도원 서류를 같은 QR에 넣습니다.</span></div>
           </label>
         </div>
@@ -417,13 +417,13 @@
         </div>
         <div class="plan-select-grid">
           <label class="plan-select-card">
-            <input type="radio" name="paymentPlan" value="monthly" checked onchange="updateSelectedPaymentPlan()" />
+            <input type="radio" name="paymentPlan" value="monthly" checked onchange="updateSelectedPaymentPlan()"  aria-label="paymentPlan" title="paymentPlan" />
             <strong>월 결제 선택</strong>
             <div id="monthlyPlanPriceText" class="plan-price">월 2,000원</div>
             <span id="monthlyPlanDescText">처음 1대 등록 기준. 한 달씩 이용하는 방식입니다.</span>
           </label>
           <label class="plan-select-card">
-            <input type="radio" name="paymentPlan" value="annual" onchange="updateSelectedPaymentPlan()" />
+            <input type="radio" name="paymentPlan" value="annual" onchange="updateSelectedPaymentPlan()"  aria-label="paymentPlan" title="paymentPlan" />
             <strong>연 결제 선택</strong>
             <div id="annualPlanPriceText" class="plan-price">연 19,900원</div>
             <span id="annualPlanDescText">처음 1대 등록 기준. 1년 동안 이용하는 방식입니다.</span>
@@ -484,12 +484,12 @@
           <h2 class="login-auth-title">로그인</h2>
           <p class="login-auth-subtitle">SitePass 계정을 계속 사용하려면</p>
           <form id="normalLoginFormArea" class="login-auth-form normal-login-area" method="post" action="./" autocomplete="on" onsubmit="submitSitePassLoginTest(); return false;">
-            <input id="sitepassLoginIdentifier" name="username" type="text" placeholder="사용자 아이디" autocomplete="username" autocapitalize="none" spellcheck="false" enterkeyhint="next" />
-            <input id="sitepassLoginPassword" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" enterkeyhint="go" />
+            <input id="sitepassLoginIdentifier" name="username" type="text" placeholder="사용자 아이디" autocomplete="username" spellcheck="false" enterkeyhint="next"  aria-label="사용자 아이디" title="사용자 아이디" />
+            <input id="sitepassLoginPassword" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" enterkeyhint="go"  aria-label="비밀번호" title="비밀번호" />
             <button id="sitepassLoginContinueButton" type="submit" class="login-continue-button">로그인</button>
           </form>
           <label class="login-password-show normal-login-area">
-            <input id="showLoginPasswordToggle" type="checkbox" onchange="toggleLoginPasswordVisible(this.checked)" />
+            <input id="showLoginPasswordToggle" type="checkbox" onchange="toggleLoginPasswordVisible(this.checked)"  aria-label="showLoginPasswordToggle" title="showLoginPasswordToggle" name="showLoginPasswordToggle" />
             <span>비밀번호 표시</span>
           </label>
           <div class="login-help-row normal-login-area">
@@ -510,7 +510,7 @@
               <button type="button" class="ghost" onclick="loginWithFingerprintQuickAuth()">👆 지문인식 로그인</button>
             </div>
             <div id="quickPinLoginPanel" class="quick-pin-panel hidden">
-              <input id="quickLoginPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" onkeydown="if(event.key==='Enter') loginWithPinQuickAuth()" />
+              <input id="quickLoginPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" onkeydown="if(event.key==='Enter') loginWithPinQuickAuth()"  aria-label="••••••" title="••••••" name="quickLoginPinInput" />
               <div class="actions">
                 <button type="button" class="secondary" onclick="closeQuickPinLoginPanel()">닫기</button>
                 <button type="button" class="primary" onclick="loginWithPinQuickAuth()">간편번호 로그인</button>
@@ -535,14 +535,14 @@
             <div id="findIdForm" class="account-find-form">
               <div id="findIdIdentityStep" class="find-step-panel">
                 <div class="find-step-title"><b>1. 본인확인</b><span>가입 이름/업체명과 가입 휴대폰번호를 먼저 확인합니다.</span></div>
-                <input id="findIdName" type="text" placeholder="가입 이름 또는 업체명" autocomplete="name" />
-                <input id="findIdPhone" type="tel" placeholder="가입 휴대폰번호" autocomplete="tel" />
+                <input id="findIdName" type="text" placeholder="가입 이름 또는 업체명" autocomplete="name"  aria-label="가입 이름 또는 업체명" title="가입 이름 또는 업체명" name="findIdName" />
+                <input id="findIdPhone" type="tel" placeholder="가입 휴대폰번호" autocomplete="tel"  aria-label="가입 휴대폰번호" title="가입 휴대폰번호" name="findIdPhone" />
                 <button type="button" class="primary" onclick="requestIdFindCodeTest()">인증번호 받기</button>
               </div>
               <div id="findIdCodeStep" class="find-step-panel hidden">
                 <div class="find-step-title"><b>2. 휴대폰 인증</b><span>휴대폰으로 받은 6자리 인증번호를 입력해주세요.</span></div>
                 <div class="find-verify-row">
-                  <input id="findIdCode" type="text" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" onkeydown="if(event.key==='Enter') verifyIdFindCodeTest()" />
+                  <input id="findIdCode" type="text" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" onkeydown="if(event.key==='Enter') verifyIdFindCodeTest()"  aria-label="인증번호 6자리" title="인증번호 6자리" name="findIdCode" />
                   <button type="button" class="ghost" onclick="verifyIdFindCodeTest()">인증확인</button>
                 </div>
               </div>
@@ -554,21 +554,21 @@
             <div id="findPasswordForm" class="account-find-form hidden">
               <div id="findPwIdentityStep" class="find-step-panel">
                 <div class="find-step-title"><b>1. 본인확인</b><span>사용자 아이디와 가입 휴대폰번호를 먼저 확인합니다.</span></div>
-                <input id="findPwLoginId" type="text" placeholder="사용자 아이디" autocomplete="username" />
-                <input id="findPwPhone" type="tel" placeholder="가입 휴대폰번호" autocomplete="tel" />
+                <input id="findPwLoginId" type="text" placeholder="사용자 아이디" autocomplete="username"  aria-label="사용자 아이디" title="사용자 아이디" name="findPwLoginId" />
+                <input id="findPwPhone" type="tel" placeholder="가입 휴대폰번호" autocomplete="tel"  aria-label="가입 휴대폰번호" title="가입 휴대폰번호" name="findPwPhone" />
                 <button type="button" class="primary" onclick="requestPasswordResetCodeTest()">인증번호 받기</button>
               </div>
               <div id="findPwCodeStep" class="find-step-panel hidden">
                 <div class="find-step-title"><b>2. 휴대폰 인증</b><span>휴대폰으로 받은 6자리 인증번호를 입력해주세요.</span></div>
                 <div class="find-verify-row">
-                  <input id="findPwCode" type="text" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" onkeydown="if(event.key==='Enter') verifyPasswordResetCodeTest()" />
+                  <input id="findPwCode" type="text" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" onkeydown="if(event.key==='Enter') verifyPasswordResetCodeTest()"  aria-label="인증번호 6자리" title="인증번호 6자리" name="findPwCode" />
                   <button type="button" class="ghost" onclick="verifyPasswordResetCodeTest()">인증확인</button>
                 </div>
               </div>
               <div id="findPwNewStep" class="find-step-panel hidden">
                 <div class="find-step-title"><b>3. 새 비밀번호 생성</b><span>인증 완료 후 새 비밀번호를 저장합니다.</span></div>
-                <input id="findPwNew" type="password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password" />
-                <input id="findPwNew2" type="password" placeholder="새 비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') resetSitePassPasswordTest()" />
+                <input id="findPwNew" type="password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password"  aria-label="새 비밀번호 6자 이상" title="새 비밀번호 6자 이상" name="findPwNew" />
+                <input id="findPwNew2" type="password" placeholder="새 비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') resetSitePassPasswordTest()"  aria-label="새 비밀번호 다시 입력" title="새 비밀번호 다시 입력" name="findPwNew2" />
                 <button type="button" class="primary" onclick="resetSitePassPasswordTest()">새 비밀번호 저장</button>
               </div>
             </div>
@@ -603,13 +603,13 @@
           <h3>회원가입 약관 동의</h3>
           <p class="terms-guide">SitePass는 장비·기사·인부 서류와 개인정보가 포함될 수 있는 현장 반입서류를 다루므로, 가입 전 필수 약관을 자세히 확인해야 합니다. 아래 문구는 법적 리스크를 줄이기 위한 정식 약관 초안이며, 실제 오픈 전에는 개인정보 처리방침·이용약관·환불정책을 전문가 검토 후 확정해야 합니다.</p>
           <label class="terms-check all">
-            <input id="agreeAllTerms" type="checkbox" onchange="toggleAllSignupTerms(this.checked)" />
+            <input id="agreeAllTerms" type="checkbox" onchange="toggleAllSignupTerms(this.checked)"  aria-label="agreeAllTerms" title="agreeAllTerms" name="agreeAllTerms" />
             <span>전체 동의</span>
           </label>
           <div class="terms-list">
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreeServiceTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreeServiceTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeServiceTerms" title="agreeServiceTerms" name="agreeServiceTerms" />
                 <span>서비스 이용약관 동의 <span class="terms-required">필수</span></span>
               </label>
               <details>
@@ -644,7 +644,7 @@ SitePass는 무단 개인정보 등록, 허위서류 등록, 불법 공유, 요�
 
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreePrivacyTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreePrivacyTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreePrivacyTerms" title="agreePrivacyTerms" name="agreePrivacyTerms" />
                 <span>개인정보 수집 및 이용 동의 <span class="terms-required">필수</span></span>
               </label>
               <details>
@@ -674,7 +674,7 @@ SitePass는 현장 반입서류 제출에 필요한 범위에서 최소한의 �
 
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreeDocumentTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreeDocumentTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeDocumentTerms" title="agreeDocumentTerms" name="agreeDocumentTerms" />
                 <span>서류 보관 및 현장 공유 동의 <span class="terms-required">필수</span></span>
               </label>
               <details>
@@ -704,7 +704,7 @@ SitePass는 현장 반입서류 제출에 필요한 범위에서 최소한의 �
 
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreeSensitiveTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreeSensitiveTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeSensitiveTerms" title="agreeSensitiveTerms" name="agreeSensitiveTerms" />
                 <span>고유식별정보·민감정보 제한 처리 안내 <span class="terms-required">필수</span></span>
               </label>
               <details>
@@ -728,7 +728,7 @@ SitePass는 신분증 촬영·업로드 시 주민등록번호 뒷자리, 주소
 
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreePaymentTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreePaymentTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreePaymentTerms" title="agreePaymentTerms" name="agreePaymentTerms" />
                 <span>결제·환불·코드 보관 정책 확인 <span class="terms-required">필수</span></span>
               </label>
               <details>
@@ -752,7 +752,7 @@ SitePass는 신분증 촬영·업로드 시 주민등록번호 뒷자리, 주소
 
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreeResponsibilityTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreeResponsibilityTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeResponsibilityTerms" title="agreeResponsibilityTerms" name="agreeResponsibilityTerms" />
                 <span>책임범위 및 법적 리스크 안내 <span class="terms-required">필수</span></span>
               </label>
               <details>
@@ -779,7 +779,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreeAlertTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreeAlertTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeAlertTerms" title="agreeAlertTerms" name="agreeAlertTerms" />
                 <span>서비스 필수 알림 및 안내 수신 동의 <span class="terms-optional">선택</span></span>
               </label>
               <details>
@@ -790,7 +790,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreeMarketingTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreeMarketingTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeMarketingTerms" title="agreeMarketingTerms" name="agreeMarketingTerms" />
                 <span>카카오톡·앱 광고성 정보 수신 동의 <span class="terms-optional">선택</span></span>
               </label>
               <details>
@@ -801,7 +801,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreeEmailMarketingTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreeEmailMarketingTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeEmailMarketingTerms" title="agreeEmailMarketingTerms" name="agreeEmailMarketingTerms" />
                 <span>이메일 광고성 정보 수신 동의 <span class="terms-optional">선택</span></span>
               </label>
               <details>
@@ -812,7 +812,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 
             <div class="terms-item">
               <label class="terms-check">
-                <input id="agreeSmsMarketingTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()" />
+                <input id="agreeSmsMarketingTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeSmsMarketingTerms" title="agreeSmsMarketingTerms" name="agreeSmsMarketingTerms" />
                 <span>문자 광고성 정보 수신 동의 <span class="terms-optional">선택</span></span>
               </label>
               <details>
@@ -837,19 +837,19 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
           <div class="form-grid">
             <div class="field">
               <label for="sitepassSignupName">이름/업체명</label>
-              <input id="sitepassSignupName" type="text" placeholder="예: 홍길동 / 제이에스건설" autocomplete="name" oninput="resetSitePassSignupPhoneAuth()" />
+              <input id="sitepassSignupName" type="text" placeholder="예: 홍길동 / 제이에스건설" autocomplete="name" oninput="resetSitePassSignupPhoneAuth()"  aria-label="예: 홍길동 / 제이에스건설" title="예: 홍길동 / 제이에스건설" name="sitepassSignupName" />
             </div>
             <div class="field">
               <label for="sitepassSignupJuminMasked">주민번호</label>
-              <input id="sitepassSignupJuminMasked" type="text" placeholder="예: 840507-1" maxlength="8" inputmode="numeric" autocomplete="off" oninput="limitSitePassSignupJuminInput()" onblur="formatSitePassSignupJuminDisplay()" />
+              <input id="sitepassSignupJuminMasked" type="text" placeholder="예: 840507-1" maxlength="8" inputmode="numeric" autocomplete="off" oninput="limitSitePassSignupJuminInput()" onblur="formatSitePassSignupJuminDisplay()"  aria-label="예: 840507-1" title="예: 840507-1" name="sitepassSignupJuminMasked" />
             </div>
             <div class="field">
               <label for="sitepassSignupPhone">휴대폰번호</label>
-              <input id="sitepassSignupPhone" type="tel" placeholder="예: 010-0000-0000" inputmode="tel" autocomplete="tel" oninput="resetSitePassSignupPhoneAuth()" />
+              <input id="sitepassSignupPhone" type="tel" placeholder="예: 010-0000-0000" inputmode="tel" autocomplete="tel" oninput="resetSitePassSignupPhoneAuth()"  aria-label="예: 010-0000-0000" title="예: 010-0000-0000" name="sitepassSignupPhone" />
             </div>
             <div class="field">
               <label for="sitepassSignupCarrier">통신사</label>
-              <select id="sitepassSignupCarrier" onchange="resetSitePassSignupPhoneAuth()">
+              <select id="sitepassSignupCarrier" onchange="resetSitePassSignupPhoneAuth()" aria-label="sitepassSignupCarrier" title="sitepassSignupCarrier" name="sitepassSignupCarrier">
                 <option value="">통신사를 선택해주세요</option>
                 <option value="SKT">SKT</option>
                 <option value="KT">KT</option>
@@ -870,7 +870,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
               <div class="verify-row">
                 <div class="field">
                   <label for="sitepassSignupCode">인증번호 6자리</label>
-                  <input id="sitepassSignupCode" type="text" placeholder="문자로 받은 6자리 입력" maxlength="6" inputmode="numeric" autocomplete="one-time-code" onkeydown="if(event.key==='Enter') confirmSitePassSignupPhoneCodeTest()" />
+                  <input id="sitepassSignupCode" type="text" placeholder="문자로 받은 6자리 입력" maxlength="6" inputmode="numeric" autocomplete="one-time-code" onkeydown="if(event.key==='Enter') confirmSitePassSignupPhoneCodeTest()"  aria-label="문자로 받은 6자리 입력" title="문자로 받은 6자리 입력" name="sitepassSignupCode" />
                 </div>
                 <button type="button" class="primary" onclick="confirmSitePassSignupPhoneCodeTest()">인증확인</button>
               </div>
@@ -878,18 +878,18 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
             <div class="verify-row">
               <div class="field">
                 <label for="sitepassSignupId">SitePass 아이디</label>
-                <input id="sitepassSignupId" type="text" placeholder="영문/숫자 아이디" autocomplete="username" oninput="resetSitePassSignupIdDuplicate()" />
+                <input id="sitepassSignupId" type="text" placeholder="영문/숫자 아이디" autocomplete="username" oninput="resetSitePassSignupIdDuplicate()"  aria-label="영문/숫자 아이디" title="영문/숫자 아이디" name="sitepassSignupId" />
                 <div id="sitepassSignupIdStatus" class="auth-mini-note">아이디 입력 후 중복확인을 눌러주세요.</div>
               </div>
               <button type="button" id="sitepassSignupIdCheckButton" class="ghost" onclick="verifySitePassSignupIdDuplicate()">중복확인</button>
             </div>
             <div class="field">
               <label for="sitepassSignupPw">비밀번호</label>
-              <input id="sitepassSignupPw" type="password" placeholder="비밀번호 입력" autocomplete="new-password" />
+              <input id="sitepassSignupPw" type="password" placeholder="비밀번호 입력" autocomplete="new-password"  aria-label="비밀번호 입력" title="비밀번호 입력" name="sitepassSignupPw" />
             </div>
             <div class="field">
               <label for="sitepassSignupPw2">비밀번호 확인</label>
-              <input id="sitepassSignupPw2" type="password" placeholder="비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') submitSitePassSignupTest()" />
+              <input id="sitepassSignupPw2" type="password" placeholder="비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') submitSitePassSignupTest()"  aria-label="비밀번호 다시 입력" title="비밀번호 다시 입력" name="sitepassSignupPw2" />
             </div>
           </div>
           <div class="actions">
@@ -921,8 +921,8 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
           <div class="quick-setup-step-title"><em>1</em><span>간편번호 6자리 등록</span></div>
           <p class="small">다음부터 홈화면 SitePass 아이콘을 누르면 이 번호 입력창이 바로 열립니다.</p>
           <div class="quick-setup-inputs">
-            <input id="quickSetupPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" />
-            <input id="quickSetupPinInput2" type="password" inputmode="numeric" maxlength="6" placeholder="한 번 더 입력" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" />
+            <input id="quickSetupPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)"  aria-label="••••••" title="••••••" name="quickSetupPinInput" />
+            <input id="quickSetupPinInput2" type="password" inputmode="numeric" maxlength="6" placeholder="한 번 더 입력" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)"  aria-label="한 번 더 입력" title="한 번 더 입력" name="quickSetupPinInput2" />
           </div>
           <div class="quick-setup-actions">
             <button type="button" class="secondary" onclick="closeQuickSetupWizard(true)">나중에 등록</button>
@@ -956,15 +956,15 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
         <div class="form-grid">
           <div class="field">
             <label for="contactName">이름 / 업체명</label>
-            <input id="contactName" type="text" placeholder="예: 홍길동 / ○○중기" autocomplete="off" />
+            <input id="contactName" type="text" placeholder="예: 홍길동 / ○○중기" autocomplete="off"  aria-label="예: 홍길동 / ○○중기" title="예: 홍길동 / ○○중기" name="contactName" />
           </div>
           <div class="field">
             <label for="contactPhone">연락처</label>
-            <input id="contactPhone" type="tel" placeholder="예: 010-0000-0000" inputmode="tel" autocomplete="tel" />
+            <input id="contactPhone" type="tel" placeholder="예: 010-0000-0000" inputmode="tel" autocomplete="tel"  aria-label="예: 010-0000-0000" title="예: 010-0000-0000" name="contactPhone" />
           </div>
           <div class="field">
             <label for="contactType">문의 종류</label>
-            <select id="contactType">
+            <select id="contactType" aria-label="contactType" title="contactType" name="contactType">
               <option value="사용문의">사용문의</option>
               <option value="서류등록문의">서류등록문의</option>
               <option value="결제문의">결제문의</option>
@@ -974,7 +974,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
           </div>
           <div class="field">
             <label for="contactMessage">문의 내용</label>
-            <textarea id="contactMessage" rows="5" placeholder="문의 내용을 적어주세요." style="min-height:120px; resize:vertical;"></textarea>
+            <textarea id="contactMessage" rows="5" placeholder="문의 내용을 적어주세요." style="min-height:120px; resize:vertical;" aria-label="문의 내용을 적어주세요." title="문의 내용을 적어주세요." name="contactMessage"></textarea>
           </div>
         </div>
         <div class="actions">
@@ -1049,7 +1049,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
         <button type="button" class="camera-close" onclick="closeCameraGuide()">닫기</button>
       </div>
       <div class="camera-view">
-        <video id="cameraVideo" class="camera-video" autoplay playsinline muted></video>
+        <video id="cameraVideo" class="camera-video" autoplay playsinline muted title="SitePass 카메라 미리보기" aria-label="SitePass 카메라 미리보기"></video>
         <div id="cameraGuide" class="camera-guide">
           <div class="guide-rect"></div>
           <div id="autoDocumentBox" class="auto-rect"></div>
@@ -1068,7 +1068,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 
   <div id="previewModal" class="preview-modal" onclick="closePreviewModal()">
     <button type="button" onclick="closePreviewModal(); event.stopPropagation();">닫기</button>
-    <img id="previewModalImg" alt="첨부 이미지 크게 보기" />
+    <img id="previewModalImg" alt="첨부 이미지 크게 보기"  title="SitePass 이미지" />
     <iframe id="previewModalFrame" title="PDF 미리보기" onclick="event.stopPropagation();"></iframe>
   </div>
 
@@ -1081,7 +1081,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
         </div>
         <button type="button" class="camera-close" onclick="closePageEditModal()">닫기</button>
       </div>
-      <div class="page-edit-preview"><img id="pageEditImage" alt="수정편집 미리보기" /></div>
+      <div class="page-edit-preview"><img id="pageEditImage" alt="수정편집 미리보기"  title="SitePass 이미지" /></div>
       <div class="page-crop-panel">
         <div class="page-crop-title">자르기</div>
         <div class="page-crop-help">자르기 버튼 옆의 되돌리기를 누르면 해당 방향만 원래대로 돌아갑니다. 카드형 서류는 아래 여백을 더 줄이고 A4 상단 1/2 칸에 크게 정리됩니다.</div>
@@ -1123,37 +1123,37 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.303" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.303" defer></script>
-<script src="./assets/js/storage.js?v=23.7.303" defer></script>
-<script src="./assets/js/terms.js?v=23.7.303" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.303" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.303" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.303" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.303" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.303" defer></script>
-<script src="./assets/js/archive.js?v=23.7.303" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.303" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.303" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.303" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.303" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.303" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.303" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.303" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.303" defer></script>
+<script src="./assets/js/config.js?v=23.7.304" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.304" defer></script>
+<script src="./assets/js/storage.js?v=23.7.304" defer></script>
+<script src="./assets/js/terms.js?v=23.7.304" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.304" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.304" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.304" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.304" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.304" defer></script>
+<script src="./assets/js/archive.js?v=23.7.304" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.304" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.304" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.304" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.304" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.304" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.304" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.304" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.304" defer></script>
 </body>
 </html>

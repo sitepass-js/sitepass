@@ -1831,6 +1831,7 @@
       text-align:left;
       white-space:nowrap;
       cursor:pointer;
+      -webkit-user-select:none;
       user-select:none;
     }
     .login-password-show input[type="checkbox"] {
@@ -3211,6 +3212,7 @@
     .clean-date-display {
       cursor:pointer;
       caret-color:transparent !important;
+      -webkit-user-select:none;
       user-select:none;
       -webkit-user-select:none;
       background:#ffffff;

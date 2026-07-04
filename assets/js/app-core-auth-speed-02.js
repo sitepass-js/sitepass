@@ -1,6 +1,6 @@
-// SitePass v23.7.303 - speed optimized medium chunk (app-core-auth-speed 02/04)
+// SitePass v23.7.304 - speed optimized medium chunk (app-core-auth-speed 02/04)
 // ---- merged from app-core-auth-06.js ----
-// SitePass v23.7.303 - app-core-auth finer split (06/19)
+// SitePass v23.7.304 - app-core-auth finer split (06/19)
 function normalizeSupabaseLoginKeyForMember(value) {
       return String(value || '').trim().toLowerCase();
     }
@@ -108,7 +108,7 @@ function normalizeSupabaseLoginKeyForMember(value) {
     }
 
 // ---- merged from app-core-auth-07.js ----
-// SitePass v23.7.303 - app-core-auth finer split (07/19)
+// SitePass v23.7.304 - app-core-auth finer split (07/19)
 function getAdminMemberCanonicalPrimaryKey(member) {
       const tokens = getAdminMemberDedupeTokens(member);
       return tokens[0] || ('row:' + (member?.id || Math.random()));
@@ -388,7 +388,7 @@ function getAdminMemberCanonicalPrimaryKey(member) {
     // v23.7.216 - 회원 저장 함수입니다. 기존 회원이면 신규 생성하지 않고, 최고관리자는 sitepass@kakao.com 1명만 유지합니다.
 
 // ---- merged from app-core-auth-08.js ----
-// SitePass v23.7.303 - app-core-auth finer split (08/19)
+// SitePass v23.7.304 - app-core-auth finer split (08/19)
 function saveMemberTest(member) {
       if (!member) return;
       const saveBlockedRecord = findWithdrawnMemberRecord(member);
@@ -582,7 +582,7 @@ function saveMemberTest(member) {
     }
 
 // ---- merged from app-core-auth-09.js ----
-// SitePass v23.7.303 - app-core-auth finer split (09/19)
+// SitePass v23.7.304 - app-core-auth finer split (09/19)
 const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
 
     // v23.7.258: 카카오/네이버 OAuth 로그인 처리는 assets/js/auth-social.js로 분리했습니다.
@@ -657,15 +657,52 @@ const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
     }
 
     // 휴대폰 inline onclick 안전 연결
+    // v23.7.304: 중간 청크 로딩 중 아직 뒤쪽 청크 함수가 정의되기 전에 전역에 연결하다가
+    // ReferenceError가 나는 문제를 막기 위해, 뒤쪽 함수는 안전 래퍼로 먼저 연결합니다.
     window.handleKakaoLogin = handleKakaoLogin;
     window.handleKakaoSignup = handleKakaoSignup;
     window.handleNaverLogin = handleNaverLogin;
     window.handleNaverSignup = handleNaverSignup;
-    window.submitSocialLoginTest = submitSocialLoginTest;
-    window.startJoinFlow = startJoinFlow;
-    window.openSitePassSignup = openSitePassSignup;
-    window.toggleAllSignupTerms = toggleAllSignupTerms;
-    window.updateSignupTermsUi = updateSignupTermsUi;
+    if (typeof window.submitSocialLoginTest !== 'function') {
+      window.submitSocialLoginTest = function(provider) {
+        if (typeof window.__sitePassSubmitSocialLoginTestImpl === 'function') {
+          return window.__sitePassSubmitSocialLoginTestImpl(provider);
+        }
+        alert('로그인 기능을 불러오는 중입니다. 새로고침 후 다시 시도해주세요.');
+      };
+    }
+    if (typeof window.startJoinFlow !== 'function') {
+      window.startJoinFlow = function() {
+        const box = document.getElementById('joinChoiceBox');
+        if (!box) return;
+        box.classList.remove('hidden');
+        box.scrollIntoView({ behavior:'smooth', block:'start' });
+      };
+    }
+    if (typeof window.openSitePassSignup !== 'function') {
+      window.openSitePassSignup = function() {
+        if (typeof window.__sitePassOpenSitePassSignupImpl === 'function') {
+          return window.__sitePassOpenSitePassSignupImpl();
+        }
+        const box = document.getElementById('sitepassSignupBox');
+        if (box) box.classList.remove('hidden');
+      };
+    }
+    if (typeof window.toggleAllSignupTerms !== 'function') {
+      window.toggleAllSignupTerms = function(checked) {
+        if (window.SitePassTerms && typeof window.SitePassTerms.toggleAllSignupTerms === 'function') {
+          return window.SitePassTerms.toggleAllSignupTerms(checked);
+        }
+      };
+    }
+    if (typeof window.updateSignupTermsUi !== 'function') {
+      window.updateSignupTermsUi = function() {
+        if (window.SitePassTerms && typeof window.SitePassTerms.updateSignupTermsUi === 'function') {
+          return window.SitePassTerms.updateSignupTermsUi();
+        }
+        return true;
+      };
+    }
 
     function normalizeOAuthProviderFromAuth(value) {
       const mod = getAuthSocialModule();
@@ -729,7 +766,7 @@ const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
       if (idInput) {
         idInput.setAttribute('name', 'username');
         idInput.setAttribute('autocomplete', 'username');
-        idInput.setAttribute('autocapitalize', 'none');
+        // v23.7.304: Edge Issues 호환성 경고를 줄이기 위해 autocapitalize 속성 동적 부여는 생략합니다.
         idInput.setAttribute('spellcheck', 'false');
       }
       if (pwInput) {
@@ -761,7 +798,7 @@ const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
     }
 
 // ---- merged from app-core-auth-10.js ----
-// SitePass v23.7.303 - app-core-auth finer split (10/19)
+// SitePass v23.7.304 - app-core-auth finer split (10/19)
 function adminRoleToSupabaseRole(roleName, loginId) {
       if (isSuperAdminLoginId(loginId)) return 'super_admin';
       if (roleName === SUPER_ADMIN_ROLE_NAME) return 'member';

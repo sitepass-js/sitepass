@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.303",
+  "version": "v23.7.304",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "이전 안전 로딩 구조를 유지하고, 디자인 전 기본 HTML 보정(lang=\"ko\", viewport meta)과 캐시 버전 v23.7.303 갱신을 적용한 버전입니다. 기능 JS/Supabase/결제 흐름은 변경하지 않았습니다.",
+  "note": "v23.7.303 기준에서 디자인 전 안정화 보정. submitSocialLoginTest 전역 연결 오류를 안전 래퍼로 보정하고, 서버 장비 캐시 localStorage 용량 초과 시 축약 캐시로 저장하도록 보정했습니다. 기본 HTML/접근성 보조 속성 일부를 보강했으며 기능 JS/Supabase/결제 흐름은 변경하지 않았습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-04T21:00:00+09:00"
+  "updatedAt": "2026-07-04T21:20:00+09:00"
 }
