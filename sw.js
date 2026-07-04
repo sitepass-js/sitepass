@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.297';
-const SITEPASS_CACHE = 'sitepass-v23.7.297';
+const SITEPASS_SW_VERSION = 'v23.7.298';
+const SITEPASS_CACHE = 'sitepass-v23.7.298';
 const SITEPASS_CORE = [
   './',
   './index.html',
@@ -28,19 +28,34 @@ const SITEPASS_CORE = [
   './assets/js/app-core-auth-04.js',
   './assets/js/app-core-auth-05.js',
   './assets/js/app-core-auth-06.js',
+  './assets/js/app-core-auth-07.js',
+  './assets/js/app-core-auth-08.js',
+  './assets/js/app-core-auth-09.js',
+  './assets/js/app-core-auth-10.js',
   './assets/js/app-camera-docs-01.js',
   './assets/js/app-camera-docs-02.js',
   './assets/js/app-camera-docs-03.js',
   './assets/js/app-camera-docs-04.js',
+  './assets/js/app-camera-docs-05.js',
+  './assets/js/app-camera-docs-06.js',
+  './assets/js/app-camera-docs-07.js',
+  './assets/js/app-camera-docs-08.js',
   './assets/js/app-register-share-payment-01.js',
   './assets/js/app-register-share-payment-02.js',
   './assets/js/app-register-share-payment-03.js',
   './assets/js/app-register-share-payment-04.js',
   './assets/js/app-register-share-payment-05.js',
+  './assets/js/app-register-share-payment-06.js',
+  './assets/js/app-register-share-payment-07.js',
+  './assets/js/app-register-share-payment-08.js',
+  './assets/js/app-register-share-payment-09.js',
   './assets/js/app-admin-boot-01.js',
   './assets/js/app-admin-boot-02.js',
   './assets/js/app-admin-boot-03.js',
   './assets/js/app-admin-boot-04.js',
+  './assets/js/app-admin-boot-05.js',
+  './assets/js/app-admin-boot-06.js',
+  './assets/js/app-admin-boot-07.js',
   './assets/js/app.bundle.js'
 ];
 

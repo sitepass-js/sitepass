@@ -1,216 +1,430 @@
-    function setPersonAuthStatus(kind, text, mode) {
-      const values = getPersonAuthValues(kind);
-      const panel = values?.panel;
-      if (!panel) return;
-      const status = panel.querySelector('[data-person-auth-status]');
-      if (status) status.textContent = text;
-      panel.classList.toggle('verified', mode === 'verified');
-      panel.classList.toggle('rejected', mode === 'rejected');
-      const badge = panel.querySelector('[data-person-auth-badge]');
-      if (badge) {
-        badge.textContent = mode === 'verified' ? '인증완료' : (mode === 'rejected' ? '동의거절' : '인증대기');
-        badge.className = 'badge ' + (mode === 'verified' ? 'done' : (mode === 'rejected' ? 'need' : 'need'));
+// SitePass v23.7.298 - app-core-auth split continue (06/10)
+function adminRoleToSupabaseRole(roleName, loginId) {
+      if (isSuperAdminLoginId(loginId)) return 'super_admin';
+      if (roleName === SUPER_ADMIN_ROLE_NAME) return 'member';
+      if (roleName === '관리자' || roleName === '운영관리자' || roleName === '조회관리자') return 'admin';
+      return 'member';
+    }
+
+    function isDesignatedSuperAdminMember(member) {
+      if (!member) return false;
+      return getMemberAdminIdentifiers(member).some(id => isSuperAdminLoginId(id));
+    }
+
+    function normalizeSingleSuperAdminRole(member) {
+      if (!member || member.isSuperAdminVirtual) return member;
+      const designated = isDesignatedSuperAdminMember(member);
+      const roleName = member.adminRole || supabaseRoleToAdminRole(member.role || '');
+      if (designated) {
+        member.adminRole = SUPER_ADMIN_ROLE_NAME;
+        member.role = 'super_admin';
+        return member;
+      }
+      if (roleName === SUPER_ADMIN_ROLE_NAME || String(member.role || '').toLowerCase() === 'super_admin') {
+        delete member.adminRole;
+        member.role = 'member';
+        member.adminRoleUpdatedAt = new Date().toISOString();
+        member.adminRoleUpdatedBy = 'SitePass 최고관리자 단일화';
+      }
+      return member;
+    }
+
+    function enforceSingleSuperAdminOnMemberList(list) {
+      const arr = Array.isArray(list) ? list : [];
+      return arr.map(member => normalizeSingleSuperAdminRole({ ...(member || {}) }));
+    }
+
+    function cleanupAdminRoleMapSingleSuperAdmin() {
+      const map = getAdminRoleMap();
+      let changed = false;
+      Object.keys(map || {}).forEach(key => {
+        if (map[key] === SUPER_ADMIN_ROLE_NAME && !isSuperAdminLoginId(key)) {
+          delete map[key];
+          changed = true;
+        }
+      });
+      if (changed) setAdminRoleMap(map);
+    }
+
+    function getLocalAdminRoleForLogin(loginId, member) {
+      if (isSuperAdminLoginId(loginId)) return SUPER_ADMIN_ROLE_NAME;
+      const role = (member && (member.adminRole || supabaseRoleToAdminRole(member.role))) || '';
+      if (role === SUPER_ADMIN_ROLE_NAME) return '';
+      const mapped = getMappedAdminRoleForLogin(loginId);
+      return mapped === SUPER_ADMIN_ROLE_NAME ? '' : mapped;
+    }
+
+    async function fetchSupabaseAdminRoleForLogin(loginId) {
+      try {
+        if (!window.sitepassSupabase) return '';
+        const raw = normalizeLoginText(loginId);
+        const key = normalizeAdminRoleKey(raw);
+        const candidates = Array.from(new Set([
+          raw,
+          key,
+          key ? 'SITEPASS-' + key : '',
+          key ? 'SITEPASS-LOGIN-' + key : ''
+        ].filter(Boolean)));
+        if (!candidates.length) return '';
+
+        const { data, error } = await window.sitepassSupabase
+          .from('sitepass_members')
+          .select('login_id, role, name, phone')
+          .in('login_id', candidates)
+          .limit(1);
+
+        if (error) {
+          console.warn('Supabase 관리자 권한 조회 실패:', error.message);
+          return '';
+        }
+        const roleName = supabaseRoleToAdminRole(data && data[0] && data[0].role);
+        if (roleName === SUPER_ADMIN_ROLE_NAME && !isSuperAdminLoginId(loginId)) return '';
+        return roleName;
+      } catch (e) {
+        console.warn('Supabase 관리자 권한 조회 예외:', e);
+        return '';
       }
     }
 
+    function getAdminRoleMap() {
+      try {
+        return JSON.parse(localStorage.getItem(ADMIN_ROLE_MAP_KEY) || '{}') || {};
+      } catch (e) {
+        return {};
+      }
+    }
 
-    function setWorkerAddButtonsEnabled(enabled) {
-      document.querySelectorAll('[data-worker-add-button]').forEach(btn => {
-        btn.disabled = !enabled;
-        btn.classList.toggle('disabled', !enabled);
+    function setAdminRoleMap(map) {
+      localStorage.setItem(ADMIN_ROLE_MAP_KEY, JSON.stringify(map || {}));
+    }
+
+    function normalizeAdminRoleKey(value) {
+      const raw = normalizeLoginText(value).toLowerCase();
+      if (!raw) return '';
+      return raw.replace(/^sitepass-/, '').replace(/^sitepass-login-/, '');
+    }
+
+    function getMemberAdminIdentifiers(member) {
+      if (!member) return [];
+      const phoneDigits = String(member.phone || '').replace(/[^0-9]/g, '');
+      const providerRaw = String(member.providerId || '');
+      const providerNoPrefix = providerRaw.replace(/^SITEPASS-/i, '').replace(/^SITEPASS-LOGIN-/i, '');
+      return [
+        member.id,
+        member.signupId,
+        member.providerId,
+        providerNoPrefix,
+        member.name,
+        member.phone,
+        phoneDigits
+      ].map(normalizeAdminRoleKey).filter(Boolean).filter((value, index, arr) => arr.indexOf(value) === index);
+    }
+
+    function syncMemberAdminRoleMap(member, role) {
+      const map = getAdminRoleMap();
+      getMemberAdminIdentifiers(member).forEach(key => {
+        if (role) map[key] = role;
+        else delete map[key];
+      });
+      setAdminRoleMap(map);
+    }
+
+    function getMappedAdminRoleForLogin(loginId) {
+      const key = normalizeAdminRoleKey(loginId);
+      if (!key) return '';
+      const map = getAdminRoleMap();
+      return map[key] || '';
+    }
+
+    function getCurrentAdminRoleName() {
+      const role = getSessionValue(ADMIN_SESSION_KEY + '_role') || SUPER_ADMIN_ROLE_NAME;
+      const adminId = getSessionValue(ADMIN_SESSION_KEY + '_id') || '';
+      if (role === SUPER_ADMIN_ROLE_NAME && adminId && !isSuperAdminLoginId(adminId)) return '관리자';
+      return role;
+    }
+
+    function isSuperAdminLoggedIn() {
+      return isAdminLoggedIn() && getCurrentAdminRoleName() === SUPER_ADMIN_ROLE_NAME;
+    }
+
+    function completeAdminLogin(roleName, adminId, adminName) {
+      let finalRoleName = roleName || SUPER_ADMIN_ROLE_NAME;
+      if (finalRoleName === SUPER_ADMIN_ROLE_NAME && !isSuperAdminLoginId(adminId || ADMIN_ID)) finalRoleName = '관리자';
+      setSessionValue(ADMIN_SESSION_KEY, 'yes');
+      setSessionValue(ADMIN_SESSION_KEY + '_role', finalRoleName);
+      setSessionValue(ADMIN_SESSION_KEY + '_id', adminId || '');
+      setSessionValue(ADMIN_SESSION_KEY + '_name', adminName || '');
+      removeSessionValue(CURRENT_MEMBER_KEY);
+      clearPwaAutoMemberTest();
+      refreshAdminUi();
+      refreshMemberUi();
+      showScreen('adminScreen');
+    }
+
+    function completeSuperAdminLogin() {
+      completeAdminLogin(SUPER_ADMIN_ROLE_NAME, ADMIN_ID, '대표이사 최고관리자');
+    }
+
+    function ensureMemberIds() {
+      const members = getMembers();
+      let changed = false;
+      members.forEach((member, index) => {
+        if (!member.id) {
+          member.id = 'MEM-' + Date.now() + '-' + index;
+          changed = true;
+        }
+      });
+      if (changed) setMembers(members);
+      return members;
+    }
+
+    function findMemberForLogin(loginId) {
+      const q = normalizeAdminRoleKey(loginId);
+      const qPhone = String(loginId || '').replace(/[^0-9]/g, '');
+      return getMembers().find(item => {
+        const keys = getMemberAdminIdentifiers(item);
+        const phone = String(item.phone || '').replace(/[^0-9]/g, '');
+        return keys.includes(q) || (qPhone && phone === qPhone);
       });
     }
 
-    function togglePersonAuthCodeInput(panel, show) {
-      if (!panel) return;
-      panel.querySelectorAll('[data-person-auth-code], [data-person-auth-verify-button]').forEach(el => {
-        el.classList.toggle('hidden', !show);
-        if (show) el.disabled = false;
-      });
-      const sendButton = panel.querySelector('[data-person-auth-send-button]');
-      if (sendButton) sendButton.textContent = show ? '문자 재전송' : '약관/동의 문자보내기';
+    function isMemberPasswordOk(member, password) {
+      if (!member) return false;
+      if (!member.testPassword) return true;
+      return String(member.testPassword) === String(password || '');
     }
 
-    function getPersonKindLabel(kind, values) {
-      const personAuth = getPersonAuthModule();
-      const resolvedValues = values || { type: document.querySelector('[data-person-auth-panel="worker"] [data-person-auth-type]')?.value || 'normal' };
-      if (personAuth.getKindLabel) return personAuth.getKindLabel(kind, resolvedValues);
-      if (kind === 'driver') return '기사';
-      const type = resolvedValues?.type || 'normal';
-      return type === 'special' ? '특수인부' : '보통인부';
+    function completeMemberAdminLogin(member) {
+      const updatedMember = updateMemberLastLogin(member, '일반 로그인(관리자 권한)') || member;
+      const role = updatedMember.adminRole || member.adminRole || '관리자';
+      const adminId = updatedMember.signupId || updatedMember.providerId || updatedMember.id || updatedMember.name || '';
+      const adminName = updatedMember.name || updatedMember.signupId || '관리자';
+      completeAdminLogin(role, adminId, adminName);
     }
 
-    function buildPersonAuthSmsText(kind) {
-      const values = getPersonAuthValues(kind) || {};
-      const equipmentNo = (document.getElementById('equipmentNo')?.value || '등록장비').trim();
-      const equipmentName = (document.getElementById('equipmentName')?.value || '현장 장비').trim();
-      const personAuth = getPersonAuthModule();
-      if (personAuth.buildSmsText) return personAuth.buildSmsText(kind, values, { equipmentNo, equipmentName, consentCode:'예시코드', testCode:TEST_PRIVATE_DOC_CODE });
-      const name = values.name || (kind === 'driver' ? '기사님' : '인부님');
-      const link = 'https://sitepass.kr/consent/' + (kind === 'driver' ? 'driver' : 'worker') + '/예시코드';
-      return '[SitePass] ' + name + '님, ' + equipmentName + ' ' + equipmentNo + ' 현장 반입서류 등록 요청입니다.\n' +
-        '약관/동의 내용을 확인한 뒤 동의하시면 6자리 번호를 등록자에게 알려주세요.\n' +
-        '약관/동의 확인 링크: ' + link + '\n' +
-        '6자리 동의번호: 123456\n' +
-        '동의하지 않거나 요청한 내용이 아니면 번호를 알려주지 말고 문자를 무시하세요.';
-    }
 
-    function buildPersonAuthConsentText(kind) {
-      const values = getPersonAuthValues(kind) || {};
-      const personAuth = getPersonAuthModule();
-      if (personAuth.buildConsentText) return personAuth.buildConsentText(kind, values);
-      const role = getPersonKindLabel(kind, values);
-      const name = values.name || (kind === 'driver' ? '기사님' : '인부님');
-      return name + '님은 ' + role + ' 현장 반입서류 등록 대상자입니다.\n\n' +
-        '동의하면 SitePass가 본인의 현장 반입서류를 등록·보관하고, 장비업자가 현장 담당자에게 서류 확인 링크를 보내는 데 사용할 수 있습니다. 담당자 확인 링크는 보안상 일정 기간 후 접속이 차단되지만, 최초 동의·인증은 현장 링크를 보낼 때마다 반복하지 않습니다.\n\n' +
-        '수집·이용 항목: 이름, 휴대폰번호, 인증 및 동의 기록, 신분증, 면허증, 안전교육 이수증, 건강검진서류 등 본인이 직접 촬영·등록한 서류\n' +
-        '이용 목적: 현장 장비 반입서류 보관, 현장 담당자 확인, 다운로드·프린트 제공, 서류 갱신 및 민원 대응\n' +
-        '보유 기간: 회원의 서비스 이용기간 또는 서류 삭제 요청 시까지. 법령상 보관이 필요한 기록은 해당 기간 보관될 수 있음\n' +
-        '거부권: 동의하지 않을 수 있으며, 거부 시 SitePass를 통한 해당 서류 등록·공유가 제한됩니다. 동의하지 않으면 6자리 번호를 등록자에게 알려주지 마세요.\n\n' +
-        '신분증의 주민등록번호 뒷자리, 주소, 면허번호 일부 등 불필요한 정보는 가림 처리하는 것을 원칙으로 합니다. 건강검진서류 등 민감정보가 포함되는 경우 별도 확인 후 필요한 경우에만 등록합니다.';
-    }
 
-    function renderPersonSmsPreview(kind) {
-      const values = getPersonAuthValues(kind);
-      if (!values) return;
-      const box = values.panel.querySelector('[data-person-sms-preview]');
-      if (!box) return;
-      const sms = buildPersonAuthSmsText(kind);
-      const consent = buildPersonAuthConsentText(kind);
-      box.innerHTML = '<div class="sms-preview-head"><span>문자/동의 화면 미리보기</span><span>실제 발송 전 확인용</span></div>' +
-        '<div class="sms-preview-content"><b>① 기사/인부에게 가는 문자</b><div class="sms-preview-text">' + escapeHtml(sms) + '</div>' +
-        '<b>② 링크 클릭 후 보이는 동의문</b><div class="sms-preview-text">' + escapeHtml(consent) + '</div></div>';
-      box.classList.remove('hidden');
-    }
-
-    function showAuthSmsPreview(kind) {
-      const values = getPersonAuthValues(kind);
-      if (!values) return;
-      if (!values.name) {
-        alert((kind === 'driver' ? '기사' : '인부') + ' 이름을 입력하면 문자 예시가 더 정확하게 보입니다.');
-        values.panel.querySelector('[data-person-auth-name]')?.focus();
+    function isSitePassInstalledAppMode() {
+      try {
+        return !!(
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.matchMedia('(display-mode: fullscreen)').matches ||
+          window.matchMedia('(display-mode: minimal-ui)').matches ||
+          window.navigator.standalone === true
+        );
+      } catch (e) {
+        return false;
       }
-      renderPersonSmsPreview(kind);
     }
 
-    function sendPersonAuthCode(kind) {
-      const values = getPersonAuthValues(kind);
-      if (!values) return;
-      const personAuth = getPersonAuthModule();
-      const validation = personAuth.validateSendValues ? personAuth.validateSendValues(kind, values) : null;
-      if (validation && !validation.ok) {
-        alert(validation.message);
-        values.panel.querySelector(validation.focusSelector || '[data-person-auth-name]')?.focus();
-        return;
+    function getQuickAuth() {
+      try {
+        return JSON.parse(localStorage.getItem(QUICK_AUTH_KEY) || 'null');
+      } catch (e) {
+        return null;
       }
-      if (!validation) {
-        if (!values.name) { alert((kind === 'driver' ? '기사' : '인부') + ' 이름을 입력해주세요.'); values.panel.querySelector('[data-person-auth-name]')?.focus(); return; }
-        if (!values.birth6 || !/^\d{6}$/.test(values.birth6) || !values.genderDigit || !/^[1-8]$/.test(values.genderDigit)) { alert((kind === 'driver' ? '기사' : '인부') + ' 주민번호는 840507-1까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.'); values.panel.querySelector('[data-person-auth-jumin]')?.focus(); return; }
-        if (!values.carrier) { alert((kind === 'driver' ? '기사' : '인부') + ' 통신사를 선택해주세요.'); values.panel.querySelector('[data-person-auth-carrier]')?.focus(); return; }
-        if (!values.phone) { alert((kind === 'driver' ? '기사' : '인부') + ' 휴대폰번호를 입력해주세요.'); values.panel.querySelector('[data-person-auth-phone]')?.focus(); return; }
+    }
+
+    function setQuickAuth(data) {
+      localStorage.setItem(QUICK_AUTH_KEY, JSON.stringify(data || {}));
+      updateQuickAuthUi();
+    }
+
+    function getQuickAuthLoginKey(member) {
+      return member?.signupId || member?.providerId || member?.id || member?.phone || member?.name || '';
+    }
+
+    function getCurrentQuickAuthMember() {
+      const current = getCurrentMemberTest();
+      if (!current) return null;
+      return findMemberForLogin(getQuickAuthLoginKey(current)) || current;
+    }
+
+    function getQuickAuthUnlockMember(auth) {
+      if (!auth) return null;
+      return findMemberForLogin(auth.memberLoginKey) || auth.member || null;
+    }
+
+    function isSignupScreenVisible() {
+      const signup = document.getElementById('signupScreen');
+      return !!(signup && !signup.classList.contains('hidden'));
+    }
+
+    function applyQuickFirstLoginMode(appMode, hasPin, hasFingerprint) {
+      const loggedOut = !isMemberLoggedIn() && !isAdminLoggedIn();
+      const quickFirst = !!(appMode && loggedOut && isSignupScreenVisible());
+      document.body.classList.toggle('quick-first-mode', quickFirst);
+      if (!quickFirst) document.body.classList.remove('show-normal-login');
+
+      const fallbackButton = document.getElementById('quickNormalLoginButton');
+      if (fallbackButton) {
+        fallbackButton.classList.toggle('hidden', !quickFirst);
+        fallbackButton.textContent = (hasPin || hasFingerprint)
+          ? '아이디/카카오/네이버 로그인으로 전환'
+          : '처음 등록은 아이디/카카오/네이버 로그인으로 하기';
       }
-      const sentDataset = personAuth.buildSentDataset ? personAuth.buildSentDataset(values) : null;
-      if (sentDataset) {
-        Object.entries(sentDataset).forEach(([key, value]) => { values.panel.dataset[key] = value; });
+
+      if (!quickFirst || document.body.classList.contains('show-normal-login')) return;
+
+      const pinPanel = document.getElementById('quickPinLoginPanel');
+      const pinInput = document.getElementById('quickLoginPinInput');
+      if (hasPin) {
+        if (pinPanel) pinPanel.classList.remove('hidden');
+        if (pinInput && document.activeElement !== pinInput) {
+          setTimeout(() => {
+            try { pinInput.focus(); } catch (e) {}
+          }, 120);
+        }
       } else {
-        values.panel.dataset.authCodeSent = 'true';
-        values.panel.dataset.authPhone = values.phone;
-        values.panel.dataset.authName = values.name;
-        values.panel.dataset.authBirth6 = values.birth6;
-        values.panel.dataset.authGenderDigit = values.genderDigit;
-        values.panel.dataset.authJuminMasked = values.juminMasked || (values.birth6 + '-' + values.genderDigit + '******');
-        values.panel.dataset.authCarrier = values.carrier;
-        values.panel.dataset.authType = values.type || '';
+        if (pinPanel) pinPanel.classList.add('hidden');
+        if (pinInput) pinInput.value = '';
       }
-      togglePersonAuthCodeInput(values.panel, true);
-      renderPersonSmsPreview(kind);
-      setPersonAuthStatus(kind, '약관/동의 안내 문자와 6자리 번호를 보냈습니다. 기사/인부가 동의하면 그 번호를 등록자에게 알려주고, 등록자는 아래 입력칸에 입력합니다.', 'pending');
-      values.panel.querySelector('[data-person-auth-code]')?.focus();
-      alert('현재 임시 6자리 번호는 123456입니다.\n정식 서비스에서는 ' + values.carrier + ' / ' + values.phone + ' 번호로 통신사 본인확인 후 약관/동의 링크와 6자리 번호가 발송됩니다. 기사/인부가 동의하면 그 번호를 등록자에게 알려주는 방식입니다.');
     }
 
-    function verifyPersonAuth(kind) {
-      const values = getPersonAuthValues(kind);
-      if (!values) return;
-      const personAuth = getPersonAuthModule();
-      const validation = personAuth.validateVerifyValues ? personAuth.validateVerifyValues(kind, values, values.panel.dataset.authCodeSent, TEST_PRIVATE_DOC_CODE) : null;
-      if (validation && !validation.ok) {
-        alert(validation.message);
-        if (validation.focusSelector) values.panel.querySelector(validation.focusSelector)?.focus();
-        return;
+    function showNormalLoginFromQuick() {
+      document.body.classList.add('show-normal-login');
+      const idInput = document.getElementById('sitepassLoginIdentifier');
+      const quickStatus = document.getElementById('quickLoginStatus');
+      if (quickStatus) {
+        quickStatus.classList.remove('ok', 'warn');
+        quickStatus.textContent = '아이디/카카오/네이버로 로그인한 뒤 홈화면 앱에서 간편번호 6자리 또는 지문인식을 등록할 수 있습니다.';
       }
-      if (!validation) {
-        if (!values.name) { alert((kind === 'driver' ? '기사' : '인부') + ' 이름을 입력해주세요.'); return; }
-        if (!values.phone) { alert('휴대폰번호를 먼저 입력해주세요.'); return; }
-        if (values.panel.dataset.authCodeSent !== 'true') { alert('먼저 약관/동의 문자보내기 버튼을 눌러주세요.'); return; }
-        if (values.code !== TEST_PRIVATE_DOC_CODE) { alert('6자리 번호가 맞지 않습니다. 현재 임시 번호 123456을 입력해주세요.'); values.panel.querySelector('[data-person-auth-code]')?.focus(); return; }
-      }
-      const meta = personAuth.buildVerifiedMeta ? personAuth.buildVerifiedMeta(values) : {
-        personName: values.name,
-        phone: values.phone,
-        type: values.type || '',
-        verifiedAt: new Date().toISOString()
+      setTimeout(() => {
+        try { idInput?.focus(); } catch (e) {}
+      }, 80);
+    }
+
+
+    function getQuickAuthState() {
+      const auth = getQuickAuth();
+      return {
+        auth,
+        hasPin: !!(auth && auth.pinHash),
+        hasFingerprint: !!(auth && auth.fingerprintCredentialId)
       };
-      if (kind === 'driver') {
-        document.querySelectorAll('.doc-card[data-group-key="driver"]').forEach(card => setDocCardAuthVerified(card, meta));
-        values.panel.dataset.authVerified = 'true';
-        values.panel.dataset.authVerifiedAt = meta.verifiedAt;
-        setPersonAuthStatus(kind, '기사 본인 동의/인증 완료 · 기사서류 전체 파일선택/사진찍기가 열렸습니다.', 'verified');
-        values.panel.querySelectorAll('input, select, button').forEach(el => { if (!el.matches('[data-person-auth-reset]')) el.disabled = true; });
-        const driverPhone = document.querySelector('.doc-card[data-doc-key="driverIdCard"] [data-extra-phone-key="driverPhone"]');
-        if (driverPhone && !driverPhone.value) driverPhone.value = values.phone;
-        alert('기사 본인 인증이 완료되었습니다.\n기사서류 전체 업로드가 열렸습니다.');
+    }
+
+    function shouldShowQuickSetupAfterNormalLogin() {
+      return false;
+    }
+
+
+    function showQuickSetupStatus(message, type) {
+      const status = document.getElementById('quickSetupStatus');
+      if (!status) return;
+      status.textContent = message;
+      status.classList.remove('ok', 'warn');
+      if (type) status.classList.add(type);
+    }
+
+    function openQuickSetupWizard() {
+      if (!shouldShowQuickSetupAfterNormalLogin()) return;
+      const overlay = document.getElementById('quickSetupOverlay');
+      const pinStep = document.getElementById('quickSetupPinStep');
+      const fingerprintStep = document.getElementById('quickSetupFingerprintStep');
+      const pin1 = document.getElementById('quickSetupPinInput');
+      const pin2 = document.getElementById('quickSetupPinInput2');
+      if (overlay) overlay.classList.remove('hidden');
+      if (pinStep) pinStep.classList.remove('hidden');
+      if (fingerprintStep) fingerprintStep.classList.add('hidden');
+      if (pin1) pin1.value = '';
+      if (pin2) pin2.value = '';
+      showQuickSetupStatus('간편번호를 먼저 등록해주세요. 지문인식은 그 다음에 선택할 수 있습니다.', '');
+      setTimeout(() => {
+        try { pin1?.focus(); } catch (e) {}
+      }, 120);
+    }
+
+    function closeQuickSetupWizard(skip) {
+      if (skip) sessionStorage.setItem(QUICK_SETUP_SKIP_SESSION_KEY, 'yes');
+      const overlay = document.getElementById('quickSetupOverlay');
+      if (overlay) overlay.classList.add('hidden');
+    }
+
+    function finishQuickSetupWizard() {
+      closeQuickSetupWizard(false);
+      alert('간편로그인 등록이 완료되었습니다.\n다음부터 홈화면 SitePass 앱을 누르면 간편번호 또는 지문인식 화면이 먼저 열립니다.');
+    }
+
+    async function saveQuickSetupPinAndAskFingerprint() {
+      const pin1 = document.getElementById('quickSetupPinInput')?.value || '';
+      const pin2 = document.getElementById('quickSetupPinInput2')?.value || '';
+      const ok = await persistQuickPinAuth(pin1, pin2, showQuickSetupStatus);
+      if (!ok) return;
+      const pinStep = document.getElementById('quickSetupPinStep');
+      const fingerprintStep = document.getElementById('quickSetupFingerprintStep');
+      if (pinStep) pinStep.classList.add('hidden');
+      if (fingerprintStep) fingerprintStep.classList.remove('hidden');
+      showQuickSetupStatus('간편번호 등록 완료. 지문인식도 등록하면 버튼 한 번으로 더 빠르게 들어올 수 있습니다.', 'ok');
+    }
+
+    async function registerQuickSetupFingerprint() {
+      const ok = await persistFingerprintQuickAuth(showQuickSetupStatus);
+      if (ok) {
+        showQuickSetupStatus('지문인식 등록 완료. 다음부터 홈화면 앱에서 간편번호 또는 지문인식으로 로그인할 수 있습니다.', 'ok');
+        setTimeout(finishQuickSetupWizard, 650);
+      }
+    }
+
+    function updateQuickAuthUi() {
+      document.body.classList.remove('quick-first-mode', 'show-normal-login');
+      const quickPanel = document.getElementById('quickLoginPanel');
+      const browserNote = document.getElementById('quickBrowserNote');
+      const settingsBox = document.getElementById('quickAuthSettingsBox');
+      const setupOverlay = document.getElementById('quickSetupOverlay');
+      if (quickPanel) quickPanel.classList.add('hidden');
+      if (browserNote) browserNote.classList.add('hidden');
+      if (settingsBox) settingsBox.classList.add('hidden');
+      if (setupOverlay) setupOverlay.classList.add('hidden');
+    }
+
+
+    function showQuickAuthStatus(message, type) {
+      const status = document.getElementById('quickAuthStatus');
+      if (!status) return;
+      status.dataset.manual = 'yes';
+      status.textContent = message;
+      status.classList.remove('ok', 'warn');
+      if (type) status.classList.add(type);
+      setTimeout(() => {
+        if (status) {
+          delete status.dataset.manual;
+          updateQuickAuthUi();
+        }
+      }, 4200);
+    }
+
+    function showQuickLoginStatus(message, type) {
+      const status = document.getElementById('quickLoginStatus');
+      if (!status) return;
+      status.textContent = message;
+      status.classList.remove('ok', 'warn');
+      if (type) status.classList.add(type);
+    }
+
+    function openQuickPinLoginPanel() {
+      if (!isSitePassInstalledAppMode()) {
+        alert('간편번호 로그인은 휴대폰 바탕화면에 설치한 SitePass 아이콘으로 들어왔을 때만 사용합니다.');
         return;
       }
-      values.panel.dataset.pendingVerified = 'true';
-      values.panel.dataset.pendingName = values.name;
-      values.panel.dataset.pendingPhone = values.phone;
-      values.panel.dataset.pendingType = values.type || 'normal';
-      values.panel.dataset.pendingVerifiedAt = meta.verifiedAt;
-      setPersonAuthStatus(kind, '인부 동의/인증 완료 · 이제 아래 버튼으로 이 인부의 서류함을 추가할 수 있습니다.', 'verified');
-      setWorkerAddButtonsEnabled(true);
-      alert('인부 동의/인증이 완료되었습니다.\n이제 보통인부 추가 또는 특수인부 추가 버튼으로 서류함을 추가하세요.\n이 인증은 해당 인부 서류 등록 동의용이며, 현장 링크를 보낼 때마다 다시 받지 않습니다.');
+      const auth = getQuickAuth();
+      if (!auth || !auth.pinHash) {
+        showQuickLoginStatus('아직 간편번호가 등록되지 않았습니다. 먼저 아이디/카카오/네이버로 로그인한 뒤 홈화면 앱에서 간편번호/지문을 등록해주세요.', 'warn');
+        return;
+      }
+      const panel = document.getElementById('quickPinLoginPanel');
+      const input = document.getElementById('quickLoginPinInput');
+      if (panel) panel.classList.remove('hidden');
+      if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 80);
+      }
     }
 
-    function rejectPersonAuth(kind) {
-      const values = getPersonAuthValues(kind);
-      if (!values) return;
-      values.panel.dataset.authRejected = 'true';
-      values.panel.dataset.pendingVerified = 'false';
-      setPersonAuthStatus(kind, '동의거절 처리되었습니다. 서류 업로드와 공유에 포함되지 않습니다.', 'rejected');
-      if (kind === 'worker') setWorkerAddButtonsEnabled(false);
-      if (kind === 'driver') {
-        document.querySelectorAll('.doc-card[data-group-key="driver"]').forEach(card => {
-          card.dataset.authVerified = 'false';
-          card.dataset.authPhone = '';
-          card.dataset.authPersonName = '';
-        });
-        refreshPrivateDocLocks(document);
-      }
-      alert('동의거절로 처리했습니다. 필요한 경우 이름/번호를 다시 입력하고 새로 약관/동의 문자보내기을 보내세요.');
+    function closeQuickPinLoginPanel() {
+      const panel = document.getElementById('quickPinLoginPanel');
+      const input = document.getElementById('quickLoginPinInput');
+      if (panel) panel.classList.add('hidden');
+      if (input) input.value = '';
     }
 
-    function resetPersonAuth(kind) {
-      const values = getPersonAuthValues(kind);
-      if (!values) return;
-      values.panel.dataset.authCodeSent = 'false';
-      values.panel.dataset.authVerified = 'false';
-      values.panel.dataset.authRejected = 'false';
-      values.panel.dataset.pendingVerified = 'false';
-      values.panel.dataset.pendingName = '';
-      values.panel.dataset.pendingPhone = '';
-      values.panel.dataset.pendingVerifiedAt = '';
-      values.panel.querySelectorAll('input').forEach(input => { input.disabled = false; if (input.type === 'checkbox') input.checked = false; else input.value = ''; });
-      values.panel.querySelectorAll('select, button').forEach(el => { el.disabled = false; });
-      togglePersonAuthCodeInput(values.panel, false);
-      if (kind === 'worker') setWorkerAddButtonsEnabled(false);
-      if (kind === 'driver') {
-        document.querySelectorAll('.doc-card[data-group-key="driver"]').forEach(card => {
-          card.dataset.authVerified = 'false';
-          card.dataset.authPhone = '';
-          card.dataset.authPersonName = '';
-        });
-        refreshPrivateDocLocks(document);
-      }
-      setPersonAuthStatus(kind, kind === 'driver' ? '기사 문자 동의안내와 6자리 인증을 완료하면 기사서류 전체가 열립니다.' : '인부 1명마다 문자 동의안내와 6자리 인증 후 추가 버튼이 열립니다.', 'pending');
-    }
