@@ -501,7 +501,7 @@
 
     const serverCleanupText = serverCleanup && serverCleanup.ok
       ? '\n서버 장비 ' + (serverCleanup.equipmentDeleted || 0) + '건, QR링크 ' + (serverCleanup.sharesDeleted || 0) + '건 정리했습니다.'
-      : '\n서버 장비/QR 정리는 확인이 필요합니다: ' + escapeHtml(serverCleanup?.error?.message || serverCleanup?.error || 'RPC 미연결');
+      : '\n서버 장비/큐알 정리는 확인이 필요합니다: ' + escapeHtml(serverCleanup?.error?.message || serverCleanup?.error || 'RPC 미연결');
     alert(targetName + '님을 강제탈퇴 처리했습니다.\n연결된 서류/코드 ' + removedDocs + '건도 함께 삭제했습니다.\n서버 탈퇴처리 ' + (serverUpdated || 0) + '건 반영했습니다.' + serverCleanupText + '\n이제 새로고침해도 가입자 수에 다시 포함되지 않습니다.');
     refreshMemberUi();
     renderAdmin();
