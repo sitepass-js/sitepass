@@ -1,6 +1,6 @@
-// SitePass v23.7.318 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
+// SitePass v23.7.319 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
 // ---- merged from app-register-share-payment-13.js ----
-// SitePass v23.7.318 - app-register-share-payment finer split (13/15)
+// SitePass v23.7.319 - app-register-share-payment finer split (13/15)
 function cssEscapeValue(value) {
       if (window.CSS && CSS.escape) return CSS.escape(String(value || ''));
       return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -284,7 +284,7 @@ function cssEscapeValue(value) {
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (parsed && parsed.item) {
-          // v23.7.318: 테스트 기간에는 결제대기 단계가 없어야 합니다.
+          // v23.7.319: 테스트 기간에는 결제대기 단계가 없어야 합니다.
           // 이전 버전에서 남은 결제대기 자료가 계속 안내창을 반복시키면 버리고 새 등록 흐름을 정상화합니다.
           if (window.SITEPASS_TEST_NO_PAYMENT_MODE && !sitePassRegistrationCompletionBusy) {
             try { sessionStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
@@ -313,9 +313,9 @@ function cssEscapeValue(value) {
     }
 
 // ---- merged from app-register-share-payment-14.js ----
-// SitePass v23.7.318 - app-register-share-payment finer split (14/15)
+// SitePass v23.7.319 - app-register-share-payment finer split (14/15)
 function openPendingRegistrationPaymentScreen(pending) {
-      // v23.7.318: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
+      // v23.7.319: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
       if (pending && pending.item) pendingRegistrationItemMemory = pending;
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE && pending && pending.item) {
         if (sitePassRegistrationCompletionBusy) return;
@@ -384,7 +384,7 @@ function openPendingRegistrationPaymentScreen(pending) {
     }
 
 // ---- merged from app-register-share-payment-15.js ----
-// SitePass v23.7.318 - app-register-share-payment finer split (15/15)
+// SitePass v23.7.319 - app-register-share-payment finer split (15/15)
 function normalizePendingRegistrationTier(pending) {
       if (!pending || !pending.item) return pending;
       const member = getEquipmentRegistrationOwnerMember ? getEquipmentRegistrationOwnerMember() : (getCurrentMemberTest() || null);
