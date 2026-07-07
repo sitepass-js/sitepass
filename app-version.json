@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.329",
+  "version": "v23.7.330",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "v23.7.328 Storage 저장구조는 유지하고, 휴대폰/다른 기기 로그인 시 서버에 저장된 내 보관함 항목을 불러오도록 일반회원 전용 보관함 동기화를 추가한 버전입니다. 실제 파일은 Supabase Storage URL로 유지되며 관리자/디자인/결제 흐름은 변경하지 않았습니다.",
+  "note": "v23.7.329 이후 PC에서 등록한 보관함이 휴대폰에 안 보이는 문제를 보정한 버전입니다. 서버 저장 시 로그인 회원 소유자 키를 확정하고, 일반회원 내 보관함 서버동기화를 강화했습니다. Supabase Storage 기반 미리보기/다운로드 구조는 유지합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-07T10:45:00+09:00"
+  "updatedAt": "2026-07-07T11:15:00+09:00"
 }
