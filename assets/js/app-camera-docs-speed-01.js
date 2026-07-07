@@ -1,7 +1,7 @@
-// SitePass v23.7.328 - speed optimized medium chunk (app-camera-docs-speed 01/04)
+// SitePass v23.7.329 - speed optimized medium chunk (app-camera-docs-speed 01/04)
 // ---- merged from app-camera-docs-01.js ----
-// SitePass v23.7.328 - app-camera-docs finer split (01/16)
-// SitePass v23.7.328 - app.bundle.js remaining split (02 camera/document scan)
+// SitePass v23.7.329 - app-camera-docs finer split (01/16)
+// SitePass v23.7.329 - app.bundle.js remaining split (02 camera/document scan)
 
 
     function sendPrivateDocAuthCode(button) {
@@ -203,7 +203,7 @@
     }
 
 // ---- merged from app-camera-docs-02.js ----
-// SitePass v23.7.328 - app-camera-docs finer split (02/16)
+// SitePass v23.7.329 - app-camera-docs finer split (02/16)
 function getCameraGuideCropBox(sourceW, sourceH, docKey = '') {
       const view = document.querySelector('.camera-view');
       const viewW = view?.clientWidth || 0;
@@ -380,7 +380,7 @@ function getCameraGuideCropBox(sourceW, sourceH, docKey = '') {
     }
 
 // ---- merged from app-camera-docs-03.js ----
-// SitePass v23.7.328 - app-camera-docs finer split (03/16)
+// SitePass v23.7.329 - app-camera-docs finer split (03/16)
 function drawCameraAutoBox(box, sourceW, sourceH) {
       const guide = document.getElementById('cameraGuide');
       const rect = document.getElementById('autoDocumentBox');
@@ -601,7 +601,7 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
     }
 
 // ---- merged from app-camera-docs-04.js ----
-// SitePass v23.7.328 - app-camera-docs finer split (04/16)
+// SitePass v23.7.329 - app-camera-docs finer split (04/16)
 function renderDocCardHtml(group, doc, index, options = {}) {
       const key = options.key || doc.key;
       const title = options.title || doc.title;
