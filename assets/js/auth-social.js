@@ -11,126 +11,6 @@
     return 'sitePass_v23_7_7_update_original_corrected_oauth_pending_v23_7_207';
   }
 
-
-  function getSitePassBaseStorageKeyForOAuth() {
-    try { if (typeof STORAGE_KEY !== 'undefined' && STORAGE_KEY) return String(STORAGE_KEY); } catch (e) {}
-    return 'sitePass_v23_7_7_update_original_corrected';
-  }
-
-  function getSitePassOAuthKeepKeys() {
-    const base = getSitePassBaseStorageKeyForOAuth();
-    const keys = [
-      base + '_members',
-      base + '_currentMember',
-      base + '_quick_auth_v23_7_141',
-      base + '_pwa_auto_member_v23_7_145',
-      base + '_admin_session',
-      base + '_admin_session_role',
-      base + '_admin_session_id',
-      base + '_admin_session_name',
-      base + '_admin_role_map',
-      getSitePassOAuthPendingKey()
-    ];
-    try {
-      if (typeof MEMBER_STORAGE_KEY !== 'undefined') keys.push(MEMBER_STORAGE_KEY);
-      if (typeof CURRENT_MEMBER_KEY !== 'undefined') keys.push(CURRENT_MEMBER_KEY);
-      if (typeof QUICK_AUTH_KEY !== 'undefined') keys.push(QUICK_AUTH_KEY);
-      if (typeof PWA_AUTO_MEMBER_KEY !== 'undefined') keys.push(PWA_AUTO_MEMBER_KEY);
-      if (typeof ADMIN_SESSION_KEY !== 'undefined') {
-        keys.push(ADMIN_SESSION_KEY, ADMIN_SESSION_KEY + '_role', ADMIN_SESSION_KEY + '_id', ADMIN_SESSION_KEY + '_name');
-      }
-      if (typeof ADMIN_ROLE_MAP_KEY !== 'undefined') keys.push(ADMIN_ROLE_MAP_KEY);
-    } catch (e) {}
-    return new Set(keys.filter(Boolean).map(String));
-  }
-
-  function isOAuthOrSupabaseStorageKey(key) {
-    const k = String(key || '');
-    const lower = k.toLowerCase();
-    return lower.indexOf('_oauth_pending_') >= 0
-      || lower.indexOf('supabase') >= 0
-      || lower.indexOf('pkce') >= 0
-      || lower.indexOf('code-verifier') >= 0
-      || lower.indexOf('code_verifier') >= 0
-      || /^sb-[a-z0-9]+-auth-token/i.test(k)
-      || /^sb-[a-z0-9]+-code-verifier/i.test(k)
-      || lower.indexOf('fipbgzvdwgjsmazmswaj') >= 0;
-  }
-
-  function stripSitePassHeavyValueForOAuth(value, depth) {
-    if (depth > 6) return null;
-    if (value === null || value === undefined) return value;
-    if (typeof value === 'string') {
-      if (value.length > 240) return '';
-      return value;
-    }
-    if (typeof value !== 'object') return value;
-    if (Array.isArray(value)) return value.slice(0, 50).map(function(item){ return stripSitePassHeavyValueForOAuth(item, depth + 1); });
-    const out = {};
-    Object.keys(value).forEach(function(key){
-      const lower = String(key || '').toLowerCase();
-      if (/base64|dataurl|data_url|image|imagedata|filedata|blob|canvas|photo|original|preview|thumbnail|thumb|pages|pageimages|printable|content|src/.test(lower)) return;
-      if (lower === 'docs' && value[key] && typeof value[key] === 'object') {
-        out[key] = {};
-        Object.keys(value[key]).forEach(function(docKey){
-          const doc = value[key][docKey] || {};
-          out[key][docKey] = {
-            uploaded: !!doc.uploaded,
-            fileName: doc.fileName || doc.name || '',
-            name: doc.name || doc.fileName || '',
-            expiry: doc.expiry || doc.expireAt || doc.expiryDate || '',
-            docType: doc.docType || doc.type || '',
-            cardLike: !!doc.cardLike,
-            pageCount: Array.isArray(doc.pages) ? doc.pages.length : (doc.pageCount || 0)
-          };
-        });
-        return;
-      }
-      out[key] = stripSitePassHeavyValueForOAuth(value[key], depth + 1);
-    });
-    return out;
-  }
-
-  function compactOrRemoveSitePassStorageKeyForOAuth(key) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return;
-      if (raw.length < 150000) return;
-      let parsed = null;
-      try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
-      localStorage.removeItem(key);
-      if (parsed === null) return;
-      const compact = stripSitePassHeavyValueForOAuth(parsed, 0);
-      if (compact === null || compact === undefined) return;
-      const compactRaw = JSON.stringify(compact);
-      if (compactRaw && compactRaw.length < raw.length) localStorage.setItem(key, compactRaw);
-    } catch (e) {
-      try { localStorage.removeItem(key); } catch (ignore) {}
-    }
-  }
-
-  function prepareOAuthStorageRoom() {
-    // v23.7.309: 브라우저 localStorage가 사진/base64 캐시로 가득 차면
-    // Supabase OAuth의 PKCE code_verifier/session 저장이 실패해서
-    // “로그인은 완료됐지만 SitePass 세션을 확인하지 못했습니다”가 뜰 수 있습니다.
-    // 로그인/회원정보/OAuth/Supabase 키는 보존하고, 사진/임시 캐시만 로그인 시작 전에 줄입니다.
-    const keep = getSitePassOAuthKeepKeys();
-    const keys = [];
-    try { for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i)); } catch (e) {}
-    keys.filter(Boolean).forEach(function(key){
-      const k = String(key);
-      const lower = k.toLowerCase();
-      if (keep.has(k) || isOAuthOrSupabaseStorageKey(k)) return;
-      if (lower.indexOf('sitepass') < 0 && lower.indexOf('sitepass') < 0) return;
-      if (lower.indexOf('_registration_draft_') >= 0 || lower.indexOf('_pending_registration_payment_') >= 0 || lower.indexOf('_server_equipment_cache_') >= 0) {
-        try { localStorage.removeItem(k); } catch (e) {}
-        return;
-      }
-      compactOrRemoveSitePassStorageKeyForOAuth(k);
-    });
-    try { sessionStorage.removeItem(getSitePassBaseStorageKeyForOAuth() + '_registration_draft_prompt_seen_v23_7_159'); } catch (e) {}
-  }
-
     function isNonChromeInternetBrowser() {
       try {
         const ua = navigator.userAgent || '';
@@ -197,7 +77,6 @@
         }
         // v23.7.231: 카카오 공식 로그인 화면을 먼저 띄우고, 돌아온 뒤 SitePass 가입 약관을 표시합니다.
         // SitePass 소셜약관은 카카오 인증 후 돌아온 다음, 신규/재가입자에게만 표시합니다.
-        prepareOAuthStorageRoom();
         await signOutSupabaseAuthQuietly();
         setSessionValue(getSitePassOAuthPendingKey(), JSON.stringify({
           provider:'kakao',
@@ -242,7 +121,6 @@
         }
         // v23.7.244: Supabase Custom Provider는 custom:naver로 호출합니다. 테스트 가짜 로그인은 만들지 않습니다.
         // 흐름: 네이버 공식 로그인 → SitePass 복귀 → 신규/재가입이면 SitePass 네이버계정 연동 가입 약관 표시.
-        prepareOAuthStorageRoom();
         await signOutSupabaseAuthQuietly();
         setSessionValue(getSitePassOAuthPendingKey(), JSON.stringify({
           provider:'naver',
@@ -451,19 +329,6 @@
 
         const withdrawnRecord = findWithdrawnMemberRecord(member);
         const serverStatus = await getSupabaseMemberStatus(member);
-        // v23.7.311: 네이버 기존회원은 RLS/직접 SELECT 실패로 serverStatus가 비어도
-        // auth_user_id 중복 동기화가 확인되면 신규가입이 아니라 기존 로그인으로 처리합니다.
-        let existingByAuthDuplicateSync = false;
-        if ((providerName === 'naver' || providerName === 'kakao') && member.authUserId && !serverStatus) {
-          try {
-            try { window.sitepassLastAuthSyncResult = { ok:false, duplicateAuthUserId:false, at:Date.now() }; } catch (ignore) {}
-            const syncOkForExisting = await syncCurrentSupabaseAuthMemberToServer();
-            const syncResult = window.sitepassLastAuthSyncResult || {};
-            existingByAuthDuplicateSync = !!(syncOkForExisting && syncResult.duplicateAuthUserId);
-          } catch (syncExistingError) {
-            console.warn('소셜 기존회원 auth_user_id 동기화 확인 생략:', syncExistingError?.message || syncExistingError);
-          }
-        }
         if (withdrawnRecord || serverStatus === 'withdrawn') {
           // v23.7.219 테스트기간: 탈퇴했던 카카오/네이버 계정도 다시 약관동의 후 재가입 테스트가 가능하게 합니다.
           removeWithdrawnMemberRecord(member);
@@ -476,7 +341,7 @@
         }
 
         const existingSocialMemberBeforeSync = findExistingMemberForSocialLogin(member);
-        const alreadyActiveServerMember = !!((serverStatus && !isWithdrawnStatusValue(serverStatus)) || existingByAuthDuplicateSync);
+        const alreadyActiveServerMember = !!(serverStatus && !isWithdrawnStatusValue(serverStatus));
         const localSocialTermsAgreed = !!(existingSocialMemberBeforeSync && hasLocalSocialTermsAgreement(existingSocialMemberBeforeSync));
         const isExplicitSignup = pending?.mode === 'signup';
         const hasPendingSocialAgreements = !!(pending && pending.agreements && pending.agreements.agreedAt);
@@ -508,8 +373,8 @@
           member.signupMethod = providerName === 'naver' ? 'naver' : 'kakao';
         }
 
-        if (!existingByAuthDuplicateSync) await syncCurrentSupabaseAuthMemberToServer();
-        const serverStatusAfterSync = existingByAuthDuplicateSync ? 'active' : await getSupabaseMemberStatus(member);
+        await syncCurrentSupabaseAuthMemberToServer();
+        const serverStatusAfterSync = await getSupabaseMemberStatus(member);
         if (serverStatusAfterSync === 'withdrawn') {
           // v23.7.219 테스트기간: 서버에 남은 탈퇴 상태를 active 재가입으로 전환하고 계속 진행합니다.
           await reactivateMemberForTestInSupabase(member);

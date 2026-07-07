@@ -1,10 +1,10 @@
-// SitePass v23.7.309 - speed optimized medium chunk (app-core-auth-speed 01/04)
+// SitePass v23.7.312 - speed optimized medium chunk (app-core-auth-speed 01/04)
 // ---- merged from app-core-auth-01.js ----
-// SitePass v23.7.309 - app-core-auth finer split (01/19)
-// SitePass v23.7.309 - app.bundle.js remaining split (01 core/auth/member)
-window.__SITEPASS_APP_SPLIT_VERSION = 'v23.7.309';
-window.SITEPASS_TEST_NO_PAYMENT_MODE = true; // v23.7.309 테스트 기간에는 결제단계를 건너뜁니다.
-// SitePass v23.7.309 - v23.7.290 기준 남은 파일 쪼개기 / 배포 안정화
+// SitePass v23.7.312 - app-core-auth finer split (01/19)
+// SitePass v23.7.312 - app.bundle.js remaining split (01 core/auth/member)
+window.__SITEPASS_APP_SPLIT_VERSION = 'v23.7.312';
+window.SITEPASS_TEST_NO_PAYMENT_MODE = true; // v23.7.312 테스트 기간에는 결제단계를 건너뜁니다.
+// SitePass v23.7.312 - v23.7.290 기준 남은 파일 쪼개기 / 배포 안정화
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PREV_STORAGE_KEY_7 = 'sitePass_v23_7_6_simple_update_controls';
@@ -72,7 +72,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     });
     let adminMemberSummaryStats = null;
     let pendingRegistrationItemMemory = null;
-    let sitePassRegistrationCompletionBusy = false; // v23.7.309: 테스트 등록완료 처리 중 결제대기/임시저장 안내가 반복으로 뜨는 것을 막습니다.
+    let sitePassRegistrationCompletionBusy = false; // v23.7.312: 테스트 등록완료 처리 중 결제대기/임시저장 안내가 반복으로 뜨는 것을 막습니다.
     let runtimeEquipmentItems = []; // localStorage 용량 부족 시 현재 세션에서 장비를 계속 보이게 하는 메모리 목록
     let registrationDraftSaveTimer = null;
     let registrationDraftRestoreBusy = false;
@@ -203,7 +203,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     }
 
 // ---- merged from app-core-auth-02.js ----
-// SitePass v23.7.309 - app-core-auth finer split (02/19)
+// SitePass v23.7.312 - app-core-auth finer split (02/19)
 const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
     const DOC_GROUPS = EQUIPMENT_REGISTER_MODULE.getDocGroups ? EQUIPMENT_REGISTER_MODULE.getDocGroups() : [
       {
@@ -368,7 +368,7 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
     }
 
 // ---- merged from app-core-auth-03.js ----
-// SitePass v23.7.309 - app-core-auth finer split (03/19)
+// SitePass v23.7.312 - app-core-auth finer split (03/19)
 function memberLogout() {
       removeSessionValue(CURRENT_MEMBER_KEY);
       clearPwaAutoMemberTest();
@@ -567,7 +567,7 @@ function memberLogout() {
     }
 
 // ---- merged from app-core-auth-04.js ----
-// SitePass v23.7.309 - app-core-auth finer split (04/19)
+// SitePass v23.7.312 - app-core-auth finer split (04/19)
 function getOrCreateMyAccountMember(ctx) {
       let member = ctx?.member;
       if (member && member.id) return member;
@@ -691,7 +691,7 @@ function getOrCreateMyAccountMember(ctx) {
     }
 
 // ---- merged from app-core-auth-05.js ----
-// SitePass v23.7.309 - app-core-auth finer split (05/19)
+// SitePass v23.7.312 - app-core-auth finer split (05/19)
 function getAdminSampleEquipmentOwner() {
       return {
         id:'MEM-SAMPLE-EQUIPMENT-OWNER',
@@ -819,13 +819,6 @@ function getAdminSampleEquipmentOwner() {
       ).trim();
     }
 
-    // v23.7.310: 같은 Supabase Auth 사용자(auth_user_id)가 이미 회원 row에 있으면
-    // 새 row를 만들려고 하지 않고 기존 회원으로 보고 로그인 흐름을 계속 진행합니다.
-    function isDuplicateAuthUserIdError(error) {
-      const msg = String(error?.message || error?.details || error || '').toLowerCase();
-      return !!(msg && (msg.includes('duplicate') || msg.includes('dupiicate')) && msg.includes('sitepass_auth_user_id_key'));
-    }
-
     async function saveMemberToSupabase(member) {
       try {
         const supabaseApi = getSupabaseApiModule();
@@ -908,11 +901,6 @@ function getAdminSampleEquipmentOwner() {
               member.supabaseLoginId = confirmLoginId || row.login_id;
               return;
             }
-            if (isDuplicateAuthUserIdError(confirmError)) {
-              console.warn('Supabase 소셜 약관회원은 이미 같은 auth_user_id로 저장되어 있어 기존 회원으로 로그인 처리합니다:', confirmError.message || confirmError);
-              member.supabaseLoginId = row.login_id;
-              return;
-            }
             console.warn('Supabase 소셜 약관회원 확정 저장 실패, 기존 저장 재시도:', confirmError.message || confirmError);
           } catch (confirmException) {
             console.warn('Supabase 소셜 약관회원 확정 저장 예외, 기존 저장 재시도:', confirmException?.message || confirmException);
@@ -944,10 +932,6 @@ function getAdminSampleEquipmentOwner() {
               console.log('Supabase RPC 회원 저장 성공:', rpcSavedLoginId || row.login_id, 'role:', row.role);
               return;
             }
-            if (isDuplicateAuthUserIdError(rpcSaveError)) {
-              console.warn('Supabase RPC 회원은 이미 같은 auth_user_id로 저장되어 있어 기존 회원으로 로그인 처리합니다:', rpcSaveError.message || rpcSaveError);
-              return;
-            }
             console.warn('Supabase RPC 회원 저장 실패, 직접 저장 재시도:', rpcSaveError.message || rpcSaveError);
           } catch (rpcSaveException) {
             console.warn('Supabase RPC 회원 저장 예외, 직접 저장 재시도:', rpcSaveException?.message || rpcSaveException);
@@ -957,10 +941,6 @@ function getAdminSampleEquipmentOwner() {
         const { error } = await supabaseApi.upsert('sitepass_members', row, { onConflict: 'login_id' });
 
         if (error) {
-          if (isDuplicateAuthUserIdError(error)) {
-            console.warn('Supabase 회원은 이미 같은 auth_user_id로 저장되어 있어 기존 회원으로 로그인 처리합니다:', error.message || error);
-            return;
-          }
           console.warn('Supabase 회원 저장 실패:', error.message);
           return;
         }

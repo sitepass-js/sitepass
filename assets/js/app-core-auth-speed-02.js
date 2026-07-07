@@ -1,6 +1,6 @@
-// SitePass v23.7.309 - speed optimized medium chunk (app-core-auth-speed 02/04)
+// SitePass v23.7.312 - speed optimized medium chunk (app-core-auth-speed 02/04)
 // ---- merged from app-core-auth-06.js ----
-// SitePass v23.7.309 - app-core-auth finer split (06/19)
+// SitePass v23.7.312 - app-core-auth finer split (06/19)
 function normalizeSupabaseLoginKeyForMember(value) {
       return String(value || '').trim().toLowerCase();
     }
@@ -108,7 +108,7 @@ function normalizeSupabaseLoginKeyForMember(value) {
     }
 
 // ---- merged from app-core-auth-07.js ----
-// SitePass v23.7.309 - app-core-auth finer split (07/19)
+// SitePass v23.7.312 - app-core-auth finer split (07/19)
 function getAdminMemberCanonicalPrimaryKey(member) {
       const tokens = getAdminMemberDedupeTokens(member);
       return tokens[0] || ('row:' + (member?.id || Math.random()));
@@ -388,7 +388,7 @@ function getAdminMemberCanonicalPrimaryKey(member) {
     // v23.7.216 - 회원 저장 함수입니다. 기존 회원이면 신규 생성하지 않고, 최고관리자는 sitepass@kakao.com 1명만 유지합니다.
 
 // ---- merged from app-core-auth-08.js ----
-// SitePass v23.7.309 - app-core-auth finer split (08/19)
+// SitePass v23.7.312 - app-core-auth finer split (08/19)
 function saveMemberTest(member) {
       if (!member) return;
       const saveBlockedRecord = findWithdrawnMemberRecord(member);
@@ -464,27 +464,15 @@ function saveMemberTest(member) {
       return savedMember;
     }
 
-    function isDuplicateAuthUserIdSyncError(error) {
-      const msg = String(error?.message || error?.details || error || '').toLowerCase();
-      return !!(msg && (msg.includes('duplicate') || msg.includes('dupiicate')) && msg.includes('sitepass_auth_user_id_key'));
-    }
-
     async function syncCurrentSupabaseAuthMemberToServer() {
       try {
         const supabaseApi = getSupabaseApiModule();
         if (!(supabaseApi.hasRpc && supabaseApi.hasRpc())) return false;
-        try { window.sitepassLastAuthSyncResult = { ok:false, duplicateAuthUserId:false, at:Date.now() }; } catch (ignore) {}
         const { error } = await supabaseApi.rpc('sitepass_sync_current_user_member');
         if (error) {
-          if (isDuplicateAuthUserIdSyncError(error)) {
-            try { window.sitepassLastAuthSyncResult = { ok:true, duplicateAuthUserId:true, at:Date.now(), message:error.message || String(error || '') }; } catch (ignore) {}
-            console.warn('현재 Supabase Auth 회원은 이미 같은 auth_user_id로 저장되어 있어 기존 회원 로그인으로 처리합니다:', error.message || error);
-            return true;
-          }
           console.warn('현재 Supabase Auth 회원 서버 동기화 RPC 실패:', error.message);
           return false;
         }
-        try { window.sitepassLastAuthSyncResult = { ok:true, duplicateAuthUserId:false, at:Date.now() }; } catch (ignore) {}
         return true;
       } catch (e) {
         console.warn('현재 Supabase Auth 회원 서버 동기화 RPC 예외:', e);
@@ -594,7 +582,7 @@ function saveMemberTest(member) {
     }
 
 // ---- merged from app-core-auth-09.js ----
-// SitePass v23.7.309 - app-core-auth finer split (09/19)
+// SitePass v23.7.312 - app-core-auth finer split (09/19)
 const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
 
     // v23.7.258: 카카오/네이버 OAuth 로그인 처리는 assets/js/auth-social.js로 분리했습니다.
@@ -669,7 +657,7 @@ const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
     }
 
     // 휴대폰 inline onclick 안전 연결
-    // v23.7.309: 중간 청크 로딩 중 아직 뒤쪽 청크 함수가 정의되기 전에 전역에 연결하다가
+    // v23.7.312: 중간 청크 로딩 중 아직 뒤쪽 청크 함수가 정의되기 전에 전역에 연결하다가
     // ReferenceError가 나는 문제를 막기 위해, 뒤쪽 함수는 안전 래퍼로 먼저 연결합니다.
     window.handleKakaoLogin = handleKakaoLogin;
     window.handleKakaoSignup = handleKakaoSignup;
@@ -778,7 +766,7 @@ const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
       if (idInput) {
         idInput.setAttribute('name', 'username');
         idInput.setAttribute('autocomplete', 'username');
-        // v23.7.309: Edge Issues 호환성 경고를 줄이기 위해 autocapitalize 속성 동적 부여는 생략합니다.
+        // v23.7.312: Edge Issues 호환성 경고를 줄이기 위해 autocapitalize 속성 동적 부여는 생략합니다.
         idInput.setAttribute('spellcheck', 'false');
       }
       if (pwInput) {
@@ -810,7 +798,7 @@ const SITEPASS_OAUTH_PENDING_KEY = STORAGE_KEY + '_oauth_pending_v23_7_207';
     }
 
 // ---- merged from app-core-auth-10.js ----
-// SitePass v23.7.309 - app-core-auth finer split (10/19)
+// SitePass v23.7.312 - app-core-auth finer split (10/19)
 function adminRoleToSupabaseRole(roleName, loginId) {
       if (isSuperAdminLoginId(loginId)) return 'super_admin';
       if (roleName === SUPER_ADMIN_ROLE_NAME) return 'member';

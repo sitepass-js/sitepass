@@ -1,7 +1,7 @@
-// SitePass v23.7.309 - speed optimized medium chunk (app-admin-boot-speed 01/03)
+// SitePass v23.7.312 - speed optimized medium chunk (app-admin-boot-speed 01/03)
 // ---- merged from app-admin-boot-01.js ----
-// SitePass v23.7.309 - app-admin-boot finer split (01/14)
-// SitePass v23.7.309 - app.bundle.js remaining split (04 admin/pwa/boot)
+// SitePass v23.7.312 - app-admin-boot finer split (01/14)
+// SitePass v23.7.312 - app.bundle.js remaining split (04 admin/pwa/boot)
 
 
     function completeAutoPaymentForItem(code, plan, sourceLabel, options) {
@@ -176,7 +176,7 @@
     }
 
 // ---- merged from app-admin-boot-02.js ----
-// SitePass v23.7.309 - app-admin-boot finer split (02/14)
+// SitePass v23.7.312 - app-admin-boot finer split (02/14)
 function renderRenewPanel(item) {
       if (!item) return '';
       const dueText = getPaymentDueText(item);
@@ -308,7 +308,7 @@ function renderRenewPanel(item) {
     }
 
 // ---- merged from app-admin-boot-03.js ----
-// SitePass v23.7.309 - app-admin-boot finer split (03/14)
+// SitePass v23.7.312 - app-admin-boot finer split (03/14)
 function isQrPaused(item) {
       const payments = getAdminPaymentsModule();
       if (payments.isQrPaused) return payments.isQrPaused(item);
@@ -536,7 +536,7 @@ function isQrPaused(item) {
     }
 
 // ---- merged from app-admin-boot-04.js ----
-// SitePass v23.7.309 - app-admin-boot finer split (04/14)
+// SitePass v23.7.312 - app-admin-boot finer split (04/14)
 async function signOutSupabaseAuthQuietly() {
       try {
         if (window.sitepassSupabase && window.sitepassSupabase.auth) {
@@ -606,10 +606,9 @@ async function signOutSupabaseAuthQuietly() {
         const isSocialStatusLookup = statusProviderKey === 'kakao' || statusProviderKey === 'naver';
         const rpcStatus = await getSupabaseSocialMemberStatusViaRpc(member);
         if (rpcStatus === 'withdrawn') return 'withdrawn';
-        // v23.7.311: 네이버 custom OAuth는 브라우저/RLS 상황에 따라 아래 직접 SELECT가 401로 막혀
-        // 기존 약관회원인데도 candidates가 비어 신규가입/세션실패로 흐를 수 있습니다.
-        // 서버 RPC가 active를 반환하면 기존 소셜회원으로 보고 로그인 흐름을 계속 진행합니다.
-        if (rpcStatus && isSocialStatusLookup && !isWithdrawnStatusValue(rpcStatus)) return rpcStatus;
+        // v23.7.250: 네이버/카카오 신규 가입은 terms_agreed_at이 확인될 때만 기존회원으로 봅니다.
+        // 예전 RPC가 status=active만 반환하면 신규 네이버도 약관창 없이 통과할 수 있어,
+        // 소셜 active 판정은 아래 sitepass_members의 terms_agreed_at 확인까지 내려보냅니다.
         if (rpcStatus && !isSocialStatusLookup) return rpcStatus;
 
         // v23.7.231: 탈퇴 여부는 서버 status/plan_type으로 판단합니다.
@@ -700,7 +699,7 @@ async function signOutSupabaseAuthQuietly() {
     }
 
 // ---- merged from app-admin-boot-05.js ----
-// SitePass v23.7.309 - app-admin-boot finer split (05/14)
+// SitePass v23.7.312 - app-admin-boot finer split (05/14)
 async function withdrawCurrentSupabaseAuthMember(reason) {
       try {
         if (!window.sitepassSupabase || !window.sitepassSupabase.rpc) return 0;
