@@ -1,6 +1,6 @@
-// SitePass v23.7.338 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
+// SitePass v23.7.339 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
 // ---- merged from app-register-share-payment-09.js ----
-// SitePass v23.7.338 - app-register-share-payment finer split (09/15)
+// SitePass v23.7.339 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
       const archive = getArchiveModule();
       if (archive.shareOneListItemEmail) return archive.shareOneListItemEmail(code);
@@ -59,6 +59,16 @@ function shareOneListItemEmail(code) {
     }
 
     async function saveManagerShareItemsToSupabase(items) {
+      const qrShare = getQrShareModule();
+      if (qrShare.saveManagerShareItemsToSupabase) {
+        return await qrShare.saveManagerShareItemsToSupabase(items, {
+          getClient: getSitePassSupabaseClient,
+          getExpireAt: getManagerExpireAt,
+          getSignature: getManagerLinkSignature,
+          cloneItem: cloneShareItemForServer,
+          getLabel: getShareItemLabel
+        });
+      }
       const client = getSitePassSupabaseClient();
       if (!client) {
         return { ok:false, message:'Supabase 연결 객체가 없습니다.' };
@@ -124,12 +134,12 @@ function shareOneListItemEmail(code) {
         if (loaded.ok) item = loaded.item;
         else if (loaded.expired) {
           const box = document.getElementById('managerPrintBox');
-          if (box) box.innerHTML = '<div class="manager-expire-box"><b>만료된 담당자 QR·링크입니다.</b><br>이 담당자 접속은 7일이 지나 더 이상 열 수 없습니다.<br>장비업자에게 새 공유 QR·링크를 다시 받아주세요.</div>';
+          if (box) box.innerHTML = '<div class="manager-expire-box"><b>만료된 담당자 QR·링크입니다.</b><br>이 담당자 접속은 1일이 지나 더 이상 열 수 없습니다.<br>장비업자에게 새 공유 QR·링크를 다시 받아주세요.</div>';
           showScreen('managerPrintScreen');
           return;
         } else {
           const msg = loaded.notFound
-            ? '조회할 수 없는 코드입니다.<br>장비업자가 7일 링크를 다시 공유해야 합니다.'
+            ? '조회할 수 없는 코드입니다.<br>장비업자가 1일 링크를 다시 공유해야 합니다.'
             : '담당자 링크를 서버에서 불러오지 못했습니다.<br>장비업자에게 새 링크를 다시 받아주세요.<br><span class="small">' + escapeHtml(loaded.message || '') + '</span>';
           const box = document.getElementById('managerPrintBox');
           if (box) box.innerHTML = '<div class="empty">' + msg + '</div>';
@@ -152,7 +162,7 @@ function shareOneListItemEmail(code) {
 
       const saved = await saveManagerShareItemsToSupabase(safeItems);
       if (!saved.ok) {
-        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 sitepass_public_shares 테이블을 만든 뒤 다시 7일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
+        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.339 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
         return;
       }
 
@@ -173,7 +183,7 @@ function shareOneListItemEmail(code) {
     function openKakaoShare(text, firstLink, itemCount) {
       if (navigator.share) {
         const payload = itemCount === 1
-          ? { title:'SitePass 담당자 서류', text:'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n7일 뒤에는 담당자 QR·링크 접속이 차단됩니다.', url:firstLink }
+          ? { title:'SitePass 담당자 서류', text:'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.', url:firstLink }
           : { title:'SitePass 담당자 서류', text };
         navigator.share(payload).catch(() => copyTextFallback(text, '담당자 공유문을 복사했습니다.\n카카오톡 대화창에 붙여넣으면 됩니다.'));
       } else {
@@ -182,7 +192,7 @@ function shareOneListItemEmail(code) {
     }
 
 // ---- merged from app-register-share-payment-10.js ----
-// SitePass v23.7.338 - app-register-share-payment finer split (10/15)
+// SitePass v23.7.339 - app-register-share-payment finer split (10/15)
 function normalizePhoneForShare(phone) {
       const qrShare = getQrShareModule();
       if (qrShare.normalizePhoneForShare) return qrShare.normalizePhoneForShare(phone);
@@ -305,7 +315,7 @@ function normalizePhoneForShare(phone) {
         '<div class="line"><b>결제단위</b><span>' + escapeHtml(item?.bundleMeta?.paymentText || '장비 및 인력 통합 1세트 결제') + '</span></div>' +
         '<div class="line"><b>서비스상태</b><span>' + escapeHtml(getServiceStatusText(item)) + '</span></div>' +
         '<div class="line"><b>요금제 기준</b><span>' + escapeHtml(item.basicPlan || BASIC_PRICE_TEXT) + '<br>' + escapeHtml(item.alertPlan || ALERT_PRICE_TEXT) + '</span></div>' +
-        '<div class="line"><b>전달 정책</b><span>' + escapeHtml(item.forwardPolicy || '공유 후 7일 재전송 가능 예정') + '</span></div>' +
+        '<div class="line"><b>전달 정책</b><span>' + escapeHtml(item.forwardPolicy || '공유 후 1일 재전송 가능 예정') + '</span></div>' +
         renewalHtml +
         '<div class="qr-box" onclick="openManagerPublicView(\'' + escapeJs(item.code) + '\')">' +
           '<img alt="통합 QR" src="' + qrUrl + '">' +
@@ -346,7 +356,7 @@ function normalizePhoneForShare(phone) {
     }
 
 // ---- merged from app-register-share-payment-11.js ----
-// SitePass v23.7.338 - app-register-share-payment finer split (11/15)
+// SitePass v23.7.339 - app-register-share-payment finer split (11/15)
 function renderDocExpiryStrip(doc) {
       if (!doc || !doc.expireDate) return '';
       const label = getExpiryPeriodLabel(doc);
@@ -450,7 +460,7 @@ function renderDocExpiryStrip(doc) {
       }
       if (isManagerExpired(item, expireAt)) {
         const recipientView = getRecipientViewModule();
-        box.innerHTML = recipientView.getExpiredManagerLinkHtml ? recipientView.getExpiredManagerLinkHtml() : '<div class="manager-expire-box"><b>만료된 담당자 QR·링크입니다.</b><br>이 담당자 접속은 7일이 지나 더 이상 열 수 없습니다.<br>장비업자에게 새 공유 QR·링크를 다시 받아주세요.<br><span class="small">장비업자의 원본 서류함과 수정/갱신 화면은 그대로 유지됩니다.</span></div>';
+        box.innerHTML = recipientView.getExpiredManagerLinkHtml ? recipientView.getExpiredManagerLinkHtml() : '<div class="manager-expire-box"><b>만료된 담당자 QR·링크입니다.</b><br>이 담당자 접속은 1일이 지나 더 이상 열 수 없습니다.<br>장비업자에게 새 공유 QR·링크를 다시 받아주세요.<br><span class="small">장비업자의 원본 서류함과 수정/갱신 화면은 그대로 유지됩니다.</span></div>';
         showScreen('managerPrintScreen');
         return;
       }
@@ -460,12 +470,12 @@ function renderDocExpiryStrip(doc) {
       const recipientView = getRecipientViewModule();
       const remainingDays = recipientView.getManagerRemainingDays ? recipientView.getManagerRemainingDays(expireAt || getManagerExpireAt(item)) : Math.ceil(((expireAt || getManagerExpireAt(item)) - Date.now()) / (1000 * 60 * 60 * 24));
       box.innerHTML =
-        '<div class="manager-received-hero"><div class="eyebrow">QR·링크로 받은 담당자 화면</div><h3>' + escapeHtml(getShareItemLabel(item)) + ' 서류</h3><p>이 화면은 하도급/원청 담당자가 카톡·문자 링크나 QR을 눌렀을 때 바로 보는 다운로드/프린트 전용 화면입니다.</p><div class="manager-status-grid"><div>코드입력 없음</div><div>7일 유효</div><div>수정/갱신 불가</div></div></div>' +
+        '<div class="manager-received-hero"><div class="eyebrow">QR·링크로 받은 담당자 화면</div><h3>' + escapeHtml(getShareItemLabel(item)) + ' 서류</h3><p>이 화면은 하도급/원청 담당자가 카톡·문자 링크나 QR을 눌렀을 때 바로 보는 다운로드/프린트 전용 화면입니다.</p><div class="manager-status-grid"><div>코드입력 없음</div><div>1일 유효</div><div>수정/갱신 불가</div></div></div>' +
         '<div class="line"><b>장비 등록번호</b><span>' + escapeHtml(item.equipmentNo) + '</span></div>' +
         '<div class="line"><b>장비명</b><span>' + escapeHtml(item.equipmentName) + '</span></div>' +
         '<div class="line"><b>포함서류</b><span>' + escapeHtml(getIncludedGroupText(item)) + '</span></div>' +
         renderD7DeadlineNotice(item) +
-        '<div class="manager-expire-box">담당자 접속 만료일: ' + escapeHtml(getManagerExpireText(expireAt || getManagerExpireAt(item))) + '<br>남은 기간: 약 ' + remainingDays + '일<br><span class="small">7일 후 담당자 QR·링크 접속만 차단됩니다.</span></div>' +
+        '<div class="manager-expire-box">담당자 접속 만료일: ' + escapeHtml(getManagerExpireText(expireAt || getManagerExpireAt(item))) + '<br>남은 기간: 약 ' + remainingDays + '일<br><span class="small">1일 후 담당자 QR·링크 접속만 차단됩니다.</span></div>' +
         renderManagerDownloadToolbar(item) +
         '<h3 style="margin-top:14px">다운로드/프린트 서류</h3>' + renderPrintSelectRow(item.code) + (docHtml || '<div class="empty">표시할 서류가 없습니다.</div>') +
         (recipientView.renderSponsorBox ? recipientView.renderSponsorBox() : '<div class="sponsor-box"><div class="small">운영·개발: 제이에스건설</div><a href="https://www.songwongeo.co.kr" target="_blank" rel="noopener">송원건설 홈페이지 바로가기</a></div>');
@@ -473,7 +483,7 @@ function renderDocExpiryStrip(doc) {
     }
 
 // ---- merged from app-register-share-payment-12.js ----
-// SitePass v23.7.338 - app-register-share-payment finer split (12/15)
+// SitePass v23.7.339 - app-register-share-payment finer split (12/15)
 function renderManagerDownloadToolbar(item) {
       const recipientView = getRecipientViewModule();
       if (recipientView.renderDownloadToolbar) {
@@ -522,7 +532,7 @@ function renderManagerDownloadToolbar(item) {
         '장비: ' + getItemTitle(item) + '\n' +
         'QR·링크: ' + link + '\n' +
         '만료일: ' + getManagerExpireText(expireAt) + '\n' +
-        '7일 뒤에는 담당자 QR·링크 접속이 차단됩니다.';
+        '1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.';
       copyTextFallback(text, '담당자 QR·링크를 복사했습니다.\n카톡이나 문자에 붙여넣으면 담당자가 코드 입력 없이 바로 열 수 있습니다.');
     }
 

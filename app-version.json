@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.338",
+  "version": "v23.7.339",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "PC/휴대폰 보관함 표시를 서버 기준으로 더 강하게 맞췄습니다. 일반회원 보관함에서는 PC localStorage의 과거 삭제코드로 서버에 살아있는 장비를 숨기지 않고, 삭제 버튼은 서버 삭제 성공 후에만 화면에서 제거되도록 보정했습니다. PC에는 없고 휴대폰에는 남는 장비 불일치 문제를 줄이는 수정입니다.",
+  "note": "담당자 QR·링크 공유 오류를 수정했습니다. sitepass_public_shares 서버 저장을 RPC 방식으로 연결하고, 테스트 기간 담당자 공유 링크 유효기간을 7일에서 1일로 변경했습니다. 1일 뒤 만료 접속 차단 테스트가 가능합니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-07T23:50:00+09:00"
+  "updatedAt": "2026-07-08T00:25:00+09:00"
 }

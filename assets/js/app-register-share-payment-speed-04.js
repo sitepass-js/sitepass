@@ -1,6 +1,6 @@
-// SitePass v23.7.338 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
+// SitePass v23.7.339 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
 // ---- merged from app-register-share-payment-13.js ----
-// SitePass v23.7.338 - app-register-share-payment finer split (13/15)
+// SitePass v23.7.339 - app-register-share-payment finer split (13/15)
 function cssEscapeValue(value) {
       if (window.CSS && CSS.escape) return CSS.escape(String(value || ''));
       return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -14,8 +14,10 @@ function cssEscapeValue(value) {
     }
 
     function getManagerExpireAt(item) {
-      if (!item) return Date.now() + (7 * 24 * 60 * 60 * 1000);
-      return item.managerExpireAt ? new Date(item.managerExpireAt).getTime() : new Date(addDaysIso(item.createdAt || new Date().toISOString(), 7)).getTime();
+      const qrShare = getQrShareModule();
+      const fallback = qrShare.getManagerShareExpireFromNowMs ? qrShare.getManagerShareExpireFromNowMs() : Date.now() + (1 * 24 * 60 * 60 * 1000);
+      if (!item) return fallback;
+      return item.managerExpireAt ? new Date(item.managerExpireAt).getTime() : fallback;
     }
 
     function getManagerExpireText(itemOrExpireAt) {
@@ -106,10 +108,12 @@ function cssEscapeValue(value) {
       const items = getItems();
       const idx = items.findIndex(x => x.code === code);
       if (idx < 0) { alert('갱신할 코드를 찾을 수 없습니다.'); return; }
-      items[idx].managerExpireAt = addDaysIso(new Date().toISOString(), 7);
+      const qrShare = getQrShareModule();
+      const expireAt = qrShare.getManagerShareExpireFromNowMs ? qrShare.getManagerShareExpireFromNowMs() : Date.now() + (1 * 24 * 60 * 60 * 1000);
+      items[idx].managerExpireAt = new Date(expireAt).toISOString();
       items[idx].updatedAt = new Date().toISOString();
       setItems(items);
-      alert('담당자용 QR·링크 유효기간을 오늘부터 7일로 다시 갱신했습니다.\n만료일: ' + getManagerExpireText(items[idx]));
+      alert('담당자용 QR·링크 유효기간을 오늘부터 1일로 다시 갱신했습니다.\n만료일: ' + getManagerExpireText(items[idx]));
       renderDetail(code);
     }
 
@@ -119,17 +123,17 @@ function cssEscapeValue(value) {
       const expireAt = getManagerExpireAt(item);
       const managerLink = makeManagerLink(item.code || '', expireAt);
       return '<div class="shortcut-panel">' +
-        '<b>담당자용 직접공유 7일 접속</b>' +
+        '<b>담당자용 직접공유 1일 접속</b>' +
         '<div class="small">담당자 PC 바탕화면이나 휴대폰 홈화면에 보일 이름</div>' +
         '<div class="shortcut-name">' + escapeHtml(name) + '</div>' +
-        '<div class="manager-expire-box">담당자 QR·링크 만료일: ' + escapeHtml(getManagerExpireText(expireAt)) + '<br>7일 후에는 담당자 다운로드/프린트 창만 열리지 않습니다. 장비업자 원본코드는 유지됩니다.</div>' +
+        '<div class="manager-expire-box">담당자 QR·링크 만료일: ' + escapeHtml(getManagerExpireText(expireAt)) + '<br>1일 후에는 담당자 다운로드/프린트 창만 열리지 않습니다. 장비업자 원본코드는 유지됩니다.</div>' +
         '<div class="actions">' +
           '<button type="button" class="primary" onclick="downloadShortcutFile(\'' + escapeJs(item.code || '') + '\')">담당자 바탕화면 파일</button>' +
           '<button type="button" class="okBtn" onclick="openManagerPublicView(\'' + escapeJs(item.code || '') + '\')">담당자 화면 열기</button>' +
           '<button type="button" class="ghost" onclick="copyManagerCode(\'' + escapeJs(item.code || '') + '\')">담당자 링크 복사</button>' +
-          '<button type="button" class="secondary" onclick="refreshManagerShare(\'' + escapeJs(item.code || '') + '\')">7일 갱신</button>' +
+          '<button type="button" class="secondary" onclick="refreshManagerShare(\'' + escapeJs(item.code || '') + '\')">1일 갱신</button>' +
         '</div>' +
-        '<div class="small">담당자에게 주는 카톡 링크·문자 링크·QR은 코드 입력 없이 바로 열리고 7일 유효입니다. 담당자는 다운로드·프린트 전용 화면만 봅니다.</div>' +
+        '<div class="small">담당자에게 주는 카톡 링크·문자 링크·QR은 코드 입력 없이 바로 열리고 1일 유효입니다. 담당자는 다운로드·프린트 전용 화면만 봅니다.</div>' +
       '</div>';
     }
 
@@ -157,12 +161,12 @@ function cssEscapeValue(value) {
           var content = document.getElementById('content');
           if (now > expireAt) {
             card.className += ' expired';
-            content.innerHTML = '<div class="warn"><b>만료된 담당자 바로가기입니다.</b><br>이 파일은 발급 후 7일이 지나 더 이상 다운로드/프린트 창을 열 수 없습니다.<br>장비업자에게 새 QR·링크를 다시 받아주세요.</div>';
+            content.innerHTML = '<div class="warn"><b>만료된 담당자 바로가기입니다.</b><br>이 파일은 발급 후 1일이 지나 더 이상 다운로드/프린트 창을 열 수 없습니다.<br>장비업자에게 새 QR·링크를 다시 받아주세요.</div>';
             return;
           }
           var p = document.createElement('p');
           p.className = 'muted';
-          p.textContent = '자동으로 담당자 다운로드/프린트 창을 엽니다. 7일 후에는 이 바로가기 접속이 차단됩니다. 자동으로 열리지 않으면 아래 버튼을 누르세요.';
+          p.textContent = '자동으로 담당자 다운로드/프린트 창을 엽니다. 1일 후에는 이 바로가기 접속이 차단됩니다. 자동으로 열리지 않으면 아래 버튼을 누르세요.';
           var a = document.createElement('a');
           a.className = 'btn';
           a.href = link;
@@ -182,7 +186,7 @@ function cssEscapeValue(value) {
           '.btn{display:flex;align-items:center;justify-content:center;min-height:48px;margin-top:12px;padding:12px 16px;border-radius:14px;background:#2457d6;color:#fff;text-decoration:none;font-weight:900}' +
           '.expired .btn{background:#eef2f8;color:#667085;pointer-events:none}.warn{padding:12px;border-radius:14px;background:#fff7e6;border:1px solid #ffd591;color:#694000;font-size:14px;margin-top:12px}' +
         '</style></head><body>' +
-        '<div class="wrap"><div id="card" class="card"><h1>' + safeName + '</h1><p class="muted">SitePass 담당자 다운로드/프린트 바로가기입니다.</p><div class="code">유효기간: ' + escapeHtml(expireDateText) + '까지<br>7일 후 담당자 접속 차단</div><div id="content">확인중입니다.</div></div></div>' +
+        '<div class="wrap"><div id="card" class="card"><h1>' + safeName + '</h1><p class="muted">SitePass 담당자 다운로드/프린트 바로가기입니다.</p><div class="code">유효기간: ' + escapeHtml(expireDateText) + '까지<br>1일 후 담당자 접속 차단</div><div id="content">확인중입니다.</div></div></div>' +
         '<script>' + shortcutScript + '</scr' + 'ipt></body></html>';
       const blob = new Blob([html], { type:'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -193,7 +197,7 @@ function cssEscapeValue(value) {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1200);
-      alert('담당자용 7일 바탕화면 파일을 내려받았습니다.\n파일 이름: ' + name + '.html\n만료일: ' + expireDateText + '\n\n담당자는 이 파일로 다운로드/프린트 창만 열 수 있습니다. 7일 후에는 담당자 QR·링크·바로가기 접속만 만료됩니다.');
+      alert('담당자용 1일 바탕화면 파일을 내려받았습니다.\n파일 이름: ' + name + '.html\n만료일: ' + expireDateText + '\n\n담당자는 이 파일로 다운로드/프린트 창만 열 수 있습니다. 1일 후에는 담당자 QR·링크·바로가기 접속만 만료됩니다.');
     }
 
     function showPhoneHomeGuide(code) {
@@ -226,14 +230,14 @@ function cssEscapeValue(value) {
     }
 
     function copyCodeText(code) {
-      alert('담당자에게는 코드를 보내지 않고, 카톡 공유/문자 공유로 7일 만료 QR·링크를 보내면 됩니다.');
+      alert('담당자에게는 코드를 보내지 않고, 카톡 공유/문자 공유로 1일 만료 QR·링크를 보내면 됩니다.');
     }
 
     function copyQrLink() {
       if (!currentDetailLink) { alert('복사할 QR·링크가 없습니다.'); return; }
       const freshLink = getFreshCurrentManagerLink();
       if (!freshLink) return;
-      copyTextFallback('SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크: ' + freshLink + '\n7일 뒤에는 담당자 QR·링크 접속이 차단됩니다.', '담당자 QR·링크를 복사했습니다.\n카톡이나 문자에 붙여넣으면 됩니다.');
+      copyTextFallback('SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크: ' + freshLink + '\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.', '담당자 QR·링크를 복사했습니다.\n카톡이나 문자에 붙여넣으면 됩니다.');
     }
 
     function getFreshCurrentManagerLink() {
@@ -251,7 +255,7 @@ function cssEscapeValue(value) {
       if (!currentDetailLink) { alert('공유할 QR·링크가 없습니다.'); return; }
       const freshLink = getFreshCurrentManagerLink();
       if (!freshLink) return;
-      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n7일 뒤에는 담당자 QR·링크 접속이 차단됩니다.';
+      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.';
       if (navigator.share) {
         navigator.share({ title:'SitePass 담당자 서류', text, url: freshLink }).catch(() => {});
       } else {
@@ -263,7 +267,7 @@ function cssEscapeValue(value) {
       if (!currentDetailLink) { alert('공유할 QR·링크가 없습니다.'); return; }
       const freshLink = getFreshCurrentManagerLink();
       if (!freshLink) return;
-      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n7일 뒤에는 담당자 QR·링크 접속이 차단됩니다.\n' + freshLink;
+      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.\n' + freshLink;
       openSmsShare(text);
     }
 
@@ -271,7 +275,7 @@ function cssEscapeValue(value) {
       if (!currentDetailLink) { alert('공유할 QR·링크가 없습니다.'); return; }
       const freshLink = getFreshCurrentManagerLink();
       if (!freshLink) return;
-      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n7일 뒤에는 담당자 QR·링크 접속이 차단됩니다.\n' + freshLink;
+      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.\n' + freshLink;
       const item = getItemByCode(getCodeFromManagerLink(currentDetailLink));
       openEmailShare(text, item ? [item] : []);
     }
@@ -284,7 +288,7 @@ function cssEscapeValue(value) {
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (parsed && parsed.item) {
-          // v23.7.338: 테스트 기간에는 결제대기 단계가 없어야 합니다.
+          // v23.7.339: 테스트 기간에는 결제대기 단계가 없어야 합니다.
           // 이전 버전에서 남은 결제대기 자료가 계속 안내창을 반복시키면 버리고 새 등록 흐름을 정상화합니다.
           if (window.SITEPASS_TEST_NO_PAYMENT_MODE && !sitePassRegistrationCompletionBusy) {
             try { sessionStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
@@ -313,9 +317,9 @@ function cssEscapeValue(value) {
     }
 
 // ---- merged from app-register-share-payment-14.js ----
-// SitePass v23.7.338 - app-register-share-payment finer split (14/15)
+// SitePass v23.7.339 - app-register-share-payment finer split (14/15)
 function openPendingRegistrationPaymentScreen(pending) {
-      // v23.7.338: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
+      // v23.7.339: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
       if (pending && pending.item) pendingRegistrationItemMemory = pending;
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE && pending && pending.item) {
         if (sitePassRegistrationCompletionBusy) return;
@@ -384,7 +388,7 @@ function openPendingRegistrationPaymentScreen(pending) {
     }
 
 // ---- merged from app-register-share-payment-15.js ----
-// SitePass v23.7.338 - app-register-share-payment finer split (15/15)
+// SitePass v23.7.339 - app-register-share-payment finer split (15/15)
 function normalizePendingRegistrationTier(pending) {
       if (!pending || !pending.item) return pending;
       const member = getEquipmentRegistrationOwnerMember ? getEquipmentRegistrationOwnerMember() : (getCurrentMemberTest() || null);

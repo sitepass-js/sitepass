@@ -151,7 +151,7 @@
     const d = depsOrFallback(deps);
     const printHtml = buildPrintHtml(item, pages, blockedPages, d);
     const expireAt = d.getManagerExpireAt(item);
-    const expireScript = '<script>(function(){var expireAt=' + JSON.stringify(expireAt) + ';if(Date.now()>expireAt){document.body.innerHTML="<div style=\\"font-family:Arial,sans-serif;margin:30px;padding:20px;border:1px solid #ffd591;border-radius:14px;background:#fff7e6;color:#694000\\"><b>만료된 담당자 서류파일입니다.</b><br>발급 후 7일이 지나 열람할 수 없습니다. 새 QR·링크를 다시 받아주세요.</div>";return;}var bar=document.createElement("div");bar.style.cssText="position:sticky;top:0;background:#f3f6fb;border-bottom:1px solid #d7dfed;padding:10px;text-align:center;z-index:10";bar.innerHTML="<button onclick=\\"window.print()\\" style=\\"min-height:42px;padding:10px 18px;border:0;border-radius:12px;background:#2457d6;color:white;font-weight:900\\">프린트</button> <span style=\\"font-size:13px;color:#667085;margin-left:8px\\">담당자 서류 다운로드본 · 7일 유효</span>";document.body.insertBefore(bar,document.body.firstChild);})();</scr' + 'ipt>';
+    const expireScript = '<script>(function(){var expireAt=' + JSON.stringify(expireAt) + ';if(Date.now()>expireAt){document.body.innerHTML="<div style=\\"font-family:Arial,sans-serif;margin:30px;padding:20px;border:1px solid #ffd591;border-radius:14px;background:#fff7e6;color:#694000\\"><b>만료된 담당자 서류파일입니다.</b><br>발급 후 1일이 지나 열람할 수 없습니다. 새 QR·링크를 다시 받아주세요.</div>";return;}var bar=document.createElement("div");bar.style.cssText="position:sticky;top:0;background:#f3f6fb;border-bottom:1px solid #d7dfed;padding:10px;text-align:center;z-index:10";bar.innerHTML="<button onclick=\\"window.print()\\" style=\\"min-height:42px;padding:10px 18px;border:0;border-radius:12px;background:#2457d6;color:white;font-weight:900\\">프린트</button> <span style=\\"font-size:13px;color:#667085;margin-left:8px\\">담당자 서류 다운로드본 · 1일 유효</span>";document.body.insertBefore(bar,document.body.firstChild);})();</scr' + 'ipt>';
     return printHtml
       .replace('<body onload="setTimeout(function(){window.focus();window.print();},450)">', '<body>')
       .replace('</body></html>', expireScript + '</body></html>');
@@ -162,7 +162,7 @@
     const printablePages = expandPrintablePages(docs || [], d);
     const blockedPages = expandBlockedPages(docs || [], d);
     if (!printablePages.length) {
-      alert('첨부파일은 확인되지만 현재 베타 저장본에 다운로드할 사진 데이터가 없습니다.\nv23.7.338 이후 사진을 다시 첨부해 저장하면 담당자 화면에서 바로 다운로드/프린트가 됩니다.\nPDF 원본 다운로드는 서버 저장 단계에서 연결합니다.');
+      alert('첨부파일은 확인되지만 현재 베타 저장본에 다운로드할 사진 데이터가 없습니다.\nv23.7.339 이후 사진을 다시 첨부해 저장하면 담당자 화면에서 바로 다운로드/프린트가 됩니다.\nPDF 원본 다운로드는 서버 저장 단계에서 연결합니다.');
       return;
     }
     const html = buildDownloadHtml(item, printablePages, blockedPages, d);
@@ -183,7 +183,7 @@
     const blockedPages = expandBlockedPages(docs || [], d);
     if (!printablePages.length) {
       const blockedText = blockedPages.map(function(page){ return '- ' + page.docTitle + ' / ' + page.fileName; }).join('\n');
-      alert('첨부파일은 확인되지만 현재 베타 저장본에 바로 인쇄할 사진 데이터가 없습니다.\n\nv23.7.338 이후 사진을 다시 첨부해 저장하면 담당자 화면에서 바로 프린트됩니다. PDF 원본 인쇄는 서버 저장 단계에서 연결합니다.' + (blockedText ? '\n\n확인된 첨부파일:\n' + blockedText : ''));
+      alert('첨부파일은 확인되지만 현재 베타 저장본에 바로 인쇄할 사진 데이터가 없습니다.\n\nv23.7.339 이후 사진을 다시 첨부해 저장하면 담당자 화면에서 바로 프린트됩니다. PDF 원본 인쇄는 서버 저장 단계에서 연결합니다.' + (blockedText ? '\n\n확인된 첨부파일:\n' + blockedText : ''));
       return;
     }
     const win = window.open('', '_blank');

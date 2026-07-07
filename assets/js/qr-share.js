@@ -1,15 +1,26 @@
-// SitePass v23.7.264 split step 11 - QR/7일 담당자 공유링크 공통 파일
+// SitePass v23.7.339 - QR/1일 담당자 공유링크 공통 파일
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
 
   const PUBLIC_SHARE_TABLE = 'sitepass_public_shares';
   const DAY_MS = 24 * 60 * 60 * 1000;
+  // v23.7.339: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
+  const MANAGER_SHARE_DAYS = 1;
 
   function nowMs(){ return Date.now(); }
 
+  function getManagerShareDays(){
+    return MANAGER_SHARE_DAYS;
+  }
+
+  function getManagerShareExpireFromNowMs(){
+    return nowMs() + (MANAGER_SHARE_DAYS * DAY_MS);
+  }
+
+  // 기존 함수명 호환용: 실제 테스트기간 값은 1일입니다.
   function getSevenDaysFromNowMs(){
-    return nowMs() + (7 * DAY_MS);
+    return getManagerShareExpireFromNowMs();
   }
 
   function randomCodeBlock(length){
@@ -94,6 +105,21 @@
     return copy;
   }
 
+  function normalizeRpcPublicShareResult(data){
+    if (!data) return null;
+    if (Array.isArray(data)) return data[0] || null;
+    return data;
+  }
+
+  async function saveManagerShareItemsByRpc(client, rows){
+    if (!client || typeof client.rpc !== 'function') return { ok:false, skipped:true, message:'Supabase RPC 연결 객체가 없습니다.' };
+    const { data, error } = await client.rpc('sitepass_upsert_public_shares', { p_rows: rows });
+    if (error) return { ok:false, message:error.message || 'Supabase 공유링크 RPC 저장 오류' };
+    const result = normalizeRpcPublicShareResult(data) || {};
+    if (result.ok === false) return { ok:false, message:result.message || result.error || '공유링크 RPC 저장 실패' };
+    return { ok:true, saved:Number(result.saved || rows.length || 0), rpc:true };
+  }
+
   async function saveManagerShareItemsToSupabase(items, deps){
     const client = getClient(deps || {});
     if (!client || typeof client.from !== 'function') {
@@ -121,9 +147,17 @@
         };
       }).filter(row => row.share_code && row.share_sig);
       if (!rows.length) return { ok:false, message:'저장할 담당자 링크 정보가 없습니다.' };
+      if (typeof client.rpc === 'function') {
+        const rpcSaved = await saveManagerShareItemsByRpc(client, rows);
+        if (rpcSaved.ok) return rpcSaved;
+        // RPC가 아직 적용되지 않은 경우에만 기존 직접 upsert를 fallback으로 시도합니다.
+        if (!/not found|Could not find|schema cache|function/i.test(String(rpcSaved.message || ''))) {
+          return rpcSaved;
+        }
+      }
       const { error } = await client.from(PUBLIC_SHARE_TABLE).upsert(rows, { onConflict:'share_code' });
       if (error) return { ok:false, message:error.message || 'Supabase 저장 오류' };
-      return { ok:true, saved:rows.length };
+      return { ok:true, saved:rows.length, direct:true };
     } catch (e) {
       return { ok:false, message:e && e.message ? e.message : String(e) };
     }
@@ -135,6 +169,32 @@
       return { ok:false, message:'Supabase 연결 또는 링크 서명이 없습니다.' };
     }
     try {
+      if (typeof client.rpc === 'function') {
+        const rpc = await client.rpc('sitepass_get_public_share_item', {
+          p_share_code: String(code || ''),
+          p_share_sig: String(sig || '')
+        });
+        if (!rpc.error) {
+          const result = normalizeRpcPublicShareResult(rpc.data) || {};
+          if (result.ok === false || result.notFound || result.expired) {
+            return {
+              ok:false,
+              notFound:!!result.notFound,
+              expired:!!result.expired,
+              expiresAt: result.expiresAt ? new Date(result.expiresAt).getTime() : (result.expires_at ? new Date(result.expires_at).getTime() : 0),
+              message: result.message || result.error || '공유 링크를 찾을 수 없습니다.'
+            };
+          }
+          const expiresAt = result.expiresAt ? new Date(result.expiresAt).getTime() : (result.expires_at ? new Date(result.expires_at).getTime() : 0);
+          const item = result.item_data || result.item || null;
+          if (!item || !item.code) return { ok:false, message:'공유 데이터가 비어 있습니다.' };
+          const cached = (deps && typeof deps.upsertLocalCache === 'function') ? deps.upsertLocalCache(item) : item;
+          return { ok:true, item:cached || item, expiresAt, rpc:true };
+        }
+        if (!/not found|Could not find|schema cache|function/i.test(String(rpc.error.message || ''))) {
+          return { ok:false, message:rpc.error.message || 'Supabase 공유링크 RPC 조회 오류' };
+        }
+      }
       const { data, error } = await client
         .from(PUBLIC_SHARE_TABLE)
         .select('share_code, share_sig, expires_at, item_data')
@@ -149,7 +209,7 @@
       const item = data.item_data || null;
       if (!item || !item.code) return { ok:false, message:'공유 데이터가 비어 있습니다.' };
       const cached = (deps && typeof deps.upsertLocalCache === 'function') ? deps.upsertLocalCache(item) : item;
-      return { ok:true, item:cached || item, expiresAt };
+      return { ok:true, item:cached || item, expiresAt, direct:true };
     } catch (e) {
       return { ok:false, message:e && e.message ? e.message : String(e) };
     }
@@ -157,6 +217,8 @@
 
   window.SitePassQrShare = {
     PUBLIC_SHARE_TABLE,
+    getManagerShareDays,
+    getManagerShareExpireFromNowMs,
     getSevenDaysFromNowMs,
     randomCodeBlock,
     makeQrLink,

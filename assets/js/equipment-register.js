@@ -170,7 +170,7 @@
       paymentPlan: oldItem?.paymentPlan || selectedPlan.key,
       basicPlan: oldItem?.basicPlan || ('결제대기 · ' + (selectedPlan.planText || '요금제 선택 대기')),
       alertPlan: oldItem?.alertPlan || '보험·검사 만료 알림 포함 준비',
-      forwardPolicy: oldItem?.forwardPolicy || '담당자용 QR·링크 7일 접속 가능',
+      forwardPolicy: oldItem?.forwardPolicy || '담당자용 QR·링크 1일 접속 가능',
       managerExpireAt: oldItem?.managerExpireAt || '',
       paymentStatus: oldItem?.paymentStatus || '결제대기',
       paymentAmount: oldItem?.paymentAmount || selectedPlan.price || '',
