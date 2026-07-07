@@ -1,7 +1,7 @@
-// SitePass v23.7.307 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
+// SitePass v23.7.308 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
 // ---- merged from app-register-share-payment-01.js ----
-// SitePass v23.7.307 - app-register-share-payment finer split (01/15)
-// SitePass v23.7.307 - app.bundle.js remaining split (03 register/share/payment)
+// SitePass v23.7.308 - app-register-share-payment finer split (01/15)
+// SitePass v23.7.308 - app.bundle.js remaining split (03 register/share/payment)
 
 
     function getDisplayDocs(item) {
@@ -195,6 +195,33 @@
       return mm + '/' + dd + ' ' + hh + ':' + mi;
     }
 
+    function hasActiveRegistrationAttachments() {
+      try {
+        const register = document.getElementById('registerScreen');
+        if (!register || register.classList.contains('hidden')) return false;
+        const docs = collectDocData();
+        return Object.values(docs || {}).some(function(doc) {
+          if (!doc) return false;
+          if (doc.fileName) return true;
+          if (Array.isArray(doc.pages) && doc.pages.length) return true;
+          if (doc.previewDataUrl || doc.editDataUrl || doc.originalDataUrl || doc.correctedDataUrl) return true;
+          return false;
+        });
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function confirmLeaveRegistrationIfNeeded(targetScreenId) {
+      // v23.7.308: 사진/파일 첨부 후 등록완료 전에 홈/보관함/뒤로가기 등으로 나가면
+      // 브라우저 저장공간 제한 때문에 기사·인부 첨부자료가 복구되지 않을 수 있어 명확히 막습니다.
+      if (sitePassRegistrationCompletionBusy) return true;
+      if (!hasActiveRegistrationAttachments()) return true;
+      const target = String(targetScreenId || '');
+      if (target === 'registerScreen') return true;
+      return confirm('아직 등록완료 전입니다.\n\n첨부한 기사/인부/장비 자료는 화면을 나가면 사라질 수 있습니다.\n등록완료까지 진행한 뒤 이동하는 것을 권장합니다.\n\n그래도 이 화면을 나갈까요?');
+    }
+
     function saveRegistrationDraftNow() {
       if (sitePassRegistrationCompletionBusy) return;
       if (registrationDraftRestoreBusy) return;
@@ -225,7 +252,14 @@
         if (event.target && event.target.closest && event.target.closest('#registerScreen')) scheduleRegistrationDraftSave();
       }, true);
       window.addEventListener('pagehide', saveRegistrationDraftNow);
-      window.addEventListener('beforeunload', saveRegistrationDraftNow);
+      window.addEventListener('beforeunload', function(event) {
+        saveRegistrationDraftNow();
+        if (!sitePassRegistrationCompletionBusy && hasActiveRegistrationAttachments()) {
+          event.preventDefault();
+          event.returnValue = '등록완료 전 첨부자료가 사라질 수 있습니다.';
+          return event.returnValue;
+        }
+      });
     }
 
     function restoreRegistrationDraft(draft) {
@@ -266,7 +300,7 @@
     }
 
 // ---- merged from app-register-share-payment-02.js ----
-// SitePass v23.7.307 - app-register-share-payment finer split (02/15)
+// SitePass v23.7.308 - app-register-share-payment finer split (02/15)
 function promptRegistrationDraftIfNeeded(reason) {
       if (sitePassRegistrationCompletionBusy) return false;
       if (registrationDraftPromptOpen) return false;
@@ -420,7 +454,7 @@ function promptRegistrationDraftIfNeeded(reason) {
     }
 
 // ---- merged from app-register-share-payment-03.js ----
-// SitePass v23.7.307 - app-register-share-payment finer split (03/15)
+// SitePass v23.7.308 - app-register-share-payment finer split (03/15)
 function fillDocsForEdit(item) {
       const docs = item.docs || {};
       Object.values(docs).forEach(doc => {
@@ -710,7 +744,7 @@ function fillDocsForEdit(item) {
     }
 
 // ---- merged from app-register-share-payment-04.js ----
-// SitePass v23.7.307 - app-register-share-payment finer split (04/15)
+// SitePass v23.7.308 - app-register-share-payment finer split (04/15)
 function requirePaymentOwnerVerification(actionLabel) {
       const member = getCurrentMemberTest() || {};
       const label = actionLabel || '결제';
@@ -914,7 +948,7 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
             createdAt: nowIso
           };
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        // v23.7.307: 테스트 기간에는 결제대기 상태를 localStorage/sessionStorage에 남기지 않습니다.
+        // v23.7.308: 테스트 기간에는 결제대기 상태를 localStorage/sessionStorage에 남기지 않습니다.
         // 결제대기 저장 → 테스트완료 처리 사이에 안내창이 반복되고 보관함 저장이 꼬이는 문제를 막기 위해
         // 현재 메모리에만 임시 등록정보를 두고 곧바로 테스트 완료 저장으로 진행합니다.
         pendingRegistrationItemMemory = pending;

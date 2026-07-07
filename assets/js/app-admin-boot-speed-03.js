@@ -1,6 +1,6 @@
-// SitePass v23.7.307 - speed optimized medium chunk (app-admin-boot-speed 03/03)
+// SitePass v23.7.308 - speed optimized medium chunk (app-admin-boot-speed 03/03)
 // ---- merged from app-admin-boot-11.js ----
-// SitePass v23.7.307 - app-admin-boot finer split (11/14)
+// SitePass v23.7.308 - app-admin-boot finer split (11/14)
 function renderAdmin() {
       if (!isAdminLoggedIn()) { showScreen('signupScreen'); return; }
       if (!sitePassEquipmentSyncing && (!sitePassEquipmentSyncedAt || Date.now() - sitePassEquipmentSyncedAt > 30000)) {
@@ -89,7 +89,7 @@ function renderAdmin() {
     }
 
     function makeAlertSummary(docs) {
-      // v23.7.307: 보관함/관리자 목록에 장비가 아닌 인부/기사 전용 항목이나
+      // v23.7.308: 보관함/관리자 목록에 장비가 아닌 인부/기사 전용 항목이나
       // 저장공간 부족으로 docs가 축약된 항목이 섞여도 화면 렌더링이 멈추지 않게 방어합니다.
       docs = (docs && typeof docs === 'object') ? docs : {};
       const targets = ['equipmentInspection','insurancePolicy','ndtInspection','driverLicense'];
@@ -136,7 +136,7 @@ function renderAdmin() {
     }
 
 // ---- merged from app-admin-boot-12.js ----
-// SitePass v23.7.307 - app-admin-boot finer split (12/14)
+// SitePass v23.7.308 - app-admin-boot finer split (12/14)
 function escapeHtml(value) {
       return String(value ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     }
@@ -366,7 +366,7 @@ function escapeHtml(value) {
     }
 
 // ---- merged from app-admin-boot-13.js ----
-// SitePass v23.7.307 - app-admin-boot finer split (13/14)
+// SitePass v23.7.308 - app-admin-boot finer split (13/14)
 function makeDemoDoc(key, groupKey, groupTitle, title, required, expiry, expireDate, fileName, index) {
       const preview = makeDemoPreviewDataUrl(title, '장비: 굴착기 / 00보0000', expireDate ? ('만료일: ' + expireDate) : '유효기간 확인용 서류');
       const doc = {
@@ -634,7 +634,7 @@ function makeDemoDoc(key, groupKey, groupTitle, title, required, expiry, expireD
     }
 
 // ---- merged from app-admin-boot-14.js ----
-// SitePass v23.7.307 - app-admin-boot finer split (14/14)
+// SitePass v23.7.308 - app-admin-boot finer split (14/14)
 function expireUnpaidPaymentTestData() {
       if (!isSuperAdminLoggedIn()) { alert('베타기간 종료 처리는 최고관리자만 가능합니다.'); return; }
       const items = getItems();

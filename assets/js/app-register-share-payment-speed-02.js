@@ -1,6 +1,6 @@
-// SitePass v23.7.307 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
+// SitePass v23.7.308 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
 // ---- merged from app-register-share-payment-05.js ----
-// SitePass v23.7.307 - app-register-share-payment finer split (05/15)
+// SitePass v23.7.308 - app-register-share-payment finer split (05/15)
 async function completePendingRegistrationPayment(plan) {
       if (sitePassRegistrationCompletionBusy) return;
       sitePassRegistrationCompletionBusy = true;
@@ -46,7 +46,7 @@ async function completePendingRegistrationPayment(plan) {
       if (existingIndex >= 0) items[existingIndex] = paidItem;
       else items.unshift(paidItem);
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        // v23.7.307: 테스트 완료 저장 중에는 더 이상 결제대기 자료가 getItems()/동기화에 섞이지 않게 먼저 정리합니다.
+        // v23.7.308: 테스트 완료 저장 중에는 더 이상 결제대기 자료가 getItems()/동기화에 섞이지 않게 먼저 정리합니다.
         clearPendingRegistration();
       }
       // 브라우저 저장공간이 부족해도 결제완료 장비는 서버 저장을 먼저 시도하고, 로컬 저장은 단계별로 가볍게 낮춰 저장합니다.
@@ -60,7 +60,7 @@ async function completePendingRegistrationPayment(plan) {
       if (!window.SITEPASS_TEST_NO_PAYMENT_MODE) {
         try { await syncSupabaseEquipmentItems(true); } catch (e) {}
       } else {
-        // v23.7.307: 테스트 등록완료 직후 전체 서버목록 RPC/SELECT가 timeout/RLS로 실패하면
+        // v23.7.308: 테스트 등록완료 직후 전체 서버목록 RPC/SELECT가 timeout/RLS로 실패하면
         // 보관함 이동까지 같이 꼬입니다. 개별 저장 후에는 현재 로컬/메모리 목록으로 먼저 보관함을 보여줍니다.
         sitePassEquipmentSyncMessage = sitePassEquipmentSyncMessage || '테스트 모드: 전체 서버목록 재조회 생략';
       }
@@ -92,7 +92,7 @@ async function completePendingRegistrationPayment(plan) {
     }
 
 // ---- merged from app-register-share-payment-06.js ----
-// SitePass v23.7.307 - app-register-share-payment finer split (06/15)
+// SitePass v23.7.308 - app-register-share-payment finer split (06/15)
 function resetForm(clearEdit = true) {
       if (clearEdit) editingCode = '';
       const no = document.getElementById('equipmentNo');
@@ -157,7 +157,7 @@ function resetForm(clearEdit = true) {
         localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(safeList));
         return true;
       } catch (e) {
-        // v23.7.307: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
+        // v23.7.308: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
         // 억지로 저장하지 않고 목록 표시용 축약 캐시로 대체합니다.
         try {
           const compactList = safeList.map(makeCompactServerEquipmentCacheItem).slice(0, 300);
@@ -304,9 +304,26 @@ function resetForm(clearEdit = true) {
       }
     }
 
+    function shouldSyncSupabaseEquipmentItemsForCurrentContext() {
+      // v23.7.308: 일반회원 화면에서 전체 장비목록 RPC/SELECT를 실행하면
+      // RLS/timeout(500/401/403) 오류가 일반 등록/보관함 흐름까지 오염시킵니다.
+      // 전체 장비목록 조회는 관리자 화면에서만 실행하고, 일반회원은 로컬/현재 등록건 중심으로 표시합니다.
+      try {
+        if (typeof isAdminLoggedIn !== 'function' || !isAdminLoggedIn()) return false;
+        if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId && sitePassCurrentScreenId !== 'adminScreen') return false;
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
     async function syncSupabaseEquipmentItems(silent) {
       const supabaseApi = window.SitePassSupabaseApi;
       if (!supabaseApi || sitePassEquipmentSyncing) return { skipped:true, error:'Supabase API 연결 없음' };
+      if (!shouldSyncSupabaseEquipmentItemsForCurrentContext()) {
+        sitePassEquipmentSyncMessage = '일반회원 화면에서는 전체 장비 서버목록 동기화를 생략했습니다.';
+        return { skipped:true, reason:'member_scope' };
+      }
       sitePassEquipmentSyncing = true;
       try {
         let data = null;
@@ -355,7 +372,7 @@ function resetForm(clearEdit = true) {
     }
 
 // ---- merged from app-register-share-payment-07.js ----
-// SitePass v23.7.307 - app-register-share-payment finer split (07/15)
+// SitePass v23.7.308 - app-register-share-payment finer split (07/15)
 function setItems(items) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -435,7 +452,7 @@ function setItems(items) {
     }
 
     function clearNonEssentialRegistrationStorageForSave() {
-      // v23.7.307: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
+      // v23.7.308: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
       // 서버 캐시/임시등록/작성중 초안처럼 다시 만들 수 있는 보조자료를 비우고 재시도합니다.
       try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
       try { localStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
@@ -464,6 +481,40 @@ function setItems(items) {
       }
     }
 
+    function getEssentialSitePassStorageKeysForSave() {
+      const keys = [STORAGE_KEY, MEMBER_STORAGE_KEY, CURRENT_MEMBER_KEY, ADMIN_SESSION_KEY, ADMIN_SESSION_KEY + '_role', ADMIN_SESSION_KEY + '_id', ADMIN_SESSION_KEY + '_name', ADMIN_ROLE_MAP_KEY, PWA_AUTO_MEMBER_KEY, QUICK_AUTH_KEY, SELECTED_PAYMENT_PLAN_KEY];
+      return new Set(keys.filter(Boolean).map(String));
+    }
+
+    function clearSitePassHeavyStorageForEmergencySave() {
+      // v23.7.308: 현재 origin의 SitePass 구버전 사진/base64 캐시가 localStorage를 꽉 채우면
+      // 새 QR/보관함 목록도 저장하지 못합니다. 로그인/회원정보는 보존하고 무거운 보조자료만 정리합니다.
+      const keep = getEssentialSitePassStorageKeysForSave();
+      const keys = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+      } catch (e) {}
+      keys.filter(Boolean).forEach(function(key) {
+        const lower = String(key).toLowerCase();
+        if (!lower.includes('sitepass')) return;
+        if (keep.has(String(key))) return;
+        try { localStorage.removeItem(key); } catch (e) {}
+      });
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    }
+
+    function tryStoreEmergencyEquipmentList(list, limit) {
+      const compact = (Array.isArray(list) ? list : []).slice(0, limit).map(makeStorageTinyItem);
+      clearSitePassHeavyStorageForEmergencySave();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(compact));
+        return true;
+      } catch (e) {
+        console.warn('장비 보관함 비상 축약 저장 실패:', e);
+        return false;
+      }
+    }
+
     function setItemsWithFallback(items) {
       const list = Array.isArray(items) ? items : [];
       rememberRuntimeEquipmentItems(list);
@@ -478,6 +529,9 @@ function setItems(items) {
       if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
       if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
       if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
+      if (tryStoreEmergencyEquipmentList(list, 25)) return { ok:true, mode:'emergency25' };
+      if (tryStoreEmergencyEquipmentList(list, 5)) return { ok:true, mode:'emergency5' };
+      if (tryStoreEmergencyEquipmentList(list, 1)) return { ok:true, mode:'emergency1' };
       return { ok:false, mode:'memory' };
     }
 
@@ -486,6 +540,7 @@ function setItems(items) {
       if (result.mode === 'light') return String.fromCharCode(10) + String.fromCharCode(10) + '용량을 줄이기 위해 원본/보정본 비교데이터는 제외하고 담당자용 사진 미리보기만 저장했습니다.';
       if (result.mode === 'tiny') return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 부족해서 이 기기에는 사진 없는 목록정보만 저장했습니다.';
       if (String(result.mode || '').indexOf('compact') === 0) return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 가득 차서 구버전 사진 캐시를 정리하고 QR/보관함 목록정보만 저장했습니다.';
+      if (String(result.mode || '').indexOf('emergency') === 0) return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 가득 차서 로그인정보를 제외한 SitePass 임시/사진 캐시를 정리하고 QR/보관함 목록정보만 저장했습니다.';
       return String.fromCharCode(10) + String.fromCharCode(10) + '브라우저 저장공간이 가득 차서 이 기기 저장은 메모리로만 유지됩니다. 새로고침 전 보관함을 확인해주세요.';
     }
 
@@ -562,7 +617,7 @@ function setItems(items) {
     }
 
 // ---- merged from app-register-share-payment-08.js ----
-// SitePass v23.7.307 - app-register-share-payment finer split (08/15)
+// SitePass v23.7.308 - app-register-share-payment finer split (08/15)
 function makeQrUrl(link, size = 180) {
       const qrShare = getQrShareModule();
       if (qrShare.makeQrUrl) return qrShare.makeQrUrl(link, size);
