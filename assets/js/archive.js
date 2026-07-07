@@ -1,4 +1,4 @@
-// SitePass v23.7.331 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
+// SitePass v23.7.332 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
 // 이 파일에는 장비/기사/인부 보관함 목록, 선택 공유, 삭제, 관리자 보관함 표시 기능을 둡니다.
 // QR 링크 생성 자체는 qr-share.js, 서버통신은 supabase-api.js를 계속 사용합니다.
 (function(){
@@ -255,9 +255,8 @@ function renderList() {
           '<button class="okBtn" onclick="shareSelectedListItemsKakao()">선택 카카오톡으로 보내기</button>' +
           '<button class="ghost" onclick="shareSelectedListItemsSms()">선택 문자로 보내기</button>' +
           '<button class="ghost" onclick="shareSelectedListItemsEmail()">선택 이메일로 보내기</button>' +
-          '<button class="secondary" onclick="sitePassSyncLocalVisibleEquipmentItemsToSupabaseForCurrentMember(true)">PC 보관함 서버동기화</button>' +
         '</div>' +
-        '<div class="small">PC에는 보이지만 휴대폰에 안 보이는 기존 장비는 이 버튼으로 서버에 다시 동기화하세요.</div>' +
+        '<div class="small">PC 보관함 자료는 로그인/보관함 진입 시 자동으로 서버에 동기화됩니다. 휴대폰은 같은 계정으로 로그인하면 서버 보관함을 자동으로 불러옵니다.</div>' +
       '</div>';
   if (!items.length) {
     box.innerHTML = toolbar + '<div class="empty">현재 조건에 맞는 장비서류가 없습니다.</div>';
