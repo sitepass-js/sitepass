@@ -1,6 +1,6 @@
-// SitePass v23.7.330 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
+// SitePass v23.7.331 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
 // ---- merged from app-register-share-payment-05.js ----
-// SitePass v23.7.330 - app-register-share-payment finer split (05/15)
+// SitePass v23.7.331 - app-register-share-payment finer split (05/15)
 async function completePendingRegistrationPayment(plan) {
       if (sitePassRegistrationCompletionBusy) return;
       sitePassRegistrationCompletionBusy = true;
@@ -10,7 +10,7 @@ async function completePendingRegistrationPayment(plan) {
         if (!window.SITEPASS_TEST_NO_PAYMENT_MODE && !requirePaymentOwnerVerification('등록 결제')) return;
 
         const item = pending.item;
-        // v23.7.330: 테스트 등록완료에서는 기존 전체 보관함/구버전 사진 캐시를 병합하지 않습니다.
+        // v23.7.331: 테스트 등록완료에서는 기존 전체 보관함/구버전 사진 캐시를 병합하지 않습니다.
         // getItems()가 과거 base64 포함 저장값을 모두 읽으면서 등록완료 버튼이 오래 멈추는 문제가 있어,
         // 현재 STORAGE_KEY 목록 + 이번 등록 1건만 빠르게 처리합니다.
         const items = window.SITEPASS_TEST_NO_PAYMENT_MODE
@@ -54,7 +54,7 @@ async function completePendingRegistrationPayment(plan) {
         else items.unshift(paidItem);
 
         if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-          // v23.7.330: 테스트 등록 완료는 현장 사용감이 중요합니다.
+          // v23.7.331: 테스트 등록 완료는 현장 사용감이 중요합니다.
           // Supabase 저장/RPC 응답을 기다리면 등록 완료 버튼에서 오래 멈추므로,
           // QR/보관함 목록정보를 먼저 가볍게 저장하고 보관함으로 즉시 이동합니다.
           clearPendingRegistration();
@@ -66,13 +66,13 @@ async function completePendingRegistrationPayment(plan) {
           clearRegistrationDraft();
           updateHomeRegistrationButton();
           resetForm(false);
-          // v23.7.330: showScreen('listScreen') 내부의 registerScreen 이탈 자동저장을 건너뜁니다.
+          // v23.7.331: showScreen('listScreen') 내부의 registerScreen 이탈 자동저장을 건너뜁니다.
           // 등록완료 직후에는 이미 clearRegistrationDraft()를 했으므로 다시 저장하면 대기시간만 길어집니다.
           window.sitePassFastCompletingRegistration = true;
           window.sitePassFastCompletionItem = makeStorageTinyItem(paidItem);
           try { showScreen('listScreen', { replace:true }); } catch (e) { console.warn('보관함 화면 이동 실패:', e); }
           finally { setTimeout(function(){ window.sitePassFastCompletingRegistration = false; }, 1200); }
-          // v23.7.330: 등록완료 직후 renderList()를 즉시 다시 돌리지 않습니다.
+          // v23.7.331: 등록완료 직후 renderList()를 즉시 다시 돌리지 않습니다.
           // 전체 보관함 병합/렌더링은 무거울 수 있으므로 사용자가 보관함에 먼저 도착하게 합니다.
           const paymentSavedLightNote = getStorageFallbackNote(saveResult);
           sitePassEquipmentSyncMessage = '테스트 등록완료: 보관함 먼저 저장, 서버 동기화는 뒤에서 처리 중';
@@ -120,7 +120,7 @@ async function completePendingRegistrationPayment(plan) {
     }
 
 // ---- merged from app-register-share-payment-06.js ----
-// SitePass v23.7.330 - app-register-share-payment finer split (06/15)
+// SitePass v23.7.331 - app-register-share-payment finer split (06/15)
 function resetForm(clearEdit = true) {
       if (clearEdit) editingCode = '';
       const no = document.getElementById('equipmentNo');
@@ -185,7 +185,7 @@ function resetForm(clearEdit = true) {
         localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(safeList));
         return true;
       } catch (e) {
-        // v23.7.330: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
+        // v23.7.331: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
         // 억지로 저장하지 않고 목록 표시용 축약 캐시로 대체합니다.
         try {
           const compactList = safeList.map(makeCompactServerEquipmentCacheItem).slice(0, 300);
@@ -251,7 +251,7 @@ function resetForm(clearEdit = true) {
 
 
 
-    // v23.7.330: 실패/미완성 등록건 방지용 첨부 데이터 검사
+    // v23.7.331: 실패/미완성 등록건 방지용 첨부 데이터 검사
     // v321~v322 빠른 등록 중 사진 데이터가 없는 항목이 QR만 생성되어 뒤늦게 보관함에 뜨는 문제를 막습니다.
     function isUsableAttachmentData(value) {
       const text = String(value || '');
@@ -303,7 +303,7 @@ function resetForm(clearEdit = true) {
     }
 
     function filterBrokenNoPhotoRegistrationItems(list) {
-      // v23.7.330: 기존 보관함 항목을 자동으로 숨기지 않습니다.
+      // v23.7.331: 기존 보관함 항목을 자동으로 숨기지 않습니다.
       // v323의 빈 QR 방지는 신규 등록 직전 validateRegistrationItemHasDownloadableDocs()에서 처리하고,
       // 이미 저장된 항목은 사용자가 직접 확인/삭제할 수 있도록 보존합니다.
       return (Array.isArray(list) ? list : []).filter(function(item) {
@@ -415,7 +415,7 @@ function resetForm(clearEdit = true) {
     }
 
     function shouldSyncSupabaseEquipmentItemsForCurrentContext() {
-      // v23.7.330: 일반회원 화면에서 전체 장비목록 RPC/SELECT를 실행하면
+      // v23.7.331: 일반회원 화면에서 전체 장비목록 RPC/SELECT를 실행하면
       // RLS/timeout(500/401/403) 오류가 일반 등록/보관함 흐름까지 오염시킵니다.
       // 전체 장비목록 조회는 관리자 화면에서만 실행하고, 일반회원은 로컬/현재 등록건 중심으로 표시합니다.
       try {
@@ -550,8 +550,117 @@ function resetForm(clearEdit = true) {
     }
     window.syncSupabaseMyEquipmentItems = syncSupabaseMyEquipmentItems;
 
+
+    function getLocalVisibleEquipmentItemsForServerResync() {
+      // v23.7.331: PC 보관함에는 보이지만 휴대폰에는 안 보이는 기존 로컬 항목을 서버로 올리기 위한 목록입니다.
+      // 서버 캐시만 있는 항목은 제외하고, 현재 브라우저/런타임에 실제로 보이는 항목을 현재 회원 소유로 재저장합니다.
+      const lists = [];
+      try { lists.push(readLocalJsonArray(STORAGE_KEY)); } catch (e) {}
+      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY)); } catch (e) {}
+      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_2)); } catch (e) {}
+      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_3)); } catch (e) {}
+      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_4)); } catch (e) {}
+      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_5)); } catch (e) {}
+      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_6)); } catch (e) {}
+      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_7)); } catch (e) {}
+      try { lists.push(Array.isArray(runtimeEquipmentItems) ? runtimeEquipmentItems : []); } catch (e) {}
+      let merged = [];
+      try { merged = mergeEquipmentItemLists.apply(null, lists); } catch (e) { merged = [].concat.apply([], lists); }
+      const map = new Map();
+      (Array.isArray(merged) ? merged : []).forEach(function(item) {
+        if (!item || !item.code || item.isDeleted || item.deletedAt) return;
+        const code = String(item.code || '').trim();
+        if (!code) return;
+        // 서버에서 내려온 동일 코드보다 PC 로컬에 사진/미리보기 데이터가 있는 항목을 우선합니다.
+        const prev = map.get(code);
+        if (!prev) { map.set(code, item); return; }
+        const prevHas = itemHasDownloadableDocData(prev);
+        const nextHas = itemHasDownloadableDocData(item);
+        if (nextHas && !prevHas) map.set(code, item);
+        else if (String(item.updatedAt || item.createdAt || '') > String(prev.updatedAt || prev.createdAt || '')) map.set(code, item);
+      });
+      return Array.from(map.values()).sort(function(a,b){
+        return String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || ''));
+      });
+    }
+
+    async function prepareLocalEquipmentItemForServerResync(item) {
+      item = item && typeof item === 'object' ? item : {};
+      const currentMember = (typeof getEquipmentRegistrationOwnerMember === 'function') ? getEquipmentRegistrationOwnerMember() : (window.currentMember || null);
+      const patched = JSON.parse(JSON.stringify(item || {}));
+      if (currentMember && typeof currentMember === 'object') {
+        patched.ownerMemberId = patched.ownerMemberId || currentMember.id || currentMember.authUserId || '';
+        patched.ownerSignupId = patched.ownerSignupId || currentMember.signupId || currentMember.loginId || '';
+        patched.ownerProviderId = patched.ownerProviderId || currentMember.providerId || currentMember.signupId || '';
+        patched.ownerName = patched.ownerName || currentMember.name || '';
+        patched.ownerPhone = patched.ownerPhone || currentMember.phone || '';
+      }
+      patched.updatedAt = patched.updatedAt || new Date().toISOString();
+      if (itemHasDownloadableDocData(patched)) {
+        try {
+          const storageItem = await uploadEquipmentItemDocsToSupabaseStorage(patched);
+          return stripItemDataUrlsForServerStorage(storageItem);
+        } catch (e) {
+          console.warn('기존 보관함 항목 Storage 재동기화 실패, 목록정보만 저장합니다:', patched.code, e);
+          return makeStorageTinyItem(patched);
+        }
+      }
+      return makeStorageTinyItem(patched);
+    }
+
+    async function syncLocalVisibleEquipmentItemsToSupabaseForCurrentMember(forceAlert) {
+      // v23.7.331: PC에는 보이지만 휴대폰에는 안 보이는 기존 보관함 항목을 서버에 다시 저장합니다.
+      // 이 작업은 PC에서 한 번 실행해야 휴대폰이 같은 계정으로 서버 목록을 불러올 수 있습니다.
+      const supabaseApi = window.SitePassSupabaseApi;
+      if (!supabaseApi) {
+        if (forceAlert) alert('Supabase 연결이 없어 서버 동기화를 할 수 없습니다.');
+        return { ok:false, error:'Supabase 연결 없음' };
+      }
+      if (!(typeof isMemberLoggedIn === 'function' && isMemberLoggedIn())) {
+        if (forceAlert) alert('일반회원 로그인 후 서버 동기화를 실행해주세요.');
+        return { ok:false, error:'회원 로그인 필요' };
+      }
+      if (typeof isAdminLoggedIn === 'function' && isAdminLoggedIn()) {
+        if (forceAlert) alert('관리자 화면이 아니라 일반회원 보관함에서 실행해주세요.');
+        return { ok:false, error:'관리자 모드 제외' };
+      }
+      const candidates = getLocalVisibleEquipmentItemsForServerResync();
+      if (!candidates.length) {
+        if (forceAlert) alert('서버로 동기화할 보관함 항목이 없습니다.');
+        return { ok:true, count:0 };
+      }
+      sitePassEquipmentSyncMessage = 'PC 보관함 서버 동기화 중: 0/' + candidates.length;
+      let saved = 0;
+      let failed = 0;
+      const failedCodes = [];
+      const limit = 200;
+      for (let i = 0; i < Math.min(candidates.length, limit); i++) {
+        const item = candidates[i];
+        try {
+          const serverItem = await prepareLocalEquipmentItemForServerResync(item);
+          const result = await saveEquipmentItemToSupabase(serverItem, 'manual_pc_to_server_resync_v331');
+          if (result && result.ok) saved++;
+          else { failed++; failedCodes.push(item.code || item.equipmentNo || ('#' + (i+1))); }
+          if ((i + 1) % 3 === 0) sitePassEquipmentSyncMessage = 'PC 보관함 서버 동기화 중: ' + (i + 1) + '/' + Math.min(candidates.length, limit);
+        } catch (e) {
+          failed++;
+          failedCodes.push(item.code || item.equipmentNo || ('#' + (i+1)));
+          console.warn('PC 보관함 서버 동기화 실패:', item && item.code, e);
+        }
+      }
+      try { await syncSupabaseMyEquipmentItems(true); } catch (e) {}
+      try { if (sitePassCurrentScreenId === 'listScreen') renderList(); } catch (e) {}
+      sitePassEquipmentSyncMessage = 'PC 보관함 서버 동기화 완료: 성공 ' + saved + '건 / 실패 ' + failed + '건';
+      if (forceAlert) {
+        alert('PC 보관함 서버 동기화가 끝났습니다.\n\n성공: ' + saved + '건\n실패: ' + failed + '건' + (failedCodes.length ? '\n\n실패 코드: ' + failedCodes.slice(0, 8).join(', ') : '') + '\n\n이제 휴대폰에서 같은 계정으로 보관함을 새로고침해 확인해주세요.');
+      }
+      return { ok: failed === 0, saved, failed };
+    }
+
+    window.sitePassSyncLocalVisibleEquipmentItemsToSupabaseForCurrentMember = syncLocalVisibleEquipmentItemsToSupabaseForCurrentMember;
+
 // ---- merged from app-register-share-payment-07.js ----
-// SitePass v23.7.330 - app-register-share-payment finer split (07/15)
+// SitePass v23.7.331 - app-register-share-payment finer split (07/15)
 function setItems(items) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -861,7 +970,7 @@ function setItems(items) {
     }
 
     function clearNonEssentialRegistrationStorageForSave() {
-      // v23.7.330: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
+      // v23.7.331: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
       // 서버 캐시/임시등록/작성중 초안처럼 다시 만들 수 있는 보조자료를 비우고 재시도합니다.
       try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
       try { localStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
@@ -895,7 +1004,7 @@ function setItems(items) {
     }
 
     function clearSitePassHeavyStorageForEmergencySave() {
-      // v23.7.330: 현재 origin의 SitePass 구버전 사진/base64 캐시가 localStorage를 꽉 채우면
+      // v23.7.331: 현재 origin의 SitePass 구버전 사진/base64 캐시가 localStorage를 꽉 채우면
       // 새 QR/보관함 목록도 저장하지 못합니다. 로그인/회원정보는 보존하고 무거운 보조자료만 정리합니다.
       const keep = getEssentialSitePassStorageKeysForSave();
       const keys = [];
@@ -908,7 +1017,7 @@ function setItems(items) {
         if (keep.has(String(key))) return;
         try { localStorage.removeItem(key); } catch (e) {}
       });
-      // v23.7.330: 기존 보관함 삭제 방지. 비상 저장에서도 현재 보관함 키는 지우지 않습니다.
+      // v23.7.331: 기존 보관함 삭제 방지. 비상 저장에서도 현재 보관함 키는 지우지 않습니다.
     }
 
     function tryStoreEmergencyEquipmentList(list, limit) {
@@ -937,14 +1046,14 @@ function setItems(items) {
       if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
       if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
       if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
-      // v23.7.330: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
+      // v23.7.331: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
       // 저장공간이 부족해도 기존 STORAGE_KEY/PREV_STORAGE_KEY를 지우지 않고 현재 화면 메모리 표시로 둡니다.
       return { ok:false, mode:'memory_preserve_existing' };
     }
 
 
     function getFastCompletionExistingItems(newCode) {
-      // v23.7.330: 추가등록 완료 직후 화면 이동이 막히지 않도록 기존 항목 병합은 가볍게만 처리합니다.
+      // v23.7.331: 추가등록 완료 직후 화면 이동이 막히지 않도록 기존 항목 병합은 가볍게만 처리합니다.
       // 서버캐시 전체 읽기는 과거 사진/base64가 크면 등록완료 버튼을 붙잡을 수 있어 즉시 경로에서는 제외합니다.
       const code = String(newCode || '');
       const sources = [];
@@ -955,7 +1064,7 @@ function setItems(items) {
         (Array.isArray(list) ? list : []).forEach(function(x) {
           if (!x || !x.code) return;
           if (String(x.code || '') === code) return;
-          // v23.7.330: 추가등록 직후 기존 보관함이 사라져 보이지 않도록
+          // v23.7.331: 추가등록 직후 기존 보관함이 사라져 보이지 않도록
           // 기존 항목은 사진 데이터가 축약되어 있어도 보존합니다.
           merged.push(x);
         });
@@ -1034,7 +1143,7 @@ function setItems(items) {
     window.sitePassRenderFastListAfterRegistration = renderFastCompletionListItem;
 
     function makeImmediateRegistrationSaveListWithPreview(list) {
-      // v23.7.330: v321에서 속도 때문에 모든 항목을 tiny 저장하면서 QR/담당자 화면이
+      // v23.7.331: v321에서 속도 때문에 모든 항목을 tiny 저장하면서 QR/담당자 화면이
       // '첨부됨'만 표시되고 다운로드 사진 데이터가 없는 문제가 있었습니다.
       // 현재 등록 1건은 담당자용 미리보기 데이터(makeStorageLightItem)를 살리고,
       // 기존 보관함 항목은 tiny로 줄여 속도와 저장공간을 같이 지킵니다.
@@ -1099,7 +1208,7 @@ function setItems(items) {
     }
 
     function setItemsForImmediateRegistrationCompletion(items) {
-      // v23.7.330: 등록완료 속도는 유지하되, 현재 등록건의 사진 미리보기 데이터는 QR/담당자 화면에 남깁니다.
+      // v23.7.331: 등록완료 속도는 유지하되, 현재 등록건의 사진 미리보기 데이터는 QR/담당자 화면에 남깁니다.
       // 기존 보관함 사진까지 모두 병합하지 않고, 현재 등록건 preview + 기존 항목 tiny 방식으로 저장합니다.
       const list = Array.isArray(items) ? items : [];
       rememberRuntimeEquipmentItems(list);
@@ -1111,7 +1220,7 @@ function setItems(items) {
       if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
       if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
       if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
-      // v23.7.330: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
+      // v23.7.331: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
       // 저장공간이 부족해도 기존 STORAGE_KEY/PREV_STORAGE_KEY를 지우지 않고 현재 화면 메모리 표시로 둡니다.
       return { ok:false, mode:'memory_preserve_existing' };
     }
@@ -1143,7 +1252,7 @@ function setItems(items) {
     }
 
     function completeTestRegistrationInstantly(item, paymentTier) {
-      // v23.7.330: 등록완료 대기시간을 없애기 위해 결제완료 변환/가벼운 저장/화면이동을 동기적으로 끝냅니다.
+      // v23.7.331: 등록완료 대기시간을 없애기 위해 결제완료 변환/가벼운 저장/화면이동을 동기적으로 끝냅니다.
       item = (item && typeof item === 'object') ? item : {};
       const validation = validateRegistrationItemHasDownloadableDocs(item);
       if (!validation.ok) {
@@ -1181,7 +1290,7 @@ function setItems(items) {
           };
       if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
 
-      // v23.7.330: 등록완료 화면 전환을 어떤 저장/병합 작업보다 먼저 실행합니다.
+      // v23.7.331: 등록완료 화면 전환을 어떤 저장/병합 작업보다 먼저 실행합니다.
       // v325에서 기존 보관함 보존 병합이 등록완료 흐름을 붙잡아 보관함으로 안 넘어가는 문제가 있었습니다.
       const immediateItems = getImmediateRegistrationCompletionItems(paidItem);
       try { window.sitePassFastCompletionItems = immediateItems; } catch (e) {}
@@ -1329,7 +1438,7 @@ function setItems(items) {
     }
 
 // ---- merged from app-register-share-payment-08.js ----
-// SitePass v23.7.330 - app-register-share-payment finer split (08/15)
+// SitePass v23.7.331 - app-register-share-payment finer split (08/15)
 function makeQrUrl(link, size = 180) {
       const qrShare = getQrShareModule();
       if (qrShare.makeQrUrl) return qrShare.makeQrUrl(link, size);
