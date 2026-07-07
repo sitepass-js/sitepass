@@ -1,6 +1,6 @@
-// SitePass v23.7.308 - speed optimized medium chunk (app-admin-boot-speed 02/03)
+// SitePass v23.7.309 - speed optimized medium chunk (app-admin-boot-speed 02/03)
 // ---- merged from app-admin-boot-06.js ----
-// SitePass v23.7.308 - app-admin-boot finer split (06/14)
+// SitePass v23.7.309 - app-admin-boot finer split (06/14)
 window.deleteOwnedServerItemsForMember = deleteOwnedServerItemsForMember;
 
     function isAdminArchiveDeletedItem(item) {
@@ -152,7 +152,7 @@ window.deleteOwnedServerItemsForMember = deleteOwnedServerItemsForMember;
     }
 
 // ---- merged from app-admin-boot-07.js ----
-// SitePass v23.7.308 - app-admin-boot finer split (07/14)
+// SitePass v23.7.309 - app-admin-boot finer split (07/14)
 function getMemberEquipmentCount(member) {
       return getMemberEquipmentItems(member).length;
     }
@@ -363,7 +363,7 @@ function getMemberEquipmentCount(member) {
     }
 
 // ---- merged from app-admin-boot-08.js ----
-// SitePass v23.7.308 - app-admin-boot finer split (08/14)
+// SitePass v23.7.309 - app-admin-boot finer split (08/14)
 // v23.7.254: 소셜 약관동의 완료 판별은 assets/js/terms.js로 분리했습니다.
 
     function getAdminSignupProviderCounts(activeMembers) {
@@ -461,7 +461,7 @@ function getMemberEquipmentCount(member) {
     // v23.7.257: 관리자 회원목록/검색/필터 렌더링 함수는 assets/js/admin-members.js로 분리했습니다.
 
 // ---- merged from app-admin-boot-09.js ----
-// SitePass v23.7.308 - app-admin-boot finer split (09/14)
+// SitePass v23.7.309 - app-admin-boot finer split (09/14)
 function getAdminMembersModule() {
       return window.SitePassAdminMembers || {};
     }
@@ -671,7 +671,7 @@ function getAdminMembersModule() {
     }
 
 // ---- merged from app-admin-boot-10.js ----
-// SitePass v23.7.308 - app-admin-boot finer split (10/14)
+// SitePass v23.7.309 - app-admin-boot finer split (10/14)
 function renderAdminStaffManager(members) {
       if (!isSuperAdminLoggedIn()) {
         return '<div class="card" style="box-shadow:none;margin-top:14px;"><h3>관리자관리</h3><div class="notice">관리자 지정/권한변경/해제, 회원 강제탈퇴, 무료권 지급은 최고관리자만 가능합니다.</div></div>';
