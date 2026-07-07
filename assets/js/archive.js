@@ -1,4 +1,4 @@
-// SitePass v23.7.337 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
+// SitePass v23.7.338 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
 // 이 파일에는 장비/기사/인부 보관함 목록, 선택 공유, 삭제, 관리자 보관함 표시 기능을 둡니다.
 // QR 링크 생성 자체는 qr-share.js, 서버통신은 supabase-api.js를 계속 사용합니다.
 (function(){
@@ -79,6 +79,27 @@ function isArchiveDeletedCode(code) {
   return getArchiveDeletedCodes().indexOf(target) >= 0;
 }
 
+function isArchiveMemberServerAuthoritativeMode() {
+  try {
+    return !!(typeof isMemberLoggedIn === 'function' && isMemberLoggedIn() && !(typeof isAdminLoggedIn === 'function' && isAdminLoggedIn()));
+  } catch (e) {
+    return false;
+  }
+}
+
+function isArchiveServerDeletedStatus(item) {
+  if (!item || typeof item !== 'object') return false;
+  if (item.isDeleted || item.is_deleted || item.deleted || item.deletedAt || item.deleted_at || item.withdrawnAt || item.withdrawn_at) return true;
+  const raw = [
+    item.serviceStatus, item.service_status,
+    item.paymentStatus, item.payment_status,
+    item.saveReason, item.save_reason,
+    item.status, item.itemStatus, item.item_status,
+    item.deletedReason, item.deleted_reason
+  ].map(function(v){ return String(v || '').toLowerCase(); }).join(' ');
+  return raw.indexOf('archive_delete') >= 0 || raw.indexOf('withdrawn') >= 0 || raw.indexOf('force_withdrawn') >= 0 || raw.indexOf('orphan_deleted') >= 0 || raw.indexOf('deleted') >= 0 || raw.indexOf('탈퇴') >= 0 || raw.indexOf('삭제') >= 0 || raw.indexOf('정리') >= 0 || raw.indexOf('차단') >= 0;
+}
+
 function rememberArchiveDeletedCode(code) {
   const target = normalizeArchiveCode(code);
   if (!target) return false;
@@ -102,15 +123,11 @@ function archiveCodeMatches(item, code) {
 
 function isArchiveDeletedItem(item) {
   if (!item || typeof item !== 'object') return false;
-  if (item.isDeleted || item.is_deleted || item.deleted || item.deletedAt || item.deleted_at || item.withdrawnAt || item.withdrawn_at) return true;
-  const raw = [
-    item.serviceStatus, item.service_status,
-    item.paymentStatus, item.payment_status,
-    item.saveReason, item.save_reason,
-    item.status, item.itemStatus, item.item_status,
-    item.deletedReason, item.deleted_reason
-  ].map(function(v){ return String(v || '').toLowerCase(); }).join(' ');
-  if (raw.indexOf('archive_delete') >= 0 || raw.indexOf('withdrawn') >= 0 || raw.indexOf('force_withdrawn') >= 0 || raw.indexOf('orphan_deleted') >= 0 || raw.indexOf('deleted') >= 0 || raw.indexOf('탈퇴') >= 0 || raw.indexOf('삭제') >= 0 || raw.indexOf('정리') >= 0 || raw.indexOf('차단') >= 0) return true;
+  if (isArchiveServerDeletedStatus(item)) return true;
+  // v23.7.338: 일반회원 보관함은 PC/휴대폰 모두 서버목록만 기준입니다.
+  // PC localStorage의 과거 삭제코드로 서버에 살아있는 장비를 숨기면
+  // PC에는 없고 휴대폰에는 보이는 불일치가 생깁니다.
+  if (isArchiveMemberServerAuthoritativeMode()) return false;
   return isArchiveDeletedCode(item.code || item.equipmentCode || item.qrCode || '');
 }
 
@@ -174,7 +191,7 @@ async function markArchiveCodeDeletedOnServer(code) {
   const api = window.SitePassSupabaseApi;
   if (!api) return { skipped:true, error:'Supabase API 연결 없음' };
   try {
-    // v23.7.337: 기존 RPC 호출은 p_code와 code를 같이 보내 PostgREST 함수 매칭이 실패할 수 있었습니다.
+    // v23.7.338: 기존 RPC 호출은 p_code와 code를 같이 보내 PostgREST 함수 매칭이 실패할 수 있었습니다.
     // 이번 버전부터는 p_code 한 개만 보내고, SQL 쪽에 같은 이름의 삭제 RPC를 준비합니다.
     if (api.rpc) {
       const rpcNames = ['sitepass_archive_delete_equipment_item', 'sitepass_soft_delete_equipment_item', 'sitepass_delete_equipment_item'];
@@ -264,7 +281,7 @@ function renderList() {
           '<button class="ghost" onclick="shareSelectedListItemsSms()">선택 문자로 보내기</button>' +
           '<button class="ghost" onclick="shareSelectedListItemsEmail()">선택 이메일로 보내기</button>' +
         '</div>' +
-        '<div class="small"><b>서버 기준 보관함</b><br>회원 장비/QR/삭제상태는 서버 자료만 기준으로 표시합니다. PC 임시자료는 삭제/중복 오류 방지를 위해 자동 재업로드하지 않습니다.</div>' +
+        '<div class="small"><b>서버 기준 보관함</b><br>회원 장비/QR/삭제상태는 서버 자료만 기준으로 표시합니다. PC의 과거 삭제표시로 서버 장비를 숨기지 않아 PC/휴대폰 목록을 맞춥니다.</div>' +
         (typeof sitePassEquipmentSyncMessage !== 'undefined' && sitePassEquipmentSyncMessage ? '<div class="small"><b>서버 상태:</b> ' + escapeHtml(sitePassEquipmentSyncMessage) + '</div>' : '') +
       '</div>';
   if (!items.length) {
@@ -400,7 +417,31 @@ async function deleteItem(code) {
   const target = normalizeArchiveCode(code);
   if (!target) { alert('삭제할 서류함 코드를 찾을 수 없습니다.'); return; }
   if (!archiveRequirePasswordReconfirm('서류함 삭제')) return;
-  if (!confirm('이 서류함을 삭제할까요?\n\n삭제하면 이전 저장키·서버캐시에 남아 있어도 보관함에 다시 나타나지 않게 정리합니다.')) return;
+  if (!confirm('이 서류함을 삭제할까요?\n\n서버에서 삭제 성공한 뒤 PC/휴대폰/다른 PC 보관함에서 같이 사라집니다.')) return;
+
+  const memberServerMode = isArchiveMemberServerAuthoritativeMode();
+
+  if (memberServerMode) {
+    // v23.7.338: 일반회원은 서버 100% 기준입니다.
+    // PC localStorage에서 먼저 숨기면 PC/휴대폰 목록이 달라지므로 서버 삭제 성공 전에는 화면에서 제거하지 않습니다.
+    const serverResult = await markArchiveCodeDeletedOnServer(target);
+    if (!serverResult || !serverResult.ok) {
+      try { if (typeof syncSupabaseMyEquipmentItems === 'function') await syncSupabaseMyEquipmentItems(true); } catch (e) {}
+      try { if (typeof refreshMemberUi === 'function') refreshMemberUi(); } catch (e) {}
+      renderList();
+      alert('서버 삭제가 완료되지 않았습니다.\n네트워크나 서버 권한 문제일 수 있어 보관함에서 임의로 숨기지 않았습니다.\n잠시 후 다시 삭제해주세요.');
+      return;
+    }
+
+    // 서버 삭제가 성공한 뒤에만 현재 기기의 보조 캐시와 런타임 목록을 정리합니다.
+    try { removeArchiveCodeEverywhereLocal(target); } catch (e) {}
+    try { if (window.sitePassRemoveServerAuthoritativeEquipmentByCode) window.sitePassRemoveServerAuthoritativeEquipmentByCode(target); } catch (e) {}
+    try { if (typeof syncSupabaseMyEquipmentItems === 'function') await syncSupabaseMyEquipmentItems(true); } catch (e) {}
+    try { if (typeof refreshMemberUi === 'function') refreshMemberUi(); } catch (e) {}
+    renderList();
+    alert('보관함에서 삭제했습니다.\nPC/휴대폰/다른 PC 모두 서버 기준으로 정리됩니다.');
+    return;
+  }
 
   const removedLocal = removeArchiveCodeEverywhereLocal(target);
   try { if (window.sitePassRemoveServerAuthoritativeEquipmentByCode) window.sitePassRemoveServerAuthoritativeEquipmentByCode(target); } catch (e) {}
