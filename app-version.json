@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.323",
+  "version": "v23.7.324",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "v23.7.322의 QR 미리보기/다운로드 보정에 더해, 오류로 생성된 첨부파일 없는 QR/빈 등록건이 뒤늦게 보관함에 올라오는 문제를 방지한 버전입니다. 등록완료 전 첨부 표시만 있고 실제 사진 데이터가 없으면 등록을 중단하고 다시 첨부하도록 안내합니다. 빠른 등록 흐름은 유지하고, Supabase SQL/결제/관리자/디자인은 변경하지 않았습니다.",
+  "note": "v23.7.323 이후 장비만 등록은 되지만 기사 포함 등록 시 collectDocData에서 파일명 영역이 없는 카드의 dataset을 읽어 중단되는 문제를 보정한 버전입니다. 빠른 등록/QR 미리보기/빈 QR 방지 흐름은 유지하고, Supabase SQL/결제/관리자/디자인은 변경하지 않았습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-07T09:06:00+09:00"
+  "updatedAt": "2026-07-07T09:24:00+09:00"
 }

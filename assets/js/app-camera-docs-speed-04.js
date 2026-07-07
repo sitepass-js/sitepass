@@ -704,8 +704,13 @@ function resizeCanvasIfNeeded(canvas, maxSize) {
         const groupKey = card.dataset.groupKey || 'equipment';
         if (!isBundleGroupEnabled(groupKey)) return;
         const key = card.dataset.docKey;
+        if (!key) return;
         const def = DOCS.find(d => d.key === key);
+        // v23.7.324: 기사/인부 포함 등록 시 일부 인증/사람 카드에는
+        // [data-role="filename"] 영역이 없을 수 있습니다. 기존에는 fileBox.dataset을
+        // 바로 읽으면서 장비만 등록은 되지만 기사 포함 등록에서 저장이 중단됐습니다.
         const fileBox = card.querySelector('[data-role="filename"]');
+        const fileBoxDataset = fileBox && fileBox.dataset ? fileBox.dataset : {};
         const rawPages = getDocPagesFromCard(card);
         const pages = makePagesForStorage(rawPages);
         const isExpiry = card.dataset.expiry === 'true';
@@ -732,8 +737,8 @@ function resizeCanvasIfNeeded(canvas, maxSize) {
           pages,
           pageCount:pages.length,
           fileName: pages.length ? ('첨부 ' + pages.length + '장 · ' + summarizePages(pages)) : '',
-          fileSource: firstPrintable.fileSource || fileBox.dataset.fileSource || '',
-          fileType: firstPrintable.fileType || fileBox.dataset.fileType || '',
+          fileSource: firstPrintable.fileSource || fileBoxDataset.fileSource || '',
+          fileType: firstPrintable.fileType || fileBoxDataset.fileType || '',
           previewDataUrl: firstPrintable.previewDataUrl || '',
           originalDataUrl: firstPrintable.originalDataUrl || '',
           correctedDataUrl: firstPrintable.correctedDataUrl || '',
