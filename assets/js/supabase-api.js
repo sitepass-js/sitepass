@@ -68,6 +68,31 @@
     }
   }
 
+
+
+  async function storageUpload(bucket, path, blob, options){
+    const client = getClient();
+    if (!client || !client.storage || typeof client.storage.from !== 'function') {
+      return { data: null, error: { message: 'Supabase Storage 연결 없음' } };
+    }
+    try {
+      return await client.storage.from(String(bucket || '')).upload(String(path || ''), blob, options || {});
+    } catch (e) {
+      return { data: null, error: e };
+    }
+  }
+
+  function storagePublicUrl(bucket, path){
+    const client = getClient();
+    if (!client || !client.storage || typeof client.storage.from !== 'function') return '';
+    try {
+      const result = client.storage.from(String(bucket || '')).getPublicUrl(String(path || ''));
+      return (result && result.data && result.data.publicUrl) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   async function signOut(){
     const client = getClient();
     if (!client || !client.auth || typeof client.auth.signOut !== 'function') return { error: null };
@@ -82,6 +107,8 @@
     select,
     upsert,
     update,
+    storageUpload,
+    storagePublicUrl,
     signOut
   };
 })();

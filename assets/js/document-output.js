@@ -162,7 +162,7 @@
     const printablePages = expandPrintablePages(docs || [], d);
     const blockedPages = expandBlockedPages(docs || [], d);
     if (!printablePages.length) {
-      alert('첨부파일은 확인되지만 현재 베타 저장본에 다운로드할 사진 데이터가 없습니다.\nv23.7.323 이후 사진을 다시 첨부해 저장하면 담당자 화면에서 바로 다운로드/프린트가 됩니다.\nPDF 원본 다운로드는 서버 저장 단계에서 연결합니다.');
+      alert('첨부파일은 확인되지만 현재 베타 저장본에 다운로드할 사진 데이터가 없습니다.\nv23.7.328 이후 사진을 다시 첨부해 저장하면 담당자 화면에서 바로 다운로드/프린트가 됩니다.\nPDF 원본 다운로드는 서버 저장 단계에서 연결합니다.');
       return;
     }
     const html = buildDownloadHtml(item, printablePages, blockedPages, d);
@@ -183,7 +183,7 @@
     const blockedPages = expandBlockedPages(docs || [], d);
     if (!printablePages.length) {
       const blockedText = blockedPages.map(function(page){ return '- ' + page.docTitle + ' / ' + page.fileName; }).join('\n');
-      alert('첨부파일은 확인되지만 현재 베타 저장본에 바로 인쇄할 사진 데이터가 없습니다.\n\nv23.7.323 이후 사진을 다시 첨부해 저장하면 담당자 화면에서 바로 프린트됩니다. PDF 원본 인쇄는 서버 저장 단계에서 연결합니다.' + (blockedText ? '\n\n확인된 첨부파일:\n' + blockedText : ''));
+      alert('첨부파일은 확인되지만 현재 베타 저장본에 바로 인쇄할 사진 데이터가 없습니다.\n\nv23.7.328 이후 사진을 다시 첨부해 저장하면 담당자 화면에서 바로 프린트됩니다. PDF 원본 인쇄는 서버 저장 단계에서 연결합니다.' + (blockedText ? '\n\n확인된 첨부파일:\n' + blockedText : ''));
       return;
     }
     const win = window.open('', '_blank');
