@@ -1,98 +1,115 @@
-// SitePass v23.7.312 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
+// SitePass v23.7.317 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
 // ---- merged from app-register-share-payment-05.js ----
-// SitePass v23.7.312 - app-register-share-payment finer split (05/15)
+// SitePass v23.7.317 - app-register-share-payment finer split (05/15)
 async function completePendingRegistrationPayment(plan) {
       if (sitePassRegistrationCompletionBusy) return;
       sitePassRegistrationCompletionBusy = true;
       try {
-      const pending = getPendingRegistration();
-      if (!pending || !pending.item) { alert('결제 대기 중인 등록서류가 없습니다.'); return; }
-      if (!window.SITEPASS_TEST_NO_PAYMENT_MODE && !requirePaymentOwnerVerification('등록 결제')) return;
-      const items = getItems();
-      const item = pending.item;
-      const existingIndex = items.findIndex(x => String(x.code || '') === String(item.code || ''));
-      const info = window.SITEPASS_TEST_NO_PAYMENT_MODE
-        ? { key:'test-free', label:'테스트 무료등록', price:'결제없음', days:60, serviceStatus:'실사용베타', planText:'테스트 무료등록 · 결제없음', additional: pending.paymentTier === 'additional' }
-        : getPlanInfo(plan || getSelectedPaymentPlan(), { additional: pending.paymentTier === 'additional' });
-      const now = new Date();
-      const nowIso = now.toISOString();
-      const equipmentRegister = getEquipmentRegisterModule();
-      const paidItem = equipmentRegister.buildPaidRegistrationItem
-        ? equipmentRegister.buildPaidRegistrationItem({
-            item,
-            info,
-            nowIso,
-            trialEndsAt:addDaysIso(nowIso, info.days),
-            managerExpireAt:new Date(getSevenDaysFromNowMs()).toISOString(),
-            managerShareToken:makeManagerShareToken(),
-            paymentTier:pending.paymentTier
-          })
-        : {
-            ...item,
-            serviceStatus: info.serviceStatus,
-            paymentPlan: info.key,
-            basicPlan: info.planText,
-            paidAt: nowIso,
-            trialEndsAt: addDaysIso(nowIso, info.days),
-            managerExpireAt: new Date(getSevenDaysFromNowMs()).toISOString(),
-            managerShareToken: makeManagerShareToken(),
-            paymentStatus: '등록결제완료',
-            paymentAmount: info.price,
-            paymentMethod: '등록 결제 테스트 처리',
-            paymentTier: pending.paymentTier,
-            updatedAt: nowIso
-          };
-      if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
-      if (existingIndex >= 0) items[existingIndex] = paidItem;
-      else items.unshift(paidItem);
-      if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        // v23.7.312: 테스트 완료 저장 중에는 더 이상 결제대기 자료가 getItems()/동기화에 섞이지 않게 먼저 정리합니다.
-        clearPendingRegistration();
-      }
-      // 브라우저 저장공간이 부족해도 결제완료 장비는 서버 저장을 먼저 시도하고, 로컬 저장은 단계별로 가볍게 낮춰 저장합니다.
-      let paidServerResult = null;
-      try { paidServerResult = await saveEquipmentItemToSupabase(paidItem, 'payment_completed'); } catch (e) { console.warn('결제완료 장비 서버 저장 실패:', e); paidServerResult = { ok:false, error:e }; }
-      const saveResult = setItemsWithFallback(items);
-      if (!saveResult.ok && !(paidServerResult && paidServerResult.ok)) {
-        alert('결제는 확인되었지만 브라우저 저장공간과 서버 저장이 모두 실패했습니다. 기존 코드를 삭제하거나 사진 용량을 줄인 뒤 다시 시도해주세요.');
-        return;
-      }
-      if (!window.SITEPASS_TEST_NO_PAYMENT_MODE) {
+        const pending = getPendingRegistration();
+        if (!pending || !pending.item) { alert('결제 대기 중인 등록서류가 없습니다.'); return; }
+        if (!window.SITEPASS_TEST_NO_PAYMENT_MODE && !requirePaymentOwnerVerification('등록 결제')) return;
+
+        const items = getItems();
+        const item = pending.item;
+        const existingIndex = items.findIndex(x => String(x.code || '') === String(item.code || ''));
+        const info = window.SITEPASS_TEST_NO_PAYMENT_MODE
+          ? { key:'test-free', label:'테스트 무료등록', price:'결제없음', days:60, serviceStatus:'실사용베타', planText:'테스트 무료등록 · 결제없음', additional: pending.paymentTier === 'additional' }
+          : getPlanInfo(plan || getSelectedPaymentPlan(), { additional: pending.paymentTier === 'additional' });
+        const now = new Date();
+        const nowIso = now.toISOString();
+        const equipmentRegister = getEquipmentRegisterModule();
+        const paidItem = equipmentRegister.buildPaidRegistrationItem
+          ? equipmentRegister.buildPaidRegistrationItem({
+              item,
+              info,
+              nowIso,
+              trialEndsAt:addDaysIso(nowIso, info.days),
+              managerExpireAt:new Date(getSevenDaysFromNowMs()).toISOString(),
+              managerShareToken:makeManagerShareToken(),
+              paymentTier:pending.paymentTier
+            })
+          : {
+              ...item,
+              serviceStatus: info.serviceStatus,
+              paymentPlan: info.key,
+              basicPlan: info.planText,
+              paidAt: nowIso,
+              trialEndsAt: addDaysIso(nowIso, info.days),
+              managerExpireAt: new Date(getSevenDaysFromNowMs()).toISOString(),
+              managerShareToken: makeManagerShareToken(),
+              paymentStatus: '등록결제완료',
+              paymentAmount: info.price,
+              paymentMethod: '등록 결제 테스트 처리',
+              paymentTier: pending.paymentTier,
+              updatedAt: nowIso
+            };
+        if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
+
+        if (existingIndex >= 0) items[existingIndex] = paidItem;
+        else items.unshift(paidItem);
+
+        if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
+          // v23.7.317: 테스트 등록 완료는 현장 사용감이 중요합니다.
+          // Supabase 저장/RPC 응답을 기다리면 등록 완료 버튼에서 오래 멈추므로,
+          // QR/보관함 목록정보를 먼저 가볍게 저장하고 보관함으로 즉시 이동합니다.
+          clearPendingRegistration();
+          const saveResult = setItemsForImmediateRegistrationCompletion(items);
+          if (!saveResult.ok) {
+            alert('브라우저 저장공간이 부족해서 보관함 목록 저장에 실패했습니다. 기존 임시자료를 정리한 뒤 다시 등록해주세요.');
+            return;
+          }
+          clearRegistrationDraft();
+          updateHomeRegistrationButton();
+          resetForm(false);
+          try { renderList(); } catch (e) { console.warn('보관함 즉시 표시 실패:', e); }
+          try { showScreen('listScreen'); } catch (e) { console.warn('보관함 화면 이동 실패:', e); }
+          const paymentSavedLightNote = getStorageFallbackNote(saveResult);
+          sitePassEquipmentSyncMessage = '테스트 등록완료: 보관함 먼저 저장, 서버 동기화는 뒤에서 처리 중';
+          setTimeout(function(){
+            try {
+              alert(`테스트 등록이 완료되었습니다.\n\n${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생성되고 보관함에 저장되었습니다.${paymentSavedLightNote}\n\n※ 서버 동기화는 뒤에서 처리합니다. 테스트 기간에는 결제단계를 건너뜁니다.`);
+            } catch (e) {}
+          }, 80);
+          setTimeout(async function(){
+            try {
+              const bgResult = await saveEquipmentItemToSupabase(paidItem, 'test_free_completed_background');
+              sitePassEquipmentSyncMessage = bgResult && bgResult.ok ? '장비 서버저장 완료: 백그라운드 동기화' : ('장비 서버저장 확인 필요: ' + (bgResult?.error?.message || bgResult?.error || '알 수 없음'));
+            } catch (e) {
+              console.warn('테스트 등록완료 후 백그라운드 서버 저장 실패:', e);
+              sitePassEquipmentSyncMessage = '장비 서버저장 확인 필요: ' + (e?.message || e);
+            }
+          }, 250);
+          return;
+        }
+
+        // 정식 결제 모드에서는 기존처럼 저장/서버확인을 함께 처리합니다.
+        let paidServerResult = null;
+        try { paidServerResult = await saveEquipmentItemToSupabase(paidItem, 'payment_completed'); } catch (e) { console.warn('결제완료 장비 서버 저장 실패:', e); paidServerResult = { ok:false, error:e }; }
+        const saveResult = setItemsWithFallback(items);
+        if (!saveResult.ok && !(paidServerResult && paidServerResult.ok)) {
+          alert('결제는 확인되었지만 브라우저 저장공간과 서버 저장이 모두 실패했습니다. 기존 코드를 삭제하거나 사진 용량을 줄인 뒤 다시 시도해주세요.');
+          return;
+        }
         try { await syncSupabaseEquipmentItems(true); } catch (e) {}
-      } else {
-        // v23.7.312: 테스트 등록완료 직후 전체 서버목록 RPC/SELECT가 timeout/RLS로 실패하면
-        // 보관함 이동까지 같이 꼬입니다. 개별 저장 후에는 현재 로컬/메모리 목록으로 먼저 보관함을 보여줍니다.
-        sitePassEquipmentSyncMessage = sitePassEquipmentSyncMessage || '테스트 모드: 전체 서버목록 재조회 생략';
-      }
-      clearPendingRegistration();
-      clearRegistrationDraft();
-      updateHomeRegistrationButton();
-      resetForm(false);
-      const paymentSavedLightNote = getStorageFallbackNote(saveResult);
-      const paidServerText = paidServerResult && paidServerResult.ok ? '\n\n장비 서버저장: 완료' : '\n\n장비 서버저장: 확인 필요 - ' + escapePlainTextForAlert(sitePassEquipmentSyncMessage || (paidServerResult?.error?.message || paidServerResult?.error || '알 수 없음'));
-      if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        alert(`테스트 등록이 완료되었습니다.\n\n${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생성되고 보관함에 저장되었습니다.${paymentSavedLightNote}${paidServerText}\n\n※ 테스트 기간에는 결제단계를 건너뜁니다. 정식 결제서비스 연결 때 PG/본인확인을 다시 확인합니다.`);
-      } else {
+        clearPendingRegistration();
+        clearRegistrationDraft();
+        updateHomeRegistrationButton();
+        resetForm(false);
+        const paymentSavedLightNote = getStorageFallbackNote(saveResult);
+        const paidServerText = paidServerResult && paidServerResult.ok ? '\n\n장비 서버저장: 완료' : '\n\n장비 서버저장: 확인 필요 - ' + escapePlainTextForAlert(sitePassEquipmentSyncMessage || (paidServerResult?.error?.message || paidServerResult?.error || '알 수 없음'));
         alert(`${info.label} 결제가 완료되었습니다.\n\n${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생성되고 보관함에 저장되었습니다.${paymentSavedLightNote}${paidServerText}`);
-      }
-      if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        try { renderList(); } catch (e) {}
-        showScreen('listScreen');
-      } else {
         renderDetail(paidItem.code);
-      }
       } finally {
         sitePassRegistrationCompletionBusy = false;
       }
     }
-
 
     function escapePlainTextForAlert(text) {
       return String(text || '').split(String.fromCharCode(13)).join(' ').split(String.fromCharCode(10)).join(' ').trim();
     }
 
 // ---- merged from app-register-share-payment-06.js ----
-// SitePass v23.7.312 - app-register-share-payment finer split (06/15)
+// SitePass v23.7.317 - app-register-share-payment finer split (06/15)
 function resetForm(clearEdit = true) {
       if (clearEdit) editingCode = '';
       const no = document.getElementById('equipmentNo');
@@ -157,7 +174,7 @@ function resetForm(clearEdit = true) {
         localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(safeList));
         return true;
       } catch (e) {
-        // v23.7.312: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
+        // v23.7.317: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
         // 억지로 저장하지 않고 목록 표시용 축약 캐시로 대체합니다.
         try {
           const compactList = safeList.map(makeCompactServerEquipmentCacheItem).slice(0, 300);
@@ -305,7 +322,7 @@ function resetForm(clearEdit = true) {
     }
 
     function shouldSyncSupabaseEquipmentItemsForCurrentContext() {
-      // v23.7.312: 일반회원 화면에서 전체 장비목록 RPC/SELECT를 실행하면
+      // v23.7.317: 일반회원 화면에서 전체 장비목록 RPC/SELECT를 실행하면
       // RLS/timeout(500/401/403) 오류가 일반 등록/보관함 흐름까지 오염시킵니다.
       // 전체 장비목록 조회는 관리자 화면에서만 실행하고, 일반회원은 로컬/현재 등록건 중심으로 표시합니다.
       try {
@@ -372,7 +389,7 @@ function resetForm(clearEdit = true) {
     }
 
 // ---- merged from app-register-share-payment-07.js ----
-// SitePass v23.7.312 - app-register-share-payment finer split (07/15)
+// SitePass v23.7.317 - app-register-share-payment finer split (07/15)
 function setItems(items) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -452,7 +469,7 @@ function setItems(items) {
     }
 
     function clearNonEssentialRegistrationStorageForSave() {
-      // v23.7.312: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
+      // v23.7.317: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
       // 서버 캐시/임시등록/작성중 초안처럼 다시 만들 수 있는 보조자료를 비우고 재시도합니다.
       try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
       try { localStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
@@ -487,7 +504,7 @@ function setItems(items) {
     }
 
     function clearSitePassHeavyStorageForEmergencySave() {
-      // v23.7.312: 현재 origin의 SitePass 구버전 사진/base64 캐시가 localStorage를 꽉 채우면
+      // v23.7.317: 현재 origin의 SitePass 구버전 사진/base64 캐시가 localStorage를 꽉 채우면
       // 새 QR/보관함 목록도 저장하지 못합니다. 로그인/회원정보는 보존하고 무거운 보조자료만 정리합니다.
       const keep = getEssentialSitePassStorageKeysForSave();
       const keys = [];
@@ -526,6 +543,21 @@ function setItems(items) {
       const tinyItems = list.map(makeStorageTinyItem);
       if (setItems(tinyItems)) return { ok:true, mode:'tiny' };
       clearLegacyEquipmentStorageForCompactSave();
+      if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
+      if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
+      if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
+      if (tryStoreEmergencyEquipmentList(list, 25)) return { ok:true, mode:'emergency25' };
+      if (tryStoreEmergencyEquipmentList(list, 5)) return { ok:true, mode:'emergency5' };
+      if (tryStoreEmergencyEquipmentList(list, 1)) return { ok:true, mode:'emergency1' };
+      return { ok:false, mode:'memory' };
+    }
+
+    function setItemsForImmediateRegistrationCompletion(items) {
+      // v23.7.317: 등록완료 버튼에서 오래 멈추지 않도록 full JSON/base64 저장을 먼저 시도하지 않습니다.
+      // 현재 화면에서는 runtimeEquipmentItems에 원본을 보존하고, localStorage에는 QR/보관함 표시용 목록정보를 우선 저장합니다.
+      const list = Array.isArray(items) ? items : [];
+      rememberRuntimeEquipmentItems(list);
+      try { clearNonEssentialRegistrationStorageForSave(); } catch (e) {}
       if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
       if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
       if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
@@ -617,7 +649,7 @@ function setItems(items) {
     }
 
 // ---- merged from app-register-share-payment-08.js ----
-// SitePass v23.7.312 - app-register-share-payment finer split (08/15)
+// SitePass v23.7.317 - app-register-share-payment finer split (08/15)
 function makeQrUrl(link, size = 180) {
       const qrShare = getQrShareModule();
       if (qrShare.makeQrUrl) return qrShare.makeQrUrl(link, size);
