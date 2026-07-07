@@ -1,4 +1,4 @@
-// SitePass v23.7.335 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
+// SitePass v23.7.336 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
 // 이 파일에는 장비/기사/인부 보관함 목록, 선택 공유, 삭제, 관리자 보관함 표시 기능을 둡니다.
 // QR 링크 생성 자체는 qr-share.js, 서버통신은 supabase-api.js를 계속 사용합니다.
 (function(){
@@ -174,7 +174,7 @@ async function markArchiveCodeDeletedOnServer(code) {
   const api = window.SitePassSupabaseApi;
   if (!api) return { skipped:true, error:'Supabase API 연결 없음' };
   try {
-    // v23.7.335: 기존 RPC 호출은 p_code와 code를 같이 보내 PostgREST 함수 매칭이 실패할 수 있었습니다.
+    // v23.7.336: 기존 RPC 호출은 p_code와 code를 같이 보내 PostgREST 함수 매칭이 실패할 수 있었습니다.
     // 이번 버전부터는 p_code 한 개만 보내고, SQL 쪽에 같은 이름의 삭제 RPC를 준비합니다.
     if (api.rpc) {
       const rpcNames = ['sitepass_archive_delete_equipment_item', 'sitepass_soft_delete_equipment_item', 'sitepass_delete_equipment_item'];
