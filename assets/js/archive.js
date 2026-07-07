@@ -1,4 +1,4 @@
-// SitePass v23.7.333 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
+// SitePass v23.7.335 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
 // 이 파일에는 장비/기사/인부 보관함 목록, 선택 공유, 삭제, 관리자 보관함 표시 기능을 둡니다.
 // QR 링크 생성 자체는 qr-share.js, 서버통신은 supabase-api.js를 계속 사용합니다.
 (function(){
@@ -102,10 +102,15 @@ function archiveCodeMatches(item, code) {
 
 function isArchiveDeletedItem(item) {
   if (!item || typeof item !== 'object') return false;
-  if (item.isDeleted || item.is_deleted || item.deletedAt || item.deleted_at || item.withdrawnAt || item.withdrawn_at) return true;
-  const raw = [item.serviceStatus, item.paymentStatus, item.saveReason, item.save_reason, item.status]
-    .map(function(v){ return String(v || '').toLowerCase(); }).join(' ');
-  if (raw.indexOf('archive_delete') >= 0 || raw.indexOf('deleted') >= 0 || raw.indexOf('삭제') >= 0) return true;
+  if (item.isDeleted || item.is_deleted || item.deleted || item.deletedAt || item.deleted_at || item.withdrawnAt || item.withdrawn_at) return true;
+  const raw = [
+    item.serviceStatus, item.service_status,
+    item.paymentStatus, item.payment_status,
+    item.saveReason, item.save_reason,
+    item.status, item.itemStatus, item.item_status,
+    item.deletedReason, item.deleted_reason
+  ].map(function(v){ return String(v || '').toLowerCase(); }).join(' ');
+  if (raw.indexOf('archive_delete') >= 0 || raw.indexOf('withdrawn') >= 0 || raw.indexOf('force_withdrawn') >= 0 || raw.indexOf('orphan_deleted') >= 0 || raw.indexOf('deleted') >= 0 || raw.indexOf('탈퇴') >= 0 || raw.indexOf('삭제') >= 0 || raw.indexOf('정리') >= 0 || raw.indexOf('차단') >= 0) return true;
   return isArchiveDeletedCode(item.code || item.equipmentCode || item.qrCode || '');
 }
 
@@ -168,20 +173,23 @@ async function markArchiveCodeDeletedOnServer(code) {
   if (!target) return { skipped:true, error:'코드 없음' };
   const api = window.SitePassSupabaseApi;
   if (!api) return { skipped:true, error:'Supabase API 연결 없음' };
-  const payload = { p_code: target, code: target };
   try {
+    // v23.7.335: 기존 RPC 호출은 p_code와 code를 같이 보내 PostgREST 함수 매칭이 실패할 수 있었습니다.
+    // 이번 버전부터는 p_code 한 개만 보내고, SQL 쪽에 같은 이름의 삭제 RPC를 준비합니다.
     if (api.rpc) {
-      const rpcNames = ['sitepass_delete_equipment_item', 'sitepass_soft_delete_equipment_item', 'sitepass_archive_delete_equipment_item'];
+      const rpcNames = ['sitepass_archive_delete_equipment_item', 'sitepass_soft_delete_equipment_item', 'sitepass_delete_equipment_item'];
       for (const name of rpcNames) {
-        const result = await api.rpc(name, payload);
-        if (result && !result.error) return { ok:true, mode:'rpc', name };
+        const result = await api.rpc(name, { p_code: target });
+        if (result && !result.error) return { ok:true, mode:'rpc', name, data:result.data };
+        if (result && result.error) console.warn('SitePass 서버 삭제 RPC 실패:', name, result.error);
       }
     }
     if (api.update) {
       const result = await api.update('sitepass_equipment_items', {
         is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        save_reason: 'archive_delete_v23_7_295',
+        service_status: 'archive_deleted',
+        payment_status: 'archive_deleted',
+        save_reason: 'member_archive_delete_v23_7_335',
         updated_at: new Date().toISOString()
       }, function(query){ return query.eq('code', target); });
       if (result && !result.error) return { ok:true, mode:'update' };
@@ -257,6 +265,8 @@ function renderList() {
           '<button class="ghost" onclick="shareSelectedListItemsEmail()">선택 이메일로 보내기</button>' +
         '</div>' +
         '<div class="small">PC 보관함 자료는 로그인/보관함 진입 시 자동으로 서버에 동기화됩니다. 휴대폰은 같은 계정으로 로그인하면 서버 보관함을 자동으로 불러옵니다.</div>' +
+        (typeof sitePassEquipmentSyncMessage !== 'undefined' && sitePassEquipmentSyncMessage ? '<div class="small"><b>서버 동기화:</b> ' + escapeHtml(sitePassEquipmentSyncMessage) + '</div>' : '') +
+        (typeof window !== 'undefined' && typeof window.sitePassGetLocalVisibleEquipmentSyncReportText === 'function' && window.sitePassGetLocalVisibleEquipmentSyncReportText() ? '<div class="small"><b>PC 자료 감지:</b> ' + escapeHtml(window.sitePassGetLocalVisibleEquipmentSyncReportText()) + '</div>' : '') +
       '</div>';
   if (!items.length) {
     box.innerHTML = toolbar + '<div class="empty">현재 조건에 맞는 장비서류가 없습니다.</div>';

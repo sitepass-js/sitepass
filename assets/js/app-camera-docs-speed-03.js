@@ -1,6 +1,6 @@
-// SitePass v23.7.333 - speed optimized medium chunk (app-camera-docs-speed 03/04)
+// SitePass v23.7.335 - speed optimized medium chunk (app-camera-docs-speed 03/04)
 // ---- merged from app-camera-docs-09.js ----
-// SitePass v23.7.333 - app-camera-docs finer split (09/16)
+// SitePass v23.7.335 - app-camera-docs finer split (09/16)
 function removeDocPage(docKey, index) {
       const card = findDocCardByKey(docKey);
       if (!card) return;
@@ -204,7 +204,7 @@ function removeDocPage(docKey, index) {
     }
 
 // ---- merged from app-camera-docs-10.js ----
-// SitePass v23.7.333 - app-camera-docs finer split (10/16)
+// SitePass v23.7.335 - app-camera-docs finer split (10/16)
 function renderEditedCardSourceDataUrl(src, brightness, contrast, crop) {
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -351,7 +351,7 @@ function renderEditedCardSourceDataUrl(src, brightness, contrast, crop) {
     }
 
 // ---- merged from app-camera-docs-11.js ----
-// SitePass v23.7.333 - app-camera-docs finer split (11/16)
+// SitePass v23.7.335 - app-camera-docs finer split (11/16)
 function fitDocumentImageToDataUrl(file, maxSize, quality, docKey) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -563,7 +563,7 @@ function fitDocumentImageToDataUrl(file, maxSize, quality, docKey) {
     }
 
 // ---- merged from app-camera-docs-12.js ----
-// SitePass v23.7.333 - app-camera-docs finer split (12/16)
+// SitePass v23.7.335 - app-camera-docs finer split (12/16)
 function mergeBBoxes(boxes, w, h) {
       const valid = (boxes || []).filter(Boolean);
       if (!valid.length) return null;
