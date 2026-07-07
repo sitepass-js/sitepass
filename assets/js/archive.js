@@ -1,4 +1,4 @@
-// SitePass v23.7.336 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
+// SitePass v23.7.337 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
 // 이 파일에는 장비/기사/인부 보관함 목록, 선택 공유, 삭제, 관리자 보관함 표시 기능을 둡니다.
 // QR 링크 생성 자체는 qr-share.js, 서버통신은 supabase-api.js를 계속 사용합니다.
 (function(){
@@ -174,7 +174,7 @@ async function markArchiveCodeDeletedOnServer(code) {
   const api = window.SitePassSupabaseApi;
   if (!api) return { skipped:true, error:'Supabase API 연결 없음' };
   try {
-    // v23.7.336: 기존 RPC 호출은 p_code와 code를 같이 보내 PostgREST 함수 매칭이 실패할 수 있었습니다.
+    // v23.7.337: 기존 RPC 호출은 p_code와 code를 같이 보내 PostgREST 함수 매칭이 실패할 수 있었습니다.
     // 이번 버전부터는 p_code 한 개만 보내고, SQL 쪽에 같은 이름의 삭제 RPC를 준비합니다.
     if (api.rpc) {
       const rpcNames = ['sitepass_archive_delete_equipment_item', 'sitepass_soft_delete_equipment_item', 'sitepass_delete_equipment_item'];
@@ -264,9 +264,8 @@ function renderList() {
           '<button class="ghost" onclick="shareSelectedListItemsSms()">선택 문자로 보내기</button>' +
           '<button class="ghost" onclick="shareSelectedListItemsEmail()">선택 이메일로 보내기</button>' +
         '</div>' +
-        '<div class="small">PC 보관함 자료는 로그인/보관함 진입 시 자동으로 서버에 동기화됩니다. 휴대폰은 같은 계정으로 로그인하면 서버 보관함을 자동으로 불러옵니다.</div>' +
-        (typeof sitePassEquipmentSyncMessage !== 'undefined' && sitePassEquipmentSyncMessage ? '<div class="small"><b>서버 동기화:</b> ' + escapeHtml(sitePassEquipmentSyncMessage) + '</div>' : '') +
-        (typeof window !== 'undefined' && typeof window.sitePassGetLocalVisibleEquipmentSyncReportText === 'function' && window.sitePassGetLocalVisibleEquipmentSyncReportText() ? '<div class="small"><b>PC 자료 감지:</b> ' + escapeHtml(window.sitePassGetLocalVisibleEquipmentSyncReportText()) + '</div>' : '') +
+        '<div class="small"><b>서버 기준 보관함</b><br>회원 장비/QR/삭제상태는 서버 자료만 기준으로 표시합니다. PC 임시자료는 삭제/중복 오류 방지를 위해 자동 재업로드하지 않습니다.</div>' +
+        (typeof sitePassEquipmentSyncMessage !== 'undefined' && sitePassEquipmentSyncMessage ? '<div class="small"><b>서버 상태:</b> ' + escapeHtml(sitePassEquipmentSyncMessage) + '</div>' : '') +
       '</div>';
   if (!items.length) {
     box.innerHTML = toolbar + '<div class="empty">현재 조건에 맞는 장비서류가 없습니다.</div>';
@@ -404,6 +403,7 @@ async function deleteItem(code) {
   if (!confirm('이 서류함을 삭제할까요?\n\n삭제하면 이전 저장키·서버캐시에 남아 있어도 보관함에 다시 나타나지 않게 정리합니다.')) return;
 
   const removedLocal = removeArchiveCodeEverywhereLocal(target);
+  try { if (window.sitePassRemoveServerAuthoritativeEquipmentByCode) window.sitePassRemoveServerAuthoritativeEquipmentByCode(target); } catch (e) {}
   try {
     const remained = filterArchiveVisibleItems(getItems()).filter(function(item){ return !archiveCodeMatches(item, target); });
     if (typeof setItems === 'function') setItems(remained);
@@ -414,7 +414,10 @@ async function deleteItem(code) {
   renderList();
 
   const serverResult = await markArchiveCodeDeletedOnServer(target);
-  try { if (typeof syncSupabaseEquipmentItems === 'function') await syncSupabaseEquipmentItems(true); } catch (e) {}
+  try {
+    if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn() && !(typeof isAdminLoggedIn === 'function' && isAdminLoggedIn()) && typeof syncSupabaseMyEquipmentItems === 'function') await syncSupabaseMyEquipmentItems(true);
+    else if (typeof syncSupabaseEquipmentItems === 'function') await syncSupabaseEquipmentItems(true);
+  } catch (e) {}
   // 서버 RPC/RLS가 아직 없어도, 동기화 직후 다시 들어온 서버캐시에서 삭제 코드를 한 번 더 제거합니다.
   try { removeArchiveCodeEverywhereLocal(target); } catch (e) {}
   try { if (typeof refreshMemberUi === 'function') refreshMemberUi(); } catch (e) {}
@@ -437,11 +440,15 @@ async function clearAll() {
   getArchiveStorageKeys().forEach(function(key){ try { localStorage.removeItem(key); } catch (e) {} });
   try { localStorage.removeItem(getArchivePendingRegistrationKey()); } catch (e) {}
   try { if (typeof runtimeEquipmentItems !== 'undefined' && Array.isArray(runtimeEquipmentItems)) runtimeEquipmentItems = []; } catch (e) {}
+  try { if (window.sitePassClearServerAuthoritativeEquipmentItems) window.sitePassClearServerAuthoritativeEquipmentItems(); } catch (e) {}
   renderList();
   for (const code of visibleCodes.slice(0, 50)) {
     try { await markArchiveCodeDeletedOnServer(code); } catch (e) {}
   }
-  try { if (typeof syncSupabaseEquipmentItems === 'function') await syncSupabaseEquipmentItems(true); } catch (e) {}
+  try {
+    if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn() && !(typeof isAdminLoggedIn === 'function' && isAdminLoggedIn()) && typeof syncSupabaseMyEquipmentItems === 'function') await syncSupabaseMyEquipmentItems(true);
+    else if (typeof syncSupabaseEquipmentItems === 'function') await syncSupabaseEquipmentItems(true);
+  } catch (e) {}
   renderList();
 }
 
