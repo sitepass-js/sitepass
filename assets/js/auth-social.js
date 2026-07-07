@@ -451,6 +451,19 @@
 
         const withdrawnRecord = findWithdrawnMemberRecord(member);
         const serverStatus = await getSupabaseMemberStatus(member);
+        // v23.7.311: 네이버 기존회원은 RLS/직접 SELECT 실패로 serverStatus가 비어도
+        // auth_user_id 중복 동기화가 확인되면 신규가입이 아니라 기존 로그인으로 처리합니다.
+        let existingByAuthDuplicateSync = false;
+        if ((providerName === 'naver' || providerName === 'kakao') && member.authUserId && !serverStatus) {
+          try {
+            try { window.sitepassLastAuthSyncResult = { ok:false, duplicateAuthUserId:false, at:Date.now() }; } catch (ignore) {}
+            const syncOkForExisting = await syncCurrentSupabaseAuthMemberToServer();
+            const syncResult = window.sitepassLastAuthSyncResult || {};
+            existingByAuthDuplicateSync = !!(syncOkForExisting && syncResult.duplicateAuthUserId);
+          } catch (syncExistingError) {
+            console.warn('소셜 기존회원 auth_user_id 동기화 확인 생략:', syncExistingError?.message || syncExistingError);
+          }
+        }
         if (withdrawnRecord || serverStatus === 'withdrawn') {
           // v23.7.219 테스트기간: 탈퇴했던 카카오/네이버 계정도 다시 약관동의 후 재가입 테스트가 가능하게 합니다.
           removeWithdrawnMemberRecord(member);
@@ -463,7 +476,7 @@
         }
 
         const existingSocialMemberBeforeSync = findExistingMemberForSocialLogin(member);
-        const alreadyActiveServerMember = !!(serverStatus && !isWithdrawnStatusValue(serverStatus));
+        const alreadyActiveServerMember = !!((serverStatus && !isWithdrawnStatusValue(serverStatus)) || existingByAuthDuplicateSync);
         const localSocialTermsAgreed = !!(existingSocialMemberBeforeSync && hasLocalSocialTermsAgreement(existingSocialMemberBeforeSync));
         const isExplicitSignup = pending?.mode === 'signup';
         const hasPendingSocialAgreements = !!(pending && pending.agreements && pending.agreements.agreedAt);
@@ -495,8 +508,8 @@
           member.signupMethod = providerName === 'naver' ? 'naver' : 'kakao';
         }
 
-        await syncCurrentSupabaseAuthMemberToServer();
-        const serverStatusAfterSync = await getSupabaseMemberStatus(member);
+        if (!existingByAuthDuplicateSync) await syncCurrentSupabaseAuthMemberToServer();
+        const serverStatusAfterSync = existingByAuthDuplicateSync ? 'active' : await getSupabaseMemberStatus(member);
         if (serverStatusAfterSync === 'withdrawn') {
           // v23.7.219 테스트기간: 서버에 남은 탈퇴 상태를 active 재가입으로 전환하고 계속 진행합니다.
           await reactivateMemberForTestInSupabase(member);

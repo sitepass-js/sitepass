@@ -606,9 +606,10 @@ async function signOutSupabaseAuthQuietly() {
         const isSocialStatusLookup = statusProviderKey === 'kakao' || statusProviderKey === 'naver';
         const rpcStatus = await getSupabaseSocialMemberStatusViaRpc(member);
         if (rpcStatus === 'withdrawn') return 'withdrawn';
-        // v23.7.250: 네이버/카카오 신규 가입은 terms_agreed_at이 확인될 때만 기존회원으로 봅니다.
-        // 예전 RPC가 status=active만 반환하면 신규 네이버도 약관창 없이 통과할 수 있어,
-        // 소셜 active 판정은 아래 sitepass_members의 terms_agreed_at 확인까지 내려보냅니다.
+        // v23.7.311: 네이버 custom OAuth는 브라우저/RLS 상황에 따라 아래 직접 SELECT가 401로 막혀
+        // 기존 약관회원인데도 candidates가 비어 신규가입/세션실패로 흐를 수 있습니다.
+        // 서버 RPC가 active를 반환하면 기존 소셜회원으로 보고 로그인 흐름을 계속 진행합니다.
+        if (rpcStatus && isSocialStatusLookup && !isWithdrawnStatusValue(rpcStatus)) return rpcStatus;
         if (rpcStatus && !isSocialStatusLookup) return rpcStatus;
 
         // v23.7.231: 탈퇴 여부는 서버 status/plan_type으로 판단합니다.

@@ -1,7 +1,7 @@
 {
-  "version": "v23.7.310",
+  "version": "v23.7.311",
   "appUrl": "https://sitepass-js.github.io/sitepass/",
-  "note": "v23.7.309 이후 네이버/카카오 로그인 시 같은 Supabase auth_user_id가 이미 회원 테이블에 있어 sitepass_auth_user_id_key 중복 오류가 발생하는 경우를 기존 회원 로그인으로 처리하도록 보정한 버전입니다. OAuth 세션 보존, 일반회원 등록/보관함/QR 안정화 흐름은 유지합니다. Supabase ZIP/결제 흐름은 변경하지 않았습니다.",
+  "note": "v23.7.310 이후 카카오는 로그인되지만 네이버 기존회원 접속이 안 되는 문제를 보정한 버전입니다. 네이버 OAuth 복귀 시 auth_user_id 중복/서버 상태 확인 실패를 기존회원 로그인으로 처리하고, 일반회원 등록/보관함/QR 안정화 흐름은 유지합니다. Supabase ZIP/결제 흐름은 변경하지 않았습니다.",
   "url": "https://sitepass-js.github.io/sitepass/",
-  "updatedAt": "2026-07-07T02:50:00+09:00"
+  "updatedAt": "2026-07-07T02:31:00+09:00"
 }

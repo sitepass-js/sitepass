@@ -473,15 +473,18 @@ function saveMemberTest(member) {
       try {
         const supabaseApi = getSupabaseApiModule();
         if (!(supabaseApi.hasRpc && supabaseApi.hasRpc())) return false;
+        try { window.sitepassLastAuthSyncResult = { ok:false, duplicateAuthUserId:false, at:Date.now() }; } catch (ignore) {}
         const { error } = await supabaseApi.rpc('sitepass_sync_current_user_member');
         if (error) {
           if (isDuplicateAuthUserIdSyncError(error)) {
-            console.warn('현재 Supabase Auth 회원은 이미 같은 auth_user_id로 저장되어 있어 동기화 성공으로 처리합니다:', error.message || error);
+            try { window.sitepassLastAuthSyncResult = { ok:true, duplicateAuthUserId:true, at:Date.now(), message:error.message || String(error || '') }; } catch (ignore) {}
+            console.warn('현재 Supabase Auth 회원은 이미 같은 auth_user_id로 저장되어 있어 기존 회원 로그인으로 처리합니다:', error.message || error);
             return true;
           }
           console.warn('현재 Supabase Auth 회원 서버 동기화 RPC 실패:', error.message);
           return false;
         }
+        try { window.sitepassLastAuthSyncResult = { ok:true, duplicateAuthUserId:false, at:Date.now() }; } catch (ignore) {}
         return true;
       } catch (e) {
         console.warn('현재 Supabase Auth 회원 서버 동기화 RPC 예외:', e);
