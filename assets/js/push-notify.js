@@ -1,9 +1,9 @@
-// SitePass v23.7.339 - v23.7.292 쪼개기 완료 기준 푸시알림 보조 유지
+// SitePass v23.7.340 - v23.7.292 쪼개기 완료 기준 푸시알림 보조 유지
 // 이 파일에는 알림 권한 요청, 테스트 푸시, 알림 대상 계산, 구독정보 저장 준비 기능을 둡니다.
 (function(){
   'use strict';
 
-  const APP_VERSION = 'v23.7.339';
+  const APP_VERSION = 'v23.7.340';
   const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_283';
   const SUBSCRIPTION_KEY = STORAGE_PREFIX + '_subscription';
   const PERMISSION_LOG_KEY = STORAGE_PREFIX + '_permission_log';

@@ -1,11 +1,11 @@
-// SitePass v23.7.339 - QR/1일 담당자 공유링크 공통 파일
+// SitePass v23.7.340 - QR/1일 담당자 공유링크 공통 파일
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
 
   const PUBLIC_SHARE_TABLE = 'sitepass_public_shares';
   const DAY_MS = 24 * 60 * 60 * 1000;
-  // v23.7.339: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
+  // v23.7.340: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
   const MANAGER_SHARE_DAYS = 1;
 
   function nowMs(){ return Date.now(); }
@@ -135,6 +135,7 @@
         const shareItem = cloneItemForServer(item, expireAt, sig, deps || {});
         const label = (deps && typeof deps.getLabel === 'function') ? deps.getLabel(item) : String(item.equipmentName || item.code || 'SitePass 서류');
         return {
+          code: String(item.code || ''),
           share_code: String(item.code || ''),
           share_sig: String(sig || ''),
           expires_at: new Date(expireAt).toISOString(),
