@@ -1,6 +1,6 @@
-// SitePass v23.7.332 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
+// SitePass v23.7.333 - speed optimized medium chunk (app-register-share-payment-speed 02/04)
 // ---- merged from app-register-share-payment-05.js ----
-// SitePass v23.7.332 - app-register-share-payment finer split (05/15)
+// SitePass v23.7.333 - app-register-share-payment finer split (05/15)
 async function completePendingRegistrationPayment(plan) {
       if (sitePassRegistrationCompletionBusy) return;
       sitePassRegistrationCompletionBusy = true;
@@ -10,7 +10,7 @@ async function completePendingRegistrationPayment(plan) {
         if (!window.SITEPASS_TEST_NO_PAYMENT_MODE && !requirePaymentOwnerVerification('등록 결제')) return;
 
         const item = pending.item;
-        // v23.7.332: 테스트 등록완료에서는 기존 전체 보관함/구버전 사진 캐시를 병합하지 않습니다.
+        // v23.7.333: 테스트 등록완료에서는 기존 전체 보관함/구버전 사진 캐시를 병합하지 않습니다.
         // getItems()가 과거 base64 포함 저장값을 모두 읽으면서 등록완료 버튼이 오래 멈추는 문제가 있어,
         // 현재 STORAGE_KEY 목록 + 이번 등록 1건만 빠르게 처리합니다.
         const items = window.SITEPASS_TEST_NO_PAYMENT_MODE
@@ -54,7 +54,7 @@ async function completePendingRegistrationPayment(plan) {
         else items.unshift(paidItem);
 
         if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-          // v23.7.332: 테스트 등록 완료는 현장 사용감이 중요합니다.
+          // v23.7.333: 테스트 등록 완료는 현장 사용감이 중요합니다.
           // Supabase 저장/RPC 응답을 기다리면 등록 완료 버튼에서 오래 멈추므로,
           // QR/보관함 목록정보를 먼저 가볍게 저장하고 보관함으로 즉시 이동합니다.
           clearPendingRegistration();
@@ -66,13 +66,13 @@ async function completePendingRegistrationPayment(plan) {
           clearRegistrationDraft();
           updateHomeRegistrationButton();
           resetForm(false);
-          // v23.7.332: showScreen('listScreen') 내부의 registerScreen 이탈 자동저장을 건너뜁니다.
+          // v23.7.333: showScreen('listScreen') 내부의 registerScreen 이탈 자동저장을 건너뜁니다.
           // 등록완료 직후에는 이미 clearRegistrationDraft()를 했으므로 다시 저장하면 대기시간만 길어집니다.
           window.sitePassFastCompletingRegistration = true;
           window.sitePassFastCompletionItem = makeStorageTinyItem(paidItem);
           try { showScreen('listScreen', { replace:true }); } catch (e) { console.warn('보관함 화면 이동 실패:', e); }
           finally { setTimeout(function(){ window.sitePassFastCompletingRegistration = false; }, 1200); }
-          // v23.7.332: 등록완료 직후 renderList()를 즉시 다시 돌리지 않습니다.
+          // v23.7.333: 등록완료 직후 renderList()를 즉시 다시 돌리지 않습니다.
           // 전체 보관함 병합/렌더링은 무거울 수 있으므로 사용자가 보관함에 먼저 도착하게 합니다.
           const paymentSavedLightNote = getStorageFallbackNote(saveResult);
           sitePassEquipmentSyncMessage = '테스트 등록완료: 보관함 먼저 저장, 서버 동기화는 뒤에서 처리 중';
@@ -120,7 +120,7 @@ async function completePendingRegistrationPayment(plan) {
     }
 
 // ---- merged from app-register-share-payment-06.js ----
-// SitePass v23.7.332 - app-register-share-payment finer split (06/15)
+// SitePass v23.7.333 - app-register-share-payment finer split (06/15)
 function resetForm(clearEdit = true) {
       if (clearEdit) editingCode = '';
       const no = document.getElementById('equipmentNo');
@@ -185,7 +185,7 @@ function resetForm(clearEdit = true) {
         localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(safeList));
         return true;
       } catch (e) {
-        // v23.7.332: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
+        // v23.7.333: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
         // 억지로 저장하지 않고 목록 표시용 축약 캐시로 대체합니다.
         try {
           const compactList = safeList.map(makeCompactServerEquipmentCacheItem).slice(0, 300);
@@ -251,7 +251,7 @@ function resetForm(clearEdit = true) {
 
 
 
-    // v23.7.332: 실패/미완성 등록건 방지용 첨부 데이터 검사
+    // v23.7.333: 실패/미완성 등록건 방지용 첨부 데이터 검사
     // v321~v322 빠른 등록 중 사진 데이터가 없는 항목이 QR만 생성되어 뒤늦게 보관함에 뜨는 문제를 막습니다.
     function isUsableAttachmentData(value) {
       const text = String(value || '');
@@ -303,7 +303,7 @@ function resetForm(clearEdit = true) {
     }
 
     function filterBrokenNoPhotoRegistrationItems(list) {
-      // v23.7.332: 기존 보관함 항목을 자동으로 숨기지 않습니다.
+      // v23.7.333: 기존 보관함 항목을 자동으로 숨기지 않습니다.
       // v323의 빈 QR 방지는 신규 등록 직전 validateRegistrationItemHasDownloadableDocs()에서 처리하고,
       // 이미 저장된 항목은 사용자가 직접 확인/삭제할 수 있도록 보존합니다.
       return (Array.isArray(list) ? list : []).filter(function(item) {
@@ -417,7 +417,7 @@ function resetForm(clearEdit = true) {
     }
 
     function shouldSyncSupabaseEquipmentItemsForCurrentContext() {
-      // v23.7.332: 일반회원 화면에서 전체 장비목록 RPC/SELECT를 실행하면
+      // v23.7.333: 일반회원 화면에서 전체 장비목록 RPC/SELECT를 실행하면
       // RLS/timeout(500/401/403) 오류가 일반 등록/보관함 흐름까지 오염시킵니다.
       // 전체 장비목록 조회는 관리자 화면에서만 실행하고, 일반회원은 로컬/현재 등록건 중심으로 표시합니다.
       try {
@@ -517,11 +517,82 @@ function resetForm(clearEdit = true) {
       return String(value || '').replace(/\s+/g, '').trim().toLowerCase();
     }
 
+    function extractEquipmentNoFromTextForSync(text) {
+      const raw = String(text || '');
+      if (!raw) return '';
+      const patterns = [/[0-9]{2,3}\s*[가-힣]\s*[0-9]{4}/g, /[0-9]{2,3}\s*[A-Za-z]\s*[0-9]{4}/g];
+      for (const re of patterns) {
+        const match = raw.match(re);
+        if (match && match[0]) return match[0];
+      }
+      return '';
+    }
+
+    function getDerivedEquipmentNoForSync(item) {
+      item = item && typeof item === 'object' ? item : {};
+      const directFields = [
+        item.equipmentNo, item.equipment_no, item.equipmentNumber, item.equipment_number,
+        item.plateNo, item.plate_no, item.registrationNo, item.registration_no, item.regNo, item.reg_no,
+        item.vehicleNo, item.vehicle_no, item.machineNo, item.machine_no, item.machineryNo, item.machinery_no,
+        item.carNo, item.car_no, item.number, item.no
+      ];
+      for (const v of directFields) {
+        const normalized = normalizeEquipmentNoForSync(v);
+        if (normalized) return normalized;
+      }
+      const snippets = [item.equipmentName, item.equipment_name, item.name, item.title, item.label, item.code, item.qrCode, item.equipmentCode];
+      try { if (typeof getItemTitle === 'function') snippets.push(getItemTitle(item)); } catch (e) {}
+      try { if (typeof getShareItemLabel === 'function') snippets.push(getShareItemLabel(item)); } catch (e) {}
+      try {
+        Object.keys(item.docs || {}).forEach(function(key) {
+          const doc = item.docs[key] || {};
+          snippets.push(doc.title, doc.fileName, doc.name, doc.label);
+          (Array.isArray(doc.pages) ? doc.pages : []).slice(0, 5).forEach(function(page) {
+            snippets.push(page && (page.fileName || page.name || page.title || page.label));
+          });
+        });
+      } catch (e) {}
+      try {
+        (Array.isArray(item.documents) ? item.documents : []).slice(0, 20).forEach(function(doc) {
+          snippets.push(doc && (doc.title || doc.fileName || doc.name || doc.label || doc.type));
+        });
+      } catch (e) {}
+      for (const text of snippets) {
+        const found = normalizeEquipmentNoForSync(extractEquipmentNoFromTextForSync(text));
+        if (found) return found;
+      }
+      return '';
+    }
+
+    function hashStringForEquipmentSync(value) {
+      const text = String(value || '');
+      let hash = 2166136261;
+      for (let i = 0; i < text.length; i++) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return Math.abs(hash >>> 0).toString(36).toUpperCase();
+    }
+
+    function sanitizeEquipmentCodePartForSync(value, fallback) {
+      const raw = String(value || '').replace(/\s+/g, '').toUpperCase();
+      const out = raw.replace(/[^0-9A-Z가-힣_-]/g, '').slice(0, 24);
+      return out || fallback || 'OLD';
+    }
+
+    function makeLegacyResyncEquipmentCodeForSync(item, index) {
+      item = item && typeof item === 'object' ? item : {};
+      const eqNo = getDerivedEquipmentNoForSync(item);
+      const base = sanitizeEquipmentCodePartForSync(eqNo || item.equipmentNo || item.equipmentName || item.name || item.title || item.code, 'OLD');
+      const seed = [item.code, item.equipmentNo, item.equipmentName, item.name, item.title, item.createdAt, item.updatedAt, index].join('|');
+      return 'SP-MIG-' + base + '-' + hashStringForEquipmentSync(seed).slice(-6);
+    }
+
     function makeStableEquipmentCodeForSync(item) {
       item = item && typeof item === 'object' ? item : {};
       const existing = String(item.code || '').trim();
       if (existing) return existing;
-      const eqNo = normalizeEquipmentNoForSync(item.equipmentNo || item.equipment_no || '');
+      const eqNo = getDerivedEquipmentNoForSync(item);
       const created = String(item.createdAt || item.created_at || item.updatedAt || item.updated_at || '').replace(/[^0-9a-zA-Z]/g, '').slice(0, 18);
       if (eqNo) return 'eq-' + eqNo + (created ? '-' + created : '');
       return 'eq-auto-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
@@ -537,7 +608,7 @@ function resetForm(clearEdit = true) {
       const out = ensureEquipmentItemCodeForSync(item && typeof item === 'object' ? item : {});
       const member = getCurrentSitePassMemberForEquipmentSync();
       if (!member || typeof member !== 'object') return out;
-      // v23.7.332: PC 로컬 보관함을 서버로 옮길 때 기존 항목의 오래된 owner 값이 남아 있으면
+      // v23.7.333: PC 로컬 보관함을 서버로 옮길 때 기존 항목의 오래된 owner 값이 남아 있으면
       // 휴대폰에서 같은 로그인 회원의 장비로 불러오지 못합니다. 일반회원 저장/재동기화는 현재 로그인 회원값으로 확정합니다.
       const memberId = member.id || member.authUserId || member.userId || '';
       const signupId = member.signupId || member.loginId || member.email || '';
@@ -548,18 +619,20 @@ function resetForm(clearEdit = true) {
       if (force || !out.ownerName) out.ownerName = member.name || member.fullName || out.ownerName || '';
       if (force || !out.ownerPhone) out.ownerPhone = member.phone || member.phoneNumber || out.ownerPhone || '';
       out.ownerSyncedAt = new Date().toISOString();
-      out.ownerSyncMode = 'current-member-v332';
+      out.ownerSyncMode = 'current-member-v333';
       return out;
     }
 
-    function getLocalEquipmentResyncIdentity(item) {
+    function getLocalEquipmentResyncIdentity(item, sourceIndex, itemIndex) {
       item = item && typeof item === 'object' ? item : {};
-      const eqNo = normalizeEquipmentNoForSync(item.equipmentNo || item.equipment_no || '');
+      const eqNo = getDerivedEquipmentNoForSync(item);
       if (eqNo) return 'equipmentNo:' + eqNo;
       const code = String(item.code || '').trim();
-      if (code) return 'code:' + code;
+      const title = String(item.equipmentName || item.equipment_name || item.name || item.title || '').trim();
       const created = String(item.createdAt || item.created_at || item.updatedAt || item.updated_at || '').trim();
-      return 'auto:' + String(item.equipmentName || item.name || 'equipment') + ':' + created;
+      if (code && title) return 'codeTitle:' + code + ':' + title + ':' + created + ':' + String(sourceIndex || 0) + ':' + String(itemIndex || 0);
+      if (code) return 'codeWeak:' + code + ':' + String(sourceIndex || 0) + ':' + String(itemIndex || 0);
+      return 'auto:' + title + ':' + created + ':' + String(sourceIndex || 0) + ':' + String(itemIndex || 0);
     }
 
     function getEquipmentItemDataScoreForSync(item) {
@@ -631,25 +704,32 @@ function resetForm(clearEdit = true) {
 
 
     function getLocalVisibleEquipmentItemsForServerResync() {
-      // v23.7.332: 사용자가 누르는 동기화 버튼 없이도 PC에 보이는 로컬 보관함을 서버로 옮기기 위한 목록입니다.
-      // 기존 v331은 code가 없는 항목/같은 code처럼 보이는 항목을 빠뜨릴 수 있어 장비 3대 중 1대만 성공하는 경우가 있었습니다.
-      const lists = [];
-      try { lists.push(readLocalJsonArray(STORAGE_KEY)); } catch (e) {}
-      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY)); } catch (e) {}
-      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_2)); } catch (e) {}
-      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_3)); } catch (e) {}
-      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_4)); } catch (e) {}
-      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_5)); } catch (e) {}
-      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_6)); } catch (e) {}
-      try { lists.push(readLocalJsonArray(PREV_STORAGE_KEY_7)); } catch (e) {}
-      try { lists.push(Array.isArray(runtimeEquipmentItems) ? runtimeEquipmentItems : []); } catch (e) {}
+      // v23.7.333: PC 보관함에는 3대가 보이는데 서버 저장은 1건만 되는 경우를 막습니다.
+      const sources = [];
+      function pushSource(keyName, list) {
+        if (Array.isArray(list) && list.length) sources.push({ key:keyName || '', list:list });
+      }
+      try { pushSource('STORAGE_KEY', readLocalJsonArray(STORAGE_KEY)); } catch (e) {}
+      try { pushSource('PREV_STORAGE_KEY', readLocalJsonArray(PREV_STORAGE_KEY)); } catch (e) {}
+      try { pushSource('PREV_STORAGE_KEY_2', readLocalJsonArray(PREV_STORAGE_KEY_2)); } catch (e) {}
+      try { pushSource('PREV_STORAGE_KEY_3', readLocalJsonArray(PREV_STORAGE_KEY_3)); } catch (e) {}
+      try { pushSource('PREV_STORAGE_KEY_4', readLocalJsonArray(PREV_STORAGE_KEY_4)); } catch (e) {}
+      try { pushSource('PREV_STORAGE_KEY_5', readLocalJsonArray(PREV_STORAGE_KEY_5)); } catch (e) {}
+      try { pushSource('PREV_STORAGE_KEY_6', readLocalJsonArray(PREV_STORAGE_KEY_6)); } catch (e) {}
+      try { pushSource('PREV_STORAGE_KEY_7', readLocalJsonArray(PREV_STORAGE_KEY_7)); } catch (e) {}
+      try { pushSource('runtimeEquipmentItems', Array.isArray(runtimeEquipmentItems) ? runtimeEquipmentItems : []); } catch (e) {}
       const map = new Map();
-      lists.forEach(function(list) {
-        (Array.isArray(list) ? list : []).forEach(function(raw) {
+      sources.forEach(function(source, sourceIndex) {
+        (Array.isArray(source.list) ? source.list : []).forEach(function(raw, itemIndex) {
           if (!raw || raw.isDeleted || raw.deletedAt) return;
           const item = ensureEquipmentItemCodeForSync(raw);
           if (!item || item.sitePassEmptyQrBlocked || item.emptyQrBlocked) return;
-          const identity = getLocalEquipmentResyncIdentity(item);
+          const eqNo = getDerivedEquipmentNoForSync(item);
+          if (eqNo && !item.equipmentNo) item.equipmentNo = eqNo;
+          item.__sitePassResyncSourceIndex = sourceIndex;
+          item.__sitePassResyncItemIndex = itemIndex;
+          item.__sitePassResyncSourceKey = source.key || '';
+          const identity = getLocalEquipmentResyncIdentity(item, sourceIndex, itemIndex);
           if (!identity) return;
           const prev = map.get(identity);
           if (!prev) { map.set(identity, item); return; }
@@ -664,9 +744,35 @@ function resetForm(clearEdit = true) {
       });
     }
 
-    async function prepareLocalEquipmentItemForServerResync(item) {
+    function ensureUniqueEquipmentCodeForServerResync(item, index, usedCodes) {
+      item = item && typeof item === 'object' ? item : {};
+      usedCodes = usedCodes || {};
+      let code = String(item.code || '').trim();
+      const eqNo = getDerivedEquipmentNoForSync(item);
+      if (eqNo && !item.equipmentNo) item.equipmentNo = eqNo;
+      const alreadyUsed = code && usedCodes[code];
+      const weakAutoCode = !code || /^eq-auto-|^eq-등록장비|^eq-장비|^undefined|null$/i.test(code);
+      if (alreadyUsed || weakAutoCode) {
+        code = makeLegacyResyncEquipmentCodeForSync(item, index);
+        let bump = 1;
+        const base = code;
+        while (usedCodes[code]) {
+          bump += 1;
+          code = base + '-' + bump;
+        }
+        item.code = code;
+        item.qrLink = makeQrLink(code);
+        item.resyncMigratedCode = true;
+        item.resyncMigratedAt = new Date().toISOString();
+      }
+      if (code) usedCodes[code] = true;
+      return item;
+    }
+
+    async function prepareLocalEquipmentItemForServerResync(item, index, usedCodes) {
       item = item && typeof item === 'object' ? item : {};
       let patched = JSON.parse(JSON.stringify(item || {}));
+      patched = ensureUniqueEquipmentCodeForServerResync(patched, index || 0, usedCodes || {});
       patched = applyCurrentMemberOwnerForEquipmentSync(patched, true);
       patched.updatedAt = patched.updatedAt || new Date().toISOString();
       if (itemHasDownloadableDocData(patched)) {
@@ -682,7 +788,7 @@ function resetForm(clearEdit = true) {
     }
 
     async function syncLocalVisibleEquipmentItemsToSupabaseForCurrentMember(forceAlert) {
-      // v23.7.332: PC에는 보이지만 휴대폰에는 안 보이는 기존 보관함 항목을 서버에 다시 저장합니다.
+      // v23.7.333: PC에는 보이지만 휴대폰에는 안 보이는 기존 보관함 항목을 서버에 다시 저장합니다.
       // 이 작업은 PC에서 한 번 실행해야 휴대폰이 같은 계정으로 서버 목록을 불러올 수 있습니다.
       const supabaseApi = window.SitePassSupabaseApi;
       if (!supabaseApi) {
@@ -706,12 +812,13 @@ function resetForm(clearEdit = true) {
       let saved = 0;
       let failed = 0;
       const failedCodes = [];
+      const usedCodes = {};
       const limit = 200;
       for (let i = 0; i < Math.min(candidates.length, limit); i++) {
         const item = candidates[i];
         try {
-          const serverItem = await prepareLocalEquipmentItemForServerResync(item);
-          const result = await saveEquipmentItemToSupabase(serverItem, 'manual_or_auto_pc_to_server_resync_v332');
+          const serverItem = await prepareLocalEquipmentItemForServerResync(item, i, usedCodes);
+          const result = await saveEquipmentItemToSupabase(serverItem, 'manual_or_auto_pc_to_server_resync_v333');
           if (result && result.ok) saved++;
           else { failed++; failedCodes.push(item.code || item.equipmentNo || ('#' + (i+1))); }
           if ((i + 1) % 3 === 0) sitePassEquipmentSyncMessage = 'PC 보관함 서버 동기화 중: ' + (i + 1) + '/' + Math.min(candidates.length, limit);
@@ -738,13 +845,13 @@ function resetForm(clearEdit = true) {
     function getAutoLocalVisibleEquipmentSyncKey() {
       const member = getCurrentSitePassMemberForEquipmentSync();
       const id = member && (member.id || member.authUserId || member.signupId || member.loginId || member.providerId || member.email);
-      return 'sitepass_auto_local_equipment_resync_v332_' + String(id || 'anonymous');
+      return 'sitepass_auto_local_equipment_resync_v333_' + String(id || 'anonymous');
     }
 
     function buildAutoLocalVisibleEquipmentSyncSignature(candidates) {
       return (Array.isArray(candidates) ? candidates : []).map(function(item) {
         return [
-          normalizeEquipmentNoForSync(item && item.equipmentNo),
+          getDerivedEquipmentNoForSync(item),
           String(item && item.code || ''),
           String(item && (item.updatedAt || item.createdAt || '')),
           String(getEquipmentItemDataScoreForSync(item))
@@ -753,7 +860,7 @@ function resetForm(clearEdit = true) {
     }
 
     async function sitePassAutoSyncLocalVisibleEquipmentItemsToSupabase(reason) {
-      // v23.7.332: 나이 드신 사용자도 버튼을 누를 필요 없도록 로그인/홈/보관함 진입 시 자동으로 PC 로컬 보관함을 서버에 저장합니다.
+      // v23.7.333: 나이 드신 사용자도 버튼을 누를 필요 없도록 로그인/홈/보관함 진입 시 자동으로 PC 로컬 보관함을 서버에 저장합니다.
       if (sitePassAutoLocalVisibleEquipmentSyncing) return { skipped:true, reason:'already_running' };
       if (!(typeof isMemberLoggedIn === 'function' && isMemberLoggedIn())) return { skipped:true, reason:'not_logged_in' };
       if (typeof isAdminLoggedIn === 'function' && isAdminLoggedIn()) return { skipped:true, reason:'admin_mode' };
@@ -790,7 +897,7 @@ function resetForm(clearEdit = true) {
     window.sitePassAutoSyncLocalVisibleEquipmentItemsToSupabase = sitePassAutoSyncLocalVisibleEquipmentItemsToSupabase;
 
 // ---- merged from app-register-share-payment-07.js ----
-// SitePass v23.7.332 - app-register-share-payment finer split (07/15)
+// SitePass v23.7.333 - app-register-share-payment finer split (07/15)
 function setItems(items) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -1100,7 +1207,7 @@ function setItems(items) {
     }
 
     function clearNonEssentialRegistrationStorageForSave() {
-      // v23.7.332: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
+      // v23.7.333: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
       // 서버 캐시/임시등록/작성중 초안처럼 다시 만들 수 있는 보조자료를 비우고 재시도합니다.
       try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
       try { localStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
@@ -1134,7 +1241,7 @@ function setItems(items) {
     }
 
     function clearSitePassHeavyStorageForEmergencySave() {
-      // v23.7.332: 현재 origin의 SitePass 구버전 사진/base64 캐시가 localStorage를 꽉 채우면
+      // v23.7.333: 현재 origin의 SitePass 구버전 사진/base64 캐시가 localStorage를 꽉 채우면
       // 새 QR/보관함 목록도 저장하지 못합니다. 로그인/회원정보는 보존하고 무거운 보조자료만 정리합니다.
       const keep = getEssentialSitePassStorageKeysForSave();
       const keys = [];
@@ -1147,7 +1254,7 @@ function setItems(items) {
         if (keep.has(String(key))) return;
         try { localStorage.removeItem(key); } catch (e) {}
       });
-      // v23.7.332: 기존 보관함 삭제 방지. 비상 저장에서도 현재 보관함 키는 지우지 않습니다.
+      // v23.7.333: 기존 보관함 삭제 방지. 비상 저장에서도 현재 보관함 키는 지우지 않습니다.
     }
 
     function tryStoreEmergencyEquipmentList(list, limit) {
@@ -1176,14 +1283,14 @@ function setItems(items) {
       if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
       if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
       if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
-      // v23.7.332: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
+      // v23.7.333: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
       // 저장공간이 부족해도 기존 STORAGE_KEY/PREV_STORAGE_KEY를 지우지 않고 현재 화면 메모리 표시로 둡니다.
       return { ok:false, mode:'memory_preserve_existing' };
     }
 
 
     function getFastCompletionExistingItems(newCode) {
-      // v23.7.332: 추가등록 완료 직후 화면 이동이 막히지 않도록 기존 항목 병합은 가볍게만 처리합니다.
+      // v23.7.333: 추가등록 완료 직후 화면 이동이 막히지 않도록 기존 항목 병합은 가볍게만 처리합니다.
       // 서버캐시 전체 읽기는 과거 사진/base64가 크면 등록완료 버튼을 붙잡을 수 있어 즉시 경로에서는 제외합니다.
       const code = String(newCode || '');
       const sources = [];
@@ -1194,7 +1301,7 @@ function setItems(items) {
         (Array.isArray(list) ? list : []).forEach(function(x) {
           if (!x || !x.code) return;
           if (String(x.code || '') === code) return;
-          // v23.7.332: 추가등록 직후 기존 보관함이 사라져 보이지 않도록
+          // v23.7.333: 추가등록 직후 기존 보관함이 사라져 보이지 않도록
           // 기존 항목은 사진 데이터가 축약되어 있어도 보존합니다.
           merged.push(x);
         });
@@ -1273,7 +1380,7 @@ function setItems(items) {
     window.sitePassRenderFastListAfterRegistration = renderFastCompletionListItem;
 
     function makeImmediateRegistrationSaveListWithPreview(list) {
-      // v23.7.332: v321에서 속도 때문에 모든 항목을 tiny 저장하면서 QR/담당자 화면이
+      // v23.7.333: v321에서 속도 때문에 모든 항목을 tiny 저장하면서 QR/담당자 화면이
       // '첨부됨'만 표시되고 다운로드 사진 데이터가 없는 문제가 있었습니다.
       // 현재 등록 1건은 담당자용 미리보기 데이터(makeStorageLightItem)를 살리고,
       // 기존 보관함 항목은 tiny로 줄여 속도와 저장공간을 같이 지킵니다.
@@ -1338,7 +1445,7 @@ function setItems(items) {
     }
 
     function setItemsForImmediateRegistrationCompletion(items) {
-      // v23.7.332: 등록완료 속도는 유지하되, 현재 등록건의 사진 미리보기 데이터는 QR/담당자 화면에 남깁니다.
+      // v23.7.333: 등록완료 속도는 유지하되, 현재 등록건의 사진 미리보기 데이터는 QR/담당자 화면에 남깁니다.
       // 기존 보관함 사진까지 모두 병합하지 않고, 현재 등록건 preview + 기존 항목 tiny 방식으로 저장합니다.
       const list = Array.isArray(items) ? items : [];
       rememberRuntimeEquipmentItems(list);
@@ -1350,7 +1457,7 @@ function setItems(items) {
       if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
       if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
       if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
-      // v23.7.332: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
+      // v23.7.333: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
       // 저장공간이 부족해도 기존 STORAGE_KEY/PREV_STORAGE_KEY를 지우지 않고 현재 화면 메모리 표시로 둡니다.
       return { ok:false, mode:'memory_preserve_existing' };
     }
@@ -1382,7 +1489,7 @@ function setItems(items) {
     }
 
     function completeTestRegistrationInstantly(item, paymentTier) {
-      // v23.7.332: 등록완료 대기시간을 없애기 위해 결제완료 변환/가벼운 저장/화면이동을 동기적으로 끝냅니다.
+      // v23.7.333: 등록완료 대기시간을 없애기 위해 결제완료 변환/가벼운 저장/화면이동을 동기적으로 끝냅니다.
       item = (item && typeof item === 'object') ? item : {};
       const validation = validateRegistrationItemHasDownloadableDocs(item);
       if (!validation.ok) {
@@ -1420,7 +1527,7 @@ function setItems(items) {
           };
       if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
 
-      // v23.7.332: 등록완료 화면 전환을 어떤 저장/병합 작업보다 먼저 실행합니다.
+      // v23.7.333: 등록완료 화면 전환을 어떤 저장/병합 작업보다 먼저 실행합니다.
       // v325에서 기존 보관함 보존 병합이 등록완료 흐름을 붙잡아 보관함으로 안 넘어가는 문제가 있었습니다.
       const immediateItems = getImmediateRegistrationCompletionItems(paidItem);
       try { window.sitePassFastCompletionItems = immediateItems; } catch (e) {}
@@ -1568,7 +1675,7 @@ function setItems(items) {
     }
 
 // ---- merged from app-register-share-payment-08.js ----
-// SitePass v23.7.332 - app-register-share-payment finer split (08/15)
+// SitePass v23.7.333 - app-register-share-payment finer split (08/15)
 function makeQrUrl(link, size = 180) {
       const qrShare = getQrShareModule();
       if (qrShare.makeQrUrl) return qrShare.makeQrUrl(link, size);
