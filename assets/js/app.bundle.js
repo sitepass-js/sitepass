@@ -1,8 +1,8 @@
-// SitePass v23.7.349 - compatibility loader for old index.html app.bundle.js references
+// SitePass v23.7.350 - compatibility loader for old index.html app.bundle.js references
 (function(){
-  if (window.__SITEPASS_APP_SPLIT_VERSION === 'v23.7.349' || window.__SITEPASS_APP_SPLIT_LOADER_ACTIVE) return;
+  if (window.__SITEPASS_APP_SPLIT_VERSION === 'v23.7.350' || window.__SITEPASS_APP_SPLIT_LOADER_ACTIVE) return;
   window.__SITEPASS_APP_SPLIT_LOADER_ACTIVE = true;
-  var version = '23.7.349';
+  var version = '23.7.350';
   var files = [
     './assets/js/app-core-auth-speed-01.js',
     './assets/js/app-core-auth-speed-02.js',

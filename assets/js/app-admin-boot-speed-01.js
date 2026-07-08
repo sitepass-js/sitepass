@@ -1,7 +1,7 @@
-// SitePass v23.7.349 - speed optimized medium chunk (app-admin-boot-speed 01/03)
+// SitePass v23.7.350 - speed optimized medium chunk (app-admin-boot-speed 01/03)
 // ---- merged from app-admin-boot-01.js ----
-// SitePass v23.7.349 - app-admin-boot finer split (01/14)
-// SitePass v23.7.349 - app.bundle.js remaining split (04 admin/pwa/boot)
+// SitePass v23.7.350 - app-admin-boot finer split (01/14)
+// SitePass v23.7.350 - app.bundle.js remaining split (04 admin/pwa/boot)
 
 
     function completeAutoPaymentForItem(code, plan, sourceLabel, options) {
@@ -176,7 +176,7 @@
     }
 
 // ---- merged from app-admin-boot-02.js ----
-// SitePass v23.7.349 - app-admin-boot finer split (02/14)
+// SitePass v23.7.350 - app-admin-boot finer split (02/14)
 function renderRenewPanel(item) {
       if (!item) return '';
       const dueText = getPaymentDueText(item);
@@ -308,7 +308,7 @@ function renderRenewPanel(item) {
     }
 
 // ---- merged from app-admin-boot-03.js ----
-// SitePass v23.7.349 - app-admin-boot finer split (03/14)
+// SitePass v23.7.350 - app-admin-boot finer split (03/14)
 function isQrPaused(item) {
       const payments = getAdminPaymentsModule();
       if (payments.isQrPaused) return payments.isQrPaused(item);
@@ -536,7 +536,7 @@ function isQrPaused(item) {
     }
 
 // ---- merged from app-admin-boot-04.js ----
-// SitePass v23.7.349 - app-admin-boot finer split (04/14)
+// SitePass v23.7.350 - app-admin-boot finer split (04/14)
 async function signOutSupabaseAuthQuietly() {
       try {
         if (window.sitepassSupabase && window.sitepassSupabase.auth) {
@@ -699,7 +699,7 @@ async function signOutSupabaseAuthQuietly() {
     }
 
 // ---- merged from app-admin-boot-05.js ----
-// SitePass v23.7.349 - app-admin-boot finer split (05/14)
+// SitePass v23.7.350 - app-admin-boot finer split (05/14)
 async function withdrawCurrentSupabaseAuthMember(reason) {
       try {
         if (!window.sitepassSupabase || !window.sitepassSupabase.rpc) return 0;

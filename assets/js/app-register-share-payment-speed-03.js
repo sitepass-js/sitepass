@@ -1,6 +1,6 @@
-// SitePass v23.7.349 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
+// SitePass v23.7.350 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
 // ---- merged from app-register-share-payment-09.js ----
-// SitePass v23.7.349 - app-register-share-payment finer split (09/15)
+// SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
       const archive = getArchiveModule();
       if (archive.shareOneListItemEmail) return archive.shareOneListItemEmail(code);
@@ -38,7 +38,7 @@ function shareOneListItemEmail(code) {
       return window.sitepassSupabase || null;
     }
 
-    // v23.7.349: 담당자 공유 링크로 받은 자료는 수신자 기기의 localStorage에 의존하지 않고
+    // v23.7.350: 담당자 공유 링크로 받은 자료는 수신자 기기의 localStorage에 의존하지 않고
     // 서버에서 받은 payload를 메모리에만 보관해 바로 렌더링합니다.
     window.sitePassManagerShareCache = window.sitePassManagerShareCache || {};
 
@@ -149,7 +149,7 @@ function shareOneListItemEmail(code) {
     }
 
     function upsertSharedItemIntoLocalCache(item) {
-      // v23.7.349: 수신자 링크 조회는 서버 payload를 메모리에만 저장합니다.
+      // v23.7.350: 수신자 링크 조회는 서버 payload를 메모리에만 저장합니다.
       // 받은 사람 휴대폰의 localStorage 용량/예전 보관함 상태 때문에 조회 실패가 나지 않게 합니다.
       return rememberManagerShareItem(item?.code || item?.share_code || item?.publicShareCode || item?.managerShareCode || '', item);
     }
@@ -265,7 +265,7 @@ function shareOneListItemEmail(code) {
 
       const saved = await saveManagerShareItemsToSupabase(safeItems);
       if (!saved.ok) {
-        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.349 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
+        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.350 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
         return;
       }
 
@@ -296,7 +296,7 @@ function shareOneListItemEmail(code) {
     }
 
 // ---- merged from app-register-share-payment-10.js ----
-// SitePass v23.7.349 - app-register-share-payment finer split (10/15)
+// SitePass v23.7.350 - app-register-share-payment finer split (10/15)
 function normalizePhoneForShare(phone) {
       const qrShare = getQrShareModule();
       if (qrShare.normalizePhoneForShare) return qrShare.normalizePhoneForShare(phone);
@@ -460,7 +460,7 @@ function normalizePhoneForShare(phone) {
     }
 
 // ---- merged from app-register-share-payment-11.js ----
-// SitePass v23.7.349 - app-register-share-payment finer split (11/15)
+// SitePass v23.7.350 - app-register-share-payment finer split (11/15)
 function renderDocExpiryStrip(doc) {
       if (!doc || !doc.expireDate) return '';
       const label = getExpiryPeriodLabel(doc);
@@ -556,7 +556,11 @@ function renderDocExpiryStrip(doc) {
         showScreen('managerPrintScreen');
         return;
       }
-      if (expireAt && !isManagerLinkSignatureValid(item, expireAt, sig)) {
+      // v23.7.350: 서버 sitepass_public_shares에서 직접 불러온 1일 공유링크는
+      // URL에 exp/sig를 붙이지 않는 단일 코드 방식입니다. 이 경우 만료/폐기 검증은
+      // Supabase RPC(sitepass_get_public_share_item)가 이미 수행하므로, 예전 URL 서명 검사를 건너뜁니다.
+      const isServerLoadedManagerShare = !!(item && (item.isPublicShareRuntime || item.publicShareLoadedFromServer || item.publicShareLoadedAt));
+      if (expireAt && !isServerLoadedManagerShare && !isManagerLinkSignatureValid(item, expireAt, sig)) {
         const recipientView = getRecipientViewModule();
         box.innerHTML = recipientView.getInvalidManagerLinkHtml ? recipientView.getInvalidManagerLinkHtml() : '<div class="manager-expire-box"><b>올바르지 않은 담당자 QR·링크입니다.</b><br>만료시간이 변경되었거나 이미 폐기된 링크입니다.<br>장비업자에게 새 공유 QR·링크를 다시 받아주세요.</div>';
         showScreen('managerPrintScreen');
@@ -587,7 +591,7 @@ function renderDocExpiryStrip(doc) {
     }
 
 // ---- merged from app-register-share-payment-12.js ----
-// SitePass v23.7.349 - app-register-share-payment finer split (12/15)
+// SitePass v23.7.350 - app-register-share-payment finer split (12/15)
 function renderManagerDownloadToolbar(item) {
       const recipientView = getRecipientViewModule();
       if (recipientView.renderDownloadToolbar) {
