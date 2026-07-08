@@ -1179,6 +1179,8 @@ function formatSitePassSignupJuminDisplay() {
       if (requestButton) requestButton.disabled = true;
       if (status) status.textContent = '네이버 SENS로 인증번호를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.';
       try {
+        let signupTermsUrl = '';
+        try { signupTermsUrl = new URL('./terms/person-consent.html?role=member&v=23.7.354', window.location.href).href; } catch (e) { signupTermsUrl = './terms/person-consent.html?role=member&v=23.7.354'; }
         const data = await sens.sendPhoneCode({
           purpose: 'member_signup_phone_verification',
           subjectType: 'member',
@@ -1191,7 +1193,8 @@ function formatSitePassSignupJuminDisplay() {
           privacyAgreed: true,
           smsAgreed: true,
           identityTermsAgreed: true,
-          termsVersion: 'v23.7.351'
+          termsVersion: 'v23.7.354',
+          termsUrl: signupTermsUrl
         });
         window.__sitepassV351SignupVerificationId = data.verificationId || '';
         window.__sitepassV351SignupVerifiedPayload = null;

@@ -3577,5 +3577,10 @@
 #paymentOwnerCardBox .auth-mini-note { margin-top:8px; }
 .payment-method-buttons button.active { transform:translateY(-1px); }
 
-/* v23.7.351 SENS 인증/신분증 하단 검증정보 */
+/* v23.7.354 SENS 인증/신분증 하단 검증정보 */
 .sp351-id-extra-strip{border-top:1px dashed #cbd5e1;margin-top:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;text-align:left;font-size:12px;line-height:1.45;color:#172033}.sp351-id-extra-strip b{color:#475569}.sp351-id-extra-strip .small{font-size:11px;color:#b86400;margin-top:4px}.sp351-locked{background:#f8fafc!important;color:#475569!important}
+
+/* v23.7.354 기사/인부 발송 전 필수 동의 체크 */
+.person-auth-consent-check{display:block;margin:8px 0;padding:10px 12px;border:1px solid #dbe3ef;border-radius:12px;background:#f8fafc;font-size:12px;line-height:1.5;color:#172033}
+.person-auth-consent-check input{margin-right:6px;vertical-align:middle}
+.person-auth-consent-check a{margin-left:6px;text-decoration:underline;font-weight:700}

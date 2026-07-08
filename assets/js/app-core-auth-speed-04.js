@@ -541,7 +541,7 @@ function setPersonAuthStatus(kind, text, mode) {
         if (show) el.disabled = false;
       });
       const sendButton = panel.querySelector('[data-person-auth-send-button]');
-      if (sendButton) sendButton.textContent = show ? '문자 재전송' : '약관/동의 문자보내기';
+      if (sendButton) sendButton.textContent = show ? '문자 재전송' : '약관동의 링크 문자 발송';
     }
 
     function getPersonKindLabel(kind, values) {
@@ -562,10 +562,9 @@ function setPersonAuthStatus(kind, text, mode) {
       const name = values.name || (kind === 'driver' ? '기사님' : '인부님');
       const link = 'https://sitepass.kr/consent/' + (kind === 'driver' ? 'driver' : 'worker') + '/예시코드';
       return '[SitePass] ' + name + '님, ' + equipmentName + ' ' + equipmentNo + ' 현장 반입서류 등록 요청입니다.\n' +
-        '약관/동의 내용을 확인한 뒤 휴대폰으로 받은 6자리 인증번호를 등록자에게 알려주세요.\n' +
-        '약관/동의 확인 링크: ' + link + '\n' +
-        '인증번호는 네이버 SENS 문자로 실제 발송됩니다.\n' +
-        '동의하지 않거나 요청한 내용이 아니면 번호를 알려주지 말고 문자를 무시하세요.';
+        '약관/개인정보 링크를 열고 필수 동의 체크를 하면 인증번호가 화면에 표시됩니다.\n' +
+        '약관/개인정보 동의 링크: ' + link + '\n' +
+        '동의하지 않거나 요청한 내용이 아니면 링크에서 동의하지 말고 창을 닫으세요. 필수 동의 체크 후 화면에 표시된 인증번호를 등록자에게 알려주면 인증 절차가 진행됩니다.';
     }
 
     function buildPersonAuthConsentText(kind) {
@@ -629,9 +628,10 @@ function setPersonAuthStatus(kind, text, mode) {
       }
       const sendButton = values.panel.querySelector('[data-person-auth-send-button]');
       if (sendButton) sendButton.disabled = true;
-      setPersonAuthStatus(kind, '네이버 SENS로 인증번호를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.', 'pending');
+      setPersonAuthStatus(kind, '네이버 SENS로 약관/개인정보 동의 링크를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.', 'pending');
       try {
         const subjectId = (document.getElementById('equipmentNo')?.value || '') + ':' + kind + ':' + values.name + ':' + sens.cleanPhone(values.phone).slice(-4);
+        const termsUrl = personAuth.buildConsentLink ? personAuth.buildConsentLink(kind, subjectId) : new URL('./terms/person-consent.html', window.location.href).href;
         const data = await sens.sendPhoneCode({
           purpose: kind + '_document_phone_verification',
           subjectType: kind === 'driver' ? 'driver' : 'worker',
@@ -640,11 +640,13 @@ function setPersonAuthStatus(kind, text, mode) {
           birthDate,
           phone: values.phone,
           carrier: values.carrier,
-          termsAgreed: true,
-          privacyAgreed: true,
+          termsAgreed: false,
+          privacyAgreed: false,
           smsAgreed: true,
-          identityTermsAgreed: true,
-          termsVersion: 'v23.7.351'
+          identityTermsAgreed: false,
+          consentMode: 'sms_link_checkbox_code_reveal',
+          termsVersion: 'v23.7.354',
+          termsUrl: termsUrl
         });
         const sentDataset = personAuth.buildSentDataset ? personAuth.buildSentDataset(values) : null;
         if (sentDataset) {
@@ -662,9 +664,9 @@ function setPersonAuthStatus(kind, text, mode) {
         values.panel.dataset.authVerificationId = data.verificationId || '';
         togglePersonAuthCodeInput(values.panel, true);
         renderPersonSmsPreview(kind);
-        setPersonAuthStatus(kind, '인증번호를 발송했습니다. 5분 안에 기사/인부가 받은 6자리 번호를 입력하세요. 끝 4자리: ' + (data.phoneLast4 || sens.cleanPhone(values.phone).slice(-4)), 'pending');
+        setPersonAuthStatus(kind, '약관/개인정보 동의 링크를 발송했습니다. 기사/인부가 자기 휴대폰에서 링크를 열고 필수 동의 체크를 하면 인증번호가 화면에 표시됩니다. 그 번호를 물어 입력하세요. 끝 4자리: ' + (data.phoneLast4 || sens.cleanPhone(values.phone).slice(-4)), 'pending');
         values.panel.querySelector('[data-person-auth-code]')?.focus();
-        alert((kind === 'driver' ? '기사' : '인부') + ' 휴대폰으로 6자리 인증번호를 보냈습니다.\n인증번호를 받아 입력하면 서류 업로드가 열립니다.\n\n※ 현재는 휴대폰 인증이며, NICE/KCB/PASS 실명 본인확인은 계약 후 연결됩니다.');
+        alert((kind === 'driver' ? '기사' : '인부') + ' 휴대폰으로 약관/개인정보 동의 링크를 보냈습니다.\n기사/인부가 자기 휴대폰에서 링크를 열고 필수 동의 체크를 하면 인증번호가 화면에 표시됩니다.\n그 인증번호를 받아 입력하세요.\n\n※ 현재는 휴대폰 인증이며, NICE/KCB/PASS 실명 본인확인은 계약 후 연결됩니다.');
       } catch (err) {
         console.error(err);
         setPersonAuthStatus(kind, '인증번호 발송 실패: ' + sens.koreanError(err), 'rejected');
@@ -682,11 +684,11 @@ function setPersonAuthStatus(kind, text, mode) {
       if (!values.name) { alert((kind === 'driver' ? '기사' : '인부') + ' 이름을 입력해주세요.'); return; }
       if (!values.phone) { alert('휴대폰번호를 먼저 입력해주세요.'); return; }
       if (values.panel.dataset.authCodeSent !== 'true' || !values.panel.dataset.authVerificationId) {
-        alert('먼저 인증번호 발송 버튼을 눌러주세요.');
+        alert('먼저 약관/개인정보 동의 링크 문자를 발송해주세요.');
         return;
       }
       if (!/^\d{6}$/.test(String(values.code || '').replace(/[^0-9]/g, ''))) {
-        alert('문자로 받은 6자리 인증번호를 입력해주세요.');
+        alert('기사/인부가 동의 후 화면에서 확인한 6자리 인증번호를 입력해주세요.');
         values.panel.querySelector('[data-person-auth-code]')?.focus();
         return;
       }
@@ -789,6 +791,6 @@ function setPersonAuthStatus(kind, text, mode) {
         });
         refreshPrivateDocLocks(document);
       }
-      setPersonAuthStatus(kind, kind === 'driver' ? '기사 문자 동의안내와 6자리 인증을 완료하면 기사서류 전체가 열립니다.' : '인부 1명마다 문자 동의안내와 6자리 인증 후 추가 버튼이 열립니다.', 'pending');
+      setPersonAuthStatus(kind, kind === 'driver' ? '기사에게 동의 링크를 보내고, 기사 휴대폰에서 동의 후 표시된 6자리 인증을 완료하면 기사서류 전체가 열립니다.' : '인부 1명마다 동의 링크를 보내고, 인부 휴대폰에서 동의 후 표시된 6자리 인증을 완료하면 추가 버튼이 열립니다.', 'pending');
     }
 

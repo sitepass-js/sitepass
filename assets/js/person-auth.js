@@ -36,7 +36,16 @@
   }
 
   function buildConsentLink(kind, code) {
-    return 'https://sitepass.kr/consent/' + (kind === 'driver' ? 'driver' : 'worker') + '/' + (code || '예시코드');
+    const role = kind === 'driver' ? 'driver' : 'worker';
+    try {
+      const url = new URL('./terms/person-consent.html', window.location.href);
+      url.searchParams.set('role', role);
+      if (code) url.searchParams.set('code', code);
+      url.searchParams.set('v', '23.7.354');
+      return url.href;
+    } catch (e) {
+      return './terms/person-consent.html?role=' + role + '&v=23.7.354';
+    }
   }
 
   function buildSmsText(kind, values, context) {
@@ -47,10 +56,9 @@
     const equipmentName = normalizeText(safeContext.equipmentName) || '현장 장비';
     const link = buildConsentLink(kind, safeContext.consentCode || '예시코드');
     return '[SitePass] ' + name + '님, ' + equipmentName + ' ' + equipmentNo + ' 현장 반입서류 등록 요청입니다.\n' +
-      '약관/동의 내용을 확인한 뒤 휴대폰으로 받은 6자리 인증번호를 등록자에게 알려주세요.\n' +
-      '약관/동의 확인 링크: ' + link + '\n' +
-      '인증번호는 네이버 SENS 문자로 실제 발송됩니다.\n' +
-      '동의하지 않거나 요청한 내용이 아니면 번호를 알려주지 말고 문자를 무시하세요.';
+      '약관/개인정보 링크를 열고 필수 동의 체크를 하면 인증번호가 화면에 표시됩니다.\n' +
+      '약관/개인정보 동의 링크: ' + link + '\n' +
+      '동의하지 않거나 본인이 요청한 등록이 아니면 링크에서 동의하지 말고 창을 닫으세요.';
   }
 
   function buildConsentText(kind, values) {
@@ -62,7 +70,7 @@
       '수집·이용 항목: 이름, 휴대폰번호, 인증 및 동의 기록, 신분증, 면허증, 안전교육 이수증, 건강검진서류 등 본인이 직접 촬영·등록한 서류\n' +
       '이용 목적: 현장 장비 반입서류 보관, 현장 담당자 확인, 다운로드·프린트 제공, 서류 갱신 및 민원 대응\n' +
       '보유 기간: 회원의 서비스 이용기간 또는 서류 삭제 요청 시까지. 법령상 보관이 필요한 기록은 해당 기간 보관될 수 있음\n' +
-      '거부권: 동의하지 않을 수 있으며, 거부 시 SitePass를 통한 해당 서류 등록·공유가 제한됩니다. 동의하지 않으면 6자리 번호를 등록자에게 알려주지 마세요.\n\n' +
+      '거부권: 동의하지 않을 수 있으며, 거부 시 SitePass를 통한 해당 서류 등록·공유가 제한됩니다. 동의하지 않으면 링크에서 동의하지 말고 인증번호를 확인하지 마세요.\n\n' +
       '신분증의 주민등록번호 뒷자리, 주소, 면허번호 일부 등 불필요한 정보는 가림 처리하는 것을 원칙으로 합니다. 건강검진서류 등 민감정보가 포함되는 경우 별도 확인 후 필요한 경우에만 등록합니다.';
   }
 
@@ -76,6 +84,7 @@
     if (!normalizeText(safeValues.carrier)) return { ok:false, message:label + ' 통신사를 선택해주세요.', focusSelector:'[data-person-auth-carrier]' };
     if (!normalizeText(safeValues.phone)) return { ok:false, message:label + ' 휴대폰번호를 입력해주세요.', focusSelector:'[data-person-auth-phone]' };
     return { ok:true };
+
   }
 
   function validateVerifyValues(kind, values, authCodeSent, expectedCode) {
@@ -83,9 +92,9 @@
     const safeValues = values || {};
     if (!normalizeText(safeValues.name)) return { ok:false, message:label + ' 이름을 입력해주세요.', focusSelector:'[data-person-auth-name]' };
     if (!normalizeText(safeValues.phone)) return { ok:false, message:'휴대폰번호를 먼저 입력해주세요.', focusSelector:'[data-person-auth-phone]' };
-    if (authCodeSent !== 'true') return { ok:false, message:'먼저 약관/동의 문자보내기 버튼을 눌러주세요.', focusSelector:'[data-person-auth-send-button]' };
+    if (authCodeSent !== 'true') return { ok:false, message:'먼저 약관/개인정보 동의 링크 문자를 발송해주세요.', focusSelector:'[data-person-auth-send-button]' };
     const code = normalizeText(safeValues.code);
-    if (!/^\d{6}$/.test(code)) return { ok:false, message:'문자로 받은 6자리 인증번호를 입력해주세요.', focusSelector:'[data-person-auth-code]' };
+    if (!/^\d{6}$/.test(code)) return { ok:false, message:'기사/인부가 동의 후 화면에서 확인한 6자리 인증번호를 입력해주세요.', focusSelector:'[data-person-auth-code]' };
     return { ok:true };
   }
 

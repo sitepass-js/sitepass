@@ -1,4 +1,4 @@
-/* SitePass v23.7.351 - 네이버 SENS 문자 인증 실제 연동 보조 모듈
+/* SitePass v23.7.354 - 네이버 SENS 문자 인증/동의 후 코드표시 실제 연동 보조 모듈
  * - API Key/Secret은 절대 GitHub에 넣지 않습니다.
  * - 브라우저는 Supabase Edge Function만 호출합니다.
  * - Edge Function이 Supabase Secrets의 SENS 키로 네이버 SENS를 호출합니다.
@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  const VERSION = 'v23.7.351';
+  const VERSION = 'v23.7.354';
 
   function cleanPhone(value) {
     return String(value || '').replace(/[^0-9]/g, '');
@@ -120,6 +120,10 @@
       birth_date_required: '생년월일을 확인해야 합니다.',
       invalid_phone: '휴대폰번호 형식이 올바르지 않습니다.',
       required_terms_not_agreed: '필수 약관/개인정보/문자 발송 동의가 필요합니다.',
+      terms_url_required: '약관 및 개인정보 동의 링크가 필요합니다.',
+      consent_required: '약관/개인정보 동의가 먼저 필요합니다. 문자 링크에서 동의 후 표시된 인증번호를 입력하세요.',
+      consent_token_invalid: '동의 링크가 올바르지 않습니다. 새로 발송해주세요.',
+      required_consent_checks_missing: '필수 동의 항목을 모두 체크해야 인증번호가 표시됩니다.',
       resend_limited: '재발송 제한 중입니다. 60초 뒤 다시 시도하세요.',
       verification_id_required: '인증 요청 정보가 없습니다. 인증번호를 다시 발송하세요.',
       invalid_code: '인증번호 6자리를 입력하세요.',
@@ -128,7 +132,8 @@
       too_many_attempts: '인증번호 입력 횟수를 초과했습니다. 다시 발송하세요.',
       code_mismatch: '인증번호가 맞지 않습니다.',
       send_phone_code_failed: '문자 발송에 실패했습니다. Supabase Secrets와 SENS 발신번호를 확인하세요.',
-      verify_phone_code_failed: '인증번호 확인에 실패했습니다.'
+      verify_phone_code_failed: '인증번호 확인에 실패했습니다.',
+      reveal_phone_code_failed: '동의 확인 및 인증번호 표시 처리에 실패했습니다.'
     };
     return map[key] || key || '처리 중 오류가 발생했습니다.';
   }
@@ -144,6 +149,10 @@
       verificationId: verificationId,
       code: cleanPhone(code)
     });
+  }
+
+  async function revealPhoneCode(payload) {
+    return await invokeFunction('reveal-phone-code', payload || {});
   }
 
   async function prepareIdentityCheck(payload) {
@@ -203,6 +212,7 @@
     nowKoText,
     sendPhoneCode,
     verifyPhoneCode,
+    revealPhoneCode,
     prepareIdentityCheck,
     koreanError,
     renderVerifiedFooter,

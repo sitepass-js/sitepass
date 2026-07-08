@@ -1,9 +1,10 @@
-const SITEPASS_SW_VERSION = 'v23.7.351';
-const SITEPASS_CACHE = 'sitepass-v23.7.351';
+const SITEPASS_SW_VERSION = 'v23.7.354';
+const SITEPASS_CACHE = 'sitepass-v23.7.354';
 const SITEPASS_CORE = [
   './',
   './index.html',
   './sitepass.webmanifest',
+  './terms/person-consent.html',
   './assets/css/style.css',
   './assets/js/config.js',
   './assets/js/supabase-api.js',
