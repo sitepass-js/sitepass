@@ -1,6 +1,6 @@
-// SitePass v23.7.348 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
+// SitePass v23.7.349 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
 // ---- merged from app-register-share-payment-09.js ----
-// SitePass v23.7.348 - app-register-share-payment finer split (09/15)
+// SitePass v23.7.349 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
       const archive = getArchiveModule();
       if (archive.shareOneListItemEmail) return archive.shareOneListItemEmail(code);
@@ -36,6 +36,49 @@ function shareOneListItemEmail(code) {
 
     function getSitePassSupabaseClient() {
       return window.sitepassSupabase || null;
+    }
+
+    // v23.7.349: 담당자 공유 링크로 받은 자료는 수신자 기기의 localStorage에 의존하지 않고
+    // 서버에서 받은 payload를 메모리에만 보관해 바로 렌더링합니다.
+    window.sitePassManagerShareCache = window.sitePassManagerShareCache || {};
+
+    function normalizeManagerShareItemForRuntime(item, code, expiresAt, sig) {
+      if (!item) return null;
+      const copy = JSON.parse(JSON.stringify(item || {}));
+      const linkCode = String(code || copy.publicShareCode || copy.managerShareCode || copy.share_code || copy.code || '').trim();
+      const originalCode = String(copy.code || copy.equipmentCode || copy.equipment_code || '').trim();
+      if (linkCode) {
+        if (originalCode && originalCode !== linkCode) copy.originalEquipmentCode = originalCode;
+        copy.code = linkCode;
+        copy.share_code = linkCode;
+        copy.publicShareCode = linkCode;
+        copy.managerShareCode = linkCode;
+      }
+      if (expiresAt) copy.managerExpireAt = new Date(Number(expiresAt)).toISOString();
+      if (sig) copy.managerShareSig = sig;
+      copy.isPublicShareRuntime = true;
+      copy.publicShareLoadedAt = new Date().toISOString();
+      return copy;
+    }
+
+    function rememberManagerShareItem(code, item, expiresAt, sig) {
+      const normalized = normalizeManagerShareItemForRuntime(item, code, expiresAt, sig);
+      if (!normalized || !normalized.code) return normalized || null;
+      window.sitePassManagerShareCache[normalized.code] = normalized;
+      if (code) window.sitePassManagerShareCache[String(code)] = normalized;
+      if (normalized.publicShareCode) window.sitePassManagerShareCache[String(normalized.publicShareCode)] = normalized;
+      if (normalized.managerShareCode) window.sitePassManagerShareCache[String(normalized.managerShareCode)] = normalized;
+      return normalized;
+    }
+
+    function getManagerShareRuntimeItem(code) {
+      const key = String(code || '').trim();
+      if (!key) return null;
+      return (window.sitePassManagerShareCache && window.sitePassManagerShareCache[key]) || null;
+    }
+
+    function getRuntimeItemByCode(code) {
+      return getManagerShareRuntimeItem(code) || getItemByCode(code);
     }
 
     function getManagerShareCodeCandidate(item) {
@@ -106,14 +149,9 @@ function shareOneListItemEmail(code) {
     }
 
     function upsertSharedItemIntoLocalCache(item) {
-      if (!item || !item.code) return null;
-      const all = getItems();
-      const idx = all.findIndex(x => String(x.code || '') === String(item.code || ''));
-      const merged = idx >= 0 ? { ...all[idx], ...item } : item;
-      if (idx >= 0) all[idx] = merged;
-      else all.unshift(merged);
-      setItems(all);
-      return merged;
+      // v23.7.349: 수신자 링크 조회는 서버 payload를 메모리에만 저장합니다.
+      // 받은 사람 휴대폰의 localStorage 용량/예전 보관함 상태 때문에 조회 실패가 나지 않게 합니다.
+      return rememberManagerShareItem(item?.code || item?.share_code || item?.publicShareCode || item?.managerShareCode || '', item);
     }
 
     async function saveManagerShareItemsToSupabase(items) {
@@ -188,11 +226,14 @@ function shareOneListItemEmail(code) {
         showManagerLinkLoadMessage('담당자 링크 정보가 없습니다. 링크를 다시 확인해주세요.');
         return;
       }
-      let item = getItemByCode(parsed.code);
+      let item = getRuntimeItemByCode(parsed.code);
       if (!item) {
         showManagerLinkLoadMessage('서버에서 담당자 링크를 불러오는 중입니다.');
         const loaded = await loadManagerShareItemFromSupabase(parsed.code, parsed.sig);
-        if (loaded.ok) item = loaded.item;
+        if (loaded.ok) {
+          item = rememberManagerShareItem(parsed.code, loaded.item, loaded.expiresAt || parsed.exp, parsed.sig);
+          parsed.exp = loaded.expiresAt || parsed.exp;
+        }
         else if (loaded.expired) {
           const box = document.getElementById('managerPrintBox');
           if (box) box.innerHTML = '<div class="manager-expire-box"><b>만료된 담당자 QR·링크입니다.</b><br>이 담당자 접속은 1일이 지나 더 이상 열 수 없습니다.<br>장비업자에게 새 공유 QR·링크를 다시 받아주세요.</div>';
@@ -224,7 +265,7 @@ function shareOneListItemEmail(code) {
 
       const saved = await saveManagerShareItemsToSupabase(safeItems);
       if (!saved.ok) {
-        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.348 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
+        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.349 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
         return;
       }
 
@@ -255,7 +296,7 @@ function shareOneListItemEmail(code) {
     }
 
 // ---- merged from app-register-share-payment-10.js ----
-// SitePass v23.7.348 - app-register-share-payment finer split (10/15)
+// SitePass v23.7.349 - app-register-share-payment finer split (10/15)
 function normalizePhoneForShare(phone) {
       const qrShare = getQrShareModule();
       if (qrShare.normalizePhoneForShare) return qrShare.normalizePhoneForShare(phone);
@@ -312,7 +353,7 @@ function normalizePhoneForShare(phone) {
     }
 
     function shareAdminOwnerAlertSmsForCode(code) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       if (!item) { alert('알림을 보낼 장비서류를 찾을 수 없습니다.'); return; }
       const phone = normalizePhoneForShare(item.ownerPhone || '');
       if (!phone) { alert('이 장비서류에는 장비업자 휴대폰번호가 등록되어 있지 않습니다.'); return; }
@@ -331,7 +372,7 @@ function normalizePhoneForShare(phone) {
     }
 
     function openAdminQrLink(code) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       if (!item) { alert('QR을 열 장비서류를 찾을 수 없습니다.'); return; }
       if (isServiceShareBlocked(item)) {
         const box = document.getElementById('detailBox');
@@ -419,7 +460,7 @@ function normalizePhoneForShare(phone) {
     }
 
 // ---- merged from app-register-share-payment-11.js ----
-// SitePass v23.7.348 - app-register-share-payment finer split (11/15)
+// SitePass v23.7.349 - app-register-share-payment finer split (11/15)
 function renderDocExpiryStrip(doc) {
       if (!doc || !doc.expireDate) return '';
       const label = getExpiryPeriodLabel(doc);
@@ -428,7 +469,7 @@ function renderDocExpiryStrip(doc) {
     }
 
     function getEquipmentNoForDocLabel(code) {
-      const item = code ? getItemByCode(code) : null;
+      const item = code ? getRuntimeItemByCode(code) : null;
       return String(item?.equipmentNo || document.getElementById('equipmentNo')?.value || '').trim();
     }
 
@@ -489,7 +530,7 @@ function renderDocExpiryStrip(doc) {
     }
 
     function openManagerPublicView(code, expireAt, sig) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       if (!item) {
         document.getElementById('managerPrintBox').innerHTML = '<div class="empty">조회할 수 없는 코드입니다.<br>코드를 다시 확인해주세요.</div>';
         showScreen('managerPrintScreen');
@@ -503,7 +544,7 @@ function renderDocExpiryStrip(doc) {
 
 
     function renderManagerPrint(code, expireAt, sig) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       const box = document.getElementById('managerPrintBox');
       if (!item) {
         box.innerHTML = '<div class="empty">조회할 수 없는 코드입니다.</div>';
@@ -546,7 +587,7 @@ function renderDocExpiryStrip(doc) {
     }
 
 // ---- merged from app-register-share-payment-12.js ----
-// SitePass v23.7.348 - app-register-share-payment finer split (12/15)
+// SitePass v23.7.349 - app-register-share-payment finer split (12/15)
 function renderManagerDownloadToolbar(item) {
       const recipientView = getRecipientViewModule();
       if (recipientView.renderDownloadToolbar) {
@@ -600,13 +641,13 @@ function renderManagerDownloadToolbar(item) {
     }
 
     function downloadAllDocsBundle(code) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       if (!item) return;
       downloadDocsBundle(item, getAttachedDisplayDocs(item), '전체서류');
     }
 
     function downloadSelectedDocsBundle(code) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       if (!item) return;
       const keys = getSelectedPrintDocKeys();
       if (!keys.length) { alert('다운로드할 서류를 체크해주세요.'); return; }
@@ -614,7 +655,7 @@ function renderManagerDownloadToolbar(item) {
     }
 
     function downloadSingleDocBundle(code, key) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       if (!item) return;
       downloadDocsBundle(item, getDocsByKeys(item, [key]), '단일서류');
     }
@@ -736,7 +777,7 @@ function renderManagerDownloadToolbar(item) {
     }
 
     function openPublicDocPreview(code, key) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       const doc = item ? getAttachedDisplayDocs(item).find(d => d.key === key) : null;
       if (!doc || !doc.fileName) { alert('미첨부 서류입니다.'); return; }
       const pages = getDocPagesFromDoc(doc);
@@ -747,14 +788,14 @@ function renderManagerDownloadToolbar(item) {
     }
 
     function printAllDocs(code) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       if (!item) { alert('인쇄할 코드를 찾을 수 없습니다.'); return; }
       const docs = getAttachedDisplayDocs(item);
       printDocs(item, docs);
     }
 
     function printSelectedDocs(code) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       if (!item) { alert('인쇄할 코드를 찾을 수 없습니다.'); return; }
       const keys = getSelectedPrintKeys();
       if (!keys.length) { alert('인쇄할 서류를 체크해주세요.'); return; }
@@ -763,7 +804,7 @@ function renderManagerDownloadToolbar(item) {
     }
 
     function printSingleDoc(code, key) {
-      const item = getItemByCode(code);
+      const item = getRuntimeItemByCode(code);
       if (!item) { alert('인쇄할 코드를 찾을 수 없습니다.'); return; }
       const docs = getDocsByKeys(item, [key]);
       printDocs(item, docs);
