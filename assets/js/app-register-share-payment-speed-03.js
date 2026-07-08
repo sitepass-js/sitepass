@@ -1,6 +1,6 @@
-// SitePass v23.7.345 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
+// SitePass v23.7.346 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
 // ---- merged from app-register-share-payment-09.js ----
-// SitePass v23.7.345 - app-register-share-payment finer split (09/15)
+// SitePass v23.7.346 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
       const archive = getArchiveModule();
       if (archive.shareOneListItemEmail) return archive.shareOneListItemEmail(code);
@@ -38,11 +38,69 @@ function shareOneListItemEmail(code) {
       return window.sitepassSupabase || null;
     }
 
+    function getManagerShareCodeCandidate(item) {
+      if (!item) return '';
+      const candidates = [
+        item.code, item.share_code, item.shareCode, item.publicShareCode, item.managerShareCode,
+        item.qr_code, item.qrCode, item.equipment_code, item.equipmentCode, item.id,
+        item.item_json && item.item_json.code, item.payload && item.payload.code, item.item_data && item.item_data.code
+      ];
+      for (const value of candidates) {
+        const text = String(value || '').trim();
+        if (text) return text;
+      }
+      return '';
+    }
+
+    function getManagerShareSeed(item) {
+      const raw = [
+        item && (item.equipmentNo || item.equipment_no || item.vehicle_number || item.registration_no),
+        item && (item.equipmentName || item.equipment_name || item.title),
+        item && (item.createdAt || item.created_at || item.updatedAt || item.updated_at),
+        item && JSON.stringify(item && item.docs ? Object.keys(item.docs).sort() : [])
+      ].join('|');
+      return raw.replace(/\s+/g, '').slice(0, 180) || ('seed-' + Date.now());
+    }
+
+    function makeFallbackManagerShareCode() {
+      const block = () => Math.random().toString(36).replace(/[^a-z0-9]/gi, '').toUpperCase().slice(2, 8).padEnd(6, 'X');
+      return 'MSH-' + Date.now().toString(36).toUpperCase() + '-' + block();
+    }
+
+    function ensureManagerShareCodeForItem(item) {
+      if (!item) return '';
+      let code = getManagerShareCodeCandidate(item);
+      if (code) {
+        item.code = code;
+        item.publicShareCode = code;
+        item.managerShareCode = code;
+        return code;
+      }
+      const mapKey = 'SITEPASS_PUBLIC_SHARE_CODE_MAP_V1';
+      const seed = getManagerShareSeed(item);
+      try {
+        const map = JSON.parse(localStorage.getItem(mapKey) || '{}');
+        code = map[seed] || makeFallbackManagerShareCode();
+        map[seed] = code;
+        localStorage.setItem(mapKey, JSON.stringify(map));
+      } catch (e) {
+        code = makeFallbackManagerShareCode();
+      }
+      item.code = code;
+      item.publicShareCode = code;
+      item.managerShareCode = code;
+      return code;
+    }
+
     function cloneShareItemForServer(item, expireAt, sig) {
+      const code = ensureManagerShareCodeForItem(item);
       const copy = JSON.parse(JSON.stringify(item || {}));
+      copy.code = code;
+      copy.publicShareCode = code;
+      copy.managerShareCode = code;
       copy.managerExpireAt = new Date(Number(expireAt || getManagerExpireAt(item))).toISOString();
-      copy.managerShareToken = item?.managerShareToken || getOrCreateManagerShareToken(item?.code || '');
-      copy.managerShareSig = sig || getManagerLinkSignature(item?.code || '', Number(expireAt || getManagerExpireAt(item)));
+      copy.managerShareToken = item?.managerShareToken || getOrCreateManagerShareToken(code);
+      copy.managerShareSig = sig || getManagerLinkSignature(code, Number(expireAt || getManagerExpireAt(item)));
       copy.publicShareSavedAt = new Date().toISOString();
       return copy;
     }
@@ -78,11 +136,13 @@ function shareOneListItemEmail(code) {
       try {
         const nowIso = new Date().toISOString();
         const rows = safeItems.map(item => {
+          const code = ensureManagerShareCodeForItem(item);
           const expireAt = getManagerExpireAt(item);
-          const sig = getManagerLinkSignature(item.code || '', expireAt);
+          const sig = getManagerLinkSignature(code, expireAt);
           const shareItem = cloneShareItemForServer(item, expireAt, sig);
           return {
-            share_code: String(item.code || ''),
+            code: String(code || ''),
+            share_code: String(code || ''),
             share_sig: String(sig || ''),
             expires_at: new Date(expireAt).toISOString(),
             item_data: shareItem,
@@ -156,20 +216,22 @@ function shareOneListItemEmail(code) {
     }
 
     async function shareManagerItemsByChannel(items, channel) {
-      const requestedItems = (items || []).filter(Boolean);
+      const requestedItems = (items || []).filter(Boolean).map(item => { ensureManagerShareCodeForItem(item); return item; });
       if (!canUseQrShareItems(requestedItems, '담당자 QR·링크 보내기')) return;
-      const safeItems = refreshManagerExpiryForCodes(requestedItems.map(item => item.code));
+      const refreshedItems = refreshManagerExpiryForCodes(requestedItems.map(item => ensureManagerShareCodeForItem(item)));
+      const safeItems = (refreshedItems && refreshedItems.length ? refreshedItems : requestedItems).filter(Boolean).map(item => { ensureManagerShareCodeForItem(item); return item; });
       if (!safeItems.length) return;
 
       const saved = await saveManagerShareItemsToSupabase(safeItems);
       if (!saved.ok) {
-        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.345 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
+        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.346 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
         return;
       }
 
       const text = buildManagerShareText(safeItems);
       const first = safeItems[0];
-      const firstLink = makeManagerLink(first.code, getManagerExpireAt(first));
+      const firstCode = ensureManagerShareCodeForItem(first);
+      const firstLink = makeManagerLink(firstCode, getManagerExpireAt(first));
       if (channel === 'sms') {
         openSmsShare(text);
         return;
@@ -193,7 +255,7 @@ function shareOneListItemEmail(code) {
     }
 
 // ---- merged from app-register-share-payment-10.js ----
-// SitePass v23.7.345 - app-register-share-payment finer split (10/15)
+// SitePass v23.7.346 - app-register-share-payment finer split (10/15)
 function normalizePhoneForShare(phone) {
       const qrShare = getQrShareModule();
       if (qrShare.normalizePhoneForShare) return qrShare.normalizePhoneForShare(phone);
@@ -357,7 +419,7 @@ function normalizePhoneForShare(phone) {
     }
 
 // ---- merged from app-register-share-payment-11.js ----
-// SitePass v23.7.345 - app-register-share-payment finer split (11/15)
+// SitePass v23.7.346 - app-register-share-payment finer split (11/15)
 function renderDocExpiryStrip(doc) {
       if (!doc || !doc.expireDate) return '';
       const label = getExpiryPeriodLabel(doc);
@@ -484,7 +546,7 @@ function renderDocExpiryStrip(doc) {
     }
 
 // ---- merged from app-register-share-payment-12.js ----
-// SitePass v23.7.345 - app-register-share-payment finer split (12/15)
+// SitePass v23.7.346 - app-register-share-payment finer split (12/15)
 function renderManagerDownloadToolbar(item) {
       const recipientView = getRecipientViewModule();
       if (recipientView.renderDownloadToolbar) {

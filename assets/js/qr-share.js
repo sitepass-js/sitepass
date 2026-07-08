@@ -1,11 +1,11 @@
-// SitePass v23.7.345 - QR/1일 담당자 공유링크 공통 파일
+// SitePass v23.7.346 - QR/1일 담당자 공유링크 공통 파일
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
 
   const PUBLIC_SHARE_TABLE = 'sitepass_public_shares';
   const DAY_MS = 24 * 60 * 60 * 1000;
-  // v23.7.345: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
+  // v23.7.346: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
   const MANAGER_SHARE_DAYS = 1;
 
   function nowMs(){ return Date.now(); }
@@ -55,6 +55,34 @@
     return 'MST-' + nowMs().toString(36).toUpperCase() + '-' + randomCodeBlock(4) + '-' + randomCodeBlock(4) + '-' + randomCodeBlock(4);
   }
 
+  function getManagerShareCodeCandidate(item){
+    if (!item) return '';
+    const candidates = [
+      item.code, item.share_code, item.shareCode, item.publicShareCode, item.managerShareCode,
+      item.qr_code, item.qrCode, item.equipment_code, item.equipmentCode, item.id,
+      item.item_json && item.item_json.code, item.payload && item.payload.code, item.item_data && item.item_data.code
+    ];
+    for (const value of candidates) {
+      const text = String(value || '').trim();
+      if (text) return text;
+    }
+    return '';
+  }
+
+  function makeFallbackManagerShareCode(){
+    return 'MSH-' + nowMs().toString(36).toUpperCase() + '-' + randomCodeBlock(6);
+  }
+
+  function ensureManagerShareCodeForItem(item){
+    if (!item) return '';
+    let code = getManagerShareCodeCandidate(item);
+    if (!code) code = makeFallbackManagerShareCode();
+    item.code = code;
+    item.publicShareCode = code;
+    item.managerShareCode = code;
+    return code;
+  }
+
   function makeManagerLinkSignatureRaw(code, expireAt, token){
     const seed = String(code || '') + '|' + String(expireAt || '') + '|' + String(token || '');
     let hash = 2166136261;
@@ -73,7 +101,7 @@
     const baseUrl = getCleanShareBaseUrl();
     const exp = expireAt || getSevenDaysFromNowMs();
     const sig = typeof getSignature === 'function' ? getSignature(code, exp) : '';
-    // v23.7.345: 문자앱은 #hash 뒤 값을 잘라서 전달하는 경우가 있어 담당자 링크는 query 방식으로 발급합니다.
+    // v23.7.346: 문자앱은 #hash 뒤 값을 잘라서 전달하는 경우가 있어 담당자 링크는 query 방식으로 발급합니다.
     return baseUrl + '?manager=' + encodeURIComponent(code || '') + '&exp=' + encodeURIComponent(String(exp)) + '&sig=' + encodeURIComponent(sig || '');
   }
 
@@ -115,8 +143,20 @@
   }
 
   function cloneItemForServer(item, expireAt, sig, deps){
-    if (deps && typeof deps.cloneItem === 'function') return deps.cloneItem(item, expireAt, sig);
+    const code = ensureManagerShareCodeForItem(item);
+    if (deps && typeof deps.cloneItem === 'function') {
+      const cloned = deps.cloneItem(item, expireAt, sig);
+      if (cloned) {
+        cloned.code = code;
+        cloned.publicShareCode = code;
+        cloned.managerShareCode = code;
+      }
+      return cloned;
+    }
     const copy = JSON.parse(JSON.stringify(item || {}));
+    copy.code = code;
+    copy.publicShareCode = code;
+    copy.managerShareCode = code;
     copy.managerExpireAt = new Date(Number(expireAt || getSevenDaysFromNowMs())).toISOString();
     copy.managerShareSig = sig || '';
     copy.publicShareSavedAt = new Date().toISOString();
@@ -148,13 +188,14 @@
     try {
       const nowIso = new Date().toISOString();
       const rows = safeItems.map(item => {
+        const code = ensureManagerShareCodeForItem(item);
         const expireAt = (deps && typeof deps.getExpireAt === 'function') ? deps.getExpireAt(item) : getSevenDaysFromNowMs();
-        const sig = (deps && typeof deps.getSignature === 'function') ? deps.getSignature(item.code || '', expireAt) : '';
+        const sig = (deps && typeof deps.getSignature === 'function') ? deps.getSignature(code, expireAt) : '';
         const shareItem = cloneItemForServer(item, expireAt, sig, deps || {});
-        const label = (deps && typeof deps.getLabel === 'function') ? deps.getLabel(item) : String(item.equipmentName || item.code || 'SitePass 서류');
+        const label = (deps && typeof deps.getLabel === 'function') ? deps.getLabel(item) : String(item.equipmentName || code || 'SitePass 서류');
         return {
-          code: String(item.code || ''),
-          share_code: String(item.code || ''),
+          code: String(code || ''),
+          share_code: String(code || ''),
           share_sig: String(sig || ''),
           expires_at: new Date(expireAt).toISOString(),
           item_data: shareItem,

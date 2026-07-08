@@ -1,4 +1,4 @@
-// SitePass v23.7.345 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
+// SitePass v23.7.346 - 보관함/장비서류 목록/관리자 집계 삭제반영 보정 파일
 // 이 파일에는 장비/기사/인부 보관함 목록, 선택 공유, 삭제, 관리자 보관함 표시 기능을 둡니다.
 // QR 링크 생성 자체는 qr-share.js, 서버통신은 supabase-api.js를 계속 사용합니다.
 (function(){
@@ -124,7 +124,7 @@ function archiveCodeMatches(item, code) {
 function isArchiveDeletedItem(item) {
   if (!item || typeof item !== 'object') return false;
   if (isArchiveServerDeletedStatus(item)) return true;
-  // v23.7.345: 일반회원 보관함은 PC/휴대폰 모두 서버목록만 기준입니다.
+  // v23.7.346: 일반회원 보관함은 PC/휴대폰 모두 서버목록만 기준입니다.
   // PC localStorage의 과거 삭제코드로 서버에 살아있는 장비를 숨기면
   // PC에는 없고 휴대폰에는 보이는 불일치가 생깁니다.
   if (isArchiveMemberServerAuthoritativeMode()) return false;
@@ -191,7 +191,7 @@ async function markArchiveCodeDeletedOnServer(code) {
   const api = window.SitePassSupabaseApi;
   if (!api) return { skipped:true, error:'Supabase API 연결 없음' };
   try {
-    // v23.7.345: 기존 RPC 호출은 p_code와 code를 같이 보내 PostgREST 함수 매칭이 실패할 수 있었습니다.
+    // v23.7.346: 기존 RPC 호출은 p_code와 code를 같이 보내 PostgREST 함수 매칭이 실패할 수 있었습니다.
     // 이번 버전부터는 p_code 한 개만 보내고, SQL 쪽에 같은 이름의 삭제 RPC를 준비합니다.
     if (api.rpc) {
       const rpcNames = ['sitepass_archive_delete_equipment_item', 'sitepass_soft_delete_equipment_item', 'sitepass_delete_equipment_item'];
@@ -331,6 +331,10 @@ function getSelectedListItemsForShare() {
   return items;
 }
 
+function getArchiveShareCode(item) {
+  return String((item && (item.code || item.share_code || item.shareCode || item.publicShareCode || item.managerShareCode || item.qrCode || item.equipmentCode || item.id)) || '').trim();
+}
+
 function shareOneListItem(code) {
   shareOneListItemKakao(code);
 }
@@ -379,7 +383,7 @@ function buildManagerShareText(items) {
     const expireAt = getManagerExpireAt(item);
     return (safeItems.length > 1 ? (index + 1) + '. ' : '') + getShareItemLabel(item) + ' 서류\n' +
       '포함서류: ' + getIncludedGroupText(item) + '\n' +
-      '담당자 화면: ' + makeManagerLink(item.code, expireAt) + '\n' +
+      '담당자 화면: ' + makeManagerLink(getArchiveShareCode(item), expireAt) + '\n' +
       '유효기간: ' + getManagerExpireText(expireAt);
   }).join('\n\n');
   return heading + '\n' +
@@ -392,7 +396,7 @@ function renderManagerSharePreviewPanel(item) {
   if (!item) return '';
   const title = getShareItemLabel(item) + ' 서류';
   const expireAt = getManagerExpireAt(item);
-  const link = makeManagerLink(item.code || '', expireAt);
+  const link = makeManagerLink(getArchiveShareCode(item), expireAt);
   const previewText = '[SitePass] ' + title + '\n' +
     '현장 반입서류 확인 링크입니다.\n' +
     '장비명/번호: ' + getShareItemLabel(item) + '\n' +
@@ -405,10 +409,10 @@ function renderManagerSharePreviewPanel(item) {
     '<div class="small">카톡/문자/이메일과 QR을 받는 담당자는 첫 줄에서 바로 <b>' + escapeHtml(getShareItemLabel(item)) + '</b> 서류라는 것을 알 수 있습니다.</div>' +
     '<div class="share-copy-preview">' + escapeHtml(previewText) + '</div>' +
     '<div class="actions">' +
-      '<button type="button" class="okBtn" onclick="shareOneListItemKakao(\'' + escapeJs(item.code || '') + '\')">카톡으로 보내기</button>' +
-      '<button type="button" class="ghost" onclick="shareOneListItemSms(\'' + escapeJs(item.code || '') + '\')">문자로 보내기</button>' +
-      '<button type="button" class="primary" onclick="openManagerPublicView(\'' + escapeJs(item.code || '') + '\')">담당자 화면 보기</button>' +
-      '<button type="button" class="secondary" onclick="copyManagerCode(\'' + escapeJs(item.code || '') + '\')">링크 복사</button>' +
+      '<button type="button" class="okBtn" onclick="shareOneListItemKakao(\'' + escapeJs(getArchiveShareCode(item)) + '\')">카톡으로 보내기</button>' +
+      '<button type="button" class="ghost" onclick="shareOneListItemSms(\'' + escapeJs(getArchiveShareCode(item)) + '\')">문자로 보내기</button>' +
+      '<button type="button" class="primary" onclick="openManagerPublicView(\'' + escapeJs(getArchiveShareCode(item)) + '\')">담당자 화면 보기</button>' +
+      '<button type="button" class="secondary" onclick="copyManagerCode(\'' + escapeJs(getArchiveShareCode(item)) + '\')">링크 복사</button>' +
     '</div>' +
   '</div>';
 }
@@ -422,7 +426,7 @@ async function deleteItem(code) {
   const memberServerMode = isArchiveMemberServerAuthoritativeMode();
 
   if (memberServerMode) {
-    // v23.7.345: 일반회원은 서버 100% 기준입니다.
+    // v23.7.346: 일반회원은 서버 100% 기준입니다.
     // PC localStorage에서 먼저 숨기면 PC/휴대폰 목록이 달라지므로 서버 삭제 성공 전에는 화면에서 제거하지 않습니다.
     const serverResult = await markArchiveCodeDeletedOnServer(target);
     if (!serverResult || !serverResult.ok) {

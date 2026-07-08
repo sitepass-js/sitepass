@@ -1,6 +1,6 @@
-// SitePass v23.7.345 - speed optimized medium chunk (app-core-auth-speed 04/04)
+// SitePass v23.7.346 - speed optimized medium chunk (app-core-auth-speed 04/04)
 // ---- merged from app-core-auth-16.js ----
-// SitePass v23.7.345 - app-core-auth finer split (16/19)
+// SitePass v23.7.346 - app-core-auth finer split (16/19)
 function submitSitePassSignupTest() {
       if (!requireSignupTerms()) return;
       formatSitePassSignupJuminDisplay();
@@ -175,7 +175,7 @@ function submitSitePassSignupTest() {
     }
 
 // ---- merged from app-core-auth-17.js ----
-// SitePass v23.7.345 - app-core-auth finer split (17/19)
+// SitePass v23.7.346 - app-core-auth finer split (17/19)
 function renderAdminContactManager() {
       const contacts = getContacts();
       const waiting = contacts.filter(x => x.status !== '답변완료').length;
@@ -262,7 +262,7 @@ function renderAdminContactManager() {
 
     function showScreen(id, options) {
       if (sitePassCurrentScreenId === 'registerScreen' && id !== 'registerScreen') {
-        // v23.7.345: 등록완료 후 보관함으로 즉시 이동할 때는
+        // v23.7.346: 등록완료 후 보관함으로 즉시 이동할 때는
         // 나가기 확인/등록중 자동저장을 다시 실행하지 않습니다.
         // v317에서는 여기서 saveRegistrationDraftNow()가 다시 돌면서
         // 이미지/서류 임시저장 때문에 등록완료 화면 이동이 오래 멈출 수 있었습니다.
@@ -288,7 +288,7 @@ function renderAdminContactManager() {
       document.body.classList.remove('sitepass-booting');
       if (id === 'homeScreen') {
         updateHomeRegistrationButton();
-        // v23.7.345: 서버 100% 기준 전환.
+        // v23.7.346: 서버 100% 기준 전환.
         // 홈 진입 시 PC localStorage 자동 재업로드는 하지 않고, 서버의 내 보관함만 불러옵니다.
         if (typeof syncSupabaseMyEquipmentItems === 'function' && isMemberLoggedIn() && !isAdminLoggedIn()) {
           setTimeout(function(){ try { syncSupabaseMyEquipmentItems(true); } catch (e) {} }, 180);
@@ -382,7 +382,7 @@ function renderAdminContactManager() {
     }
 
 // ---- merged from app-core-auth-18.js ----
-// SitePass v23.7.345 - app-core-auth finer split (18/19)
+// SitePass v23.7.346 - app-core-auth finer split (18/19)
 function adminLogout() {
       removeSessionValue(ADMIN_SESSION_KEY);
       removeSessionValue(ADMIN_SESSION_KEY + '_role');
@@ -508,7 +508,7 @@ function adminLogout() {
     }
 
 // ---- merged from app-core-auth-19.js ----
-// SitePass v23.7.345 - app-core-auth finer split (19/19)
+// SitePass v23.7.346 - app-core-auth finer split (19/19)
 function setPersonAuthStatus(kind, text, mode) {
       const values = getPersonAuthValues(kind);
       const panel = values?.panel;
@@ -680,7 +680,7 @@ function setPersonAuthStatus(kind, text, mode) {
       values.panel.dataset.pendingVerifiedAt = meta.verifiedAt;
       setPersonAuthStatus(kind, '인부 동의/인증 완료 · 선택한 인부 서류첨부창을 바로 추가합니다.', 'verified');
       setWorkerAddButtonsEnabled(true);
-      // v23.7.345: 인부는 인증 완료 후 사용자가 보통/특수 추가 버튼을 다시 누르지 않도록
+      // v23.7.346: 인부는 인증 완료 후 사용자가 보통/특수 추가 버튼을 다시 누르지 않도록
       // 선택한 구분의 서류첨부창을 즉시 열어줍니다.
       try {
         addWorkerPerson(values.type || 'normal');
