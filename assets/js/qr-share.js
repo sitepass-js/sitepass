@@ -1,11 +1,11 @@
-// SitePass v23.7.341 - QR/1일 담당자 공유링크 공통 파일
+// SitePass v23.7.345 - QR/1일 담당자 공유링크 공통 파일
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
 
   const PUBLIC_SHARE_TABLE = 'sitepass_public_shares';
   const DAY_MS = 24 * 60 * 60 * 1000;
-  // v23.7.341: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
+  // v23.7.345: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
   const MANAGER_SHARE_DAYS = 1;
 
   function nowMs(){ return Date.now(); }
@@ -65,29 +65,47 @@
     return Math.abs(hash >>> 0).toString(36).toUpperCase().padStart(8, '0').slice(-8);
   }
 
+  function getCleanShareBaseUrl(){
+    return window.location.origin + window.location.pathname;
+  }
+
   function makeManagerLink(code, expireAt, getSignature){
-    const baseUrl = window.location.href.split('#')[0];
+    const baseUrl = getCleanShareBaseUrl();
     const exp = expireAt || getSevenDaysFromNowMs();
     const sig = typeof getSignature === 'function' ? getSignature(code, exp) : '';
-    return baseUrl + '#manager=' + encodeURIComponent(code || '') + '&exp=' + encodeURIComponent(String(exp)) + '&sig=' + encodeURIComponent(sig || '');
+    // v23.7.345: 문자앱은 #hash 뒤 값을 잘라서 전달하는 경우가 있어 담당자 링크는 query 방식으로 발급합니다.
+    return baseUrl + '?manager=' + encodeURIComponent(code || '') + '&exp=' + encodeURIComponent(String(exp)) + '&sig=' + encodeURIComponent(sig || '');
   }
 
   function parseManagerHash(hash){
-    const value = String(hash || window.location.hash || '');
-    if (!value.startsWith('#manager=')) return { code:'', exp:undefined, sig:'' };
-    const raw = value.replace('#manager=', '');
-    const parts = raw.split('&');
-    const code = decodeURIComponent(parts.shift() || '');
-    let exp;
-    let sig = '';
-    parts.forEach(part => {
-      const pair = part.split('=');
-      const key = decodeURIComponent(pair[0] || '');
-      const val = decodeURIComponent(pair.slice(1).join('=') || '');
-      if (key === 'exp') exp = Number(val);
-      if (key === 'sig') sig = val;
-    });
-    return { code, exp, sig };
+    const supplied = String(hash || '');
+    let value = supplied || window.location.hash || window.location.search || '';
+    if (value.includes('?manager=')) value = value.slice(value.indexOf('?manager='));
+    if (value.includes('&manager=') && !value.startsWith('?manager=')) value = '?' + value.slice(value.indexOf('&manager=') + 1);
+    if (value.startsWith('#manager=')) {
+      const raw = value.replace('#manager=', '');
+      const parts = raw.split('&');
+      const code = decodeURIComponent(parts.shift() || '');
+      let exp;
+      let sig = '';
+      parts.forEach(part => {
+        const pair = part.split('=');
+        const key = decodeURIComponent(pair[0] || '');
+        const val = decodeURIComponent(pair.slice(1).join('=') || '');
+        if (key === 'exp') exp = Number(val);
+        if (key === 'sig') sig = val;
+      });
+      return { code, exp, sig };
+    }
+    if (value.startsWith('?') || value.includes('manager=')) {
+      const params = new URLSearchParams(value.startsWith('?') ? value.slice(1) : value);
+      return {
+        code: params.get('manager') || params.get('m') || '',
+        exp: params.get('exp') ? Number(params.get('exp')) : undefined,
+        sig: params.get('sig') || ''
+      };
+    }
+    return { code:'', exp:undefined, sig:'' };
   }
 
   function getClient(deps){

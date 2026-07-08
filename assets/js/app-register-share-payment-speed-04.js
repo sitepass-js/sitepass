@@ -1,6 +1,6 @@
-// SitePass v23.7.341 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
+// SitePass v23.7.345 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
 // ---- merged from app-register-share-payment-13.js ----
-// SitePass v23.7.341 - app-register-share-payment finer split (13/15)
+// SitePass v23.7.345 - app-register-share-payment finer split (13/15)
 function cssEscapeValue(value) {
       if (window.CSS && CSS.escape) return CSS.escape(String(value || ''));
       return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -78,30 +78,37 @@ function cssEscapeValue(value) {
     function makeManagerLink(code, expireAt) {
       const qrShare = getQrShareModule();
       if (qrShare.makeManagerLink) return qrShare.makeManagerLink(code, expireAt, getManagerLinkSignature);
-      const baseUrl = window.location.href.split('#')[0];
+      const baseUrl = window.location.origin + window.location.pathname;
       const exp = expireAt || getSevenDaysFromNowMs();
       const sig = getManagerLinkSignature(code, exp);
-      return baseUrl + '#manager=' + encodeURIComponent(code || '') + '&exp=' + encodeURIComponent(String(exp)) + '&sig=' + encodeURIComponent(sig);
+      return baseUrl + '?manager=' + encodeURIComponent(code || '') + '&exp=' + encodeURIComponent(String(exp)) + '&sig=' + encodeURIComponent(sig);
     }
 
     function parseManagerHash(hash) {
       const qrShare = getQrShareModule();
       if (qrShare.parseManagerHash) return qrShare.parseManagerHash(hash);
-      const value = String(hash || window.location.hash || '');
-      if (!value.startsWith('#manager=')) return { code:'', exp:undefined, sig:'' };
-      const raw = value.replace('#manager=', '');
-      const parts = raw.split('&');
-      const code = decodeURIComponent(parts.shift() || '');
-      let exp;
-      let sig = '';
-      parts.forEach(part => {
-        const pair = part.split('=');
-        const key = decodeURIComponent(pair[0] || '');
-        const val = decodeURIComponent(pair.slice(1).join('=') || '');
-        if (key === 'exp') exp = Number(val);
-        if (key === 'sig') sig = val;
-      });
-      return { code, exp, sig };
+      let value = String(hash || window.location.hash || window.location.search || '');
+      if (value.includes('?manager=')) value = value.slice(value.indexOf('?manager='));
+      if (value.startsWith('#manager=')) {
+        const raw = value.replace('#manager=', '');
+        const parts = raw.split('&');
+        const code = decodeURIComponent(parts.shift() || '');
+        let exp;
+        let sig = '';
+        parts.forEach(part => {
+          const pair = part.split('=');
+          const key = decodeURIComponent(pair[0] || '');
+          const val = decodeURIComponent(pair.slice(1).join('=') || '');
+          if (key === 'exp') exp = Number(val);
+          if (key === 'sig') sig = val;
+        });
+        return { code, exp, sig };
+      }
+      if (value.startsWith('?') || value.includes('manager=')) {
+        const params = new URLSearchParams(value.startsWith('?') ? value.slice(1) : value);
+        return { code: params.get('manager') || params.get('m') || '', exp: params.get('exp') ? Number(params.get('exp')) : undefined, sig: params.get('sig') || '' };
+      }
+      return { code:'', exp:undefined, sig:'' };
     }
 
     function refreshManagerShare(code) {
@@ -288,7 +295,7 @@ function cssEscapeValue(value) {
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (parsed && parsed.item) {
-          // v23.7.341: 테스트 기간에는 결제대기 단계가 없어야 합니다.
+          // v23.7.345: 테스트 기간에는 결제대기 단계가 없어야 합니다.
           // 이전 버전에서 남은 결제대기 자료가 계속 안내창을 반복시키면 버리고 새 등록 흐름을 정상화합니다.
           if (window.SITEPASS_TEST_NO_PAYMENT_MODE && !sitePassRegistrationCompletionBusy) {
             try { sessionStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
@@ -317,9 +324,9 @@ function cssEscapeValue(value) {
     }
 
 // ---- merged from app-register-share-payment-14.js ----
-// SitePass v23.7.341 - app-register-share-payment finer split (14/15)
+// SitePass v23.7.345 - app-register-share-payment finer split (14/15)
 function openPendingRegistrationPaymentScreen(pending) {
-      // v23.7.341: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
+      // v23.7.345: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
       if (pending && pending.item) pendingRegistrationItemMemory = pending;
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE && pending && pending.item) {
         if (sitePassRegistrationCompletionBusy) return;
@@ -388,7 +395,7 @@ function openPendingRegistrationPaymentScreen(pending) {
     }
 
 // ---- merged from app-register-share-payment-15.js ----
-// SitePass v23.7.341 - app-register-share-payment finer split (15/15)
+// SitePass v23.7.345 - app-register-share-payment finer split (15/15)
 function normalizePendingRegistrationTier(pending) {
       if (!pending || !pending.item) return pending;
       const member = getEquipmentRegistrationOwnerMember ? getEquipmentRegistrationOwnerMember() : (getCurrentMemberTest() || null);

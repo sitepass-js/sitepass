@@ -1,6 +1,6 @@
-// SitePass v23.7.341 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
+// SitePass v23.7.345 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
 // ---- merged from app-register-share-payment-09.js ----
-// SitePass v23.7.341 - app-register-share-payment finer split (09/15)
+// SitePass v23.7.345 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
       const archive = getArchiveModule();
       if (archive.shareOneListItemEmail) return archive.shareOneListItemEmail(code);
@@ -163,7 +163,7 @@ function shareOneListItemEmail(code) {
 
       const saved = await saveManagerShareItemsToSupabase(safeItems);
       if (!saved.ok) {
-        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.341 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
+        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.345 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
         return;
       }
 
@@ -193,7 +193,7 @@ function shareOneListItemEmail(code) {
     }
 
 // ---- merged from app-register-share-payment-10.js ----
-// SitePass v23.7.341 - app-register-share-payment finer split (10/15)
+// SitePass v23.7.345 - app-register-share-payment finer split (10/15)
 function normalizePhoneForShare(phone) {
       const qrShare = getQrShareModule();
       if (qrShare.normalizePhoneForShare) return qrShare.normalizePhoneForShare(phone);
@@ -206,7 +206,7 @@ function normalizePhoneForShare(phone) {
       const phone = normalizePhoneForShare(phoneRaw);
       if (!phone) { alert('휴대폰번호를 입력해야 문자로 보낼 수 있습니다.'); return; }
       const body = encodeURIComponent(text);
-      window.location.href = 'sms:' + encodeURIComponent(phone) + '?&body=' + body;
+      window.location.href = 'sms:' + encodeURIComponent(phone) + '?body=' + body;
     }
 
     function openSmsShareToPhones(phones, text) {
@@ -216,7 +216,7 @@ function normalizePhoneForShare(phone) {
         return;
       }
       const body = encodeURIComponent(text);
-      window.location.href = 'sms:' + encodeURIComponent(targets.join(',')) + '?&body=' + body;
+      window.location.href = 'sms:' + encodeURIComponent(targets.join(',')) + '?body=' + body;
     }
 
     function buildAdminOwnerAlertText(items) {
@@ -357,7 +357,7 @@ function normalizePhoneForShare(phone) {
     }
 
 // ---- merged from app-register-share-payment-11.js ----
-// SitePass v23.7.341 - app-register-share-payment finer split (11/15)
+// SitePass v23.7.345 - app-register-share-payment finer split (11/15)
 function renderDocExpiryStrip(doc) {
       if (!doc || !doc.expireDate) return '';
       const label = getExpiryPeriodLabel(doc);
@@ -410,8 +410,8 @@ function renderDocExpiryStrip(doc) {
 
     function openCurrentQrLink() {
       if (!currentDetailLink) return;
-      if (currentDetailLink.includes('#manager=')) {
-        const parsed = parseManagerHash('#' + currentDetailLink.split('#')[1]);
+      if (currentDetailLink.includes('#manager=') || currentDetailLink.includes('?manager=') || currentDetailLink.includes('&manager=')) {
+        const parsed = parseManagerHash(currentDetailLink.includes('#manager=') ? '#' + currentDetailLink.split('#')[1] : currentDetailLink);
         if (parsed.code) openManagerPublicView(parsed.code, parsed.exp, parsed.sig);
         return;
       }
@@ -466,7 +466,7 @@ function renderDocExpiryStrip(doc) {
         return;
       }
       currentDetailLink = makeManagerLink(item.code, expireAt || getManagerExpireAt(item));
-      const docs = getDisplayDocs(item);
+      const docs = getAttachedDisplayDocs(item);
       const docHtml = docs.map((doc, index) => renderManagerDocLine(doc, item.code, index)).join('');
       const recipientView = getRecipientViewModule();
       const remainingDays = recipientView.getManagerRemainingDays ? recipientView.getManagerRemainingDays(expireAt || getManagerExpireAt(item)) : Math.ceil(((expireAt || getManagerExpireAt(item)) - Date.now()) / (1000 * 60 * 60 * 24));
@@ -484,19 +484,19 @@ function renderDocExpiryStrip(doc) {
     }
 
 // ---- merged from app-register-share-payment-12.js ----
-// SitePass v23.7.341 - app-register-share-payment finer split (12/15)
+// SitePass v23.7.345 - app-register-share-payment finer split (12/15)
 function renderManagerDownloadToolbar(item) {
       const recipientView = getRecipientViewModule();
       if (recipientView.renderDownloadToolbar) {
         return recipientView.renderDownloadToolbar(item, {
           mode:'manager',
           showSelection:true,
-          deps:{ getDisplayDocs, getDocPagesFromDoc, expandPrintablePages, escapeJs }
+          deps:{ getDisplayDocs:getAttachedDisplayDocs, getDocPagesFromDoc, expandPrintablePages, escapeJs }
         });
       }
       const code = item.code || '';
-      const printableCount = getDisplayDocs(item).reduce((sum, doc) => sum + expandPrintablePages([doc]).length, 0);
-      const attachedPageCount = getDisplayDocs(item).reduce((sum, doc) => sum + getDocPagesFromDoc(doc).length, 0);
+      const printableCount = getAttachedDisplayDocs(item).reduce((sum, doc) => sum + expandPrintablePages([doc]).length, 0);
+      const attachedPageCount = getAttachedDisplayDocs(item).reduce((sum, doc) => sum + getDocPagesFromDoc(doc).length, 0);
       return '<div class="print-toolbar download-toolbar">' +
         '<div class="print-help full">필요한 서류를 체크하고 상단 버튼으로 다운로드/프린트하세요. 첨부 ' + attachedPageCount + '장 / 바로 처리 가능 ' + printableCount + '장</div>' +
         '<button type="button" class="primary" onclick="downloadAllDocsBundle(\'' + escapeJs(code) + '\')">전체 다운로드</button>' +
@@ -540,7 +540,7 @@ function renderManagerDownloadToolbar(item) {
     function downloadAllDocsBundle(code) {
       const item = getItemByCode(code);
       if (!item) return;
-      downloadDocsBundle(item, getDisplayDocs(item), '전체서류');
+      downloadDocsBundle(item, getAttachedDisplayDocs(item), '전체서류');
     }
 
     function downloadSelectedDocsBundle(code) {
@@ -609,7 +609,7 @@ function renderManagerDownloadToolbar(item) {
       }
       const paused = isQrPaused(item);
       const recipientView = getRecipientViewModule();
-      const publicDocs = getDisplayDocs(item);
+      const publicDocs = getAttachedDisplayDocs(item);
       const docHtml = publicDocs.map((doc, index) => renderPublicDocLine(doc, item.code, index)).join('');
       document.getElementById('publicBox').innerHTML =
         '<div class="manager-received-hero"><div class="eyebrow">QR 서류 확인 화면</div><h3>' + escapeHtml(getShareItemLabel(item)) + ' 서류</h3><p>QR을 찍은 현장 담당자가 보는 화면입니다. 장비명과 장비번호를 먼저 보여줍니다.</p></div>' +
@@ -633,12 +633,12 @@ function renderManagerDownloadToolbar(item) {
         return recipientView.renderDownloadToolbar(item, {
           mode:'public',
           showSelection: !!showSelection,
-          deps:{ getDisplayDocs, getDocPagesFromDoc, expandPrintablePages, escapeJs }
+          deps:{ getDisplayDocs:getAttachedDisplayDocs, getDocPagesFromDoc, expandPrintablePages, escapeJs }
         });
       }
       const code = item.code || '';
-      const printableCount = getDisplayDocs(item).reduce((sum, doc) => sum + expandPrintablePages([doc]).length, 0);
-      const attachedPageCount = getDisplayDocs(item).reduce((sum, doc) => sum + getDocPagesFromDoc(doc).length, 0);
+      const printableCount = getAttachedDisplayDocs(item).reduce((sum, doc) => sum + expandPrintablePages([doc]).length, 0);
+      const attachedPageCount = getAttachedDisplayDocs(item).reduce((sum, doc) => sum + getDocPagesFromDoc(doc).length, 0);
       return '<div class="print-toolbar download-toolbar">' +
         '<div class="print-help full">필요한 서류를 체크하고 상단 버튼으로 다운로드/프린트하세요. 첨부 ' + attachedPageCount + '장 / 바로 처리 가능 ' + printableCount + '장</div>' +
         '<button type="button" class="okBtn" onclick="downloadAllDocsBundle(\'' + escapeJs(code) + '\')">전체 서류 다운로드</button>' +
@@ -675,7 +675,7 @@ function renderManagerDownloadToolbar(item) {
 
     function openPublicDocPreview(code, key) {
       const item = getItemByCode(code);
-      const doc = item ? getDisplayDocs(item).find(d => d.key === key) : null;
+      const doc = item ? getAttachedDisplayDocs(item).find(d => d.key === key) : null;
       if (!doc || !doc.fileName) { alert('미첨부 서류입니다.'); return; }
       const pages = getDocPagesFromDoc(doc);
       const firstPreview = pages.find(page => page.previewDataUrl);
@@ -687,7 +687,7 @@ function renderManagerDownloadToolbar(item) {
     function printAllDocs(code) {
       const item = getItemByCode(code);
       if (!item) { alert('인쇄할 코드를 찾을 수 없습니다.'); return; }
-      const docs = getDocsByKeys(item);
+      const docs = getAttachedDisplayDocs(item);
       printDocs(item, docs);
     }
 
