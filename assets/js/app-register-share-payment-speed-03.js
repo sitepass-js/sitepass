@@ -1,6 +1,6 @@
-// SitePass v23.7.340 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
+// SitePass v23.7.341 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
 // ---- merged from app-register-share-payment-09.js ----
-// SitePass v23.7.340 - app-register-share-payment finer split (09/15)
+// SitePass v23.7.341 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
       const archive = getArchiveModule();
       if (archive.shareOneListItemEmail) return archive.shareOneListItemEmail(code);
@@ -86,6 +86,7 @@ function shareOneListItemEmail(code) {
             share_sig: String(sig || ''),
             expires_at: new Date(expireAt).toISOString(),
             item_data: shareItem,
+            payload: shareItem,
             share_title: getShareItemLabel(item),
             equipment_no: String(item.equipmentNo || ''),
             equipment_name: String(item.equipmentName || ''),
@@ -162,7 +163,7 @@ function shareOneListItemEmail(code) {
 
       const saved = await saveManagerShareItemsToSupabase(safeItems);
       if (!saved.ok) {
-        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.340 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
+        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.341 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
         return;
       }
 
@@ -192,7 +193,7 @@ function shareOneListItemEmail(code) {
     }
 
 // ---- merged from app-register-share-payment-10.js ----
-// SitePass v23.7.340 - app-register-share-payment finer split (10/15)
+// SitePass v23.7.341 - app-register-share-payment finer split (10/15)
 function normalizePhoneForShare(phone) {
       const qrShare = getQrShareModule();
       if (qrShare.normalizePhoneForShare) return qrShare.normalizePhoneForShare(phone);
@@ -356,7 +357,7 @@ function normalizePhoneForShare(phone) {
     }
 
 // ---- merged from app-register-share-payment-11.js ----
-// SitePass v23.7.340 - app-register-share-payment finer split (11/15)
+// SitePass v23.7.341 - app-register-share-payment finer split (11/15)
 function renderDocExpiryStrip(doc) {
       if (!doc || !doc.expireDate) return '';
       const label = getExpiryPeriodLabel(doc);
@@ -483,7 +484,7 @@ function renderDocExpiryStrip(doc) {
     }
 
 // ---- merged from app-register-share-payment-12.js ----
-// SitePass v23.7.340 - app-register-share-payment finer split (12/15)
+// SitePass v23.7.341 - app-register-share-payment finer split (12/15)
 function renderManagerDownloadToolbar(item) {
       const recipientView = getRecipientViewModule();
       if (recipientView.renderDownloadToolbar) {
