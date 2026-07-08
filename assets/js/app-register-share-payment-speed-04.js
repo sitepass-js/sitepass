@@ -1,6 +1,6 @@
-// SitePass v23.7.347 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
+// SitePass v23.7.348 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
 // ---- merged from app-register-share-payment-13.js ----
-// SitePass v23.7.347 - app-register-share-payment finer split (13/15)
+// SitePass v23.7.348 - app-register-share-payment finer split (13/15)
 function cssEscapeValue(value) {
       if (window.CSS && CSS.escape) return CSS.escape(String(value || ''));
       return String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -49,7 +49,7 @@ function cssEscapeValue(value) {
         }
         return items[idx].managerShareToken || '';
       }
-      // v23.7.347: 서버기준 보관함/공유 중 일부 항목은 로컬 getItems()에 없을 수 있습니다.
+      // v23.7.348: 서버기준 보관함/공유 중 일부 항목은 로컬 getItems()에 없을 수 있습니다.
       // 이 경우에도 문자/카톡 공유링크 서명이 비지 않도록 코드별 토큰을 별도 보관합니다.
       const tokenKey = 'SITEPASS_MANAGER_SHARE_TOKEN_MAP_V1';
       try {
@@ -95,7 +95,7 @@ function cssEscapeValue(value) {
       const qrShare = getQrShareModule();
       if (qrShare.makeManagerLink) return qrShare.makeManagerLink(code, expireAt, getManagerLinkSignature);
       const baseUrl = window.location.origin + window.location.pathname;
-      return baseUrl + '?manager=' + encodeURIComponent(code || '');
+      return baseUrl + '#manager=' + encodeURIComponent(code || '');
     }
 
     function parseManagerHash(hash) {
@@ -309,7 +309,7 @@ function cssEscapeValue(value) {
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (parsed && parsed.item) {
-          // v23.7.347: 테스트 기간에는 결제대기 단계가 없어야 합니다.
+          // v23.7.348: 테스트 기간에는 결제대기 단계가 없어야 합니다.
           // 이전 버전에서 남은 결제대기 자료가 계속 안내창을 반복시키면 버리고 새 등록 흐름을 정상화합니다.
           if (window.SITEPASS_TEST_NO_PAYMENT_MODE && !sitePassRegistrationCompletionBusy) {
             try { sessionStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
@@ -338,9 +338,9 @@ function cssEscapeValue(value) {
     }
 
 // ---- merged from app-register-share-payment-14.js ----
-// SitePass v23.7.347 - app-register-share-payment finer split (14/15)
+// SitePass v23.7.348 - app-register-share-payment finer split (14/15)
 function openPendingRegistrationPaymentScreen(pending) {
-      // v23.7.347: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
+      // v23.7.348: 테스트 기간에는 결제화면을 열지 않고 등록완료 처리합니다.
       if (pending && pending.item) pendingRegistrationItemMemory = pending;
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE && pending && pending.item) {
         if (sitePassRegistrationCompletionBusy) return;
@@ -409,7 +409,7 @@ function openPendingRegistrationPaymentScreen(pending) {
     }
 
 // ---- merged from app-register-share-payment-15.js ----
-// SitePass v23.7.347 - app-register-share-payment finer split (15/15)
+// SitePass v23.7.348 - app-register-share-payment finer split (15/15)
 function normalizePendingRegistrationTier(pending) {
       if (!pending || !pending.item) return pending;
       const member = getEquipmentRegistrationOwnerMember ? getEquipmentRegistrationOwnerMember() : (getCurrentMemberTest() || null);
