@@ -1,11 +1,11 @@
-// SitePass v23.7.346 - QR/1일 담당자 공유링크 공통 파일
+// SitePass v23.7.347 - QR/1일 담당자 공유링크 공통 파일
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
 
   const PUBLIC_SHARE_TABLE = 'sitepass_public_shares';
   const DAY_MS = 24 * 60 * 60 * 1000;
-  // v23.7.346: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
+  // v23.7.347: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
   const MANAGER_SHARE_DAYS = 1;
 
   function nowMs(){ return Date.now(); }
@@ -99,10 +99,10 @@
 
   function makeManagerLink(code, expireAt, getSignature){
     const baseUrl = getCleanShareBaseUrl();
-    const exp = expireAt || getSevenDaysFromNowMs();
-    const sig = typeof getSignature === 'function' ? getSignature(code, exp) : '';
-    // v23.7.346: 문자앱은 #hash 뒤 값을 잘라서 전달하는 경우가 있어 담당자 링크는 query 방식으로 발급합니다.
-    return baseUrl + '?manager=' + encodeURIComponent(code || '') + '&exp=' + encodeURIComponent(String(exp)) + '&sig=' + encodeURIComponent(sig || '');
+    // v23.7.347: 문자앱/카톡 미리보기에서 &exp, &sig 뒤가 잘리는 경우가 있어
+    // 담당자 링크는 단일 query 파라미터만 노출합니다.
+    // 만료일과 검증은 Supabase sitepass_public_shares의 expires_at 기준으로 서버에서 처리합니다.
+    return baseUrl + '?manager=' + encodeURIComponent(code || '');
   }
 
   function parseManagerHash(hash){
@@ -226,8 +226,8 @@
 
   async function loadManagerShareItemFromSupabase(code, sig, deps){
     const client = getClient(deps || {});
-    if (!client || typeof client.from !== 'function' || !code || !sig) {
-      return { ok:false, message:'Supabase 연결 또는 링크 서명이 없습니다.' };
+    if (!client || typeof client.from !== 'function' || !code) {
+      return { ok:false, message:'Supabase 연결 또는 링크 코드가 없습니다.' };
     }
     try {
       if (typeof client.rpc === 'function') {
@@ -256,13 +256,12 @@
           return { ok:false, message:rpc.error.message || 'Supabase 공유링크 RPC 조회 오류' };
         }
       }
-      const { data, error } = await client
+      let query = client
         .from(PUBLIC_SHARE_TABLE)
         .select('share_code, share_sig, expires_at, item_data')
-        .eq('share_code', String(code || ''))
-        .eq('share_sig', String(sig || ''))
-        .limit(1)
-        .maybeSingle();
+        .eq('share_code', String(code || ''));
+      if (sig) query = query.eq('share_sig', String(sig || ''));
+      const { data, error } = await query.limit(1).maybeSingle();
       if (error) return { ok:false, message:error.message || 'Supabase 조회 오류' };
       if (!data) return { ok:false, notFound:true, message:'공유 링크를 찾을 수 없습니다.' };
       const expiresAt = data.expires_at ? new Date(data.expires_at).getTime() : 0;

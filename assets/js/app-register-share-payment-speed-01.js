@@ -1,7 +1,7 @@
-// SitePass v23.7.346 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
+// SitePass v23.7.347 - speed optimized medium chunk (app-register-share-payment-speed 01/04)
 // ---- merged from app-register-share-payment-01.js ----
-// SitePass v23.7.346 - app-register-share-payment finer split (01/15)
-// SitePass v23.7.346 - app.bundle.js remaining split (03 register/share/payment)
+// SitePass v23.7.347 - app-register-share-payment finer split (01/15)
+// SitePass v23.7.347 - app.bundle.js remaining split (03 register/share/payment)
 
 
     function getDisplayDocs(item) {
@@ -18,7 +18,7 @@
       return staticDocs.concat(dynamicDocs);
     }
 
-    // v23.7.346: 수신자 QR/1일 링크 화면은 회원이 실제 첨부한 서류만 보여줍니다.
+    // v23.7.347: 수신자 QR/1일 링크 화면은 회원이 실제 첨부한 서류만 보여줍니다.
     // 등록/수정 화면에서는 빈 필수서류도 보여야 하므로 getDisplayDocs는 그대로 두고,
     // 외부 담당자 화면/다운로드/인쇄에서만 이 필터를 사용합니다.
     function isPlaceholderAttachmentValue(value) {
@@ -37,7 +37,7 @@
 
     function hasRealPageAttachment(page) {
       if (!page) return false;
-      // v23.7.346: 수신자 화면에서는 fileName/status만 남은 예전 껍데기 자료를 첨부로 보지 않습니다.
+      // v23.7.347: 수신자 화면에서는 fileName/status만 남은 예전 껍데기 자료를 첨부로 보지 않습니다.
       // 실제 데이터 URL 또는 Supabase Storage 경로/URL이 있어야 표시합니다.
       return hasUsableAttachmentUrl(page);
     }
@@ -248,7 +248,7 @@
     }
 
     function confirmLeaveRegistrationIfNeeded(targetScreenId) {
-      // v23.7.346: 사진/파일 첨부 후 등록완료 전에 홈/보관함/뒤로가기 등으로 나가면
+      // v23.7.347: 사진/파일 첨부 후 등록완료 전에 홈/보관함/뒤로가기 등으로 나가면
       // 브라우저 저장공간 제한 때문에 기사·인부 첨부자료가 복구되지 않을 수 있어 명확히 막습니다.
       if (sitePassRegistrationCompletionBusy) return true;
       if (!hasActiveRegistrationAttachments()) return true;
@@ -335,7 +335,7 @@
     }
 
 // ---- merged from app-register-share-payment-02.js ----
-// SitePass v23.7.346 - app-register-share-payment finer split (02/15)
+// SitePass v23.7.347 - app-register-share-payment finer split (02/15)
 function promptRegistrationDraftIfNeeded(reason) {
       if (sitePassRegistrationCompletionBusy) return false;
       if (registrationDraftPromptOpen) return false;
@@ -489,7 +489,7 @@ function promptRegistrationDraftIfNeeded(reason) {
     }
 
 // ---- merged from app-register-share-payment-03.js ----
-// SitePass v23.7.346 - app-register-share-payment finer split (03/15)
+// SitePass v23.7.347 - app-register-share-payment finer split (03/15)
 function fillDocsForEdit(item) {
       const docs = item.docs || {};
       Object.values(docs).forEach(doc => {
@@ -779,7 +779,7 @@ function fillDocsForEdit(item) {
     }
 
 // ---- merged from app-register-share-payment-04.js ----
-// SitePass v23.7.346 - app-register-share-payment finer split (04/15)
+// SitePass v23.7.347 - app-register-share-payment finer split (04/15)
 function requirePaymentOwnerVerification(actionLabel) {
       const member = getCurrentMemberTest() || {};
       const label = actionLabel || '결제';
@@ -991,7 +991,7 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
             createdAt: nowIso
           };
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
-        // v23.7.346: 테스트 등록완료는 Supabase/전체 보관함 렌더링/결제대기 처리를 기다리지 않고
+        // v23.7.347: 테스트 등록완료는 Supabase/전체 보관함 렌더링/결제대기 처리를 기다리지 않고
         // 현재 등록 1건을 즉시 QR/보관함 카드로 표시합니다.
         // 이전 v317~v320에서는 completePendingRegistrationPayment() 안쪽에서 남은 처리 때문에
         // 등록완료 버튼 이후 대기가 길어질 수 있었습니다.
