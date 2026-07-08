@@ -28,15 +28,15 @@
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
 <link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
 <link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.350" />
-<!-- v23.7.350: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.351" />
+<!-- v23.7.351: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.350 split complete from v23.7.292 -->
+  <!-- SitePass deploy-check: v23.7.351 split complete from v23.7.292 -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.350" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.351" />
 </head>
 <body class="sitepass-booting">
   <main class="app">
@@ -431,7 +431,7 @@
         </div>
         <div id="selectedPlanNote" class="notice blue-note"></div>
         <div class="security-step-box">
-          결제는 카드 명의자 또는 휴대폰 명의자 본인확인 후 진행합니다. 현재 테스트 결제 본인확인 인증번호는 <b>123456</b>이며, 계좌이체는 별도 확인번호 <b>1234</b>로 임시 처리합니다.
+          결제는 카드 명의자 또는 휴대폰 명의자 본인확인 후 진행합니다. 결제 본인확인은 정식 결제대행사와 NICE/KCB/PASS 본인확인 연동 후 실제 인증으로 처리합니다. 현재 계좌이체 확인번호는 베타용 별도 확인값으로만 사용합니다.
         </div>
         <div class="actions">
           <button class="secondary" onclick="showScreen('homeScreen')">처음 화면</button>
@@ -840,7 +840,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
               <input id="sitepassSignupName" type="text" placeholder="예: 홍길동 / 제이에스건설" autocomplete="name" oninput="resetSitePassSignupPhoneAuth()"  aria-label="예: 홍길동 / 제이에스건설" title="예: 홍길동 / 제이에스건설" name="sitepassSignupName" />
             </div>
             <div class="field">
-              <label for="sitepassSignupJuminMasked">주민번호</label>
+              <label for="sitepassSignupJuminMasked">생년월일</label>
               <input id="sitepassSignupJuminMasked" type="text" placeholder="예: 840507-1" maxlength="8" inputmode="numeric" autocomplete="off" oninput="limitSitePassSignupJuminInput()" onblur="formatSitePassSignupJuminDisplay()"  aria-label="예: 840507-1" title="예: 840507-1" name="sitepassSignupJuminMasked" />
             </div>
             <div class="field">
@@ -861,8 +861,8 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
             </div>
             <div class="verify-row">
               <div class="field">
-                <label>휴대폰 본인확인</label>
-                <div id="sitepassSignupVerifyStatus" class="auth-mini-note">이름, 주민번호, 휴대폰번호, 통신사를 입력한 뒤 인증요청을 눌러주세요. 주민번호는 840507-1까지만 입력하면 840507-1******로 표시됩니다. 현재 임시 인증번호는 123456입니다.</div>
+                <label>휴대폰 인증</label>
+                <div id="sitepassSignupVerifyStatus" class="auth-mini-note">이름, 생년월일, 휴대폰번호, 통신사를 입력한 뒤 인증요청을 눌러주세요. 생년월일은 840507-1처럼 앞 6자리와 성별확인 1자리까지만 입력하면 840507-1******로 표시됩니다. 현재 인증번호는 네이버 SENS 문자로 발송됩니다.</div>
               </div>
               <button type="button" id="sitepassSignupRequestButton" class="ghost" onclick="sendSitePassSignupPhoneCodeTest()">인증요청</button>
             </div>
@@ -896,12 +896,12 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
             <button class="primary full" onclick="submitSitePassSignupTest()">회원가입완료</button>
           </div>
           <div class="notice blue-note">
-            현재 베타 화면에서는 123456으로 인증확인합니다. 정식 서비스에서는 통신사 본인확인 또는 PASS/휴대폰 본인확인 API를 연결해 이름·주민번호·휴대폰번호·통신사가 실제 가입자 정보와 맞는지 확인하고, 아이디 중복확인 후 가입되게 해야 합니다.
+            현재 v23.7.351부터 인증번호는 네이버 SENS 문자로 실제 발송됩니다. 이 단계는 휴대폰 인증이며, 이름·생년월일·휴대폰 명의 일치 본인확인은 NICE/KCB/PASS 계약 후 연결합니다.
           </div>
         </div>
 
         <div class="notice blue-note">
-          카카오톡·네이버는 위쪽 계속하기 버튼으로 로그인/가입을 진행하고, SitePass 자체 가입은 약관 동의 후 이름·주민번호·휴대폰번호·통신사 확인, 6자리 인증번호 확인, 아이디 중복확인이 완료되어야 가입됩니다. 정식 서비스에서는 통신사 본인확인 또는 PASS 본인확인 API를 연결하고, 비밀번호는 서버에서 암호화해 저장해야 합니다. 최고관리자와 직원 관리자는 별도 관리자 로그인 화면 없이 같은 로그인 화면에서 로그인하고, 계정 권한에 따라 관리자 화면으로 자동 이동합니다.
+          카카오톡·네이버는 위쪽 계속하기 버튼으로 로그인/가입을 진행하고, SitePass 자체 가입은 약관 동의 후 이름·생년월일·휴대폰번호·통신사 확인, 6자리 인증번호 확인, 아이디 중복확인이 완료되어야 가입됩니다. 정식 실명 본인확인은 NICE/KCB/PASS 본인확인기관 계약 후 연결하고, 비밀번호는 서버에서 암호화해 저장해야 합니다. 최고관리자와 직원 관리자는 별도 관리자 로그인 화면 없이 같은 로그인 화면에서 로그인하고, 계정 권한에 따라 관리자 화면으로 자동 이동합니다.
         </div>
         </div>
       </div>
@@ -1123,37 +1123,38 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.350" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.350" defer></script>
-<script src="./assets/js/storage.js?v=23.7.350" defer></script>
-<script src="./assets/js/terms.js?v=23.7.350" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.350" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.350" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.350" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.350" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.350" defer></script>
-<script src="./assets/js/archive.js?v=23.7.350" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.350" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.350" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.350" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.350" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.350" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.350" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.350" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.350" defer></script>
+<script src="./assets/js/config.js?v=23.7.351" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.351" defer></script>
+<script src="./assets/js/storage.js?v=23.7.351" defer></script>
+<script src="./assets/js/terms.js?v=23.7.351" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.351" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.351" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.351" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.351" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.351" defer></script>
+<script src="./assets/js/archive.js?v=23.7.351" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.351" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.351" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.351" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.351" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.351" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.351" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.351" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.351" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.351" defer></script>
 </body>
 </html>

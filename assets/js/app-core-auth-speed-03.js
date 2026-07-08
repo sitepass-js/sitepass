@@ -1051,7 +1051,7 @@ function formatSitePassSignupJuminDisplay() {
       const requestButton = document.getElementById('sitepassSignupRequestButton');
       if (requestButton) requestButton.textContent = '인증요청';
       const status = document.getElementById('sitepassSignupVerifyStatus');
-      if (status) status.textContent = '이름, 주민번호, 휴대폰번호, 통신사를 입력한 뒤 인증요청을 눌러주세요. 주민번호는 840507-1까지만 입력하면 840507-1******로 표시됩니다. 임시 인증번호는 123456입니다.';
+      if (status) status.textContent = '이름, 생년월일, 휴대폰번호, 통신사를 입력한 뒤 인증요청을 눌러주세요. 생년월일은 840507-1처럼 앞 6자리와 성별확인 1자리까지만 입력하면 840507-1******로 표시됩니다. 인증번호는 네이버 SENS 문자로 발송됩니다.';
     }
 
     function findMemberBySignupPhone(phone) {
@@ -1147,16 +1147,17 @@ function formatSitePassSignupJuminDisplay() {
       return true;
     }
 
-    function sendSitePassSignupPhoneCodeTest() {
+    async function sendSitePassSignupPhoneCodeTest() {
       if (!requireSignupTerms()) return;
       formatSitePassSignupJuminDisplay();
       const identity = getSitePassSignupIdentity();
+      const sens = window.SitePassSens351;
       if (!identity.name || !identity.phone || !identity.birth6 || !identity.genderDigit || !identity.carrier) {
-        alert('이름/업체명, 주민번호, 휴대폰번호, 통신사를 먼저 입력해주세요.');
+        alert('이름/업체명, 생년월일, 휴대폰번호, 통신사를 먼저 입력해주세요. 생년월일은 예: 840507-1 형식으로 입력합니다. 주민등록번호 전체는 저장하지 않습니다.');
         return;
       }
       if (!/^\d{6}$/.test(identity.birth6) || !/^[1-8]$/.test(identity.genderDigit)) {
-        alert('주민번호는 840507-1까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.');
+        alert('생년월일은 840507-1처럼 앞 6자리와 성별확인 1자리까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.');
         return;
       }
       if (!/^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/.test(identity.phone)) {
@@ -1164,36 +1165,91 @@ function formatSitePassSignupJuminDisplay() {
         return;
       }
       if (checkSitePassSignupPhoneDuplicateAndMove(identity.phone, identity.name)) return;
-      sitepassSignupPhoneRequestSent = true;
-      sitepassSignupPhoneVerified = false;
-      const codeBox = document.getElementById('sitepassSignupCodeBox');
-      if (codeBox) codeBox.classList.remove('hidden');
+      if (!sens || !sens.sendPhoneCode) {
+        alert('SENS 인증 모듈을 불러오지 못했습니다. 브라우저 캐시를 비운 뒤 새로고침해주세요.');
+        return;
+      }
+      const birthDate = sens.birth6GenderToDate(identity.birth6, identity.genderDigit);
+      if (!birthDate) {
+        alert('생년월일을 확인해주세요. 예: 840507-1');
+        return;
+      }
       const requestButton = document.getElementById('sitepassSignupRequestButton');
-      if (requestButton) requestButton.textContent = '인증번호 재전송';
       const status = document.getElementById('sitepassSignupVerifyStatus');
-      if (status) status.textContent = identity.carrier + ' 본인확인 문자 발송 완료. 이름·주민번호·휴대폰번호 일치 확인 후 임시 인증번호 123456을 입력해주세요.';
-      const codeInput = document.getElementById('sitepassSignupCode');
-      if (codeInput) setTimeout(() => codeInput.focus(), 80);
-      alert('[SitePass 인증]\n' + identity.name + '님 휴대폰으로 6자리 인증번호를 보냈습니다.\n임시 인증번호: 123456\n\n정식 서비스에서는 통신사/PASS 본인확인 API로 이름·주민번호·전화번호·통신사 일치 여부를 확인합니다.');
+      if (requestButton) requestButton.disabled = true;
+      if (status) status.textContent = '네이버 SENS로 인증번호를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.';
+      try {
+        const data = await sens.sendPhoneCode({
+          purpose: 'member_signup_phone_verification',
+          subjectType: 'member',
+          subjectId: identity.name,
+          name: identity.name,
+          birthDate,
+          phone: identity.phone,
+          carrier: identity.carrier,
+          termsAgreed: true,
+          privacyAgreed: true,
+          smsAgreed: true,
+          identityTermsAgreed: true,
+          termsVersion: 'v23.7.351'
+        });
+        window.__sitepassV351SignupVerificationId = data.verificationId || '';
+        window.__sitepassV351SignupVerifiedPayload = null;
+        sitepassSignupPhoneRequestSent = true;
+        sitepassSignupPhoneVerified = false;
+        const codeBox = document.getElementById('sitepassSignupCodeBox');
+        if (codeBox) codeBox.classList.remove('hidden');
+        if (requestButton) requestButton.textContent = '인증번호 재전송';
+        if (status) status.textContent = identity.carrier + ' 휴대폰 인증번호를 발송했습니다. 5분 안에 입력해주세요. 끝 4자리: ' + (data.phoneLast4 || sens.cleanPhone(identity.phone).slice(-4));
+        const codeInput = document.getElementById('sitepassSignupCode');
+        if (codeInput) setTimeout(() => codeInput.focus(), 80);
+        alert('[SitePass 휴대폰 인증]\n' + identity.name + '님 휴대폰으로 6자리 인증번호를 보냈습니다.\n5분 안에 입력해주세요.\n\n※ 이 단계는 휴대폰 인증이며, NICE/KCB/PASS 실명 본인확인은 계약 후 별도 연결됩니다.');
+      } catch (err) {
+        console.error(err);
+        if (status) status.textContent = '인증번호 발송 실패: ' + sens.koreanError(err);
+        alert('인증번호 발송 실패: ' + sens.koreanError(err) + '\n\nSupabase Secrets, SENS Service ID, 발신번호 등록 상태를 확인해주세요.');
+      } finally {
+        if (requestButton) setTimeout(() => { requestButton.disabled = false; }, 60000);
+      }
     }
 
-    function confirmSitePassSignupPhoneCodeTest() {
-      if (!sitepassSignupPhoneRequestSent) {
+    async function confirmSitePassSignupPhoneCodeTest() {
+      const sens = window.SitePassSens351;
+      if (!sitepassSignupPhoneRequestSent || !window.__sitepassV351SignupVerificationId) {
         alert('먼저 인증요청을 눌러주세요.');
         return;
       }
-      const code = (document.getElementById('sitepassSignupCode')?.value || '').trim();
-      if (code !== '123456') {
-        alert('인증번호가 맞지 않습니다. 임시 번호는 123456입니다.');
+      const code = (document.getElementById('sitepassSignupCode')?.value || '').replace(/[^0-9]/g, '');
+      if (!/^\d{6}$/.test(code)) {
+        alert('문자로 받은 인증번호 6자리를 입력해주세요.');
         return;
       }
-      sitepassSignupPhoneVerified = true;
-      const identity = getSitePassSignupIdentity();
+      if (!sens || !sens.verifyPhoneCode) {
+        alert('SENS 인증 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
       const status = document.getElementById('sitepassSignupVerifyStatus');
-      if (status) status.textContent = '본인확인 완료: ' + identity.name + ' / ' + identity.juminMasked + ' / ' + identity.carrier + ' / ' + identity.phone;
-      const codeBox = document.getElementById('sitepassSignupCodeBox');
-      if (codeBox) codeBox.classList.add('hidden');
-      alert('휴대폰 본인확인이 완료되었습니다. 이제 SitePass 회원가입을 완료할 수 있습니다.');
+      if (status) status.textContent = '인증번호를 확인하고 있습니다.';
+      try {
+        const data = await sens.verifyPhoneCode(window.__sitepassV351SignupVerificationId, code);
+        sitepassSignupPhoneVerified = true;
+        window.__sitepassV351SignupVerifiedPayload = data.phoneVerified || {};
+        const identity = getSitePassSignupIdentity();
+        if (status) status.textContent = '휴대폰 인증 완료: ' + identity.name + ' / ' + identity.juminMasked + ' / ' + identity.carrier + ' / ' + identity.phone + ' / 본인확인 미완료';
+        const codeBox = document.getElementById('sitepassSignupCodeBox');
+        if (codeBox) codeBox.classList.add('hidden');
+        sens.lockElements([
+          document.getElementById('sitepassSignupName'),
+          document.getElementById('sitepassSignupJuminMasked'),
+          document.getElementById('sitepassSignupPhone'),
+          document.getElementById('sitepassSignupCarrier')
+        ]);
+        alert('휴대폰 인증이 완료되었습니다.\n이름/생년월일/휴대폰번호는 잠겼습니다.\n\nNICE/KCB/PASS 본인확인은 계약 후 별도 연결됩니다.');
+      } catch (err) {
+        console.error(err);
+        if (status) status.textContent = '인증 실패: ' + sens.koreanError(err);
+        alert('인증 실패: ' + sens.koreanError(err));
+      }
     }
 
 // v23.7.350: 뒤쪽 청크에서 정의되는 로그인/가입 함수를 안전 래퍼의 실제 구현으로 다시 연결합니다.

@@ -480,10 +480,16 @@ function renderDocExpiryStrip(doc) {
     }
 
     function renderIdExtraStrip(doc) {
-      const phoneValue = doc.driverPhone || doc.workerPhone || doc.personPhone || '';
-      const phoneStrip = phoneValue ? '<div>전화번호: ' + escapeHtml(phoneValue) + '</div>' : '';
-      const taskStrip = doc.workerTask ? '<div>작업내용: ' + escapeHtml(doc.workerTask) + '</div>' : '';
-      return (phoneStrip || taskStrip) ? '<div class="id-extra-strip">' + phoneStrip + taskStrip + '</div>' : '';
+      if (!doc) return '';
+      const phoneValue = doc.driverPhone || doc.workerPhone || doc.personPhone || doc.authPhone || '';
+      const nameValue = doc.authPersonName || '';
+      const verifiedAt = doc.authVerifiedAt || '';
+      const identityStatus = doc.identityStatus || '미완료';
+      const nameStrip = nameValue ? '<div><b>이름</b>: ' + escapeHtml(nameValue) + '</div>' : '';
+      const phoneStrip = phoneValue ? '<div><b>휴대폰</b>: ' + escapeHtml(phoneValue) + '</div>' : '';
+      const verifiedStrip = (nameStrip || phoneStrip) ? '<div><b>휴대폰 인증</b>: 완료' + (verifiedAt ? ' / ' + escapeHtml(new Date(verifiedAt).toLocaleString('ko-KR')) : '') + '</div><div><b>본인확인</b>: ' + escapeHtml(identityStatus) + '</div><div class="small">※ 위 이름과 첨부 신분증 이름이 일치하는지 확인하세요.</div>' : '';
+      const taskStrip = doc.workerTask ? '<div><b>작업내용</b>: ' + escapeHtml(doc.workerTask) + '</div>' : '';
+      return (nameStrip || phoneStrip || taskStrip) ? '<div class="id-extra-strip sp351-id-extra-strip">' + nameStrip + phoneStrip + verifiedStrip + taskStrip + '</div>' : '';
     }
 
     function renderPreviewHtml(doc) {

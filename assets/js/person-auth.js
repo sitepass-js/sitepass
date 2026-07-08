@@ -47,9 +47,9 @@
     const equipmentName = normalizeText(safeContext.equipmentName) || '현장 장비';
     const link = buildConsentLink(kind, safeContext.consentCode || '예시코드');
     return '[SitePass] ' + name + '님, ' + equipmentName + ' ' + equipmentNo + ' 현장 반입서류 등록 요청입니다.\n' +
-      '약관/동의 내용을 확인한 뒤 동의하시면 6자리 번호를 등록자에게 알려주세요.\n' +
+      '약관/동의 내용을 확인한 뒤 휴대폰으로 받은 6자리 인증번호를 등록자에게 알려주세요.\n' +
       '약관/동의 확인 링크: ' + link + '\n' +
-      '6자리 동의번호: ' + (safeContext.testCode || TEST_PRIVATE_DOC_CODE) + '\n' +
+      '인증번호는 네이버 SENS 문자로 실제 발송됩니다.\n' +
       '동의하지 않거나 요청한 내용이 아니면 번호를 알려주지 말고 문자를 무시하세요.';
   }
 
@@ -71,7 +71,7 @@
     const safeValues = values || {};
     if (!normalizeText(safeValues.name)) return { ok:false, message:label + ' 이름을 입력해주세요.', focusSelector:'[data-person-auth-name]' };
     if (!safeValues.birth6 || !/^\d{6}$/.test(String(safeValues.birth6)) || !safeValues.genderDigit || !/^[1-8]$/.test(String(safeValues.genderDigit))) {
-      return { ok:false, message:label + ' 주민번호는 840507-1까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.', focusSelector:'[data-person-auth-jumin]' };
+      return { ok:false, message:label + ' 생년월일은 840507-1처럼 앞 6자리와 성별확인 1자리까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.', focusSelector:'[data-person-auth-jumin]' };
     }
     if (!normalizeText(safeValues.carrier)) return { ok:false, message:label + ' 통신사를 선택해주세요.', focusSelector:'[data-person-auth-carrier]' };
     if (!normalizeText(safeValues.phone)) return { ok:false, message:label + ' 휴대폰번호를 입력해주세요.', focusSelector:'[data-person-auth-phone]' };
@@ -85,8 +85,7 @@
     if (!normalizeText(safeValues.phone)) return { ok:false, message:'휴대폰번호를 먼저 입력해주세요.', focusSelector:'[data-person-auth-phone]' };
     if (authCodeSent !== 'true') return { ok:false, message:'먼저 약관/동의 문자보내기 버튼을 눌러주세요.', focusSelector:'[data-person-auth-send-button]' };
     const code = normalizeText(safeValues.code);
-    const expected = String(expectedCode || TEST_PRIVATE_DOC_CODE);
-    if (code !== expected) return { ok:false, message:'6자리 번호가 맞지 않습니다. 현재 임시 번호 ' + expected + '을 입력해주세요.', focusSelector:'[data-person-auth-code]' };
+    if (!/^\d{6}$/.test(code)) return { ok:false, message:'문자로 받은 6자리 인증번호를 입력해주세요.', focusSelector:'[data-person-auth-code]' };
     return { ok:true };
   }
 

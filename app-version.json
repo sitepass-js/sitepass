@@ -1,1 +1,1 @@
-{"version":"v23.7.350","updatedAt":"2026-07-08T02:35:00+09:00","note":"Server public share runtime skips legacy URL signature check"}
+{"version": "v23.7.351", "updatedAt": "2026-07-08T14:55:00+09:00", "note": "Naver SENS phone verification, consent records, NICE/KCB/PASS identity preparation, locked verified identity fields"}

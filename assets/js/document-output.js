@@ -50,7 +50,11 @@
               driverPhone: doc.driverPhone || '',
               workerPhone: doc.workerPhone || '',
               personPhone: doc.personPhone || '',
-              workerTask: doc.workerTask || ''
+              workerTask: doc.workerTask || '',
+              authPersonName: doc.authPersonName || '',
+              authPhone: doc.authPhone || '',
+              authVerifiedAt: doc.authVerifiedAt || '',
+              identityStatus: doc.identityStatus || '미완료'
             });
           }
         });
@@ -68,7 +72,11 @@
             driverPhone: doc.driverPhone || '',
             workerPhone: doc.workerPhone || '',
             personPhone: doc.personPhone || '',
-            workerTask: doc.workerTask || ''
+            workerTask: doc.workerTask || '',
+            authPersonName: doc.authPersonName || '',
+            authPhone: doc.authPhone || '',
+            authVerifiedAt: doc.authVerifiedAt || '',
+            identityStatus: doc.identityStatus || '미완료'
           });
         }
       }
@@ -99,8 +107,14 @@
     const d = depsOrFallback(deps);
     const escapeHtml = d.escapeHtml || escapeHtmlFallback;
     const parts = [];
-    const phone = (doc && (doc.driverPhone || doc.workerPhone || doc.personPhone)) || '';
-    if (phone) parts.push('전화번호: ' + escapeHtml(phone));
+    const name = (doc && doc.authPersonName) || '';
+    const phone = (doc && (doc.driverPhone || doc.workerPhone || doc.personPhone || doc.authPhone)) || '';
+    const verifiedAt = (doc && doc.authVerifiedAt) || '';
+    const identityStatus = (doc && doc.identityStatus) || '미완료';
+    if (name) parts.push('이름: ' + escapeHtml(name));
+    if (phone) parts.push('휴대폰: ' + escapeHtml(phone));
+    if (name || phone) parts.push('휴대폰 인증: 완료' + (verifiedAt ? ' / ' + escapeHtml(new Date(verifiedAt).toLocaleString('ko-KR')) : ''));
+    if (name || phone) parts.push('본인확인: ' + escapeHtml(identityStatus));
     if (doc && doc.workerTask) parts.push('작업내용: ' + escapeHtml(doc.workerTask));
     return parts.join('<br>');
   }

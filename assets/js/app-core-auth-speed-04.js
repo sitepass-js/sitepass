@@ -14,11 +14,11 @@ function submitSitePassSignupTest() {
       const pw = (document.getElementById('sitepassSignupPw')?.value || '').trim();
       const pw2 = (document.getElementById('sitepassSignupPw2')?.value || '').trim();
       if (!name || !phone || !birth6 || !genderDigit || !carrier || !signupId || !pw || !pw2) {
-        alert('이름/업체명, 주민번호, 휴대폰번호, 통신사, SitePass 아이디, 비밀번호를 모두 입력해주세요.');
+        alert('이름/업체명, 생년월일, 휴대폰번호, 통신사, SitePass 아이디, 비밀번호를 모두 입력해주세요.');
         return;
       }
       if (!/^\d{6}$/.test(birth6) || !/^[1-8]$/.test(genderDigit)) {
-        alert('주민번호는 840507-1까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.');
+        alert('생년월일은 840507-1처럼 앞 6자리와 성별확인 1자리까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.');
         return;
       }
       if (!sitepassSignupPhoneVerified) {
@@ -419,7 +419,7 @@ function adminLogout() {
     function requirePrivateDocAuth(card) {
       if (!isPrivateDocCard(card) || isPrivateDocAuthVerified(card)) return true;
       const title = card.dataset.docTitle || '개인정보 서류';
-      alert(title + '는 6자리 인증 전에는 파일선택/사진찍기를 사용할 수 없습니다.\n' + getPrivateDocLockTargetText(card) + '\n현재 임시 6자리 번호는 123456입니다.');
+      alert(title + '는 6자리 인증 전에는 파일선택/사진찍기를 사용할 수 없습니다.\n' + getPrivateDocLockTargetText(card) + '\n인증번호는 네이버 SENS 문자로 실제 발송됩니다.');
       const groupKey = card.dataset.groupKey || '';
       const panel = groupKey === 'driver'
         ? document.querySelector('[data-person-auth-panel="driver"]')
@@ -437,6 +437,8 @@ function adminLogout() {
       if (meta.carrier) card.dataset.authCarrier = meta.carrier;
       if (meta.birth6) card.dataset.authBirth6 = meta.birth6;
       if (meta.genderDigit) card.dataset.authGenderDigit = meta.genderDigit;
+      if (meta.verificationId) card.dataset.authVerificationId = meta.verificationId;
+      if (meta.identityStatus) card.dataset.identityStatus = meta.identityStatus;
       unlockPrivateDocUpload(card);
     }
 
@@ -560,9 +562,9 @@ function setPersonAuthStatus(kind, text, mode) {
       const name = values.name || (kind === 'driver' ? '기사님' : '인부님');
       const link = 'https://sitepass.kr/consent/' + (kind === 'driver' ? 'driver' : 'worker') + '/예시코드';
       return '[SitePass] ' + name + '님, ' + equipmentName + ' ' + equipmentNo + ' 현장 반입서류 등록 요청입니다.\n' +
-        '약관/동의 내용을 확인한 뒤 동의하시면 6자리 번호를 등록자에게 알려주세요.\n' +
+        '약관/동의 내용을 확인한 뒤 휴대폰으로 받은 6자리 인증번호를 등록자에게 알려주세요.\n' +
         '약관/동의 확인 링크: ' + link + '\n' +
-        '6자리 동의번호: 123456\n' +
+        '인증번호는 네이버 SENS 문자로 실제 발송됩니다.\n' +
         '동의하지 않거나 요청한 내용이 아니면 번호를 알려주지 말고 문자를 무시하세요.';
     }
 
@@ -604,73 +606,128 @@ function setPersonAuthStatus(kind, text, mode) {
       renderPersonSmsPreview(kind);
     }
 
-    function sendPersonAuthCode(kind) {
+    async function sendPersonAuthCode(kind) {
       const values = getPersonAuthValues(kind);
       if (!values) return;
       const personAuth = getPersonAuthModule();
+      const sens = window.SitePassSens351;
       const validation = personAuth.validateSendValues ? personAuth.validateSendValues(kind, values) : null;
       if (validation && !validation.ok) {
         alert(validation.message);
         values.panel.querySelector(validation.focusSelector || '[data-person-auth-name]')?.focus();
         return;
       }
-      if (!validation) {
-        if (!values.name) { alert((kind === 'driver' ? '기사' : '인부') + ' 이름을 입력해주세요.'); values.panel.querySelector('[data-person-auth-name]')?.focus(); return; }
-        if (!values.birth6 || !/^\d{6}$/.test(values.birth6) || !values.genderDigit || !/^[1-8]$/.test(values.genderDigit)) { alert((kind === 'driver' ? '기사' : '인부') + ' 주민번호는 840507-1까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.'); values.panel.querySelector('[data-person-auth-jumin]')?.focus(); return; }
-        if (!values.carrier) { alert((kind === 'driver' ? '기사' : '인부') + ' 통신사를 선택해주세요.'); values.panel.querySelector('[data-person-auth-carrier]')?.focus(); return; }
-        if (!values.phone) { alert((kind === 'driver' ? '기사' : '인부') + ' 휴대폰번호를 입력해주세요.'); values.panel.querySelector('[data-person-auth-phone]')?.focus(); return; }
+      if (!sens || !sens.sendPhoneCode) {
+        alert('SENS 인증 모듈을 불러오지 못했습니다. 브라우저 캐시를 비운 뒤 새로고침해주세요.');
+        return;
       }
-      const sentDataset = personAuth.buildSentDataset ? personAuth.buildSentDataset(values) : null;
-      if (sentDataset) {
-        Object.entries(sentDataset).forEach(([key, value]) => { values.panel.dataset[key] = value; });
-      } else {
-        values.panel.dataset.authCodeSent = 'true';
-        values.panel.dataset.authPhone = values.phone;
-        values.panel.dataset.authName = values.name;
-        values.panel.dataset.authBirth6 = values.birth6;
-        values.panel.dataset.authGenderDigit = values.genderDigit;
-        values.panel.dataset.authJuminMasked = values.juminMasked || (values.birth6 + '-' + values.genderDigit + '******');
-        values.panel.dataset.authCarrier = values.carrier;
-        values.panel.dataset.authType = values.type || '';
+      const birthDate = sens.birth6GenderToDate(values.birth6, values.genderDigit);
+      if (!birthDate) {
+        alert((kind === 'driver' ? '기사' : '인부') + ' 생년월일을 확인해주세요. 예: 840507-1');
+        values.panel.querySelector('[data-person-auth-jumin]')?.focus();
+        return;
       }
-      togglePersonAuthCodeInput(values.panel, true);
-      renderPersonSmsPreview(kind);
-      setPersonAuthStatus(kind, '약관/동의 안내 문자와 6자리 번호를 보냈습니다. 기사/인부가 동의하면 그 번호를 등록자에게 알려주고, 등록자는 아래 입력칸에 입력합니다.', 'pending');
-      values.panel.querySelector('[data-person-auth-code]')?.focus();
-      alert('현재 임시 6자리 번호는 123456입니다.\n정식 서비스에서는 ' + values.carrier + ' / ' + values.phone + ' 번호로 통신사 본인확인 후 약관/동의 링크와 6자리 번호가 발송됩니다. 기사/인부가 동의하면 그 번호를 등록자에게 알려주는 방식입니다.');
+      const sendButton = values.panel.querySelector('[data-person-auth-send-button]');
+      if (sendButton) sendButton.disabled = true;
+      setPersonAuthStatus(kind, '네이버 SENS로 인증번호를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.', 'pending');
+      try {
+        const subjectId = (document.getElementById('equipmentNo')?.value || '') + ':' + kind + ':' + values.name + ':' + sens.cleanPhone(values.phone).slice(-4);
+        const data = await sens.sendPhoneCode({
+          purpose: kind + '_document_phone_verification',
+          subjectType: kind === 'driver' ? 'driver' : 'worker',
+          subjectId,
+          name: values.name,
+          birthDate,
+          phone: values.phone,
+          carrier: values.carrier,
+          termsAgreed: true,
+          privacyAgreed: true,
+          smsAgreed: true,
+          identityTermsAgreed: true,
+          termsVersion: 'v23.7.351'
+        });
+        const sentDataset = personAuth.buildSentDataset ? personAuth.buildSentDataset(values) : null;
+        if (sentDataset) {
+          Object.entries(sentDataset).forEach(([key, value]) => { values.panel.dataset[key] = value; });
+        } else {
+          values.panel.dataset.authCodeSent = 'true';
+          values.panel.dataset.authPhone = values.phone;
+          values.panel.dataset.authName = values.name;
+          values.panel.dataset.authBirth6 = values.birth6;
+          values.panel.dataset.authGenderDigit = values.genderDigit;
+          values.panel.dataset.authJuminMasked = values.juminMasked || (values.birth6 + '-' + values.genderDigit + '******');
+          values.panel.dataset.authCarrier = values.carrier;
+          values.panel.dataset.authType = values.type || '';
+        }
+        values.panel.dataset.authVerificationId = data.verificationId || '';
+        togglePersonAuthCodeInput(values.panel, true);
+        renderPersonSmsPreview(kind);
+        setPersonAuthStatus(kind, '인증번호를 발송했습니다. 5분 안에 기사/인부가 받은 6자리 번호를 입력하세요. 끝 4자리: ' + (data.phoneLast4 || sens.cleanPhone(values.phone).slice(-4)), 'pending');
+        values.panel.querySelector('[data-person-auth-code]')?.focus();
+        alert((kind === 'driver' ? '기사' : '인부') + ' 휴대폰으로 6자리 인증번호를 보냈습니다.\n인증번호를 받아 입력하면 서류 업로드가 열립니다.\n\n※ 현재는 휴대폰 인증이며, NICE/KCB/PASS 실명 본인확인은 계약 후 연결됩니다.');
+      } catch (err) {
+        console.error(err);
+        setPersonAuthStatus(kind, '인증번호 발송 실패: ' + sens.koreanError(err), 'rejected');
+        alert('인증번호 발송 실패: ' + sens.koreanError(err));
+      } finally {
+        if (sendButton) setTimeout(() => { sendButton.disabled = false; }, 60000);
+      }
     }
 
-    function verifyPersonAuth(kind) {
+    async function verifyPersonAuth(kind) {
       const values = getPersonAuthValues(kind);
       if (!values) return;
       const personAuth = getPersonAuthModule();
-      const validation = personAuth.validateVerifyValues ? personAuth.validateVerifyValues(kind, values, values.panel.dataset.authCodeSent, TEST_PRIVATE_DOC_CODE) : null;
-      if (validation && !validation.ok) {
-        alert(validation.message);
-        if (validation.focusSelector) values.panel.querySelector(validation.focusSelector)?.focus();
+      const sens = window.SitePassSens351;
+      if (!values.name) { alert((kind === 'driver' ? '기사' : '인부') + ' 이름을 입력해주세요.'); return; }
+      if (!values.phone) { alert('휴대폰번호를 먼저 입력해주세요.'); return; }
+      if (values.panel.dataset.authCodeSent !== 'true' || !values.panel.dataset.authVerificationId) {
+        alert('먼저 인증번호 발송 버튼을 눌러주세요.');
         return;
       }
-      if (!validation) {
-        if (!values.name) { alert((kind === 'driver' ? '기사' : '인부') + ' 이름을 입력해주세요.'); return; }
-        if (!values.phone) { alert('휴대폰번호를 먼저 입력해주세요.'); return; }
-        if (values.panel.dataset.authCodeSent !== 'true') { alert('먼저 약관/동의 문자보내기 버튼을 눌러주세요.'); return; }
-        if (values.code !== TEST_PRIVATE_DOC_CODE) { alert('6자리 번호가 맞지 않습니다. 현재 임시 번호 123456을 입력해주세요.'); values.panel.querySelector('[data-person-auth-code]')?.focus(); return; }
+      if (!/^\d{6}$/.test(String(values.code || '').replace(/[^0-9]/g, ''))) {
+        alert('문자로 받은 6자리 인증번호를 입력해주세요.');
+        values.panel.querySelector('[data-person-auth-code]')?.focus();
+        return;
       }
-      const meta = personAuth.buildVerifiedMeta ? personAuth.buildVerifiedMeta(values) : {
+      if (!sens || !sens.verifyPhoneCode) {
+        alert('SENS 인증 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
+      const verifyButton = values.panel.querySelector('[data-person-auth-verify-button]');
+      if (verifyButton) verifyButton.disabled = true;
+      setPersonAuthStatus(kind, '인증번호를 확인하고 있습니다.', 'pending');
+      let data;
+      try {
+        data = await sens.verifyPhoneCode(values.panel.dataset.authVerificationId, values.code);
+      } catch (err) {
+        console.error(err);
+        if (verifyButton) verifyButton.disabled = false;
+        setPersonAuthStatus(kind, '인증 실패: ' + sens.koreanError(err), 'rejected');
+        alert('인증 실패: ' + sens.koreanError(err));
+        return;
+      }
+      const meta = personAuth.buildVerifiedMeta ? personAuth.buildVerifiedMeta(values, data.verifiedAt) : {
         personName: values.name,
         phone: values.phone,
         type: values.type || '',
-        verifiedAt: new Date().toISOString()
+        verifiedAt: data.verifiedAt || new Date().toISOString()
       };
+      meta.verificationId = values.panel.dataset.authVerificationId || '';
+      meta.birth6 = values.birth6;
+      meta.genderDigit = values.genderDigit;
+      meta.carrier = values.carrier;
+      meta.identityStatus = '미완료';
       if (kind === 'driver') {
         document.querySelectorAll('.doc-card[data-group-key="driver"]').forEach(card => setDocCardAuthVerified(card, meta));
         values.panel.dataset.authVerified = 'true';
         values.panel.dataset.authVerifiedAt = meta.verifiedAt;
-        setPersonAuthStatus(kind, '기사 본인 동의/인증 완료 · 기사서류 전체 파일선택/사진찍기가 열렸습니다.', 'verified');
+        values.panel.dataset.identityStatus = '미완료';
+        setPersonAuthStatus(kind, '기사 휴대폰 인증 완료 · 본인확인 미완료 · 기사서류 전체 파일선택/사진찍기가 열렸습니다.', 'verified');
         values.panel.querySelectorAll('input, select, button').forEach(el => { if (!el.matches('[data-person-auth-reset]')) el.disabled = true; });
         const driverPhone = document.querySelector('.doc-card[data-doc-key="driverIdCard"] [data-extra-phone-key="driverPhone"]');
         if (driverPhone && !driverPhone.value) driverPhone.value = values.phone;
-        alert('기사 본인 인증이 완료되었습니다.\n기사서류 전체 업로드가 열렸습니다.');
+        alert('기사 휴대폰 인증이 완료되었습니다.\n기사서류 전체 업로드가 열렸습니다.\n\n받은 사람 화면에는 신분증 하단에 이름/휴대폰/인증상태가 함께 표시됩니다.');
         return;
       }
       values.panel.dataset.pendingVerified = 'true';
@@ -678,15 +735,17 @@ function setPersonAuthStatus(kind, text, mode) {
       values.panel.dataset.pendingPhone = values.phone;
       values.panel.dataset.pendingType = values.type || 'normal';
       values.panel.dataset.pendingVerifiedAt = meta.verifiedAt;
-      setPersonAuthStatus(kind, '인부 동의/인증 완료 · 선택한 인부 서류첨부창을 바로 추가합니다.', 'verified');
+      values.panel.dataset.pendingVerificationId = meta.verificationId || '';
+      values.panel.dataset.pendingBirth6 = values.birth6 || '';
+      values.panel.dataset.pendingGenderDigit = values.genderDigit || '';
+      values.panel.dataset.pendingCarrier = values.carrier || '';
+      setPersonAuthStatus(kind, '인부 휴대폰 인증 완료 · 본인확인 미완료 · 선택한 인부 서류첨부창을 바로 추가합니다.', 'verified');
       setWorkerAddButtonsEnabled(true);
-      // v23.7.350: 인부는 인증 완료 후 사용자가 보통/특수 추가 버튼을 다시 누르지 않도록
-      // 선택한 구분의 서류첨부창을 즉시 열어줍니다.
       try {
         addWorkerPerson(values.type || 'normal');
       } catch (e) {
         console.warn('인부 인증 후 서류첨부창 자동 추가 실패:', e);
-        alert('인부 동의/인증이 완료되었습니다.\n아래 추가 버튼으로 이 인부의 서류첨부창을 열어주세요.');
+        alert('인부 휴대폰 인증이 완료되었습니다.\n아래 추가 버튼으로 이 인부의 서류첨부창을 열어주세요.');
       }
     }
 

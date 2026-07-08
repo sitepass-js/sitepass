@@ -6,9 +6,9 @@ function renderWorkerPeopleSection() {
         '<div class="small">인부는 여러 명이 될 수 있으므로 인부 1명마다 문자 동의안내와 6자리 번호를 먼저 확인합니다. 인증 완료 후에만 아래 추가 버튼이 열리고, 추가된 그 인부의 서류는 한 번에 업로드할 수 있습니다. 단, 이 인증은 해당 인부 서류 등록 동의용이고, 현장 담당자에게 공유 링크를 보낼 때마다 다시 인증받는 구조가 아닙니다.</div>' +
         '<div class="person-auth-panel" data-person-auth-panel="worker" data-auth-code-sent="false" data-pending-verified="false">' +
           '<div class="person-auth-head"><div><b>인부 1명 동의/인증 후 추가</b><span>보통인부/특수인부를 선택하고 이름·휴대폰번호·문자 동의안내·6자리 인증을 끝내면 추가 버튼이 열립니다. 인증은 인부 1명당 최초 등록 때 받으며, 현장 링크를 보낼 때마다 다시 받지 않습니다.</span></div><span class="badge need" data-person-auth-badge>인증대기</span></div>' +
-          '<div class="person-auth-grid three"><select data-person-auth-type><option value="normal">보통인부</option><option value="special">특수인부</option></select><input type="text" data-person-auth-name placeholder="인부 이름" autocomplete="off" /><input type="text" data-person-auth-jumin placeholder="주민번호 예: 840507-1" maxlength="8" inputmode="numeric" autocomplete="off" oninput="formatPersonAuthJuminTyping(this)" onblur="formatPersonAuthJuminDisplay(this)" /></div>' +
+          '<div class="person-auth-grid three"><select data-person-auth-type><option value="normal">보통인부</option><option value="special">특수인부</option></select><input type="text" data-person-auth-name placeholder="인부 이름" autocomplete="off" /><input type="text" data-person-auth-jumin placeholder="생년월일 예: 840507-1" maxlength="8" inputmode="numeric" autocomplete="off" oninput="formatPersonAuthJuminTyping(this)" onblur="formatPersonAuthJuminDisplay(this)" /></div>' +
           '<div class="person-auth-grid"><select data-person-auth-carrier><option value="">통신사 선택</option><option value="SKT">SKT</option><option value="KT">KT</option><option value="LG U+">LG U+</option><option value="SKT 알뜰폰">SKT 알뜰폰</option><option value="KT 알뜰폰">KT 알뜰폰</option><option value="LG U+ 알뜰폰">LG U+ 알뜰폰</option></select><input type="tel" data-person-auth-phone placeholder="인부 휴대폰번호" inputmode="tel" autocomplete="tel" /></div>' +
-          '<div class="auth-mini-note">인부에게 약관/동의 안내 문자와 6자리 번호를 보냅니다. 정식 서비스에서는 통신사/PASS 본인확인으로 이름·주민번호·휴대폰번호가 일치하는지 확인합니다.</div>' +
+          '<div class="auth-mini-note">인부에게 약관/동의 안내 문자와 6자리 번호를 보냅니다. 정식 서비스에서는 NICE/KCB/PASS 본인확인으로 이름·생년월일·휴대폰번호가 일치하는지 확인합니다.</div>' +
           '<div class="person-auth-grid three"><button type="button" class="ghost" data-person-auth-send-button onclick="sendPersonAuthCode(\'worker\')">약관/동의 문자보내기</button><input type="text" class="hidden" data-person-auth-code placeholder="기사/인부가 받은 6자리 번호 입력" inputmode="numeric" maxlength="6" autocomplete="one-time-code" /><button type="button" class="primary hidden" data-person-auth-verify-button onclick="verifyPersonAuth(\'worker\')">인증하기</button></div>' +
           '<div class="person-auth-actions"><button type="button" class="secondary" onclick="resetPersonAuth(\'worker\')">다음 인부 입력</button><button type="button" class="ghost" onclick="showAuthSmsPreview(\'worker\')">문자내용 보기</button></div>' +
           '<div class="sms-preview-box hidden" data-person-sms-preview></div>' +
@@ -64,6 +64,11 @@ function renderWorkerPeopleSection() {
         card.dataset.authVerifiedAt = authMeta.authVerifiedAt || new Date().toISOString();
         if (authMeta.authPhone) card.dataset.authPhone = authMeta.authPhone;
         if (authMeta.authPersonName) card.dataset.authPersonName = authMeta.authPersonName;
+        if (authMeta.authVerificationId) card.dataset.authVerificationId = authMeta.authVerificationId;
+        if (authMeta.authBirth6) card.dataset.authBirth6 = authMeta.authBirth6;
+        if (authMeta.authGenderDigit) card.dataset.authGenderDigit = authMeta.authGenderDigit;
+        if (authMeta.authCarrier) card.dataset.authCarrier = authMeta.authCarrier;
+        card.dataset.identityStatus = authMeta.identityStatus || '미완료';
         if (typeof unlockPrivateDocUpload === 'function') unlockPrivateDocUpload(card);
       });
       const phoneInput = personCard.querySelector('[data-extra-phone-key="workerPhone"]');
@@ -86,7 +91,12 @@ function renderWorkerPeopleSection() {
         authVerified:true,
         authPhone:panel.dataset.pendingPhone || '',
         authPersonName:panel.dataset.pendingName || '',
-        authVerifiedAt:panel.dataset.pendingVerifiedAt || new Date().toISOString()
+        authVerifiedAt:panel.dataset.pendingVerifiedAt || new Date().toISOString(),
+        authVerificationId:panel.dataset.pendingVerificationId || '',
+        authBirth6:panel.dataset.pendingBirth6 || '',
+        authGenderDigit:panel.dataset.pendingGenderDigit || '',
+        authCarrier:panel.dataset.pendingCarrier || '',
+        identityStatus:'미완료'
       };
       let uid = 'w' + Date.now() + '_' + (++workerPersonSeq);
       // v23.7.350: 인증 후 위에 비어 있는 인부칸이 있는데도 아래에 인부가 하나 더 생기는 문제 보정.
