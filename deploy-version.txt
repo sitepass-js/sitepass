@@ -1,3 +1,3 @@
-SitePass v23.7.371
-fix: auth route hash preserved after repeated refresh
-based on v23.7.370
+SitePass v23.7.372
+fix: prevent accidental leaving browser page when back is pressed repeatedly after auth refresh
+based on v23.7.371
