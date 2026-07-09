@@ -3585,7 +3585,7 @@
 .person-auth-consent-check input{margin-right:6px;vertical-align:middle}
 .person-auth-consent-check a{margin-left:6px;text-decoration:underline;font-weight:700}
 
-/* v23.7.356 - 첫 화면 직접 로그인형 화면 */
+/* v23.7.357 - 첫 화면 직접 로그인형 화면(비밀번호 자물쇠 아이콘) */
 #signupScreen .sitepass-first-card {
   max-width: 640px;
   margin: 0 auto;
@@ -3653,6 +3653,23 @@
   line-height: 1;
   color: #111827;
   font-weight: 900;
+}
+
+.sitepass-first-field-icon svg {
+  width: 30px;
+  height: 30px;
+  display: block;
+  margin: 0 auto;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sitepass-first-lock-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .sitepass-first-field input {
   min-width: 0;
