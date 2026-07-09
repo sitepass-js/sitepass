@@ -1,1 +1,6 @@
-{"version": "v23.7.357", "updatedAt": "2026-07-09T13:10:00+09:00", "note": "First screen direct login design kept. Password field icon changed from key/square-style to a clean lock icon. Kakao/Naver code kept but hidden."}
+{
+  "version": "v23.7.359",
+  "updatedAt": "2026-07-09T13:10:00+09:00",
+  "note": "First screen direct login design kept. Password field icon changed from key/square-style to a clean lock icon. Kakao/Naver code kept but hidden.",
+  "build": "v23.7.359"
+}

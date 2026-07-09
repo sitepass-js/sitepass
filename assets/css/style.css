@@ -3585,7 +3585,7 @@
 .person-auth-consent-check input{margin-right:6px;vertical-align:middle}
 .person-auth-consent-check a{margin-left:6px;text-decoration:underline;font-weight:700}
 
-/* v23.7.357 - 첫 화면 직접 로그인형 화면(비밀번호 자물쇠 아이콘) */
+/* v23.7.359 - 첫 화면 로고 자연스럽게 통합 */
 #signupScreen .sitepass-first-card {
   max-width: 640px;
   margin: 0 auto;
@@ -3600,12 +3600,16 @@
   padding: 0;
 }
 .sitepass-first-hero img {
-  width: min(100%, 430px);
-  max-height: 270px;
+  width: min(100%, 520px);
+  max-height: 315px;
   object-fit: contain;
   display: block;
-  margin: 0 auto 10px;
-  filter: drop-shadow(0 14px 22px rgba(15,23,42,.08));
+  margin: -4px auto 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 16px 20px rgba(15,23,42,.06));
 }
 .sitepass-first-title {
   margin: 14px 0 10px;
@@ -3797,7 +3801,7 @@
 }
 @media (max-width: 620px) {
   #signupScreen .sitepass-first-card { padding: 22px 14px 20px; border-radius: 24px; }
-  .sitepass-first-hero img { max-height: 220px; margin-bottom: 8px; }
+  .sitepass-first-hero img { max-height: 250px; margin-bottom: 6px; }
   .sitepass-first-title { font-size: 30px; }
   .sitepass-first-subtitle { font-size: 16px; margin-bottom: 22px; }
   .sitepass-first-login-form { grid-template-columns: minmax(0, 1fr) 104px; gap: 10px; }
@@ -3818,7 +3822,7 @@
 }
 @media (max-width: 390px) {
   .sitepass-first-title { font-size: 27px; }
-  .sitepass-first-hero img { max-height: 195px; }
+  .sitepass-first-hero img { max-height: 220px; }
   .sitepass-first-login-form { grid-template-columns: minmax(0, 1fr) 92px; }
   .sitepass-first-login { font-size: 22px; }
   .sitepass-first-link-row { font-size: 14px; gap: 8px; }
@@ -3830,3 +3834,8 @@ body.sitepass-first-screen-active .app {
   max-width: 980px;
   padding-top: 10px;
 }
+
+/* v23.7.359 first-screen cleanup */
+#signupScreen .auth-start-grid.single-signup-choice,
+#signupScreen .auth-mini-note,
+#signupScreen .notice.blue-note { display:none !important; }
