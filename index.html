@@ -28,8 +28,8 @@
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
 <link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
 <link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.372" />
-<!-- v23.7.372: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.373" />
+<!-- v23.7.373: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
@@ -48,16 +48,34 @@
   if (route) {
     window.__sitepassFirstAuthRouteOnBoot = route;
     document.documentElement.classList.add('sitepass-first-auth-route-boot');
+    /* v23.7.373:
+       새로고침한 회원가입/찾기 화면에서 뒤로가기를 누르면
+       브라우저 이전 화면이 아니라 SitePass 첫 화면으로 오도록
+       현재 auth 항목을 home 항목으로 바꾼 뒤 auth 항목을 다시 올립니다. */
+    try {
+      if (window.history && window.history.replaceState && window.history.pushState && !history.state?.sitepassFirstAuthRoute) {
+        var baseUrl = window.location.pathname + window.location.search;
+        var authUrl = baseUrl + '#' + route;
+        history.replaceState({ sitepassFirstLanding: true, sitepassScreen: 'signupScreen' }, document.title || 'SitePass', baseUrl);
+        history.pushState({ sitepassFirstAuthRoute: route }, document.title || 'SitePass', authUrl);
+      }
+    } catch(e) {}
+  } else {
+    try {
+      if (window.history && window.history.replaceState && !(history.state && (history.state.sitepassScreen || history.state.sitepassFirstLanding))) {
+        history.replaceState({ sitepassFirstLanding: true, sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);
+      }
+    } catch(e) {}
   }
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.372 split complete from v23.7.372 -->
+  <!-- SitePass deploy-check: v23.7.373 split complete from v23.7.373 -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.372" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.373" />
 
   <style>
-    /* v23.7.372 first-screen hero cleanup */
+    /* v23.7.373 first-screen hero cleanup */
     #signupScreen .sitepass-first-hero,
     #signupScreen .sitepass-first-hero::before,
     #signupScreen .sitepass-first-hero::after {
@@ -94,7 +112,7 @@
       }
     }
 
-    /* v23.7.372 first-screen compact: title removed, subtitle changed, password icons removed */
+    /* v23.7.373 first-screen compact: title removed, subtitle changed, password icons removed */
     body.sitepass-first-screen-active {
       overflow-x: hidden !important;
     }
@@ -180,7 +198,7 @@
     }
 
 
-    /* v23.7.372 - subtitle font polish, input alignment, remember ID checkbox */
+    /* v23.7.373 - subtitle font polish, input alignment, remember ID checkbox */
     #signupScreen .sitepass-first-subtitle {
       display: flex !important;
       flex-direction: column !important;
@@ -304,7 +322,7 @@
       }
     }
 
-    /* v23.7.372 - subtitle left-edge alignment + smaller remember ID checkbox */
+    /* v23.7.373 - subtitle left-edge alignment + smaller remember ID checkbox */
     #signupScreen .sitepass-first-subtitle {
       display: inline-flex !important;
       flex-direction: column !important;
@@ -365,7 +383,7 @@
       }
     }
 
-    /* v23.7.372 - 자동 로그인 체크박스: 작게, V 체크표시, 문구 앞줄 맞춤 */
+    /* v23.7.373 - 자동 로그인 체크박스: 작게, V 체크표시, 문구 앞줄 맞춤 */
     #signupScreen .sitepass-first-subtitle {
       display: inline-flex !important;
       flex-direction: column !important;
@@ -494,7 +512,7 @@
       }
     }
 
-    /* v23.7.372 - 회원가입/찾기 새로고침 시 첫 로그인화면 순간 노출 방지 */
+    /* v23.7.373 - 회원가입/찾기 새로고침 시 첫 로그인화면 순간 노출 방지 */
     html.sitepass-first-auth-route-boot #sitepassFirstLanding {
       display: none !important;
     }
@@ -505,9 +523,9 @@
       display: block !important;
     }
 
-    /* v23.7.372 - 반복 새로고침 시 회원가입/찾기 hash 유지 보정 */
+    /* v23.7.373 - 반복 새로고침 시 회원가입/찾기 hash 유지 보정 */
 
-    /* v23.7.372 - 뒤로가기 반복 이탈 방지용 first landing guard */
+    /* v23.7.373 - 새로고침 뒤로가기 페어 보정 */
   </style>
 </head>
 <body class="sitepass-booting">
@@ -925,7 +943,7 @@
       <div class="card sitepass-first-card">
         <div id="sitepassFirstLanding" class="sitepass-first-landing">
           <div class="sitepass-first-hero">
-            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.372" alt="SitePass 장비서류 간편 전송" />
+            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.373" alt="SitePass 장비서류 간편 전송" />
           </div>
           <p class="sitepass-first-subtitle"><span>현장에 제출할 장비 서류를</span><span>빠르게 공유할 수 있습니다.</span></p>
 
@@ -957,7 +975,7 @@
           <button type="button" class="sitepass-first-install" onclick="addSitePassToHomeScreen(event)"><span aria-hidden="true">⇩</span> 바탕화면에 설치하기</button>
 
           <div class="sitepass-first-company">
-            <img src="./assets/img/js-construction-badge.png?v=23.7.372" alt="제이에스건설 J.S CONSTRUCTION" />
+            <img src="./assets/img/js-construction-badge.png?v=23.7.373" alt="제이에스건설 J.S CONSTRUCTION" />
             <span class="sitepass-company-divider" aria-hidden="true"></span>
             <span>경상남도 김해시 삼문동 1275</span>
             <span>사업자등록번호 402-33-15497</span>
@@ -1607,7 +1625,6 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
   var SITEPASS_FIRST_AUTO_LOGIN_ID_KEY = 'sitepass:first:auto-login-id';
   var SITEPASS_FIRST_REMEMBER_ID_KEY = 'sitepass:first:remember-login-id';
   var SITEPASS_FIRST_AUTH_ROUTE_KEY = 'sitepass:first:auth-route';
-  var SITEPASS_FIRST_LANDING_GUARD_KEY = 'sitepass:first:landing-back-guard';
 
   function normalizeFirstAuthRoute(route){
     route = String(route || '').replace(/^#/, '').trim();
@@ -1631,13 +1648,9 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
       else sessionStorage.removeItem(SITEPASS_FIRST_AUTH_ROUTE_KEY);
     } catch(e) {}
   }
-  function markFirstAuthVisited(){
-    try { sessionStorage.setItem(SITEPASS_FIRST_LANDING_GUARD_KEY, '1'); } catch(e) {}
-  }
   function pushFirstAuthRoute(route){
     route = normalizeFirstAuthRoute(route);
     if (!route) return;
-    markFirstAuthVisited();
     setStoredRoute(route);
     var hash = routeToHash(route);
     if (window.location.hash === hash) return;
@@ -1654,6 +1667,15 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
   function clearFirstAuthRouteInPlace(){
     setStoredRoute('');
     try { document.documentElement.classList.remove('sitepass-first-auth-route-boot'); } catch(e) {}
+  }
+  function markSitePassFirstLandingState(){
+    try {
+      if (!window.history || !window.history.replaceState) return;
+      if (window.location.hash) return;
+      var state = window.history.state || {};
+      if (state.sitepassFirstLanding || state.sitepassScreen === 'signupScreen') return;
+      window.history.replaceState({ sitepassFirstLanding: true, sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);
+    } catch(e) {}
   }
   window.setSitePassFirstAuthRoute = function(route){
     if (window.__sitepassRestoringFirstAuthRoute) return;
@@ -1673,21 +1695,6 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     if (join) join.classList.add('hidden');
     if (find) find.classList.add('hidden');
   }
-  function ensureFirstLandingBackGuard(){
-    try {
-      if (!window.history || !window.history.pushState) return;
-      if (window.__sitepassCreatingFirstLandingGuard) return;
-      if (window.location.hash) return;
-      if (sessionStorage.getItem(SITEPASS_FIRST_LANDING_GUARD_KEY) !== '1') return;
-      var state = window.history.state || {};
-      if (state.sitepassFirstLandingGuard) return;
-      window.__sitepassCreatingFirstLandingGuard = true;
-      window.history.pushState({ sitepassFirstLandingGuard: true, sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);
-      setTimeout(function(){ window.__sitepassCreatingFirstLandingGuard = false; }, 0);
-    } catch(e) {
-      window.__sitepassCreatingFirstLandingGuard = false;
-    }
-  }
   function revealFirstLanding(){
     var landing = document.getElementById('sitepassFirstLanding');
     var shell = document.querySelector('#signupScreen .login-auth-shell');
@@ -1695,7 +1702,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     if (landing) landing.classList.remove('hidden');
     if (shell) shell.classList.add('hidden');
     clearFirstAuthRouteInPlace();
-    setTimeout(ensureFirstLandingBackGuard, 30);
+    setTimeout(markSitePassFirstLandingState, 20);
   }
 
   window.openSitePassFirstLogin = function(){
@@ -1766,7 +1773,6 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
   function showFirstAuthRoute(route, pushRoute){
     route = normalizeFirstAuthRoute(route);
     if (!route) return false;
-    markFirstAuthVisited();
     if (pushRoute) pushFirstAuthRoute(route);
     else {
       setStoredRoute(route);
@@ -1877,38 +1883,38 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.372" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.372" defer></script>
-<script src="./assets/js/storage.js?v=23.7.372" defer></script>
-<script src="./assets/js/terms.js?v=23.7.372" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.372" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.372" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.372" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.372" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.372" defer></script>
-<script src="./assets/js/archive.js?v=23.7.372" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.372" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.372" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.372" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.372" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.372" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.372" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.372" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.372" defer></script>
-<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.372" defer></script>
+<script src="./assets/js/config.js?v=23.7.373" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.373" defer></script>
+<script src="./assets/js/storage.js?v=23.7.373" defer></script>
+<script src="./assets/js/terms.js?v=23.7.373" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.373" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.373" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.373" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.373" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.373" defer></script>
+<script src="./assets/js/archive.js?v=23.7.373" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.373" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.373" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.373" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.373" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.373" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.373" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.373" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.373" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.373" defer></script>
 </body>
 </html>
