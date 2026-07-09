@@ -801,6 +801,15 @@ function expireUnpaidPaymentTestData() {
         renderPublic(code);
         return true;
       }
+      if (hash === '#join' || hash === '#signup' || hash === '#sitepass-join' || hash === '#find-id' || hash === '#id-find' || hash === '#sitepass-find-id' || hash === '#find-password' || hash === '#password-find' || hash === '#sitepass-find-password') {
+        showScreen('signupScreen', { replace:true });
+        setTimeout(function(){
+          try {
+            if (typeof window.restoreSitePassFirstAuthRoute === 'function') window.restoreSitePassFirstAuthRoute();
+          } catch (e) {}
+        }, 20);
+        return true;
+      }
       if (hash === '#admin' || hash === '#관리자') {
         showScreen(isAdminLoggedIn() ? 'adminScreen' : 'signupScreen');
         return true;
@@ -810,6 +819,17 @@ function expireUnpaidPaymentTestData() {
 
     window.addEventListener('popstate', function(event) {
       const state = event.state || {};
+      if (state.sitepassFirstAuthRoute) {
+        sitePassHandlingPopState = true;
+        showScreen('signupScreen', { skipHistory:true });
+        sitePassHandlingPopState = false;
+        setTimeout(function(){
+          try {
+            if (typeof window.restoreSitePassFirstAuthRoute === 'function') window.restoreSitePassFirstAuthRoute(state.sitepassFirstAuthRoute);
+          } catch (e) {}
+        }, 20);
+        return;
+      }
       if (state.sitepassScreen) {
         sitePassHandlingPopState = true;
         showScreen(state.sitepassScreen, { skipHistory:true });

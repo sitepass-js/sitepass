@@ -1,3 +1,3 @@
-SitePass v23.7.369
-stable rollback from v365/v368
+SitePass v23.7.370
+auth refresh/back fix based on stable v369
 .nojekyll enabled
