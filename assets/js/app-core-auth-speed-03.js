@@ -489,11 +489,6 @@ function bufferToBase64Url(buffer) {
     }
 
     function openAccountFindPanel(mode) {
-      try {
-        if (!window.__sitepassRestoringFirstAuthRoute && typeof window.setSitePassFirstAuthRoute === 'function') {
-          window.setSitePassFirstAuthRoute(mode === 'password' ? 'find-password' : 'find-id');
-        }
-      } catch (e) {}
       const panel = document.getElementById('accountFindPanel');
       const idForm = document.getElementById('findIdForm');
       const pwForm = document.getElementById('findPasswordForm');
@@ -874,11 +869,6 @@ function fillFoundLoginIdTest() {
     }
 
     function startJoinFlow() {
-      try {
-        if (!window.__sitepassRestoringFirstAuthRoute && typeof window.setSitePassFirstAuthRoute === 'function') {
-          window.setSitePassFirstAuthRoute('join');
-        }
-      } catch (e) {}
       const box = document.getElementById('joinChoiceBox');
       if (!box) return;
       box.classList.remove('hidden');

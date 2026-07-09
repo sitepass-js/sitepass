@@ -37,7 +37,7 @@
     if (!isOfficialGithubUrl()) return;
     const needsCleanUrl = /\/index\.html$/i.test(location.pathname) || /[?&]v=/.test(location.search || '');
     if (!needsCleanUrl) return;
-    try { history.replaceState(history.state || {}, document.title, '/sitepass/' + (location.hash || '')); } catch (e) {}
+    try { history.replaceState(history.state || {}, document.title, '/sitepass/'); } catch (e) {}
   }
 
   async function clearBrowserCache(){

@@ -283,10 +283,6 @@ function renderAdminContactManager() {
       document.querySelectorAll('.screen').forEach(screen => screen.classList.add('hidden'));
       const target = document.getElementById(id);
       if (target) target.classList.remove('hidden');
-      if (id === 'signupScreen' && typeof window.__sitepassPrepareAuthRouteBeforeShow === 'function') {
-        try { window.__sitepassPrepareAuthRouteBeforeShow(); } catch (e) {}
-      }
-      // v23.7.367: 회원가입/찾기 새로고침 시 로그인 첫 화면이 보이기 전에 해당 화면을 먼저 준비합니다.
       // v23.7.216: 새로고침 때 로그인창이 먼저 보였다가 사라지는 깜빡임 방지.
       // 세션/소셜 콜백 확인이 끝난 뒤 최종 화면을 정한 다음에만 화면을 공개합니다.
       document.body.classList.remove('sitepass-booting');
