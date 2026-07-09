@@ -238,7 +238,11 @@ function renderAdminContactManager() {
     function isSitePassHashRouteActive() {
       const hash = window.location.hash || '';
       const search = window.location.search || '';
-      return hash.startsWith('#pay=') || hash.startsWith('#manager=') || hash.startsWith('#qr=') || /(?:^\?|&)manager=/.test(search);
+      const authHashRouteActive =
+        hash === '#join' || hash === '#signup' || hash === '#sitepass-join' ||
+        hash === '#find-id' || hash === '#id-find' || hash === '#sitepass-find-id' ||
+        hash === '#find-password' || hash === '#password-find' || hash === '#sitepass-find-password';
+      return authHashRouteActive || hash.startsWith('#pay=') || hash.startsWith('#manager=') || hash.startsWith('#qr=') || /(?:^\?|&)manager=/.test(search);
     }
 
     function rememberSitePassScreen(id, options) {

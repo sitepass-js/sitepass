@@ -802,7 +802,7 @@ function expireUnpaidPaymentTestData() {
         return true;
       }
       if (hash === '#join' || hash === '#signup' || hash === '#sitepass-join' || hash === '#find-id' || hash === '#id-find' || hash === '#sitepass-find-id' || hash === '#find-password' || hash === '#password-find' || hash === '#sitepass-find-password') {
-        showScreen('signupScreen', { replace:true });
+        showScreen('signupScreen', { skipHistory:true });
         setTimeout(function(){
           try {
             if (typeof window.restoreSitePassFirstAuthRoute === 'function') window.restoreSitePassFirstAuthRoute();
