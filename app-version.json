@@ -1,6 +1,6 @@
 {
-  "version": "v23.7.361",
-  "updatedAt": "2026-07-09T13:10:00+09:00",
-  "note": "full GitHub package: first screen hero blend, no ID heart",
-  "build": "v23.7.361"
+  "version": "v23.7.362",
+  "updatedAt": "2026-07-09T13:30:00+09:00",
+  "note": "full GitHub package: remove first title, update subtitle, compact login, remove password icons",
+  "build": "v23.7.362"
 }

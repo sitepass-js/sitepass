@@ -28,18 +28,18 @@
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
 <link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
 <link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.361" />
-<!-- v23.7.361: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.362" />
+<!-- v23.7.362: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.361 split complete from v23.7.361 -->
+  <!-- SitePass deploy-check: v23.7.362 split complete from v23.7.362 -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.361" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.362" />
 
   <style>
-    /* v23.7.361 first-screen hero cleanup */
+    /* v23.7.362 first-screen hero cleanup */
     #signupScreen .sitepass-first-hero,
     #signupScreen .sitepass-first-hero::before,
     #signupScreen .sitepass-first-hero::after {
@@ -73,6 +73,91 @@
       #signupScreen .sitepass-first-hero img {
         width: min(100%, 500px) !important;
         max-height: 300px !important;
+      }
+    }
+
+    /* v23.7.362 first-screen compact: title removed, subtitle changed, password icons removed */
+    body.sitepass-first-screen-active {
+      overflow-x: hidden !important;
+    }
+    body.sitepass-first-screen-active .app {
+      min-height: 100svh !important;
+      padding-top: 8px !important;
+      padding-bottom: 8px !important;
+    }
+    #signupScreen .sitepass-first-card {
+      padding-top: 16px !important;
+      padding-bottom: 16px !important;
+    }
+    #signupScreen .sitepass-first-title {
+      display: none !important;
+    }
+    #signupScreen .sitepass-first-subtitle {
+      font-size: clamp(18px, 3vw, 21px) !important;
+      line-height: 1.45 !important;
+      margin: 2px auto 22px !important;
+      letter-spacing: -0.4px !important;
+    }
+    #signupScreen .sitepass-first-field {
+      min-height: 60px !important;
+      height: 60px !important;
+      border-radius: 17px !important;
+      padding: 0 18px !important;
+      gap: 0 !important;
+    }
+    #signupScreen .sitepass-first-field input {
+      height: 58px !important;
+      min-height: 58px !important;
+      font-size: 24px !important;
+    }
+    #signupScreen #sitepassFirstLoginPassword {
+      padding-left: 18px !important;
+      padding-right: 18px !important;
+    }
+    #signupScreen .sitepass-first-lock-icon,
+    #signupScreen .sitepass-first-eye {
+      display: none !important;
+    }
+    #signupScreen .sitepass-first-login {
+      min-height: 132px !important;
+      height: 132px !important;
+      border-radius: 20px !important;
+      font-size: 30px !important;
+    }
+    #signupScreen .sitepass-first-login-form {
+      gap: 14px !important;
+      margin-bottom: 14px !important;
+    }
+    #signupScreen .sitepass-first-link-row {
+      margin-bottom: 12px !important;
+    }
+    @media (max-width: 620px) {
+      #signupScreen .sitepass-first-card {
+        padding-top: 14px !important;
+        padding-bottom: 14px !important;
+      }
+      #signupScreen .sitepass-first-hero img {
+        max-height: 240px !important;
+        margin-bottom: 4px !important;
+      }
+      #signupScreen .sitepass-first-subtitle {
+        font-size: 17px !important;
+        margin-bottom: 18px !important;
+      }
+      #signupScreen .sitepass-first-field {
+        min-height: 56px !important;
+        height: 56px !important;
+        padding: 0 14px !important;
+      }
+      #signupScreen .sitepass-first-field input {
+        height: 54px !important;
+        min-height: 54px !important;
+        font-size: 21px !important;
+      }
+      #signupScreen .sitepass-first-login {
+        min-height: 122px !important;
+        height: 122px !important;
+        font-size: 25px !important;
       }
     }
   </style>
@@ -492,10 +577,9 @@
       <div class="card sitepass-first-card">
         <div id="sitepassFirstLanding" class="sitepass-first-landing">
           <div class="sitepass-first-hero">
-            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.361" alt="SitePass 장비서류 간편 전송" />
+            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.362" alt="SitePass 장비서류 간편 전송" />
           </div>
-          <h1 class="sitepass-first-title">장비서류를 간편하게<br>보내고 관리하세요</h1>
-          <p class="sitepass-first-subtitle">장비 · 기사 · 인부 서류를<br>쉽고 빠르게 공유할 수 있습니다</p>
+          <p class="sitepass-first-subtitle">현장에 제출할 장비 서류를<br>빠르게 공유할 수 있습니다</p>
 
           <form class="sitepass-first-login-form" method="post" action="./" autocomplete="on" onsubmit="return submitSitePassFirstLogin(event)">
             <div class="sitepass-first-login-left">
@@ -503,15 +587,7 @@
                 <input id="sitepassFirstLoginIdentifier" name="username" type="text" placeholder="아이디" autocomplete="username" spellcheck="false" enterkeyhint="next" aria-label="아이디" />
               </label>
               <label class="sitepass-first-field" for="sitepassFirstLoginPassword">
-                <span class="sitepass-first-field-icon sitepass-first-lock-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-                    <path d="M7.5 10V7.8A4.5 4.5 0 0 1 12 3.3a4.5 4.5 0 0 1 4.5 4.5V10"/>
-                    <rect x="5.4" y="10" width="13.2" height="10" rx="2.2"/>
-                    <path d="M12 14.2v2.8"/>
-                  </svg>
-                </span>
                 <input id="sitepassFirstLoginPassword" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" enterkeyhint="go" aria-label="비밀번호" />
-                <button type="button" class="sitepass-first-eye" onclick="toggleSitePassFirstPassword()" aria-label="비밀번호 보기">◎</button>
               </label>
             </div>
             <button type="submit" class="sitepass-first-login">로그인</button>
@@ -528,7 +604,7 @@
           <button type="button" class="sitepass-first-install" onclick="addSitePassToHomeScreen(event)"><span aria-hidden="true">⇩</span> 홈화면에 설치하기</button>
 
           <div class="sitepass-first-company">
-            <img src="./assets/img/js-construction-badge.png?v=23.7.361" alt="제이에스건설 J.S CONSTRUCTION" />
+            <img src="./assets/img/js-construction-badge.png?v=23.7.362" alt="제이에스건설 J.S CONSTRUCTION" />
             <span class="sitepass-company-divider" aria-hidden="true"></span>
             <span>경상남도 김해시 삼문동 1275</span>
             <span>사업자등록번호 402-33-15497</span>
@@ -1273,38 +1349,38 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.361" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.361" defer></script>
-<script src="./assets/js/storage.js?v=23.7.361" defer></script>
-<script src="./assets/js/terms.js?v=23.7.361" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.361" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.361" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.361" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.361" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.361" defer></script>
-<script src="./assets/js/archive.js?v=23.7.361" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.361" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.361" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.361" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.361" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.361" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.361" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.361" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.361" defer></script>
-<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.361" defer></script>
+<script src="./assets/js/config.js?v=23.7.362" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.362" defer></script>
+<script src="./assets/js/storage.js?v=23.7.362" defer></script>
+<script src="./assets/js/terms.js?v=23.7.362" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.362" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.362" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.362" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.362" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.362" defer></script>
+<script src="./assets/js/archive.js?v=23.7.362" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.362" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.362" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.362" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.362" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.362" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.362" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.362" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.362" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.362" defer></script>
 </body>
 </html>
