@@ -1,6 +1,6 @@
 {
-  "version": "v23.7.362",
-  "updatedAt": "2026-07-09T13:30:00+09:00",
-  "note": "full GitHub package: remove first title, update subtitle, compact login, remove password icons",
-  "build": "v23.7.362"
+  "version": "v23.7.363",
+  "updatedAt": "2026-07-09T20:10:00+09:00",
+  "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
+  "build": "v23.7.363"
 }
