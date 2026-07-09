@@ -29,12 +29,12 @@
 <link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
 <link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
 <link rel="manifest" href="./sitepass.webmanifest?v=23.7.355" />
-<!-- v23.7.355: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
+<!-- v23.7.356: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
 <link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-  <!-- SitePass deploy-check: v23.7.355 split complete from v23.7.292 -->
+  <!-- SitePass deploy-check: v23.7.356 split complete from v23.7.292 -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
   <link rel="stylesheet" href="./assets/css/style.css?v=23.7.355" />
 </head>
@@ -453,17 +453,38 @@
       <div class="card sitepass-first-card">
         <div id="sitepassFirstLanding" class="sitepass-first-landing">
           <div class="sitepass-first-hero">
-            <img src="./assets/img/sitepass-hero-logo.png?v=23.7.355" alt="SitePass 장비서류 간편 전송" />
+            <img src="./assets/img/sitepass-hero-logo.png?v=23.7.356" alt="SitePass 장비서류 간편 전송" />
           </div>
           <h1 class="sitepass-first-title">장비서류를 간편하게<br>보내고 관리하세요</h1>
           <p class="sitepass-first-subtitle">장비 · 기사 · 인부 서류를<br>쉽고 빠르게 공유할 수 있습니다</p>
-          <div class="sitepass-first-actions">
-            <button type="button" class="sitepass-first-login" onclick="openSitePassFirstLogin()">로그인</button>
-            <button type="button" class="sitepass-first-join" onclick="openSitePassFirstJoin()">회원가입</button>
-            <button type="button" class="sitepass-first-install" onclick="addSitePassToHomeScreen(event)"><span aria-hidden="true">⇩</span> 홈화면에 설치하기</button>
+
+          <form class="sitepass-first-login-form" method="post" action="./" autocomplete="on" onsubmit="return submitSitePassFirstLogin(event)">
+            <div class="sitepass-first-login-left">
+              <label class="sitepass-first-field" for="sitepassFirstLoginIdentifier">
+                <span class="sitepass-first-field-icon" aria-hidden="true">♡</span>
+                <input id="sitepassFirstLoginIdentifier" name="username" type="text" placeholder="아이디" autocomplete="username" spellcheck="false" enterkeyhint="next" aria-label="아이디" />
+              </label>
+              <label class="sitepass-first-field" for="sitepassFirstLoginPassword">
+                <span class="sitepass-first-field-icon" aria-hidden="true">▣</span>
+                <input id="sitepassFirstLoginPassword" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" enterkeyhint="go" aria-label="비밀번호" />
+                <button type="button" class="sitepass-first-eye" onclick="toggleSitePassFirstPassword()" aria-label="비밀번호 보기">◎</button>
+              </label>
+            </div>
+            <button type="submit" class="sitepass-first-login">로그인</button>
+          </form>
+
+          <div class="sitepass-first-link-row">
+            <button type="button" onclick="openSitePassFirstJoin()">회원가입</button>
+            <span aria-hidden="true">|</span>
+            <button type="button" onclick="openSitePassFirstFind('id')">아이디 찾기</button>
+            <span aria-hidden="true">|</span>
+            <button type="button" onclick="openSitePassFirstFind('password')">비밀번호 찾기</button>
           </div>
+
+          <button type="button" class="sitepass-first-install" onclick="addSitePassToHomeScreen(event)"><span aria-hidden="true">⇩</span> 홈화면에 설치하기</button>
+
           <div class="sitepass-first-company">
-            <img src="./assets/img/js-construction-badge.png?v=23.7.355" alt="제이에스건설 J.S CONSTRUCTION" />
+            <img src="./assets/img/js-construction-badge.png?v=23.7.356" alt="제이에스건설 J.S CONSTRUCTION" />
             <span class="sitepass-company-divider" aria-hidden="true"></span>
             <span>경상남도 김해시 삼문동 1275</span>
             <span>사업자등록번호 402-33-15497</span>
@@ -914,7 +935,7 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
             <button class="primary full" onclick="submitSitePassSignupTest()">회원가입완료</button>
           </div>
           <div class="notice blue-note">
-            현재 v23.7.355부터 인증번호는 네이버 SENS 문자로 실제 발송됩니다. 이 단계는 휴대폰 인증이며, 이름·생년월일·휴대폰 명의 일치 본인확인은 NICE/KCB/PASS 계약 후 연결합니다.
+            현재 v23.7.356부터 인증번호는 네이버 SENS 문자로 실제 발송됩니다. 이 단계는 휴대폰 인증이며, 이름·생년월일·휴대폰 명의 일치 본인확인은 NICE/KCB/PASS 계약 후 연결합니다.
           </div>
         </div>
 
@@ -1136,6 +1157,34 @@ SitePass는 안정적인 서비스를 제공하기 위해 노력하지만, 통�
     if (join) join.classList.add('hidden');
     var id = document.getElementById('sitepassLoginIdentifier');
     setTimeout(function(){ try { id && id.focus(); } catch(e) {} }, 120);
+  };
+
+  window.submitSitePassFirstLogin = function(event){
+    if (event && event.preventDefault) event.preventDefault();
+    var firstId = document.getElementById('sitepassFirstLoginIdentifier');
+    var firstPw = document.getElementById('sitepassFirstLoginPassword');
+    var realId = document.getElementById('sitepassLoginIdentifier');
+    var realPw = document.getElementById('sitepassLoginPassword');
+    if (realId) realId.value = firstId ? firstId.value : '';
+    if (realPw) realPw.value = firstPw ? firstPw.value : '';
+    if (typeof submitSitePassLoginTest === 'function') {
+      submitSitePassLoginTest();
+    } else {
+      openSitePassFirstLogin();
+    }
+    return false;
+  };
+  window.toggleSitePassFirstPassword = function(){
+    var pw = document.getElementById('sitepassFirstLoginPassword');
+    if (!pw) return;
+    pw.type = pw.type === 'password' ? 'text' : 'password';
+    try { pw.focus(); } catch(e) {}
+  };
+  window.openSitePassFirstFind = function(type){
+    revealAuthShell();
+    if (typeof openAccountFindPanel === 'function') {
+      openAccountFindPanel(type);
+    }
   };
   window.openSitePassFirstJoin = function(){
     revealAuthShell();
