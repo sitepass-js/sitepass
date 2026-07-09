@@ -819,18 +819,6 @@ function expireUnpaidPaymentTestData() {
 
     window.addEventListener('popstate', function(event) {
       const state = event.state || {};
-      if (state.sitepassFirstLanding) {
-        try { if (typeof window.clearSitePassFirstAuthRoute === 'function') window.clearSitePassFirstAuthRoute(); } catch (e) {}
-        sitePassHandlingPopState = true;
-        showScreen('signupScreen', { skipHistory:true });
-        sitePassHandlingPopState = false;
-        setTimeout(function(){
-          try {
-            if (typeof window.backToSitePassFirstLanding === 'function') window.backToSitePassFirstLanding();
-          } catch (e) {}
-        }, 20);
-        return;
-      }
       if (state.sitepassFirstAuthRoute) {
         sitePassHandlingPopState = true;
         showScreen('signupScreen', { skipHistory:true });

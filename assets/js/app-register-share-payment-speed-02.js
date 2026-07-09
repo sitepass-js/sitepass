@@ -1515,7 +1515,7 @@ function setItems(items) {
       const bottomActions = document.getElementById('listScreenBottomActions');
       if (title) title.textContent = '장비/기사/인부 보관함';
       if (bottomActions) {
-        bottomActions.innerHTML = '<button class="secondary" onclick="showScreen(\'homeScreen\')">처음 화면</button><button class="dangerBtn" onclick="clearAll()">전체 삭제</button>';
+        bottomActions.innerHTML = '<button class="secondary" onclick="showScreen(\'homeScreen\')">홈화면</button><button class="dangerBtn" onclick="clearAll()">전체 삭제</button>';
       }
       function fastCardHtml(x, isNew) {
         const safeTitle = escapeHtml(getItemTitle(x));

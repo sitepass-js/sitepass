@@ -257,7 +257,20 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
         showScreen('adminScreen');
         return;
       }
-      showScreen(isMemberLoggedIn() ? 'homeScreen' : 'signupScreen');
+      if (isMemberLoggedIn()) {
+        // 로그인 후 홈으로가기는 장비등록/보관함이 있는 홈 화면으로 이동합니다.
+        showScreen('homeScreen');
+        return;
+      }
+      // 비로그인 상태의 홈화면은 회원가입/찾기 화면이 아니라 첫 로그인 화면입니다.
+      showScreen('signupScreen');
+      setTimeout(function(){
+        try {
+          if (typeof window.backToSitePassFirstLanding === 'function') {
+            window.backToSitePassFirstLanding();
+          }
+        } catch (e) {}
+      }, 30);
     }
 
     function getCurrentMemberTest() {

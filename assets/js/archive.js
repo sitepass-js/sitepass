@@ -247,7 +247,7 @@ function renderList() {
   if (bottomActions) {
     bottomActions.innerHTML = isAdminMode
       ? ''
-      : '<button class="secondary" onclick="showScreen(\'homeScreen\')">처음 화면</button><button class="dangerBtn" onclick="clearAll()">전체 삭제</button>';
+      : '<button class="secondary" onclick="showScreen(\'homeScreen\')">홈화면</button><button class="dangerBtn" onclick="clearAll()">전체 삭제</button>';
   }
   if (allItems.length === 0) {
     box.innerHTML = '<div class="empty">' + (isAdminMode ? '아직 등록된 장비서류가 없습니다.<br>회원이 직접 등록한 장비서류가 생기면 여기서 확인할 수 있습니다.' : '아직 저장된 통합 서류함이 없습니다.<br>통합 서류함 등록에서 먼저 저장해보세요.') + '</div>';
