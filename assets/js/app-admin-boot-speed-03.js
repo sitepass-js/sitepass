@@ -193,7 +193,7 @@ function escapeHtml(value) {
         return '이미 홈화면에서 현장서류패스 앱처럼 실행 중입니다.';
       }
       if (location.protocol === 'file:') {
-        return '현재는 PC에서 파일을 직접 연 상태라 설치창이 뜨지 않습니다. 정식 https 주소에 올린 뒤 <b>홈화면에 설치하기</b> 버튼을 확인해야 합니다.';
+        return '현재는 PC에서 파일을 직접 연 상태라 설치창이 뜨지 않습니다. 정식 https 주소에 올린 뒤 <b>바탕화면에 설치하기</b> 버튼을 확인해야 합니다.';
       }
       if (!isSecure) {
         return '설치창을 띄우려면 https 보안주소가 필요합니다. 정식 도메인 또는 HTTPS 베타 주소에서 다시 눌러주세요.';
@@ -217,10 +217,10 @@ function escapeHtml(value) {
           btn.textContent = '설치 안내 접기';
           btn.disabled = false;
         } else if (deferredSitePassInstallPrompt) {
-          btn.textContent = '홈화면에 설치하기';
+          btn.textContent = '바탕화면에 설치하기';
           btn.disabled = false;
         } else {
-          btn.textContent = '홈화면에 설치하기';
+          btn.textContent = '바탕화면에 설치하기';
           btn.disabled = false;
         }
       });
@@ -231,7 +231,7 @@ function escapeHtml(value) {
       if (event && event.preventDefault) event.preventDefault();
 
       if (isHomeInstallGuidePanelOpen()) {
-        closeHomeInstallGuidePanel('설치 안내를 접었습니다. 필요하면 다시 <b>홈화면에 설치하기</b>를 눌러주세요.');
+        closeHomeInstallGuidePanel('설치 안내를 접었습니다. 필요하면 다시 <b>바탕화면에 설치하기</b>를 눌러주세요.');
         return false;
       }
 
@@ -297,12 +297,12 @@ function escapeHtml(value) {
       showScreen('installScreen', { replace:true });
       const linkText = document.getElementById('recommendInstallLinkText');
       if (linkText) linkText.textContent = SITEPASS_RECOMMEND_INSTALL_URL;
-      setHomeInstallStatus('추천링크로 접속했습니다. 아래 <b>홈화면에 설치하기</b>를 누르면 설치 가능한 브라우저는 설치창이 열리고, 안 뜨면 수동 방법을 따라 추가하면 됩니다.');
+      setHomeInstallStatus('추천링크로 접속했습니다. 아래 <b>바탕화면에 설치하기</b>를 누르면 설치 가능한 브라우저는 설치창이 열리고, 안 뜨면 수동 방법을 따라 추가하면 됩니다.');
       setTimeout(function() {
         if (!deferredSitePassInstallPrompt && !isSitePassStandalone()) {
           openHomeInstallGuidePanel(getSitePassInstallFallbackMessage());
         } else {
-          updateHomeInstallButtonState('설치 준비가 완료되면 <b>홈화면에 설치하기</b> 버튼으로 설치창을 열 수 있습니다.');
+          updateHomeInstallButtonState('설치 준비가 완료되면 <b>바탕화면에 설치하기</b> 버튼으로 설치창을 열 수 있습니다.');
         }
       }, 900);
       return true;
@@ -801,6 +801,15 @@ function expireUnpaidPaymentTestData() {
         renderPublic(code);
         return true;
       }
+      if (hash === '#join' || hash === '#sitepass-join' || hash === '#signup' || hash === '#find-id' || hash === '#sitepass-find-id' || hash === '#find-password' || hash === '#sitepass-find-password') {
+        showScreen('signupScreen', { replace:true });
+        setTimeout(function(){
+          try {
+            if (typeof window.restoreSitePassFirstAuthRoute === 'function') window.restoreSitePassFirstAuthRoute();
+          } catch (e) {}
+        }, 80);
+        return true;
+      }
       if (hash === '#admin' || hash === '#관리자') {
         showScreen(isAdminLoggedIn() ? 'adminScreen' : 'signupScreen');
         return true;
@@ -829,8 +838,8 @@ function expireUnpaidPaymentTestData() {
       event.preventDefault();
       deferredSitePassInstallPrompt = event;
       updateHomeInstallButtonState(isSitePassRecommendInstallRequest()
-        ? '추천링크 설치 준비가 완료되었습니다. <b>홈화면에 설치하기</b>를 누르면 설치창이 열립니다.'
-        : '이 브라우저에서는 <b>홈화면에 설치하기</b> 버튼으로 설치창을 열 수 있습니다.');
+        ? '추천링크 설치 준비가 완료되었습니다. <b>바탕화면에 설치하기</b>를 누르면 설치창이 열립니다.'
+        : '이 브라우저에서는 <b>바탕화면에 설치하기</b> 버튼으로 설치창을 열 수 있습니다.');
     });
 
     window.addEventListener('appinstalled', function() {

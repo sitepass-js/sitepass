@@ -37,7 +37,7 @@
     if (!isOfficialGithubUrl()) return;
     const needsCleanUrl = /\/index\.html$/i.test(location.pathname) || /[?&]v=/.test(location.search || '');
     if (!needsCleanUrl) return;
-    try { history.replaceState(history.state || {}, document.title, '/sitepass/'); } catch (e) {}
+    try { history.replaceState(history.state || {}, document.title, '/sitepass/' + (location.hash || '')); } catch (e) {}
   }
 
   async function clearBrowserCache(){
@@ -113,7 +113,7 @@
     navigator.serviceWorker.register('./sw.js?v=' + encodeURIComponent(appVersion)).then(function(reg) {
       try { reg.update(); } catch (e) {}
       if (!hasDeferredInstallPrompt() && !isStandalone()) {
-        setHomeStatus('설치 준비 중입니다. 브라우저가 설치 가능하다고 판단하면 <b>홈화면에 설치하기</b> 버튼으로 설치창이 열립니다.');
+        setHomeStatus('설치 준비 중입니다. 브라우저가 설치 가능하다고 판단하면 <b>바탕화면에 설치하기</b> 버튼으로 설치창이 열립니다.');
       }
     }).catch(function() {
       setHomeStatus('서비스워커 등록이 되지 않았습니다. 정식 배포 시 sw.js 파일이 같은 폴더에 있어야 합니다.');
