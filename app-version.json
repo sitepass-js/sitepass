@@ -1,1 +1,1 @@
-{"version": "v23.7.354", "updatedAt": "2026-07-08T15:20:00+09:00", "note": "Driver/worker SMS consent-link flow: send terms/privacy link first; code is revealed only after required consent check; SENS secrets stay server-only."}
+{"version": "v23.7.355", "updatedAt": "2026-07-09T12:10:00+09:00", "note": "First screen changed to clean SitePass landing page: hero logo image, login/sign-up/install buttons, JS construction footer; Kakao/Naver login code kept but hidden."}

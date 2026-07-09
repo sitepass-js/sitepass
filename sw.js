@@ -1,9 +1,11 @@
-const SITEPASS_SW_VERSION = 'v23.7.354';
-const SITEPASS_CACHE = 'sitepass-v23.7.354';
+const SITEPASS_SW_VERSION = 'v23.7.355';
+const SITEPASS_CACHE = 'sitepass-v23.7.355';
 const SITEPASS_CORE = [
   './',
   './index.html',
   './sitepass.webmanifest',
+  './assets/img/sitepass-hero-logo.png',
+  './assets/img/js-construction-badge.png',
   './terms/person-consent.html',
   './assets/css/style.css',
   './assets/js/config.js',
