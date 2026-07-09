@@ -1,6 +1,6 @@
 {
-  "version": "v23.7.363",
+  "version": "23.7.364",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.363"
+  "build": "v23.7.364"
 }
