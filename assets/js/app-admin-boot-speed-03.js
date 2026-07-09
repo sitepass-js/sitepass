@@ -787,6 +787,17 @@ function expireUnpaidPaymentTestData() {
     function checkHash() {
       const hash = window.location.hash || '';
       const search = window.location.search || '';
+      const firstAuthBootRoute = window.__sitepassFirstAuthBootRoute || '';
+      if (!hash && (firstAuthBootRoute === 'join' || firstAuthBootRoute === 'find-id' || firstAuthBootRoute === 'find-password')) {
+        try { if (typeof window.__sitepassPrepareAuthRouteBeforeShow === 'function') window.__sitepassPrepareAuthRouteBeforeShow(firstAuthBootRoute); } catch (e) {}
+        showScreen('signupScreen', { replace:true });
+        setTimeout(function(){
+          try {
+            if (typeof window.restoreSitePassFirstAuthRoute === 'function') window.restoreSitePassFirstAuthRoute(firstAuthBootRoute);
+          } catch (e) {}
+        }, 20);
+        return true;
+      }
       if (hash.startsWith('#pay=')) {
         handleAutoPaymentHash(hash);
         return true;
@@ -802,12 +813,13 @@ function expireUnpaidPaymentTestData() {
         return true;
       }
       if (hash === '#join' || hash === '#sitepass-join' || hash === '#signup' || hash === '#find-id' || hash === '#sitepass-find-id' || hash === '#find-password' || hash === '#sitepass-find-password') {
+        try { if (typeof window.__sitepassPrepareAuthRouteBeforeShow === 'function') window.__sitepassPrepareAuthRouteBeforeShow(); } catch (e) {}
         showScreen('signupScreen', { replace:true });
         setTimeout(function(){
           try {
             if (typeof window.restoreSitePassFirstAuthRoute === 'function') window.restoreSitePassFirstAuthRoute();
           } catch (e) {}
-        }, 80);
+        }, 20);
         return true;
       }
       if (hash === '#admin' || hash === '#관리자') {
@@ -819,6 +831,21 @@ function expireUnpaidPaymentTestData() {
 
     window.addEventListener('popstate', function(event) {
       const state = event.state || {};
+      if (state.sitepassFirstAuth) {
+        try { if (typeof window.__sitepassPrepareAuthRouteBeforeShow === 'function') window.__sitepassPrepareAuthRouteBeforeShow(state.sitepassFirstAuth); } catch (e) {}
+        sitePassHandlingPopState = true;
+        showScreen('signupScreen', { skipHistory:true });
+        sitePassHandlingPopState = false;
+        setTimeout(function(){
+          try {
+            if (typeof window.restoreSitePassFirstAuthRoute === 'function') window.restoreSitePassFirstAuthRoute(state.sitepassFirstAuth);
+          } catch (e) {}
+        }, 20);
+        return;
+      }
+      if (!state.sitepassFirstAuth && !(window.location.hash || '')) {
+        try { if (typeof window.clearSitePassFirstAuthRoute === 'function') window.clearSitePassFirstAuthRoute({ replaceUrl:false }); } catch (e) {}
+      }
       if (state.sitepassScreen) {
         sitePassHandlingPopState = true;
         showScreen(state.sitepassScreen, { skipHistory:true });
@@ -870,7 +897,7 @@ function expireUnpaidPaymentTestData() {
         updateQuickAuthUi();
         // v23.7.248: “로그인 확인 중입니다” 차단 화면을 더 이상 오래 띄우지 않습니다.
         // OAuth 확인은 뒤에서 진행하되, 사용자가 화면에 갇히지 않게 먼저 공개합니다.
-        try { document.body.classList.remove('sitepass-booting'); } catch (e) {}
+        try { if (!window.__sitepassFirstAuthBootRoute) document.body.classList.remove('sitepass-booting'); } catch (e) {}
         // v23.7.246: 소셜 로그인 확인 과정이 외부 OAuth/Userinfo 응답 대기로 멈춰도
         // 화면이 '로그인 확인 중입니다'에 갇히지 않게 안전 타이머를 먼저 걸어둡니다.
         let sitePassBootWatchdogFired = false;
