@@ -103,12 +103,20 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     let deferredSitePassInstallPrompt = null;
     const QUICK_AUTH_KEY = STORAGE_KEY + '_quick_auth_v23_7_141';
     const QUICK_SETUP_SKIP_SESSION_KEY = STORAGE_KEY + '_quick_setup_skip_v23_7_144';
+
+    function isSitePassAutoLoginEnabled() {
+      try {
+        return localStorage.getItem('sitepass:first:auto-login') === '1';
+      } catch (e) {
+        return false;
+      }
+    }
     function shouldPersistAdminSessionKey(key) {
       const normalizedKey = String(key || '');
       // v23.7.231: 카카오/네이버 인증은 앱/외부 브라우저를 거치면서 sessionStorage가 끊길 수 있어
       // OAuth 대기값과 소셜 약관동의값도 localStorage에 잠깐 보존합니다.
       return normalizedKey.indexOf(ADMIN_SESSION_KEY) === 0
-        || normalizedKey === CURRENT_MEMBER_KEY
+        || (normalizedKey === CURRENT_MEMBER_KEY && isSitePassAutoLoginEnabled())
         || normalizedKey.indexOf('_oauth_pending_') >= 0;
     }
     // v23.7.260: 세션/로컬 저장 공통 기능은 assets/js/storage.js로 분리했습니다.
@@ -316,6 +324,7 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
     }
 
     function restorePwaAutoMemberSession() {
+      if (!isSitePassAutoLoginEnabled()) return false;
       if (!isSitePassInstalledAppMode()) return false;
       if (isMemberLoggedIn() || isAdminLoggedIn()) return true;
       const saved = getPwaAutoMemberTest();
@@ -360,7 +369,8 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
       const updatedMember = updateMemberLastLogin(member, member?.signupMethod || member?.provider || 'SitePass 로그인') || member;
       setCurrentMemberTest(updatedMember || {});
       const current = getCurrentMemberTest();
-      if (isSitePassInstalledAppMode()) setPwaAutoMemberTest(current || updatedMember || {});
+      if (isSitePassInstalledAppMode() && isSitePassAutoLoginEnabled()) setPwaAutoMemberTest(current || updatedMember || {});
+      if (!isSitePassAutoLoginEnabled()) clearPwaAutoMemberTest();
       refreshMemberUi();
       if (message) alert(message);
       showScreen(isSitePassInstalledAppMode() ? 'listScreen' : 'homeScreen');
