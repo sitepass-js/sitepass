@@ -1,11 +1,11 @@
 {
-  "version": "23.7.390",
+  "version": "23.7.392",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.390",
-  "stage": "v390-test 자연스러운 로그인전 뒤로가기/새로고침",
-  "baselineFrom": "23.7.389",
-  "releaseType": "test-natural-auth-history",
-  "runtimeChange": "auth-navigation-only",
-  "purpose": "회원가입/아이디찾기/비밀번호찾기 화면을 브라우저 주소와 기록 기준으로 자연스럽게 이동"
+  "build": "v23.7.392",
+  "stage": "v392-test 약관 안내문 한 줄 정리",
+  "baselineFrom": "23.7.391",
+  "releaseType": "test-terms-hint-one-line",
+  "runtimeChange": "minor-ui",
+  "purpose": "회원가입 약관 다음 버튼 아래 안내문을 한 줄로 정리하고 줄맞춤"
 }
