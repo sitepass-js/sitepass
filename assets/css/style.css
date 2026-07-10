@@ -1,4 +1,4 @@
-/* SitePass v23.7.382 split step 1
+/* SitePass v23.7.384 split step 1
    - index.html에서 분리한 전체 화면 디자인/CSS입니다.
    - 기능 JavaScript는 assets/js/app.bundle.js로 분리했습니다.
 */
@@ -807,7 +807,7 @@
     .camera-note{margin-top:10px;color:#cbd5e1;font-size:12px;line-height:1.5}
 
 
-    /* v23.7.382 - 초록 자동인식 의존을 줄이고 노란 촬영틀 기준으로 저장 */
+    /* v23.7.384 - 초록 자동인식 의존을 줄이고 노란 촬영틀 기준으로 저장 */
     .camera-guide .guide-rect {
       display:block !important;
       left:10% !important;
@@ -867,7 +867,7 @@
     }
 
 
-    /* v23.7.382 - 사진찍기 모드 명확화: 사업자등록증은 A4, 신분증/면허증/이수증만 카드 */
+    /* v23.7.384 - 사진찍기 모드 명확화: 사업자등록증은 A4, 신분증/면허증/이수증만 카드 */
     .camera-mode-label {
       margin:8px 0 0;
       padding:8px 10px;
@@ -2321,7 +2321,7 @@
     }
 
 
-    /* v23.7.382 - Evernote 참고형 깔끔한 상단/첫화면 정리 */
+    /* v23.7.384 - Evernote 참고형 깔끔한 상단/첫화면 정리 */
     .sitepass-clean-header {
       align-items:center;
       gap:18px;
@@ -2495,7 +2495,7 @@
 
 
 
-    /* v23.7.382 - 자동로그인 제거 / 홈화면 설치 간편로그인 / 결제연장 / 재인증 */
+    /* v23.7.384 - 자동로그인 제거 / 홈화면 설치 간편로그인 / 결제연장 / 재인증 */
     .auto-login-note {
       max-width:454px;
       margin:12px auto 0;
@@ -2720,7 +2720,7 @@
 
 
 
-    /* v23.7.382 - QR 받은 담당자 화면 + 장비명/번호 공유문 강조 */
+    /* v23.7.384 - QR 받은 담당자 화면 + 장비명/번호 공유문 강조 */
     .manager-demo-note {
       margin-top:12px;
       padding:13px;
@@ -3203,7 +3203,7 @@
 
 
 
-    /* v23.7.382 - 날짜칸 깜박임 완전 제거: 보이는 칸은 읽기전용 표시, 실제 달력 input은 숨김 */
+    /* v23.7.384 - 날짜칸 깜박임 완전 제거: 보이는 칸은 읽기전용 표시, 실제 달력 input은 숨김 */
     .clean-date-picker {
       position:relative;
       display:block;
@@ -3241,7 +3241,7 @@
     }
 
 
-    /* v23.7.382 - 홈화면 앱 전용 간편번호/지문 로그인 */
+    /* v23.7.384 - 홈화면 앱 전용 간편번호/지문 로그인 */
     .quick-login-panel,
     .quick-auth-settings-box {
       max-width:454px;
@@ -3365,7 +3365,7 @@
     }
 
 
-    /* v23.7.382 - 홈화면 앱으로 실행하면 일반 로그인 전에 간편번호/지문을 먼저 표시 */
+    /* v23.7.384 - 홈화면 앱으로 실행하면 일반 로그인 전에 간편번호/지문을 먼저 표시 */
     body.quick-first-mode #signupScreen .login-auth-title::after {
       content:'홈화면 앱 간편로그인';
       display:block;
@@ -3415,7 +3415,7 @@
 
 
 
-    /* v23.7.382 - 홈화면 앱 첫 로그인 후 간편로그인 즉시 등록창 */
+    /* v23.7.384 - 홈화면 앱 첫 로그인 후 간편로그인 즉시 등록창 */
     .quick-setup-overlay {
       position:fixed;
       inset:0;
@@ -3550,7 +3550,7 @@
     }
 
 
-/* v23.7.382 결제 본인확인 화면 보정 */
+/* v23.7.384 결제 본인확인 화면 보정 */
 .pending-pay-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .pending-pay-head b{font-size:16px}
 .pending-pay-head span{font-size:13px;color:#64748b;font-weight:800}
@@ -3566,7 +3566,7 @@
 #paymentOwnerVerifyStatus.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
 @media(max-width:520px){.payment-method-buttons{grid-template-columns:1fr}.person-auth-grid.three{grid-template-columns:1fr}}
 
-/* v23.7.382 결제화면 보정 */
+/* v23.7.384 결제화면 보정 */
 .payment-owner-verify-box .person-auth-grid select,
 .payment-owner-verify-box .person-auth-grid input,
 .payment-owner-verify-box > input,
@@ -3577,15 +3577,15 @@
 #paymentOwnerCardBox .auth-mini-note { margin-top:8px; }
 .payment-method-buttons button.active { transform:translateY(-1px); }
 
-/* v23.7.382 SENS 인증/신분증 하단 검증정보 */
+/* v23.7.384 SENS 인증/신분증 하단 검증정보 */
 .sp351-id-extra-strip{border-top:1px dashed #cbd5e1;margin-top:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;text-align:left;font-size:12px;line-height:1.45;color:#172033}.sp351-id-extra-strip b{color:#475569}.sp351-id-extra-strip .small{font-size:11px;color:#b86400;margin-top:4px}.sp351-locked{background:#f8fafc!important;color:#475569!important}
 
-/* v23.7.382 기사/인부 발송 전 필수 동의 체크 */
+/* v23.7.384 기사/인부 발송 전 필수 동의 체크 */
 .person-auth-consent-check{display:block;margin:8px 0;padding:10px 12px;border:1px solid #dbe3ef;border-radius:12px;background:#f8fafc;font-size:12px;line-height:1.5;color:#172033}
 .person-auth-consent-check input{margin-right:6px;vertical-align:middle}
 .person-auth-consent-check a{margin-left:6px;text-decoration:underline;font-weight:700}
 
-/* v23.7.382 - 첫 화면 로고 자연스럽게 통합 */
+/* v23.7.384 - 첫 화면 로고 자연스럽게 통합 */
 #signupScreen .sitepass-first-card {
   max-width: 640px;
   margin: 0 auto;
@@ -3835,13 +3835,13 @@ body.sitepass-first-screen-active .app {
   padding-top: 10px;
 }
 
-/* v23.7.382 first-screen cleanup */
+/* v23.7.384 first-screen cleanup */
 #signupScreen .auth-start-grid.single-signup-choice,
 #signupScreen .auth-mini-note,
 #signupScreen .notice.blue-note { display:none !important; }
 
 
-/* v23.7.382 first-screen full package: hero blend + no ID heart */
+/* v23.7.384 first-screen full package: hero blend + no ID heart */
 #signupScreen .sitepass-first-hero,
 #signupScreen .sitepass-first-hero::before,
 #signupScreen .sitepass-first-hero::after{
@@ -3883,7 +3883,7 @@ body.sitepass-first-screen-active .app {
   }
 }
 
-/* v23.7.382 - first screen: title removed, subtitle changed, compact login, no password icons */
+/* v23.7.384 - first screen: title removed, subtitle changed, compact login, no password icons */
 #signupScreen .sitepass-first-title{display:none!important;}
 #signupScreen .sitepass-first-subtitle{font-size:clamp(18px,3vw,21px)!important;line-height:1.45!important;margin:2px auto 22px!important;letter-spacing:-.4px!important;}
 #signupScreen .sitepass-first-card{padding-top:16px!important;padding-bottom:16px!important;}
@@ -3901,7 +3901,7 @@ body.sitepass-first-screen-active .app{min-height:100svh!important;padding-top:8
 
 
 
-/* v23.7.382 - subtitle font polish, input alignment, remember ID checkbox */
+/* v23.7.384 - subtitle font polish, input alignment, remember ID checkbox */
 #signupScreen .sitepass-first-subtitle {
   display: flex !important;
   flex-direction: column !important;
@@ -4026,7 +4026,7 @@ font-size: 25px !important;
 }
 
 
-/* v23.7.382 - 자동 로그인 체크박스: 작게, V 체크표시, 문구 앞줄 맞춤 */
+/* v23.7.384 - 자동 로그인 체크박스: 작게, V 체크표시, 문구 앞줄 맞춤 */
 #signupScreen .sitepass-first-subtitle {
   display: inline-flex !important;
   flex-direction: column !important;
@@ -4156,20 +4156,24 @@ font-size: 25px !important;
     }
 
 
-/* v23.7.382 auth refresh hash fix */
+/* v23.7.384 auth refresh hash fix */
 
-/* v23.7.382 safe auth back button */
+/* v23.7.384 safe auth back button */
 
-/* v23.7.382 home button behavior */
+/* v23.7.384 home button behavior */
 
-/* v23.7.382 clean auth sub screens */
+/* v23.7.384 clean auth sub screens */
 
-/* v23.7.382 hide login on auth sub screens */
+/* v23.7.384 hide login on auth sub screens */
 
-/* v23.7.382 signup terms next button */
+/* v23.7.384 signup terms next button */
 
-/* v23.7.382 signup next button fixed */
+/* v23.7.384 signup next button fixed */
 
-/* v23.7.382 signup/account terms separated */
+/* v23.7.384 signup/account terms separated */
 
-/* v23.7.382 logout to first login */
+/* v23.7.384 logout to first login */
+
+/* v23.7.384 member storage scope fix */
+
+/* v23.7.384 beta stable structure baseline - no functional redesign */

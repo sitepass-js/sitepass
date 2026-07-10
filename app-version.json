@@ -1,6 +1,9 @@
 {
-  "version": "23.7.382",
+  "version": "23.7.384",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.382"
+  "build": "v23.7.384",
+  "stage": "실사용 베타 안정화 + 구조 기준판",
+  "baselineFrom": "23.7.383",
+  "releaseType": "beta-stable-structure-baseline"
 }

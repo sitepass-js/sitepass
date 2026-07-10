@@ -1,3 +1,4 @@
-SitePass v23.7.382
-logout returns to the first login screen, not signup/join page
-based on v23.7.381
+SitePass v23.7.384
+실사용 베타 안정화 + 큰틀/중간틀/작은틀 구조 기준판
+기준: v23.7.383
+원칙: 기능 대공사 없음 / 화면 변경 최소 / 테스트 체크리스트와 수정 범위 기준 추가

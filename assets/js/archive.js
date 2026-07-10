@@ -237,9 +237,12 @@ function clearAdminListQuickFilter() {
 
 function renderList() {
   const isAdminMode = isAdminLoggedIn();
-  const allItems = filterArchiveVisibleItems(isAdminMode && typeof getAdminVisibleEquipmentItems === 'function'
+  let allItems = filterArchiveVisibleItems(isAdminMode && typeof getAdminVisibleEquipmentItems === 'function'
     ? getAdminVisibleEquipmentItems()
     : getItems());
+  if (!isAdminMode && typeof window.sitePassFilterCurrentMemberEquipmentStorageScope === 'function') {
+    allItems = window.sitePassFilterCurrentMemberEquipmentStorageScope(allItems);
+  }
   const box = document.getElementById('equipmentList');
   const title = document.getElementById('listScreenTitle');
   const bottomActions = document.getElementById('listScreenBottomActions');
