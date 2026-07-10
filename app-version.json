@@ -1,11 +1,11 @@
 {
-  "version": "23.7.385",
+  "version": "23.7.386",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.385",
-  "stage": "1단계 큰틀 기준판",
-  "baselineFrom": "23.7.384",
-  "releaseType": "step1-big-frame-baseline",
+  "build": "v23.7.386",
+  "stage": "2단계 중간틀 기준판 - compact",
+  "baselineFrom": "23.7.385",
+  "releaseType": "step2-middle-frame-baseline-compact",
   "runtimeChange": "none",
-  "purpose": "수정을 쉽게 하고 서로 꼬이지 않게 큰 프로그램 영역과 수정 금지선을 고정"
+  "purpose": "파일 수 100개 이하로 줄인 중간틀 기준판"
 }
