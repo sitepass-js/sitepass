@@ -1,11 +1,11 @@
 {
-  "version": "23.7.408",
+  "version": "23.7.410",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.408",
-  "stage": "v408-test 가입/찾기 새로고침 카드 숨김 방지",
-  "baselineFrom": "23.7.407",
-  "releaseType": "test-refresh-card-visible-fix",
+  "build": "v23.7.410",
+  "stage": "v410-test v405기준 새로고침 최소수정",
+  "baselineFrom": "23.7.405",
+  "releaseType": "test-signup-refresh-minimal-fix",
   "runtimeChange": "auth-ui-navigation",
-  "purpose": "회원가입/아이디찾기/비밀번호찾기 새로고침 때 바깥 카드가 숨겨져 화면이 사라지는 문제 보정"
+  "purpose": "v405 화면 구조를 유지하고 새로고침 때 sitepass-first-card 전체가 숨겨지는 원인만 제거"
 }
