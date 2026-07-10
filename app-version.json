@@ -1,11 +1,11 @@
 {
-  "version": "23.7.413",
+  "version": "23.7.415",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.413",
-  "stage": "v413-test 회원가입 입력칸 가로정렬+휴대폰인증후계정입력",
-  "baselineFrom": "23.7.412",
-  "releaseType": "test-signup-inline-fields-phone-then-account",
-  "runtimeChange": "signup-ui-auth-step",
-  "purpose": "이름/주민번호/휴대폰번호 입력 UI 정리 및 휴대폰 인증 완료 후 아이디/비밀번호 입력 단계로 변경"
+  "build": "v23.7.415",
+  "stage": "v415-test 회원가입 다음후완료",
+  "baselineFrom": "23.7.414",
+  "releaseType": "test-signup-next-then-complete",
+  "runtimeChange": "signup-step-ui",
+  "purpose": "휴대폰 인증 단계에서는 다음 버튼을 보여주고, 아이디/비밀번호 입력 단계에서만 회원가입완료 버튼을 보여줌"
 }

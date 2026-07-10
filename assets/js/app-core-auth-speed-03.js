@@ -1056,9 +1056,24 @@ function formatSitePassSignupJuminDisplay() {
 
     function toggleSitePassSignupAccountStage(show) {
       const stage = document.getElementById('sitepassSignupAccountStage');
-      if (!stage) return;
-      stage.classList.toggle('hidden', !show);
+      const nextActions = document.getElementById('sitepassSignupNextActions');
+      if (stage) stage.classList.toggle('hidden', !show);
+      if (nextActions) nextActions.classList.toggle('hidden', !!show);
     }
+
+    function goSitePassSignupAccountStep() {
+      if (!sitepassSignupPhoneVerified) {
+        alert('휴대폰 인증을 완료한 뒤 다음으로 넘어갈 수 있습니다.');
+        const status = document.getElementById('sitepassSignupVerifyStatus');
+        if (status) status.textContent = '먼저 인증요청을 누르고 문자 인증번호를 확인해주세요.';
+        return false;
+      }
+      toggleSitePassSignupAccountStage(true);
+      const idInput = document.getElementById('sitepassSignupId');
+      setTimeout(() => { if (idInput) idInput.focus(); }, 80);
+      return false;
+    }
+    window.goSitePassSignupAccountStep = goSitePassSignupAccountStep;
 
     function getSitePassSignupIdentity() {
       const birth6 = (document.getElementById('sitepassSignupJuminMasked')?.value || '').replace(/[^0-9]/g, '').slice(0, 6);
@@ -1212,7 +1227,7 @@ function formatSitePassSignupJuminDisplay() {
       if (status) status.textContent = '네이버 SENS로 인증번호를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.';
       try {
         let signupTermsUrl = '';
-        try { signupTermsUrl = new URL('./terms/person-consent.html?role=member&v=23.7.413', window.location.href).href; } catch (e) { signupTermsUrl = './terms/person-consent.html?role=member&v=23.7.413'; }
+        try { signupTermsUrl = new URL('./terms/person-consent.html?role=member&v=23.7.415', window.location.href).href; } catch (e) { signupTermsUrl = './terms/person-consent.html?role=member&v=23.7.415'; }
         const data = await sens.sendPhoneCode({
           purpose: 'member_signup_phone_verification',
           subjectType: 'member',
@@ -1225,7 +1240,7 @@ function formatSitePassSignupJuminDisplay() {
           privacyAgreed: true,
           smsAgreed: true,
           identityTermsAgreed: true,
-          termsVersion: 'v23.7.413',
+          termsVersion: 'v23.7.415',
           termsUrl: signupTermsUrl
         });
         window.__sitepassV351SignupVerificationId = data.verificationId || '';
@@ -1285,7 +1300,7 @@ function formatSitePassSignupJuminDisplay() {
           const idInput = document.getElementById('sitepassSignupId');
           if (idInput) idInput.focus();
         }, 80);
-        alert('휴대폰 인증이 완료되었습니다.\n이제 아이디와 비밀번호를 입력해주세요.');
+        alert('휴대폰 인증이 완료되었습니다.\n이제 아이디와 비밀번호를 입력한 뒤 회원가입을 완료해주세요.');
       } catch (err) {
         console.error(err);
         if (status) status.textContent = '인증 실패: ' + sens.koreanError(err);
