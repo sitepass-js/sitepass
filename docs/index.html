@@ -1,0 +1,2017 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="현장서류패스는 건설장비·기사·인부 서류를 QR링크로 간편하게 등록·공유하는 서비스입니다." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="현장서류패스" />
+<meta property="og:title" content="현장서류패스 - 건설현장 서류 QR 공유" />
+<meta property="og:description" content="장비서류·기사서류·인부서류를 휴대폰으로 등록하고 QR링크로 현장 담당자에게 바로 공유하세요." />
+<meta property="og:url" content="https://sitepass-js.github.io/sitepass/recommend.html" />
+<meta property="og:image" content="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="현장서류패스 - 건설현장 서류 QR 공유" />
+<meta name="twitter:description" content="QR링크로 장비·기사·인부 서류를 간편하게 공유하세요." />
+<meta name="twitter:image" content="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview.png" />
+
+<meta name="theme-color" content="#2457d6" />
+<meta name="application-name" content="현장서류패스" />
+<meta name="apple-mobile-web-app-title" content="현장서류패스" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
+<link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
+<link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.385" />
+<!-- v23.7.385: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
+<link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png" />
+  <title>현장서류패스 - 건설현장 서류 QR 공유</title>
+
+<script>
+(function(){
+  function routeFromHash(){
+    var h = String(location.hash || '').replace(/^#/, '').trim();
+    if (h === 'join' || h === 'signup' || h === 'sitepass-join') return 'join';
+    if (h === 'find-id' || h === 'id-find' || h === 'sitepass-find-id') return 'find-id';
+    if (h === 'find-password' || h === 'password-find' || h === 'sitepass-find-password') return 'find-password';
+    return '';
+  }
+  var route = routeFromHash();
+  if (route) {
+    window.__sitepassFirstAuthRouteOnBoot = route;
+    document.documentElement.classList.add('sitepass-first-auth-route-boot');
+  }
+})();
+</script>
+
+  <!-- SitePass deploy-check: v23.7.385 split complete from v23.7.385 -->
+  <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.385" />
+
+  <style>
+    /* v23.7.385 first-screen hero cleanup */
+    #signupScreen .sitepass-first-hero,
+    #signupScreen .sitepass-first-hero::before,
+    #signupScreen .sitepass-first-hero::after {
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      outline: none !important;
+    }
+    #signupScreen .sitepass-first-hero img {
+      width: min(100%, 560px) !important;
+      max-height: 340px !important;
+      display: block !important;
+      margin: 0 auto 10px !important;
+      object-fit: contain !important;
+      background: transparent !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      outline: none !important;
+      mix-blend-mode: normal !important;
+      filter: none !important;
+    }
+    #signupScreen .sitepass-first-login-left > .sitepass-first-field:first-child {
+      padding-left: 0 !important;
+      gap: 0 !important;
+    }
+    #signupScreen #sitepassFirstLoginIdentifier {
+      padding-left: 18px !important;
+    }
+    @media (max-width: 768px) {
+      #signupScreen .sitepass-first-hero img {
+        width: min(100%, 500px) !important;
+        max-height: 300px !important;
+      }
+    }
+
+    /* v23.7.385 first-screen compact: title removed, subtitle changed, password icons removed */
+    body.sitepass-first-screen-active {
+      overflow-x: hidden !important;
+    }
+    body.sitepass-first-screen-active .app {
+      min-height: 100svh !important;
+      padding-top: 8px !important;
+      padding-bottom: 8px !important;
+    }
+    #signupScreen .sitepass-first-card {
+      padding-top: 16px !important;
+      padding-bottom: 16px !important;
+    }
+    #signupScreen .sitepass-first-title {
+      display: none !important;
+    }
+    #signupScreen .sitepass-first-subtitle {
+      font-size: clamp(18px, 3vw, 21px) !important;
+      line-height: 1.45 !important;
+      margin: 2px auto 22px !important;
+      letter-spacing: -0.4px !important;
+    }
+    #signupScreen .sitepass-first-field {
+      min-height: 60px !important;
+      height: 60px !important;
+      border-radius: 17px !important;
+      padding: 0 18px !important;
+      gap: 0 !important;
+    }
+    #signupScreen .sitepass-first-field input {
+      height: 58px !important;
+      min-height: 58px !important;
+      font-size: 24px !important;
+    }
+    #signupScreen #sitepassFirstLoginPassword {
+      padding-left: 18px !important;
+      padding-right: 18px !important;
+    }
+    #signupScreen .sitepass-first-lock-icon,
+    #signupScreen .sitepass-first-eye {
+      display: none !important;
+    }
+    #signupScreen .sitepass-first-login {
+      min-height: 132px !important;
+      height: 132px !important;
+      border-radius: 20px !important;
+      font-size: 30px !important;
+    }
+    #signupScreen .sitepass-first-login-form {
+      gap: 14px !important;
+      margin-bottom: 14px !important;
+    }
+    #signupScreen .sitepass-first-link-row {
+      margin-bottom: 12px !important;
+    }
+    @media (max-width: 620px) {
+      #signupScreen .sitepass-first-card {
+        padding-top: 14px !important;
+        padding-bottom: 14px !important;
+      }
+      #signupScreen .sitepass-first-hero img {
+        max-height: 240px !important;
+        margin-bottom: 4px !important;
+      }
+      #signupScreen .sitepass-first-subtitle {
+        font-size: 17px !important;
+        margin-bottom: 18px !important;
+      }
+      #signupScreen .sitepass-first-field {
+        min-height: 56px !important;
+        height: 56px !important;
+        padding: 0 14px !important;
+      }
+      #signupScreen .sitepass-first-field input {
+        height: 54px !important;
+        min-height: 54px !important;
+        font-size: 21px !important;
+      }
+      #signupScreen .sitepass-first-login {
+        min-height: 122px !important;
+        height: 122px !important;
+        font-size: 25px !important;
+      }
+    }
+
+
+    /* v23.7.385 - subtitle font polish, input alignment, remember ID checkbox */
+    #signupScreen .sitepass-first-subtitle {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 3px !important;
+      font-family: "Pretendard", "SUIT", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      font-size: clamp(19px, 3.2vw, 23px) !important;
+      line-height: 1.32 !important;
+      font-weight: 850 !important;
+      letter-spacing: -0.65px !important;
+      color: #172033 !important;
+      margin: 0 auto 22px !important;
+      text-align: center !important;
+    }
+    #signupScreen .sitepass-first-subtitle span {
+      display: block !important;
+    }
+    #signupScreen .sitepass-first-login-left {
+      gap: 10px !important;
+      align-content: start !important;
+    }
+    #signupScreen .sitepass-first-field,
+    #signupScreen .sitepass-first-login-left > .sitepass-first-field:first-child {
+      padding: 0 !important;
+      gap: 0 !important;
+      min-height: 58px !important;
+      height: 58px !important;
+      box-sizing: border-box !important;
+    }
+    #signupScreen .sitepass-first-field input,
+    #signupScreen #sitepassFirstLoginIdentifier,
+    #signupScreen #sitepassFirstLoginPassword {
+      box-sizing: border-box !important;
+      height: 56px !important;
+      min-height: 56px !important;
+      padding: 0 18px !important;
+      margin: 0 !important;
+      font-size: 23px !important;
+      line-height: 1 !important;
+      font-weight: 750 !important;
+    }
+    #signupScreen .sitepass-first-remember-id {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      gap: 8px !important;
+      min-height: 24px !important;
+      padding: 0 2px 0 4px !important;
+      margin: -1px 0 0 0 !important;
+      font-family: "Pretendard", "SUIT", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      font-size: 15px !important;
+      line-height: 1 !important;
+      font-weight: 800 !important;
+      color: #334155 !important;
+      cursor: pointer !important;
+      user-select: none !important;
+    }
+    #signupScreen .sitepass-first-remember-id input {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px !important;
+      border-radius: 5px !important;
+      border: 1.8px solid #cbd5e1 !important;
+      background: #fff !important;
+      display: inline-grid !important;
+      place-content: center !important;
+      margin: 0 !important;
+      box-shadow: 0 3px 8px rgba(15,23,42,.05) !important;
+    }
+    #signupScreen .sitepass-first-remember-id input::before {
+      content: "" !important;
+      width: 9px !important;
+      height: 9px !important;
+      border-radius: 3px !important;
+      transform: scale(0) !important;
+      transition: transform .12s ease !important;
+      background: #ffb800 !important;
+    }
+    #signupScreen .sitepass-first-remember-id input:checked {
+      border-color: #ffb800 !important;
+      background: #fff9df !important;
+    }
+    #signupScreen .sitepass-first-remember-id input:checked::before {
+      transform: scale(1) !important;
+    }
+    #signupScreen .sitepass-first-login {
+      min-height: 150px !important;
+      height: 150px !important;
+      align-self: start !important;
+    }
+    @media (max-width: 620px) {
+      #signupScreen .sitepass-first-subtitle {
+        font-size: 18px !important;
+        line-height: 1.34 !important;
+        margin-bottom: 18px !important;
+      }
+      #signupScreen .sitepass-first-field,
+      #signupScreen .sitepass-first-login-left > .sitepass-first-field:first-child {
+        min-height: 54px !important;
+        height: 54px !important;
+      }
+      #signupScreen .sitepass-first-field input,
+      #signupScreen #sitepassFirstLoginIdentifier,
+      #signupScreen #sitepassFirstLoginPassword {
+        height: 52px !important;
+        min-height: 52px !important;
+        padding: 0 15px !important;
+        font-size: 21px !important;
+      }
+      #signupScreen .sitepass-first-remember-id {
+        font-size: 14px !important;
+        min-height: 22px !important;
+      }
+      #signupScreen .sitepass-first-login {
+        min-height: 140px !important;
+        height: 140px !important;
+        font-size: 25px !important;
+      }
+    }
+
+    /* v23.7.385 - subtitle left-edge alignment + smaller remember ID checkbox */
+    #signupScreen .sitepass-first-subtitle {
+      display: inline-flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      justify-content: center !important;
+      width: max-content !important;
+      max-width: calc(100% - 32px) !important;
+      margin: 0 auto 22px !important;
+      text-align: left !important;
+      font-family: "Pretendard", "SUIT", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      font-size: clamp(19px, 3.2vw, 23px) !important;
+      line-height: 1.34 !important;
+      font-weight: 900 !important;
+      letter-spacing: -0.7px !important;
+      color: #111827 !important;
+    }
+    #signupScreen .sitepass-first-subtitle span {
+      display: block !important;
+      width: 100% !important;
+      text-align: left !important;
+    }
+    #signupScreen .sitepass-first-remember-id {
+      gap: 5px !important;
+      min-height: 18px !important;
+      padding: 0 2px 0 3px !important;
+      margin: -2px 0 0 0 !important;
+      font-size: 14px !important;
+      line-height: 1 !important;
+    }
+    #signupScreen .sitepass-first-remember-id input {
+      width: 10px !important;
+      height: 10px !important;
+      min-width: 10px !important;
+      border-radius: 3px !important;
+      border-width: 1.3px !important;
+      box-shadow: none !important;
+    }
+    #signupScreen .sitepass-first-remember-id input::before {
+      width: 5px !important;
+      height: 5px !important;
+      border-radius: 2px !important;
+    }
+    @media (max-width: 620px) {
+      #signupScreen .sitepass-first-subtitle {
+        font-size: 18px !important;
+        line-height: 1.34 !important;
+        margin-bottom: 18px !important;
+      }
+      #signupScreen .sitepass-first-remember-id {
+        gap: 5px !important;
+        min-height: 17px !important;
+        font-size: 13px !important;
+      }
+      #signupScreen .sitepass-first-remember-id input {
+        width: 10px !important;
+        height: 10px !important;
+        min-width: 10px !important;
+      }
+    }
+
+    /* v23.7.385 - 자동 로그인 체크박스: 작게, V 체크표시, 문구 앞줄 맞춤 */
+    #signupScreen .sitepass-first-subtitle {
+      display: inline-flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      justify-content: center !important;
+      width: max-content !important;
+      max-width: calc(100% - 32px) !important;
+      margin: 0 auto 22px !important;
+      text-align: left !important;
+      font-family: "Pretendard", "SUIT", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      font-size: clamp(19px, 3.2vw, 23px) !important;
+      line-height: 1.34 !important;
+      font-weight: 900 !important;
+      letter-spacing: -0.7px !important;
+      color: #111827 !important;
+    }
+    #signupScreen .sitepass-first-subtitle span {
+      display: block !important;
+      width: 100% !important;
+      text-align: left !important;
+    }
+    #signupScreen .sitepass-first-auto-login,
+    #signupScreen .sitepass-first-remember-id {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      gap: 5px !important;
+      min-height: 18px !important;
+      padding: 0 2px 0 3px !important;
+      margin: -2px 0 0 0 !important;
+      font-family: "Pretendard", "SUIT", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      font-size: 13.5px !important;
+      line-height: 1 !important;
+      font-weight: 800 !important;
+      color: #334155 !important;
+      cursor: pointer !important;
+      user-select: none !important;
+    }
+    #signupScreen .sitepass-first-auto-login input {
+      position: absolute !important;
+      opacity: 0 !important;
+      width: 1px !important;
+      height: 1px !important;
+      min-width: 1px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      pointer-events: none !important;
+    }
+    #signupScreen .sitepass-first-checkmark {
+      width: 12px !important;
+      height: 12px !important;
+      min-width: 12px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-sizing: border-box !important;
+      border: 1.4px solid #cbd5e1 !important;
+      border-radius: 3px !important;
+      background: #ffffff !important;
+      color: transparent !important;
+      font-size: 8px !important;
+      font-weight: 950 !important;
+      line-height: 1 !important;
+      box-shadow: none !important;
+      transform: translateY(0) !important;
+    }
+    #signupScreen .sitepass-first-auto-login input:checked + .sitepass-first-checkmark {
+      border-color: #ffb800 !important;
+      background: #fff4bf !important;
+      color: #111827 !important;
+    }
+    #signupScreen .sitepass-first-auto-login input:checked + .sitepass-first-checkmark::after {
+      content: "V" !important;
+      display: block !important;
+      font-size: 8.5px !important;
+      font-weight: 950 !important;
+      line-height: 1 !important;
+      transform: translateY(-0.2px) !important;
+    }
+    /* 기존 자동 로그인 input이 캐시에 남아도 작게 보이도록 보조 */
+    #signupScreen .sitepass-first-remember-id input {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      width: 12px !important;
+      height: 12px !important;
+      min-width: 12px !important;
+      border-radius: 3px !important;
+      border: 1.4px solid #cbd5e1 !important;
+      background: #fff !important;
+      display: inline-grid !important;
+      place-content: center !important;
+      margin: 0 !important;
+      box-shadow: none !important;
+    }
+    #signupScreen .sitepass-first-remember-id input::before {
+      content: "V" !important;
+      width: auto !important;
+      height: auto !important;
+      background: transparent !important;
+      color: #111827 !important;
+      font-size: 8.5px !important;
+      font-weight: 950 !important;
+      line-height: 1 !important;
+      transform: scale(0) !important;
+    }
+    #signupScreen .sitepass-first-remember-id input:checked::before {
+      transform: scale(1) !important;
+    }
+    @media (max-width: 620px) {
+      #signupScreen .sitepass-first-subtitle {
+        font-size: 18px !important;
+        line-height: 1.34 !important;
+        margin-bottom: 18px !important;
+      }
+      #signupScreen .sitepass-first-auto-login,
+      #signupScreen .sitepass-first-remember-id {
+        gap: 5px !important;
+        min-height: 17px !important;
+        font-size: 13px !important;
+      }
+      #signupScreen .sitepass-first-checkmark,
+      #signupScreen .sitepass-first-remember-id input {
+        width: 12px !important;
+        height: 12px !important;
+        min-width: 12px !important;
+      }
+    }
+
+    /* v23.7.385 - 회원가입/찾기 새로고침 시 첫 로그인화면 순간 노출 방지 */
+    html.sitepass-first-auth-route-boot #sitepassFirstLanding {
+      display: none !important;
+    }
+    html.sitepass-first-auth-route-boot #signupScreen .login-auth-shell {
+      display: block !important;
+    }
+    html.sitepass-first-auth-route-boot #signupScreen .login-auth-shell.hidden {
+      display: block !important;
+    }
+
+    /* v23.7.385 - 반복 새로고침 시 회원가입/찾기 hash 유지 보정 */
+
+    /* v23.7.385 - 브라우저 뒤로가기 대신 안전한 화면 내 처음화면 버튼 */
+    #signupScreen .sitepass-auth-safe-back {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+      align-self: flex-start !important;
+      min-height: 38px !important;
+      padding: 0 14px !important;
+      margin: 0 0 12px 0 !important;
+      border: 1px solid #dbe4f0 !important;
+      border-radius: 999px !important;
+      background: #ffffff !important;
+      color: #1e293b !important;
+      font-size: 14px !important;
+      font-weight: 900 !important;
+      line-height: 1 !important;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06) !important;
+      cursor: pointer !important;
+    }
+    #signupScreen .sitepass-auth-safe-back:active {
+      transform: translateY(1px) !important;
+    }
+    #signupScreen .join-choice-head .sitepass-auth-safe-back {
+      margin-bottom: 10px !important;
+    }
+
+    /* v23.7.385 - 홈화면/홈으로가기 역할 분리 */
+    /* v23.7.385 - 회원가입/아이디찾기/비밀번호찾기 화면에서는 위 로그인 박스 숨김 */
+    #signupScreen .login-auth-shell.sitepass-auth-panel-only > :not(#joinChoiceBox):not(#accountFindPanel) {
+      display: none !important;
+    }
+    #signupScreen .login-auth-shell.sitepass-auth-panel-only {
+      padding-top: 22px !important;
+    }
+    #signupScreen .login-auth-shell.sitepass-auth-panel-only #joinChoiceBox,
+    #signupScreen .login-auth-shell.sitepass-auth-panel-only #accountFindPanel {
+      margin-top: 0 !important;
+    }
+    #signupScreen .login-auth-shell.sitepass-auth-panel-only #joinChoiceBox.hidden,
+    #signupScreen .login-auth-shell.sitepass-auth-panel-only #accountFindPanel.hidden {
+      display: none !important;
+    }
+
+    /* v23.7.385 - 회원가입/찾기 화면에서 로그인창 완전 제거 */
+    #signupScreen.sitepass-auth-join-open .login-auth-shell {
+      display: none !important;
+    }
+    #signupScreen .login-auth-shell.sitepass-auth-find-open > :not(#accountFindPanel) {
+      display: none !important;
+    }
+    #signupScreen .login-auth-shell.sitepass-auth-find-open {
+      padding-top: 22px !important;
+    }
+    #signupScreen .login-auth-shell.sitepass-auth-find-open #accountFindPanel {
+      display: block !important;
+      margin-top: 0 !important;
+    }
+    #signupScreen .login-auth-shell.sitepass-auth-find-open #accountFindPanel.hidden {
+      display: none !important;
+    }
+
+    /* v23.7.385 - 회원가입 약관 다음 버튼 */
+    #signupScreen .terms-next-actions {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 10px !important;
+      margin: 16px 0 6px !important;
+      padding: 0 !important;
+    }
+    #signupScreen .terms-next-button {
+      width: 100% !important;
+      min-height: 54px !important;
+      border: 0 !important;
+      border-radius: 16px !important;
+      background: linear-gradient(180deg, #ffc92f, #ffb300) !important;
+      color: #111827 !important;
+      font-size: 18px !important;
+      font-weight: 950 !important;
+      letter-spacing: -0.4px !important;
+      box-shadow: 0 12px 26px rgba(255, 183, 0, 0.22) !important;
+      cursor: pointer !important;
+    }
+    #signupScreen .terms-next-button:active {
+      transform: translateY(1px) !important;
+    }
+    #signupScreen .terms-next-hint {
+      margin: 8px 0 0 !important;
+      color: #64748b !important;
+      font-size: 13px !important;
+      line-height: 1.4 !important;
+      text-align: center !important;
+    }
+
+    /* v23.7.385 - 회원가입 약관 다음 버튼 동작 보정 */
+    #signupScreen .terms-next-actions {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 10px !important;
+      margin: 16px 0 6px !important;
+      padding: 0 !important;
+    }
+    #signupScreen .terms-next-button {
+      width: 100% !important;
+      min-height: 54px !important;
+      border: 0 !important;
+      border-radius: 16px !important;
+      background: linear-gradient(180deg, #ffc92f, #ffb300) !important;
+      color: #111827 !important;
+      font-size: 18px !important;
+      font-weight: 950 !important;
+      letter-spacing: -0.4px !important;
+      box-shadow: 0 12px 26px rgba(255, 183, 0, 0.22) !important;
+      cursor: pointer !important;
+    }
+    #signupScreen .terms-next-button:active {
+      transform: translateY(1px) !important;
+    }
+    #signupScreen .terms-next-hint {
+      margin: 8px 0 0 !important;
+      color: #64748b !important;
+      font-size: 13px !important;
+      line-height: 1.4 !important;
+      text-align: center !important;
+    }
+
+    /* v23.7.385 - 회원가입 약관과 서류 등록 약관 분리 */
+    #signupScreen .terms-guide {
+      word-break: keep-all !important;
+    }
+
+  </style>
+</head>
+<body class="sitepass-booting">
+  <main class="app">
+    <div class="topbar sitepass-clean-header">
+      <div class="brand logo-brand" onclick="goHome()" role="button" tabindex="0" title="홈으로가기" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goHome();}">
+        <div class="sitepass-logo" aria-label="SitePass 로고">
+          <svg class="sitepass-logo-mark" viewBox="0 0 64 64" role="img" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="sitepassLogoGrad" x1="8" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#1677f2" />
+                <stop offset="0.55" stop-color="#16a7d9" />
+                <stop offset="1" stop-color="#22c55e" />
+              </linearGradient>
+              <linearGradient id="sitepassDocGrad" x1="24" y1="12" x2="45" y2="48" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#ffffff" />
+                <stop offset="1" stop-color="#f7fbff" />
+              </linearGradient>
+            </defs>
+            <rect x="7" y="7" width="49" height="50" rx="13" fill="url(#sitepassLogoGrad)" />
+            <path d="M6 26h11M3 34h15M8 42h10" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".92" />
+            <path d="M22 13h24l8 8v30H22z" fill="url(#sitepassDocGrad)" />
+            <path d="M46 13v8h8z" fill="#cfe9ff" />
+            <path d="M28 22h13M28 28h9" stroke="#1677f2" stroke-width="3.2" stroke-linecap="round" />
+            <rect x="28" y="34" width="6" height="6" rx="1.2" fill="#0b357f" />
+            <rect x="38" y="34" width="6" height="6" rx="1.2" fill="#0b357f" />
+            <rect x="28" y="44" width="6" height="6" rx="1.2" fill="#0b357f" />
+            <rect x="36" y="42" width="3.5" height="3.5" rx=".8" fill="#0b357f" />
+            <rect x="42" y="44" width="3.5" height="3.5" rx=".8" fill="#0b357f" />
+            <rect x="36" y="48" width="3.5" height="3.5" rx=".8" fill="#0b357f" />
+            <circle cx="47" cy="48" r="11" fill="#22c55e" stroke="#ffffff" stroke-width="3.5" />
+            <path d="M41.5 47.8l3.9 3.9 7.4-8" fill="none" stroke="#ffffff" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <strong class="sitepass-logo-word">SitePass</strong>
+        </div>
+      </div>
+      <div class="top-actions sitepass-header-actions">
+        <button id="memberHomeButton" type="button" class="top-nav-button top-home-button hidden" onclick="goHome()">홈으로가기</button>
+        <div class="top-account-actions">
+          <span id="adminStatePill" class="pill danger hidden">관리자모드</span>
+          <button id="myAccountButton" type="button" class="top-login-button hidden" onclick="openMyAccountScreen()">내정보</button>
+          <button id="memberLogoutButton" type="button" class="top-login-button hidden" onclick="memberLogout()">로그아웃</button>
+          <button id="memberWithdrawButton" type="button" class="top-withdraw-button hidden" onclick="memberWithdraw()">회원탈퇴</button>
+          <button id="adminLogoutButton" type="button" class="top-login-button hidden" onclick="adminLogout()">로그아웃</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="homeScreen" class="screen hidden">
+      <div class="card home-hero-card">
+        <div class="hero-eyebrow">건설현장 서류 공유 플랫폼</div>
+        <h1>현장 장비 반입서류,<br>한 번 등록하고 링크 하나로 전달</h1>
+        <p>장비·기사·인부 서류를 한 번만 등록해두세요. 현장마다 카톡이나 문자로 1일 만료 링크를 보내면, 담당자는 다운로드와 프린트만 바로 하면 됩니다.</p>
+        <div class="menu-grid">
+          <button id="homeRegisterButton" class="primary" onclick="startNewRegistration()">장비/기사/인부 등록</button>
+          <button class="ghost" onclick="showScreen('listScreen')">장비/기사/인부 보관함</button>
+        </div>
+        <div class="roadmap-grid">
+          <button type="button" class="roadmap-card roadmap-button" onclick="showScreen('usageGuideScreen')">
+            <b>1. SitePass 사용법</b>
+            <span>처음 등록부터 보관함 공유, 담당자 확인까지 상세 사용방법을 확인합니다.</span>
+          </button>
+          <button type="button" class="roadmap-card roadmap-button" onclick="showScreen('pricingScreen')">
+            <b>2. 결제방법</b>
+            <span>월 결제, 연 결제, 결제 후 QR 활성화 흐름을 확인합니다.</span>
+          </button>
+          <button type="button" class="roadmap-card roadmap-button" onclick="showScreen('installScreen')">
+            <b>3. 홈화면 설치</b>
+            <span>설치 버튼이 안 뜰 때 안드로이드·아이폰별 저장 방법을 확인합니다.</span>
+          </button>
+        </div>
+        <div class="install-guide-box">
+          <div class="install-guide-title">휴대폰 홈화면에 현장서류패스 설치</div>
+          <p class="install-guide-desc">
+            <span><b>바탕화면에 설치하기</b>를 누르면 설치 가능한 브라우저는 바로 설치창이 열립니다.</span>
+            <span>아이폰처럼 자동 설치가 막히면 저장 방법을 바로 안내합니다.</span>
+          </p>
+          <div class="install-action-grid">
+            <button id="homeInstallButton" data-install-primary-button="1" type="button" class="install-primary-button" onclick="addSitePassToHomeScreen(event)">바탕화면에 설치하기</button>
+            <button id="homeInstallHelpButton" type="button" class="install-help-button" onclick="showHomeInstallGuide(event)">설치 안 뜰 때 보기</button>
+          </div>
+          <div id="homeInstallStatus" data-install-status="1" class="install-mini-note">고정주소 https://sitepass-js.github.io/sitepass/ 에서 설치하세요. 버튼이 안 뜨면 설치화면의 수동 방법을 따라 하면 됩니다.</div>
+          <div id="homeInstallManualGuide" data-install-manual-guide="1" class="install-expanded-guide hidden">
+            <b>설치창이 안 뜰 때 저장 방법</b>
+            <ol>
+              <li><b>안드로이드 Chrome/Edge:</b> 먼저 <b>바탕화면에 설치하기</b> 버튼을 눌러봅니다.</li>
+              <li><b>안드로이드에서 창이 안 뜨면:</b> 브라우저 메뉴(⋮)에서 <b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누릅니다.</li>
+              <li><b>아이폰:</b> 현장서류패스를 Safari 또는 브라우저로 연 뒤 공유 버튼(□↑)을 누릅니다.</li>
+              <li><b>아이폰:</b> 메뉴에서 <b>홈 화면에 추가</b>를 누르고, 이름을 <b>현장서류패스</b>로 저장합니다.</li>
+              <li><b>카카오톡 안에서 열렸다면:</b> 먼저 <b>외부 브라우저로 열기</b>를 누른 뒤 위 방법대로 저장합니다.</li>
+            </ol>
+            <div class="install-mini-note">주의: PC에서 파일을 더블클릭해서 여는 file:// 상태에서는 설치창이 뜨지 않습니다. GitHub Pages, Netlify, Vercel, 실제 도메인처럼 https 주소에 올려야 홈화면 설치가 가능합니다.</div>
+          </div>
+        </div>
+        <div id="quickAuthSettingsBox" class="quick-auth-settings-box hidden">
+          <div class="quick-auth-head">
+            <div>
+              <b>홈화면 앱 간편로그인 등록</b>
+              <span>휴대폰 바탕화면 SitePass 아이콘으로 들어올 때만 6자리 간편번호 또는 지문인식을 사용합니다.</span>
+            </div>
+            <span id="quickAuthModeBadge" class="quick-mode-badge">일반 인터넷창</span>
+          </div>
+          <p>일반 인터넷창에서는 지금처럼 사용자 아이디, 카카오톡, 네이버 로그인 방식을 사용합니다. 간편로그인은 이 휴대폰에만 저장되는 테스트 기능입니다.</p>
+          <div class="quick-auth-action-grid three">
+            <button type="button" class="ghost" onclick="openQuickPinRegisterPanel()">간편번호 6자리 등록</button>
+            <button type="button" class="ghost" onclick="registerFingerprintQuickAuth()">지문인식 등록</button>
+            <button type="button" class="dangerBtn" onclick="removeQuickAuth()">간편로그인 해제</button>
+          </div>
+          <div id="quickPinRegisterPanel" class="quick-pin-panel hidden">
+            <input id="quickPinRegisterInput" type="password" inputmode="numeric" maxlength="6" placeholder="새 간편번호 6자리" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)"  aria-label="새 간편번호 6자리" title="새 간편번호 6자리" name="quickPinRegisterInput" />
+            <input id="quickPinRegisterInput2" type="password" inputmode="numeric" maxlength="6" placeholder="간편번호 다시 입력" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" style="margin-top:8px"  aria-label="간편번호 다시 입력" title="간편번호 다시 입력" name="quickPinRegisterInput2" />
+            <div class="actions">
+              <button type="button" class="secondary" onclick="closeQuickPinRegisterPanel()">닫기</button>
+              <button type="button" class="primary" onclick="saveQuickPinAuth()">등록하기</button>
+            </div>
+          </div>
+          <div id="quickAuthStatus" class="quick-auth-status">홈화면에 설치한 SitePass 앱에서 로그인 후 등록하면 다음부터 간편번호/지문으로 들어갈 수 있습니다.</div>
+        </div>
+        <div class="ad-box">광고 배너 자리</div>
+        <div class="home-company-card">
+          <div class="home-company-title">운영/개발 · 제이에스건설</div>
+          <div class="js-construction-logo-inline" aria-label="제이에스건설 로고">
+            <span class="js-mark">JS</span>
+            <span class="js-text"><span class="js-name">제이에스건설</span><span class="js-sub">J.S CONSTRUCTION</span></span>
+          </div>
+          <p>SitePass 운영 및 개발은 제이에스건설이 함께합니다.</p>
+        </div>
+      </div>
+    </section>
+
+
+
+    <section id="myAccountScreen" class="screen hidden">
+      <div class="card">
+        <div class="hero-eyebrow">계정 관리</div>
+        <h2>내정보</h2>
+        <p>로그인한 계정 정보를 확인하고 비밀번호를 변경합니다. 최고관리자와 운영관리자도 같은 화면에서 자기 비밀번호를 바꿀 수 있습니다.</p>
+        <div class="notice blue-note">
+          <b>베타 안내</b><br>
+          현재 비밀번호 변경은 이 브라우저 테스트 회원정보에 먼저 저장됩니다. 정식 서비스에서는 Supabase 서버에서 암호화된 비밀번호 변경으로 연결해야 합니다. 카카오톡·네이버 계정 자체 비밀번호는 각 서비스에서 변경해야 합니다.
+        </div>
+        <div class="line"><b>계정구분</b><span id="myAccountType">-</span></div>
+        <div class="line"><b>이름/업체명</b><span id="myAccountName">-</span></div>
+        <div class="line"><b>아이디</b><span id="myAccountLoginId">-</span></div>
+        <div class="line"><b>가입방식</b><span id="myAccountProvider">-</span></div>
+        <div class="line"><b>휴대폰</b><span id="myAccountPhone">-</span></div>
+
+        <div class="card" style="box-shadow:none;margin-top:14px;">
+          <h3>휴대폰번호 수정</h3>
+          <p class="small">알림과 계정 확인에 사용할 휴대폰번호를 수정합니다.</p>
+          <div class="field">
+            <label for="myAccountPhoneInput">휴대폰번호</label>
+            <input id="myAccountPhoneInput" type="tel" placeholder="01012345678" inputmode="numeric" autocomplete="tel"  aria-label="01012345678" title="01012345678" name="myAccountPhoneInput" />
+          </div>
+          <div class="actions">
+            <button type="button" class="primary" onclick="saveMyAccountPhone()">휴대폰번호 저장</button>
+          </div>
+          <div id="myAccountPhoneStatus" class="my-account-status">휴대폰번호를 수정한 뒤 저장을 눌러주세요.</div>
+        </div>
+
+        <div class="card" style="box-shadow:none;margin-top:14px;">
+          <h3>비밀번호 변경</h3>
+          <p class="small">현재 비밀번호를 먼저 확인한 뒤 새 비밀번호를 입력합니다. 카카오톡·네이버 자체 비밀번호는 각 서비스에서 변경해야 합니다.</p>
+          <div id="myPasswordStepCurrent">
+            <div class="field">
+              <label for="myCurrentPassword">현재 비밀번호</label>
+              <input id="myCurrentPassword" type="password" placeholder="현재 비밀번호 입력" autocomplete="current-password" onkeydown="if(event.key==='Enter') verifyMyAccountCurrentPassword()"  aria-label="현재 비밀번호 입력" title="현재 비밀번호 입력" name="myCurrentPassword" />
+            </div>
+            <div class="actions">
+              <button type="button" class="secondary" onclick="clearMyAccountPasswordInputs()">입력 지우기</button>
+              <button type="button" class="primary" onclick="verifyMyAccountCurrentPassword()">현재 비밀번호 확인</button>
+            </div>
+          </div>
+          <div id="myPasswordStepNew" class="hidden">
+            <div class="field">
+              <label for="myNewPassword">새 비밀번호</label>
+              <input id="myNewPassword" type="password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password"  aria-label="새 비밀번호 6자 이상" title="새 비밀번호 6자 이상" name="myNewPassword" />
+            </div>
+            <div class="field">
+              <label for="myNewPassword2">새 비밀번호 확인</label>
+              <input id="myNewPassword2" type="password" placeholder="새 비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') changeMyAccountPassword()"  aria-label="새 비밀번호 다시 입력" title="새 비밀번호 다시 입력" name="myNewPassword2" />
+            </div>
+            <div class="actions">
+              <button type="button" class="secondary" onclick="resetMyAccountPasswordStep()">현재 비밀번호 다시 확인</button>
+              <button type="button" class="primary" onclick="changeMyAccountPassword()">비밀번호 변경 저장</button>
+            </div>
+          </div>
+          <div id="myAccountPasswordStatus" class="my-account-status">현재 비밀번호를 입력하고 확인을 눌러주세요.</div>
+        </div>
+
+        <div class="actions">
+          <button class="secondary" onclick="goHome()">돌아가기</button>
+          <button class="ghost" onclick="isAdminLoggedIn() ? adminLogout() : memberLogout()">로그아웃</button>
+          <button id="myAccountWithdrawButton" class="dangerBtn" onclick="memberWithdraw()">회원탈퇴</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="installScreen" class="screen hidden">
+      <div class="card install-screen-card">
+        <div class="hero-eyebrow">휴대폰 바탕화면 설치</div>
+        <h2>현장서류패스 설치하기</h2>
+        <p>설치창이 뜨면 버튼으로 바로 설치하고, 설치창이 안 뜨면 아래 수동 방법으로 홈화면에 추가하면 됩니다.</p>
+        <div class="install-guide-box">
+          <div class="install-guide-title">설치 버튼</div>
+          <p class="install-guide-desc">
+            <span><b>바탕화면에 설치하기</b>를 먼저 눌러보세요.</span>
+            <span>자동 설치창이 안 뜨는 휴대폰은 바로 아래의 수동 설치방법을 따라 하면 됩니다.</span>
+          </p>
+          <div class="install-action-grid">
+            <button id="installScreenButton" data-install-primary-button="1" type="button" class="install-primary-button" onclick="addSitePassToHomeScreen(event)">바탕화면에 설치하기</button>
+            <button id="installScreenHelpButton" type="button" class="install-help-button" onclick="showHomeInstallGuide(event)">설치 안 뜰 때 보기</button>
+          </div>
+          <div id="installScreenStatus" data-install-status="1" class="install-mini-note">주소는 https://sitepass-js.github.io/sitepass/ 로 열고 설치해야 자동업데이트가 안정적으로 됩니다.</div>
+          <div class="install-mini-note" style="margin-top:8px;background:#f8fbff;border:1px solid #dbe6ff;border-radius:12px;padding:10px;">
+            <b>추천용 설치 링크</b><br>
+            <span id="recommendInstallLinkText">https://sitepass-js.github.io/sitepass/recommend.html</span><br>
+            <button type="button" class="mini-button" style="margin-top:8px;" onclick="copyRecommendInstallLink()">추천링크 복사</button>
+          </div>
+          <div id="installManualGuide" data-install-manual-guide="1" class="install-expanded-guide">
+            <b>설치창이 안 뜰 때 사용법</b>
+            <ol>
+              <li><b>먼저 주소 확인:</b> 주소창이 <b>https://sitepass-js.github.io/sitepass/</b> 인지 확인합니다. 카톡 안에서 열렸으면 외부 브라우저로 열어주세요.</li>
+              <li><b>안드로이드 Chrome:</b> 오른쪽 위 메뉴(⋮)를 누른 뒤 <b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누릅니다.</li>
+              <li><b>안드로이드 삼성 인터넷:</b> 아래/오른쪽 메뉴(≡ 또는 ⋮)에서 <b>현재 페이지 추가</b> → <b>홈 화면</b>을 누릅니다.</li>
+              <li><b>아이폰 Safari:</b> 아래 공유 버튼(□↑) → <b>홈 화면에 추가</b> → 이름을 <b>현장서류패스</b>로 저장합니다.</li>
+              <li><b>설치 버튼이 계속 안 뜨면:</b> 새로고침 후 20~30초 정도 사용했다가 다시 누르거나, 브라우저 메뉴의 홈 화면 추가를 사용합니다.</li>
+            </ol>
+            <div class="install-mini-note">설치 후에는 바탕화면의 <b>현장서류패스</b> 아이콘으로 들어오면 됩니다. 새 버전은 앱 실행 시 자동으로 확인합니다.</div>
+          </div>
+        </div>
+        <div class="notice blue-note">
+          <b>설치가 바로 안 뜨는 이유</b><br>
+          카카오톡 안에서 열었거나, 브라우저가 아직 설치 가능 신호를 안 보냈거나, 예전 캐시가 남아 있으면 설치창이 바로 안 뜰 수 있습니다. 이때는 위 수동 방법으로 홈화면에 추가하면 됩니다.
+        </div>
+        <div class="actions">
+          <button class="secondary" onclick="showScreen(isMemberLoggedIn() ? 'homeScreen' : 'signupScreen')">돌아가기</button>
+          <button class="primary" onclick="showHomeInstallGuide(event)">설치 안 뜰 때 다시 보기</button>
+        </div>
+      </div>
+    </section>
+    <section id="usageGuideScreen" class="screen hidden">
+      <div class="card">
+        <h2>SitePass 사용법</h2>
+        <p>장비·기사·인부 서류를 등록하고, 사진이 삐뚤거나 테두리가 남으면 A4 기준으로 수정한 뒤 보관함에서 담당자에게 1일 확인 링크를 보내는 순서입니다.</p>
+        <div class="step-guide-list">
+          <div class="step-guide-item"><span class="step-guide-num">1</span><div><b>장비/기사/인부 등록 시작</b><span>장비 등록번호와 장비명을 먼저 입력합니다. 장비서류는 기본으로 등록하고, 기사서류나 인부서류가 필요하면 체크해서 같은 QR 안에 함께 묶습니다.</span></div></div>
+          <div class="step-guide-item"><span class="step-guide-num">2</span><div><b>A4 서류 사진찍기</b><span>사업자등록증, 장비등록증, 검사증, 보험증권은 사진찍기를 누른 뒤 세로 A4 노란 테두리에 종이 네 귀퉁이가 최대한 맞게 들어오도록 맞추고 촬영합니다. 밝기·색상은 자동보정하지 않고, 용지 위치와 A4 크기만 맞춥니다.</span></div></div>
+          <div class="step-guide-item"><span class="step-guide-num">3</span><div><b>카드형 서류 사진찍기</b><span>신분증, 면허증, 이수증 같은 카드형 서류는 카드/이수증 촬영모드에서 가로 노란 테두리에 크게 맞춰 촬영합니다. 수정편집 후 저장하면 A4 용지 상단 1/2 칸에 보기 좋게 정리됩니다.</span></div></div>
+          <div class="step-guide-item"><span class="step-guide-num">4</span><div><b>테두리 남으면 수정편집</b><span>사진에 바닥, 책상, 손가락, 검은 테두리가 남으면 미리보기의 수정편집을 누릅니다. 왼쪽/오른쪽/위쪽/아래쪽 자르기를 눌러 용지만 남기고, 잘못 잘랐으면 전체 되돌리기로 한 번에 처음 상태로 돌아갑니다.</span></div></div>
+          <div class="step-guide-item"><span class="step-guide-num">5</span><div><b>수정본만 저장</b><span>자르기가 끝나면 수정본만 저장을 누릅니다. 이때 원본은 남기지 않고 수정된 사진 1장만 등록화면과 보관함에 남습니다.</span></div></div>
+          <div class="step-guide-item"><span class="step-guide-num">6</span><div><b>만료일 입력 후 결제</b><span>검사증, 보험증권, 비파괴검사증처럼 만료일이 있는 서류는 날짜를 입력합니다. 통합서류함 저장을 누르면 결제방법 화면으로 이동하고, 결제 완료 후 QR·담당자용 링크가 생성됩니다.</span></div></div>
+          <div class="step-guide-item"><span class="step-guide-num">7</span><div><b>보관함에서 담당자에게 공유</b><span>보관함에서 필요한 장비를 선택해 카톡이나 문자로 1일 확인 링크를 보냅니다. 받은 담당자는 로그인 없이 서류 확인, 다운로드, 프린트를 할 수 있습니다.</span></div></div>
+          <div class="step-guide-item"><span class="step-guide-num">8</span><div><b>만료서류 갱신</b><span>보험증권, 검사증, 비파괴검사증, 기사 안전교육처럼 만료일이 있는 서류는 갱신 후 새 파일과 새 만료일을 넣으면 담당자 화면에도 바로 반영됩니다.</span></div></div>
+          <div class="step-guide-item"><span class="step-guide-num">9</span><div><b>휴대폰 홈화면 설치</b><span>로그인 후 홈화면의 홈화면 설치하기를 누릅니다. 설치창이 안 뜨면 카카오톡 안에서 바로 설치하지 말고 외부 브라우저로 열고, 안드로이드는 메뉴(⋮)의 앱 설치/홈 화면에 추가, 아이폰은 공유 버튼(□↑)의 홈 화면에 추가를 누릅니다. 이름은 현장서류패스로 저장합니다.</span></div></div>
+        </div>
+        <div class="notice blue-note">
+          <b>사진찍기 핵심</b><br>
+          A4 서류는 종이 전체가 노란 A4 테두리 안에 들어오게 찍고, 카드형은 카드가 가로 노란 테두리에 크게 보이게 찍습니다. 촬영 후 테두리가 남으면 수정편집에서 자르기만 하고, 밝기보정은 하지 않는 것이 가장 깔끔합니다.
+        </div>
+
+        <div class="notice blue-note">
+          <b>설치창이 안 뜰 때</b><br>
+          주소를 <b>https://sitepass-js.github.io/sitepass/</b> 로 열었는지 확인하세요. 카카오톡 안에서 열렸다면 외부 브라우저로 열고, 안드로이드는 브라우저 메뉴의 <b>앱 설치</b> 또는 <b>홈 화면에 추가</b>, 아이폰은 Safari 공유 버튼의 <b>홈 화면에 추가</b>를 사용하면 됩니다.
+        </div>
+        <div class="notice">
+          <b>등록 중 나가도 괜찮습니다.</b><br>
+          작성 중인 장비는 자동저장됩니다. 다시 접속하면 등록중인 장비 안내가 뜨고, 확인은 이어서 등록, 취소는 임시저장 삭제 후 새로 시작입니다.
+        </div>
+        <div class="actions">
+          <button class="secondary" onclick="showScreen('homeScreen')">홈으로가기</button>
+          <button class="primary" onclick="startNewRegistration()">등록 시작하기</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="registerScreen" class="screen hidden">
+      <div class="card">
+        <h2>통합 서류함 기본정보</h2>
+        <p>장비 1대를 기준으로 기사서류와 인부서류를 같은 코드 안에 묶습니다.</p>
+        <div id="editModeBanner" class="notice blue-note hidden">기존 통합 서류함을 수정/갱신하는 중입니다. 장비번호는 그대로 두고 기사 교체, 보험증·검사증 날짜 갱신, 제원표 교체가 가능합니다.</div>
+        <div id="registrationDraftNotice" class="notice blue-note">작성 중 화면을 나가도 자동저장됩니다. 다시 접속하면 <b>등록중인 장비가 있습니다</b> 안내가 뜨고, 확인은 이어서 등록 / 취소는 새로 시작입니다.</div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="equipmentNo">장비 등록번호</label>
+            <input id="equipmentNo" type="text" placeholder="예: 12가3456 / 부산12가3456" autocomplete="off"  aria-label="예: 12가3456 / 부산12가3456" title="예: 12가3456 / 부산12가3456" name="equipmentNo" />
+          </div>
+          <div class="field">
+            <label for="equipmentName">장비명</label>
+            <input id="equipmentName" type="text" placeholder="예: 굴삭기 06W / 크레인 25톤" autocomplete="off"  aria-label="예: 굴삭기 06W / 크레인 25톤" title="예: 굴삭기 06W / 크레인 25톤" name="equipmentName" />
+          </div>
+        </div>
+        <div class="bundle-toggle-grid">
+          <label class="bundle-toggle">
+            <input type="checkbox" checked disabled  aria-label="SitePass 입력항목" title="SitePass 입력항목" />
+            <div><b>장비서류</b><span>사업자등록증, 장비등록증, 장비검사증, 장비보험증권은 기본 필수입니다.</span></div>
+          </label>
+          <label class="bundle-toggle">
+            <input id="includeDriverDocs" type="checkbox" onchange="toggleBundleGroup('driver')"  aria-label="includeDriverDocs" title="includeDriverDocs" name="includeDriverDocs" />
+            <div><b>기사서류</b><span>선택하면 기사 필수서류를 같은 QR에 넣습니다.</span></div>
+          </label>
+          <label class="bundle-toggle">
+            <input id="includeWorkerDocs" type="checkbox" onchange="toggleBundleGroup('worker')"  aria-label="includeWorkerDocs" title="includeWorkerDocs" name="includeWorkerDocs" />
+            <div><b>인부서류</b><span>선택하면 인부/신호수/유도원 서류를 같은 QR에 넣습니다.</span></div>
+          </label>
+        </div>
+        <div class="bundle-summary" id="bundleSummary"></div>
+      </div>
+
+      <div class="card" id="documentSection">
+        <h2>통합 서류함</h2>
+        <div class="doc-check-title">✅ 선택한 구역 안에서 필수/선택을 나눠 저장합니다</div>
+        <div id="docCards"></div>
+        <div class="notice">
+          장비서류는 항상 포함됩니다. 기사서류와 인부서류는 체크했을 때만 필수 검사를 합니다. 기사 신분증에는 전화번호 입력칸이 있고, 인부는 보통인부/특수인부로 여러 명 추가할 수 있습니다. 보통인부 신분증에는 전화번호, 특수인부 신분증에는 전화번호와 작업내용을 함께 표시합니다. 사진찍기는 장비서류는 A4 촬영모드, 신분증·면허증·이수증은 카드 촬영모드로 분리됩니다. 용지/카드 위치만 맞추고 밝기/색상 자동보정은 하지 않습니다. 이번 버전은 기사·인부에게 약관/동의 문자와 6자리 번호를 보내고, 기사·인부가 동의할 때 그 번호를 등록자에게 알려주면 등록자가 입력해서 업로드가 열리도록 정리했습니다. 인증은 사람별 최초 등록 때 받고, 이후 같은 서류함에서 현장 담당자에게 링크를 보낼 때마다 다시 인증받지 않습니다. 담당자 공유 링크만 발급 후 1일이 지나면 접속 차단됩니다.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>만료 알림 미리보기</h2>
+        <p>선택한 통합 서류함 안의 장비검사증·장비보험증권·비파괴검사증·기사 안전교육 날짜를 한 번에 봅니다.</p>
+        <div id="alertPreview"></div>
+        <div class="actions">
+          <button class="secondary" onclick="showScreen('homeScreen')">홈으로가기</button>
+          <button id="saveBundleButton" class="primary" onclick="saveEquipment()">통합 서류함 저장</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="listScreen" class="screen hidden">
+      <div class="card">
+        <h2 id="listScreenTitle">장비/기사/인부 보관함</h2>
+        <div id="equipmentList"></div>
+        <div id="listScreenBottomActions" class="actions">
+          <button class="secondary" onclick="showScreen('homeScreen')">홈으로가기</button>
+          <button class="dangerBtn" onclick="clearAll()">전체 삭제</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="detailScreen" class="screen hidden">
+      <div class="card">
+        <h2>통합 서류함 상세 / QR</h2>
+        <div id="detailBox"></div>
+        <!-- 상세/QR 화면은 정보와 QR, 등록서류만 표시합니다. 하단 보관함/수정/갱신/담당자 미리보기/카톡/문자/이메일 버튼 묶음 제거. -->
+      </div>
+    </section>
+
+
+    <section id="pricingScreen" class="screen hidden">
+      <div class="card">
+        <h2>이용 결제방법</h2>
+        <p>처음 1대 등록 요금과 2대부터 추가등록 요금을 쉽게 확인하는 화면입니다.</p>
+        <div class="notice blue-note" style="font-size:16px;font-weight:950;">
+          첫 장비는 기본요금, 2대째부터는 보관함/등록화면에서 <b>추가등록</b>으로 등록하면 할인요금이 적용됩니다.
+        </div>
+        <div id="pendingRegistrationPaymentBox" class="notice blue-note hidden"></div>
+        <div class="payment-price-table">
+          <div class="payment-price-card highlight">
+            <strong>1대 등록</strong>
+            <div class="pay-line"><span>월 결제</span><span>월 2,000원</span></div>
+            <div class="pay-line"><span>연 결제</span><span>연 19,900원</span></div>
+          </div>
+          <div class="payment-price-card">
+            <strong>2대부터 추가등록</strong>
+            <div class="pay-line"><span>월 결제</span><span>월 1,000원</span></div>
+            <div class="pay-line"><span>연 결제</span><span>연 9,900원</span></div>
+          </div>
+        </div>
+        <div class="payment-easy-box">
+          <b>쉽게 보면 이렇게입니다.</b>
+          <ul>
+            <li>처음 장비 1대는 월 2,000원 또는 연 19,900원입니다.</li>
+            <li>이미 1대를 등록한 회원이 2대째부터 추가등록하면 월 1,000원 또는 연 9,900원입니다.</li>
+            <li>결제가 완료되면 해당 장비의 QR·담당자 링크가 바로 활성화됩니다.</li><li>카드결제는 본인 명의 카드 확인, 휴대폰결제는 본인 명의 휴대폰 확인 후 진행합니다. 계좌이체는 결제대행사/은행 인증 흐름으로 별도 확인합니다.</li>
+            <li>월 결제는 한 달씩, 연 결제는 1년 단위로 이용하는 방식입니다.</li>
+            <li>기간연장은 추가등록 결제와 분리하고, 만료 7일 전/당일에 연장 안내를 보낼 수 있습니다.</li>
+          </ul>
+        </div>
+        <div class="plan-select-grid">
+          <label class="plan-select-card">
+            <input type="radio" name="paymentPlan" value="monthly" checked onchange="updateSelectedPaymentPlan()"  aria-label="paymentPlan" title="paymentPlan" />
+            <strong>월 결제 선택</strong>
+            <div id="monthlyPlanPriceText" class="plan-price">월 2,000원</div>
+            <span id="monthlyPlanDescText">처음 1대 등록 기준. 한 달씩 이용하는 방식입니다.</span>
+          </label>
+          <label class="plan-select-card">
+            <input type="radio" name="paymentPlan" value="annual" onchange="updateSelectedPaymentPlan()"  aria-label="paymentPlan" title="paymentPlan" />
+            <strong>연 결제 선택</strong>
+            <div id="annualPlanPriceText" class="plan-price">연 19,900원</div>
+            <span id="annualPlanDescText">처음 1대 등록 기준. 1년 동안 이용하는 방식입니다.</span>
+          </label>
+        </div>
+        <div id="selectedPlanNote" class="notice blue-note"></div>
+        <div class="security-step-box">
+          결제는 카드 명의자 또는 휴대폰 명의자 본인확인 후 진행합니다. 결제 본인확인은 정식 결제대행사와 NICE/KCB/PASS 본인확인 연동 후 실제 인증으로 처리합니다. 현재 계좌이체 확인번호는 베타용 별도 확인값으로만 사용합니다.
+        </div>
+        <div class="actions">
+          <button class="secondary" onclick="showScreen('homeScreen')">홈으로가기</button>
+          <button id="paymentRegisterButton" class="primary" onclick="startRegistrationWithSelectedPlan()">선택한 결제방법으로 등록하기</button>
+        </div>
+      </div>
+      <div id="pricingRenewCard" class="card">
+        <h2>이용 중인 서류함 기간연장</h2>
+        <p>기존 장비의 기간연장은 추가등록 결제와 섞이지 않게 별도로 표시합니다. 만료 7일 전과 만료 당일에는 연장 안내 문자를 보낼 수 있습니다.</p>
+        <div class="notice blue-note">
+          <b>연장 알림 기준</b><br>만료 7일 전에는 “곧 만료” 알림, 만료 당일에는 “오늘 만료 · 기간연장 사이트 접속” 알림을 보냅니다.
+        </div>
+        <div id="pricingTargetList" class="pricing-target-list"></div>
+      </div>
+    </section>
+
+
+    <section id="signupScreen" class="screen">
+      <div class="card sitepass-first-card">
+        <div id="sitepassFirstLanding" class="sitepass-first-landing">
+          <div class="sitepass-first-hero">
+            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.385" alt="SitePass 장비서류 간편 전송" />
+          </div>
+          <p class="sitepass-first-subtitle"><span>현장에 제출할 장비 서류를</span><span>빠르게 공유할 수 있습니다.</span></p>
+
+          <form class="sitepass-first-login-form" method="post" action="./" autocomplete="on" onsubmit="return submitSitePassFirstLogin(event)">
+            <div class="sitepass-first-login-left">
+              <label class="sitepass-first-field" for="sitepassFirstLoginIdentifier">
+                <input id="sitepassFirstLoginIdentifier" name="username" type="text" placeholder="아이디" autocomplete="username" spellcheck="false" enterkeyhint="next" aria-label="아이디" />
+              </label>
+              <label class="sitepass-first-field" for="sitepassFirstLoginPassword">
+                <input id="sitepassFirstLoginPassword" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" enterkeyhint="go" aria-label="비밀번호" />
+              </label>
+              <label class="sitepass-first-auto-login" for="sitepassFirstAutoLogin">
+                <input id="sitepassFirstAutoLogin" type="checkbox" />
+                <span class="sitepass-first-checkmark" aria-hidden="true"></span>
+                <span>자동 로그인</span>
+              </label>
+            </div>
+            <button type="submit" class="sitepass-first-login">로그인</button>
+          </form>
+
+          <div class="sitepass-first-link-row">
+            <button type="button" onclick="openSitePassFirstJoin()">회원가입</button>
+            <span aria-hidden="true">|</span>
+            <button type="button" onclick="openSitePassFirstFind('id')">아이디 찾기</button>
+            <span aria-hidden="true">|</span>
+            <button type="button" onclick="openSitePassFirstFind('password')">비밀번호 찾기</button>
+          </div>
+
+          <button type="button" class="sitepass-first-install" onclick="addSitePassToHomeScreen(event)"><span aria-hidden="true">⇩</span> 바탕화면에 설치하기</button>
+
+          <div class="sitepass-first-company">
+            <img src="./assets/img/js-construction-badge.png?v=23.7.385" alt="제이에스건설 J.S CONSTRUCTION" />
+            <span class="sitepass-company-divider" aria-hidden="true"></span>
+            <span>경상남도 김해시 삼문동 1275</span>
+            <span>사업자등록번호 402-33-15497</span>
+          </div>
+        </div>
+        <div class="login-auth-shell hidden">
+          <button type="button" class="sitepass-auth-safe-back" onclick="backToSitePassFirstLanding()">← 홈화면</button>
+          <div class="login-auth-brand">
+            <svg class="sitepass-logo-mark" viewBox="0 0 64 64" role="img" aria-hidden="true" focusable="false">
+              <defs>
+                <linearGradient id="sitepassLoginLogoGrad" x1="8" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stop-color="#1677f2" />
+                  <stop offset="0.55" stop-color="#16a7d9" />
+                  <stop offset="1" stop-color="#22c55e" />
+                </linearGradient>
+                <linearGradient id="sitepassLoginDocGrad" x1="24" y1="12" x2="45" y2="48" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stop-color="#ffffff" />
+                  <stop offset="1" stop-color="#f7fbff" />
+                </linearGradient>
+              </defs>
+              <rect x="7" y="7" width="49" height="50" rx="13" fill="url(#sitepassLoginLogoGrad)" />
+              <path d="M6 26h11M3 34h15M8 42h10" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".92" />
+              <path d="M22 13h24l8 8v30H22z" fill="url(#sitepassLoginDocGrad)" />
+              <path d="M46 13v8h8z" fill="#cfe9ff" />
+              <path d="M28 22h13M28 28h9" stroke="#1677f2" stroke-width="3.2" stroke-linecap="round" />
+              <rect x="28" y="34" width="6" height="6" rx="1.2" fill="#0b357f" />
+              <rect x="38" y="34" width="6" height="6" rx="1.2" fill="#0b357f" />
+              <rect x="28" y="44" width="6" height="6" rx="1.2" fill="#0b357f" />
+              <rect x="36" y="42" width="3.5" height="3.5" rx=".8" fill="#0b357f" />
+              <rect x="42" y="44" width="3.5" height="3.5" rx=".8" fill="#0b357f" />
+              <rect x="36" y="48" width="3.5" height="3.5" rx=".8" fill="#0b357f" />
+              <circle cx="47" cy="48" r="11" fill="#22c55e" stroke="#ffffff" stroke-width="3.5" />
+              <path d="M41.5 47.8l3.9 3.9 7.4-8" fill="none" stroke="#ffffff" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <div class="login-auth-word">SitePass</div>
+          </div>
+          <h2 class="login-auth-title">로그인</h2>
+          <p class="login-auth-subtitle">SitePass 계정을 계속 사용하려면</p>
+          <form id="normalLoginFormArea" class="login-auth-form normal-login-area" method="post" action="./" autocomplete="on" onsubmit="submitSitePassLoginTest(); return false;">
+            <input id="sitepassLoginIdentifier" name="username" type="text" placeholder="사용자 아이디" autocomplete="username" spellcheck="false" enterkeyhint="next"  aria-label="사용자 아이디" title="사용자 아이디" />
+            <input id="sitepassLoginPassword" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" enterkeyhint="go"  aria-label="비밀번호" title="비밀번호" />
+            <button id="sitepassLoginContinueButton" type="submit" class="login-continue-button">로그인</button>
+          </form>
+          <label class="login-password-show normal-login-area">
+            <input id="showLoginPasswordToggle" type="checkbox" onchange="toggleLoginPasswordVisible(this.checked)"  aria-label="showLoginPasswordToggle" title="showLoginPasswordToggle" name="showLoginPasswordToggle" />
+            <span>비밀번호 표시</span>
+          </label>
+          <div class="login-help-row normal-login-area">
+            <button type="button" class="login-text-link" onclick="openAccountFindPanel('id')">아이디 찾기</button>
+            <span class="divider-dot">|</span>
+            <button type="button" class="login-text-link" onclick="openAccountFindPanel('password')">비밀번호 찾기</button>
+          </div>
+          <div id="quickLoginPanel" class="quick-login-panel hidden">
+            <div class="quick-login-head">
+              <div>
+                <b>간편로그인</b>
+                <span>휴대폰 바탕화면에 설치한 SitePass 아이콘으로 들어올 때만 사용합니다.</span>
+              </div>
+              <span class="quick-mode-badge">홈화면 앱 전용</span>
+            </div>
+            <div class="quick-login-grid quick-login-main-buttons">
+              <button type="button" class="ghost" onclick="openQuickPinLoginPanel()">🔢 간편번호 6자리</button>
+              <button type="button" class="ghost" onclick="loginWithFingerprintQuickAuth()">👆 지문인식 로그인</button>
+            </div>
+            <div id="quickPinLoginPanel" class="quick-pin-panel hidden">
+              <input id="quickLoginPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" onkeydown="if(event.key==='Enter') loginWithPinQuickAuth()"  aria-label="••••••" title="••••••" name="quickLoginPinInput" />
+              <div class="actions">
+                <button type="button" class="secondary" onclick="closeQuickPinLoginPanel()">닫기</button>
+                <button type="button" class="primary" onclick="loginWithPinQuickAuth()">간편번호 로그인</button>
+              </div>
+            </div>
+            <button id="quickNormalLoginButton" type="button" class="quick-fallback-button hidden" onclick="showNormalLoginFromQuick()">아이디/카카오/네이버 로그인으로 등록하기</button>
+            <div id="quickLoginStatus" class="quick-login-status">간편로그인은 먼저 로그인 후 홈화면 앱에서 6자리 번호 또는 지문을 등록해야 사용할 수 있습니다.</div>
+          </div>
+          <div id="quickBrowserNote" class="quick-browser-note hidden">일반 인터넷창에서는 보안을 위해 간편번호/지문 로그인을 숨기고, 사용자 아이디·카카오톡·네이버 로그인만 사용합니다.</div>
+          <div id="accountFindPanel" class="account-find-panel normal-login-area hidden">
+            <div class="account-find-head">
+              <div>
+                <b>아이디/비밀번호 찾기</b>
+                <span>현재 테스트 파일에서는 이 휴대폰 브라우저에 저장된 회원정보 기준으로 확인합니다. 정식 서비스에서는 카카오/문자/PASS 본인확인으로 연결합니다.</span>
+              </div>
+              <button type="button" class="account-find-close" onclick="backToSitePassFirstLanding()">홈화면</button>
+            </div>
+            <div class="account-find-tabs">
+              <button id="findIdTab" type="button" onclick="openAccountFindPanel('id')">아이디 찾기</button>
+              <button id="findPasswordTab" type="button" onclick="openAccountFindPanel('password')">비밀번호 재설정</button>
+            </div>
+            <div id="findIdForm" class="account-find-form">
+              <div id="findIdIdentityStep" class="find-step-panel">
+                <div class="find-step-title"><b>1. 본인확인</b><span>가입 이름/업체명과 가입 휴대폰번호를 먼저 확인합니다.</span></div>
+                <input id="findIdName" type="text" placeholder="가입 이름 또는 업체명" autocomplete="name"  aria-label="가입 이름 또는 업체명" title="가입 이름 또는 업체명" name="findIdName" />
+                <input id="findIdPhone" type="tel" placeholder="가입 휴대폰번호" autocomplete="tel"  aria-label="가입 휴대폰번호" title="가입 휴대폰번호" name="findIdPhone" />
+                <button type="button" class="primary" onclick="requestIdFindCodeTest()">인증번호 받기</button>
+              </div>
+              <div id="findIdCodeStep" class="find-step-panel hidden">
+                <div class="find-step-title"><b>2. 휴대폰 인증</b><span>휴대폰으로 받은 6자리 인증번호를 입력해주세요.</span></div>
+                <div class="find-verify-row">
+                  <input id="findIdCode" type="text" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" onkeydown="if(event.key==='Enter') verifyIdFindCodeTest()"  aria-label="인증번호 6자리" title="인증번호 6자리" name="findIdCode" />
+                  <button type="button" class="ghost" onclick="verifyIdFindCodeTest()">인증확인</button>
+                </div>
+              </div>
+              <div id="findIdResultStep" class="find-step-panel hidden">
+                <div class="find-step-title"><b>3. 아이디 확인</b><span>인증 완료 후 찾은 아이디를 로그인 칸에 넣을 수 있습니다.</span></div>
+                <button type="button" class="primary" onclick="fillFoundLoginIdTest()">찾은 아이디로 로그인하기</button>
+              </div>
+            </div>
+            <div id="findPasswordForm" class="account-find-form hidden">
+              <div id="findPwIdentityStep" class="find-step-panel">
+                <div class="find-step-title"><b>1. 본인확인</b><span>사용자 아이디와 가입 휴대폰번호를 먼저 확인합니다.</span></div>
+                <input id="findPwLoginId" type="text" placeholder="사용자 아이디" autocomplete="username"  aria-label="사용자 아이디" title="사용자 아이디" name="findPwLoginId" />
+                <input id="findPwPhone" type="tel" placeholder="가입 휴대폰번호" autocomplete="tel"  aria-label="가입 휴대폰번호" title="가입 휴대폰번호" name="findPwPhone" />
+                <button type="button" class="primary" onclick="requestPasswordResetCodeTest()">인증번호 받기</button>
+              </div>
+              <div id="findPwCodeStep" class="find-step-panel hidden">
+                <div class="find-step-title"><b>2. 휴대폰 인증</b><span>휴대폰으로 받은 6자리 인증번호를 입력해주세요.</span></div>
+                <div class="find-verify-row">
+                  <input id="findPwCode" type="text" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)" onkeydown="if(event.key==='Enter') verifyPasswordResetCodeTest()"  aria-label="인증번호 6자리" title="인증번호 6자리" name="findPwCode" />
+                  <button type="button" class="ghost" onclick="verifyPasswordResetCodeTest()">인증확인</button>
+                </div>
+              </div>
+              <div id="findPwNewStep" class="find-step-panel hidden">
+                <div class="find-step-title"><b>3. 새 비밀번호 생성</b><span>인증 완료 후 새 비밀번호를 저장합니다.</span></div>
+                <input id="findPwNew" type="password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password"  aria-label="새 비밀번호 6자 이상" title="새 비밀번호 6자 이상" name="findPwNew" />
+                <input id="findPwNew2" type="password" placeholder="새 비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') resetSitePassPasswordTest()"  aria-label="새 비밀번호 다시 입력" title="새 비밀번호 다시 입력" name="findPwNew2" />
+                <button type="button" class="primary" onclick="resetSitePassPasswordTest()">새 비밀번호 저장</button>
+              </div>
+            </div>
+            <div id="accountFindResult" class="account-find-result">아이디 찾기 또는 비밀번호 재설정을 선택해주세요.</div>
+          </div>
+          <div class="login-divider normal-login-area"><span>또는</span></div>
+          <div class="login-social-grid normal-login-area">
+            <button type="button" class="login-social-button kakao" onclick="handleKakaoLogin()">💬 카카오톡 계정으로 계속하기</button>
+            <button type="button" class="login-social-button naver" onclick="handleNaverLogin()">N 네이버 계정으로 계속하기</button>
+          </div>
+          <div id="oauthRedirectHelp" class="oauth-redirect-help normal-login-area" aria-live="polite"></div>
+          <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link" onclick="startJoinFlow()">가입</button></div>
+          <div class="company-channel-note normal-login-area">
+            <div class="js-company-logo" aria-label="제이에스건설 로고">
+              <div class="js-construction-logo-inline" aria-label="제이에스건설 로고">
+                <span class="js-mark">JS</span>
+                <span class="js-text"><span class="js-name">제이에스건설</span><span class="js-sub">J.S CONSTRUCTION</span></span>
+              </div>
+            </div>
+            <p>SitePass 문의와 안내는 제이에스건설 카카오톡 채널로 연결됩니다.</p>
+            <button type="button" class="kakao-channel-button" onclick="openCompanyKakaoInquiry()">💬 카카오톡 채널 추가</button>
+          </div>
+        </div>
+
+        <div id="joinChoiceBox" class="join-choice-box hidden">
+          <div class="join-choice-head">
+            <button type="button" class="sitepass-auth-safe-back" onclick="backToSitePassFirstLanding()">← 홈화면</button>
+            <h3>회원가입</h3>
+            <p>처음 사용하는 분은 약관 동의 후 원하는 가입을 진행해주세요.</p>
+          </div>
+
+          <div class="terms-box">
+          <h3>회원가입 기본 약관 동의</h3>
+          <p class="terms-guide">이 화면은 SitePass 계정 생성, 로그인, 휴대폰 인증, 서비스 이용에 필요한 기본 약관만 동의하는 단계입니다. 서류 등록·보관·현장 공유 관련 동의는 실제 서류를 등록할 때 따로 받습니다.</p>
+          <label class="terms-check all">
+            <input id="agreeAllTerms" type="checkbox" onchange="toggleAllSignupTerms(this.checked)"  aria-label="agreeAllTerms" title="agreeAllTerms" name="agreeAllTerms" />
+            <span>전체 동의</span>
+          </label>
+          <div class="terms-list">
+            <div class="terms-item">
+              <label class="terms-check">
+                <input id="agreeServiceTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeServiceTerms" title="agreeServiceTerms" name="agreeServiceTerms" />
+                <span>서비스 이용약관 동의 <span class="terms-required">필수</span></span>
+              </label>
+              <details>
+                <summary>내용 보기</summary>
+                <div class="terms-content">SitePass는 현장 서류 업무를 편리하게 처리할 수 있도록 계정 생성, 로그인, 서류함 이용, QR·링크 공유, 보관함 관리, 알림, 문의 응대 기능을 제공하는 서비스입니다. 회원은 본인 명의 또는 정당한 권한이 있는 정보만 입력해야 하며, 허위 정보 입력, 타인 명의 사용, 서비스 악용, 보안 우회, 업무 목적 외 공유를 해서는 안 됩니다. 서비스는 실사용 베타 단계에서 기능과 정책이 변경될 수 있으며, 중요한 자료는 회원이 별도로 보관하고 최종 제출 전 직접 확인해야 합니다.</div>
+              </details>
+            </div>
+
+            <div class="terms-item">
+              <label class="terms-check">
+                <input id="agreePrivacyTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreePrivacyTerms" title="agreePrivacyTerms" name="agreePrivacyTerms" />
+                <span>개인정보 수집 및 이용 동의 <span class="terms-required">필수</span></span>
+              </label>
+              <details>
+                <summary>내용 보기</summary>
+                <div class="terms-content">SitePass는 회원가입, 로그인, 본인확인, 인증번호 발송, 계정 복구, 부정 이용 방지, 고객 문의 응대, 서비스 운영을 위해 이름 또는 업체명, 휴대폰번호, 생년월일 일부, 통신사, 아이디, 비밀번호 설정 여부, 인증 일시, 접속기록, 기기정보, IP주소, 서비스 이용기록을 수집·이용할 수 있습니다. 필수 개인정보 수집·이용에 동의하지 않으면 회원가입과 로그인 기능을 이용할 수 없습니다. 회원 정보는 회원 탈퇴, 서비스 종료, 법령상 보관기간 만료 중 먼저 도래한 때까지 보관하는 것을 원칙으로 합니다.</div>
+              </details>
+            </div>
+
+            <div class="terms-item">
+              <label class="terms-check">
+                <input id="agreePaymentTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreePaymentTerms" title="agreePaymentTerms" name="agreePaymentTerms" />
+                <span>결제·환불·코드 보관 정책 확인 <span class="terms-required">필수</span></span>
+              </label>
+              <details>
+                <summary>내용 보기</summary>
+                <div class="terms-content">현재는 실사용 베타 단계이며 정식 결제 전환 전까지 무료 테스트로 운영될 수 있습니다. 정식 결제 적용 시 요금제, 결제일, 무료기간, 환불 기준, 미결제 시 이용 제한 또는 코드 보관 정책은 서비스 화면에 별도로 안내합니다. 결제 전환 후에는 회원이 선택한 요금제와 보관기간에 따라 기능 이용 범위가 달라질 수 있습니다.</div>
+              </details>
+            </div>
+
+            <div class="terms-item">
+              <label class="terms-check">
+                <input id="agreeResponsibilityTerms" class="signup-term signup-required-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeResponsibilityTerms" title="agreeResponsibilityTerms" name="agreeResponsibilityTerms" />
+                <span>책임범위 및 법적 리스크 안내 <span class="terms-required">필수</span></span>
+              </label>
+              <details>
+                <summary>내용 보기</summary>
+                <div class="terms-content">회원은 서비스에 입력한 정보와 공유한 자료에 대한 권한과 정확성을 직접 확인해야 합니다. SitePass는 사용자가 등록한 자료의 진위, 최신성, 현장 승인 여부, 법령상 적합성을 자동으로 보증하지 않습니다. 부정확한 정보 입력, 타인의 정보 무단 사용, 업무 목적 외 공유, 외부 유출로 발생하는 문제는 해당 행위를 한 회원 또는 이용자에게 책임이 있을 수 있습니다.</div>
+              </details>
+            </div>
+
+            <div class="terms-item">
+              <label class="terms-check">
+                <input id="agreeAlertTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeAlertTerms" title="agreeAlertTerms" name="agreeAlertTerms" />
+                <span>서비스 알림 및 안내 수신 동의 <span class="terms-optional">선택</span></span>
+              </label>
+              <details>
+                <summary>내용 보기</summary>
+                <div class="terms-content">SitePass는 인증, 보안, 계정 안내, 서비스 변경, 오류 안내, 만료 알림 등 서비스 이용에 필요한 알림을 앱 알림, 문자, 카카오톡 채널, 이메일 또는 화면 알림으로 제공할 수 있습니다. 법령상 또는 서비스 운영상 반드시 필요한 안내는 수신 동의 여부와 관계없이 제공될 수 있습니다.</div>
+              </details>
+            </div>
+
+            <div class="terms-item">
+              <label class="terms-check">
+                <input id="agreeMarketingTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeMarketingTerms" title="agreeMarketingTerms" name="agreeMarketingTerms" />
+                <span>카카오톡·앱 광고성 정보 수신 동의 <span class="terms-optional">선택</span></span>
+              </label>
+              <details>
+                <summary>내용 보기</summary>
+                <div class="terms-content">이벤트, 할인, 제휴 서비스, 신규 기능 안내 등 광고성 정보를 카카오톡 채널, 앱 알림, 서비스 화면 알림으로 받을 수 있습니다. 동의하지 않아도 회원가입과 기본 서비스 이용에는 제한이 없습니다.</div>
+              </details>
+            </div>
+
+            <div class="terms-item">
+              <label class="terms-check">
+                <input id="agreeEmailMarketingTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeEmailMarketingTerms" title="agreeEmailMarketingTerms" name="agreeEmailMarketingTerms" />
+                <span>이메일 광고성 정보 수신 동의 <span class="terms-optional">선택</span></span>
+              </label>
+              <details>
+                <summary>내용 보기</summary>
+                <div class="terms-content">이벤트, 할인, 제휴 서비스, 신규 기능, 결제 혜택 등 광고성 정보를 이메일로 받을 수 있습니다. 동의하지 않아도 회원가입과 기본 서비스 이용에는 제한이 없습니다.</div>
+              </details>
+            </div>
+
+            <div class="terms-item">
+              <label class="terms-check">
+                <input id="agreeSmsMarketingTerms" class="signup-term" type="checkbox" onchange="updateSignupTermsUi()"  aria-label="agreeSmsMarketingTerms" title="agreeSmsMarketingTerms" name="agreeSmsMarketingTerms" />
+                <span>문자 광고성 정보 수신 동의 <span class="terms-optional">선택</span></span>
+              </label>
+              <details>
+                <summary>내용 보기</summary>
+                <div class="terms-content">이벤트, 할인, 제휴 서비스, 신규 기능, 결제 혜택 등 광고성 정보를 문자메시지 또는 알림톡으로 받을 수 있습니다. 동의하지 않아도 회원가입과 기본 서비스 이용에는 제한이 없습니다.</div>
+              </details>
+            </div>
+          </div>
+        </div>
+
+          <div id="termsOkNote" class="terms-ok-note">필수 약관 동의가 완료되었습니다. 아래 다음 버튼을 눌러 회원가입 정보를 입력해주세요.</div>
+          <div class="terms-next-actions">
+            <button type="button" id="sitepassTermsNextButton" class="terms-next-button" onclick="continueSitePassSignupAfterTerms()">다음</button>
+          </div>
+          <p class="terms-next-hint">필수 약관 동의 후 다음으로 넘어갈 수 있습니다. 서류 등록 관련 동의는 등록 화면에서 별도로 진행합니다.</p>
+        </div>
+
+        <div id="sitepassSignupBox" class="hidden">
+          <div class="auth-divider">SitePass 회원가입</div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="sitepassSignupName">이름/업체명</label>
+              <input id="sitepassSignupName" type="text" placeholder="예: 홍길동 / 제이에스건설" autocomplete="name" oninput="resetSitePassSignupPhoneAuth()"  aria-label="예: 홍길동 / 제이에스건설" title="예: 홍길동 / 제이에스건설" name="sitepassSignupName" />
+            </div>
+            <div class="field">
+              <label for="sitepassSignupJuminMasked">생년월일</label>
+              <input id="sitepassSignupJuminMasked" type="text" placeholder="예: 840507-1" maxlength="8" inputmode="numeric" autocomplete="off" oninput="limitSitePassSignupJuminInput()" onblur="formatSitePassSignupJuminDisplay()"  aria-label="예: 840507-1" title="예: 840507-1" name="sitepassSignupJuminMasked" />
+            </div>
+            <div class="field">
+              <label for="sitepassSignupPhone">휴대폰번호</label>
+              <input id="sitepassSignupPhone" type="tel" placeholder="예: 010-0000-0000" inputmode="tel" autocomplete="tel" oninput="resetSitePassSignupPhoneAuth()"  aria-label="예: 010-0000-0000" title="예: 010-0000-0000" name="sitepassSignupPhone" />
+            </div>
+            <div class="field">
+              <label for="sitepassSignupCarrier">통신사</label>
+              <select id="sitepassSignupCarrier" onchange="resetSitePassSignupPhoneAuth()" aria-label="sitepassSignupCarrier" title="sitepassSignupCarrier" name="sitepassSignupCarrier">
+                <option value="">통신사를 선택해주세요</option>
+                <option value="SKT">SKT</option>
+                <option value="KT">KT</option>
+                <option value="LG U+">LG U+</option>
+                <option value="SKT 알뜰폰">SKT 알뜰폰</option>
+                <option value="KT 알뜰폰">KT 알뜰폰</option>
+                <option value="LG U+ 알뜰폰">LG U+ 알뜰폰</option>
+              </select>
+            </div>
+            <div class="verify-row">
+              <div class="field">
+                <label>휴대폰 인증</label>
+                <div id="sitepassSignupVerifyStatus" class="auth-mini-note">이름, 생년월일, 휴대폰번호, 통신사를 입력한 뒤 인증요청을 눌러주세요. 생년월일은 840507-1처럼 앞 6자리와 성별확인 1자리까지만 입력하면 840507-1******로 표시됩니다. 현재 인증번호는 네이버 SENS 문자로 발송됩니다.</div>
+              </div>
+              <button type="button" id="sitepassSignupRequestButton" class="ghost" onclick="sendSitePassSignupPhoneCodeTest()">인증요청</button>
+            </div>
+            <div id="sitepassSignupCodeBox" class="hidden">
+              <div class="verify-row">
+                <div class="field">
+                  <label for="sitepassSignupCode">인증번호 6자리</label>
+                  <input id="sitepassSignupCode" type="text" placeholder="문자로 받은 6자리 입력" maxlength="6" inputmode="numeric" autocomplete="one-time-code" onkeydown="if(event.key==='Enter') confirmSitePassSignupPhoneCodeTest()"  aria-label="문자로 받은 6자리 입력" title="문자로 받은 6자리 입력" name="sitepassSignupCode" />
+                </div>
+                <button type="button" class="primary" onclick="confirmSitePassSignupPhoneCodeTest()">인증확인</button>
+              </div>
+            </div>
+            <div class="verify-row">
+              <div class="field">
+                <label for="sitepassSignupId">SitePass 아이디</label>
+                <input id="sitepassSignupId" type="text" placeholder="영문/숫자 아이디" autocomplete="username" oninput="resetSitePassSignupIdDuplicate()"  aria-label="영문/숫자 아이디" title="영문/숫자 아이디" name="sitepassSignupId" />
+                <div id="sitepassSignupIdStatus" class="auth-mini-note">아이디 입력 후 중복확인을 눌러주세요.</div>
+              </div>
+              <button type="button" id="sitepassSignupIdCheckButton" class="ghost" onclick="verifySitePassSignupIdDuplicate()">중복확인</button>
+            </div>
+            <div class="field">
+              <label for="sitepassSignupPw">비밀번호</label>
+              <input id="sitepassSignupPw" type="password" placeholder="비밀번호 입력" autocomplete="new-password"  aria-label="비밀번호 입력" title="비밀번호 입력" name="sitepassSignupPw" />
+            </div>
+            <div class="field">
+              <label for="sitepassSignupPw2">비밀번호 확인</label>
+              <input id="sitepassSignupPw2" type="password" placeholder="비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') submitSitePassSignupTest()"  aria-label="비밀번호 다시 입력" title="비밀번호 다시 입력" name="sitepassSignupPw2" />
+            </div>
+          </div>
+          <div class="actions">
+            <button class="primary full" onclick="submitSitePassSignupTest()">회원가입완료</button>
+          </div>
+        </div>
+        </div>
+      </div>
+    </section>
+
+
+    <div id="quickSetupOverlay" class="quick-setup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="quickSetupTitle">
+      <div class="quick-setup-sheet">
+        <div class="quick-setup-head">
+          <div>
+            <b id="quickSetupTitle">간편로그인 등록</b>
+            <span>홈화면 SitePass 앱에서 처음 로그인한 뒤, 다음부터 바로 들어올 수 있게 이 휴대폰에 간편번호와 지문인식을 등록합니다.</span>
+          </div>
+          <button type="button" class="mini-button" onclick="closeQuickSetupWizard(true)">나중에</button>
+        </div>
+        <div id="quickSetupPinStep" class="quick-setup-step">
+          <div class="quick-setup-step-title"><em>1</em><span>간편번호 6자리 등록</span></div>
+          <p class="small">다음부터 홈화면 SitePass 아이콘을 누르면 이 번호 입력창이 바로 열립니다.</p>
+          <div class="quick-setup-inputs">
+            <input id="quickSetupPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)"  aria-label="••••••" title="••••••" name="quickSetupPinInput" />
+            <input id="quickSetupPinInput2" type="password" inputmode="numeric" maxlength="6" placeholder="한 번 더 입력" autocomplete="one-time-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)"  aria-label="한 번 더 입력" title="한 번 더 입력" name="quickSetupPinInput2" />
+          </div>
+          <div class="quick-setup-actions">
+            <button type="button" class="secondary" onclick="closeQuickSetupWizard(true)">나중에 등록</button>
+            <button type="button" class="primary" onclick="saveQuickSetupPinAndAskFingerprint()">간편번호 등록</button>
+          </div>
+        </div>
+        <div id="quickSetupFingerprintStep" class="quick-setup-step hidden">
+          <div class="quick-setup-step-title"><em>2</em><span>지문인식도 등록할까요?</span></div>
+          <p class="small">지문인식은 지원되는 휴대폰과 정식 https 주소에서 사용할 수 있습니다. 등록하지 않아도 간편번호 6자리로 로그인할 수 있습니다.</p>
+          <div class="quick-setup-actions">
+            <button type="button" class="secondary" onclick="finishQuickSetupWizard()">간편번호만 사용</button>
+            <button type="button" class="primary" onclick="registerQuickSetupFingerprint()">지문인식 등록</button>
+          </div>
+        </div>
+        <div id="quickSetupStatus" class="quick-setup-status">간편번호를 먼저 등록해주세요. 지문인식은 그 다음에 선택할 수 있습니다.</div>
+      </div>
+    </div>
+
+    <section id="contactScreen" class="screen hidden">
+      <div class="card">
+        <h2>문의</h2>
+        <p>SitePass 사용 중 궁금한 점이나 오류, 결제 문의, 서류 등록 관련 요청을 남기는 화면입니다. 급한 문의는 제이에스건설 회사 카톡 문의로도 연결할 수 있게 준비합니다.</p>
+        <div class="company-kakao-box">
+          <strong>💬 회사 카톡 문의</strong>
+          <span>제이에스건설 카카오톡 채널을 만들면 이 버튼에서 바로 1:1 문의가 열리게 연결합니다. 현재는 채널명 복사와 안내가 먼저 표시됩니다.</span>
+          <div class="company-kakao-actions">
+            <button type="button" class="company-kakao-button" onclick="openCompanyKakaoInquiry()">카톡 문의하기</button>
+            <button type="button" class="ghost" onclick="copyCompanyKakaoName()">채널명 복사</button>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="contactName">이름 / 업체명</label>
+            <input id="contactName" type="text" placeholder="예: 홍길동 / ○○중기" autocomplete="off"  aria-label="예: 홍길동 / ○○중기" title="예: 홍길동 / ○○중기" name="contactName" />
+          </div>
+          <div class="field">
+            <label for="contactPhone">연락처</label>
+            <input id="contactPhone" type="tel" placeholder="예: 010-0000-0000" inputmode="tel" autocomplete="tel"  aria-label="예: 010-0000-0000" title="예: 010-0000-0000" name="contactPhone" />
+          </div>
+          <div class="field">
+            <label for="contactType">문의 종류</label>
+            <select id="contactType" aria-label="contactType" title="contactType" name="contactType">
+              <option value="사용문의">사용문의</option>
+              <option value="서류등록문의">서류등록문의</option>
+              <option value="결제문의">결제문의</option>
+              <option value="오류신고">오류신고</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="contactMessage">문의 내용</label>
+            <textarea id="contactMessage" rows="5" placeholder="문의 내용을 적어주세요." style="min-height:120px; resize:vertical;" aria-label="문의 내용을 적어주세요." title="문의 내용을 적어주세요." name="contactMessage"></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="secondary" onclick="showScreen('homeScreen')">홈으로가기</button>
+          <button class="primary" onclick="submitContactTest()">문의 접수</button>
+        </div>
+        <div class="notice">
+          현재 베타버전에서는 문의가 이 브라우저 안에 저장됩니다. 서버 연결 후에는 앱 안 문의는 관리자페이지로 저장하고, 급한 문의는 제이에스건설 회사 카카오톡 채널 1:1 채팅으로 연결하면 됩니다.
+        </div>
+        <div id="contactHistoryBox" style="margin-top:14px;"></div>
+      </div>
+    </section>
+
+    <section id="adminScreen" class="screen hidden">
+      <div class="card">
+        <h2>관리자페이지</h2>
+        <p>현재는 실사용 베타 관리자 화면입니다. 서버 연결 전에는 이 브라우저에 저장된 회원/장비코드 중심으로 관리되고, 정식 웹서비스에서는 로그인한 관리자만 전체 장비코드, 결제기간, QR 정지 상태를 관리하게 됩니다.</p>
+        <div id="adminBox"></div>
+      </div>
+    </section>
+
+
+    <section id="managerAccessScreen" class="screen hidden">
+      <div class="card">
+        <h2>담당자 직접접속</h2>
+        <p>담당자는 카톡 공유, 문자 공유, QR을 누르면 코드 입력 없이 바로 다운로드/프린트 화면으로 들어갑니다.</p>
+        <div class="manager-access-box">
+          <div class="notice blue-note">공유받은 링크나 QR을 다시 눌러 접속해주세요. 담당자에게 코드를 따로 알려줄 필요가 없도록 정리했습니다.</div>
+          <div class="actions">
+            <button class="secondary" onclick="showScreen('homeScreen')">홈으로가기</button>
+          </div>
+        </div>
+        <div class="notice">담당자에게 보내는 QR·링크는 테스트기간 1일 유효입니다. 1일 뒤에는 담당자 다운로드/프린트 화면만 차단하고, 장비업자의 원본 서류함과 수정/갱신은 유지합니다.</div>
+      </div>
+    </section>
+
+    <section id="managerPrintScreen" class="screen hidden">
+      <div class="card">
+        <h2>담당자 다운로드/프린트 화면</h2>
+        <p>담당자는 공유 링크나 QR을 누르면 이 화면을 바로 봅니다. 서류 확인, 다운로드, 프린트만 가능하고 수정/갱신은 장비업자 장비/기사/인부 보관함에서만 가능합니다.</p>
+        <div id="managerPrintBox"></div>
+        <div class="actions">
+          <button class="ghost" onclick="showScreen('homeScreen')">홈으로가기</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="publicScreen" class="screen hidden">
+      <div class="card">
+        <h2>QR 서류 확인 화면</h2>
+        <p>원청사/하도급회사가 QR을 찍었을 때 보는 화면입니다. 담당자는 코드 입력 없이 서류를 확인하고 다운로드·인쇄할 수 있습니다.</p>
+        <div id="publicBox"></div>
+        <div class="notice">실제 웹서비스에서는 이 화면이 서버 주소로 열리고, 외부 사람이 QR을 찍어도 장비·기사·인부 서류 상태를 바로 확인하고 다운로드·인쇄할 수 있습니다. 담당자에게 공유된 QR·링크는 1일 후 접속이 차단됩니다.</div>
+        <!-- QR 서류 확인 화면 하단 공유/이동 버튼 묶음 제거 -->
+      </div>
+    </section>
+  </main>
+
+
+  <div id="cameraModal" class="camera-modal hidden">
+    <div class="camera-sheet">
+      <div class="camera-top">
+        <div>
+          <h3>사진찍기</h3>
+          <p id="cameraModeHelp">A4 서류는 세로 노란틀 기준으로 촬영합니다. 밝기/색상은 자동보정하지 않습니다.</p>
+          <div id="cameraDocModeLabel" class="camera-mode-label">현재 촬영모드: A4 서류</div>
+          <div id="cameraModeSwitch" class="camera-mode-switch hidden">
+            <button type="button" id="cameraModeA4" class="camera-mode-chip" onclick="setCameraScanMode('a4')">A4 서류</button>
+            <button type="button" id="cameraModeCard" class="camera-mode-chip" onclick="setCameraScanMode('card')">카드/이수증</button>
+          </div>
+        </div>
+        <button type="button" class="camera-close" onclick="closeCameraGuide()">닫기</button>
+      </div>
+      <div class="camera-view">
+        <video id="cameraVideo" class="camera-video" autoplay playsinline muted title="SitePass 카메라 미리보기" aria-label="SitePass 카메라 미리보기"></video>
+        <div id="cameraGuide" class="camera-guide">
+          <div class="guide-rect"></div>
+          <div id="autoDocumentBox" class="auto-rect"></div>
+          <div id="cameraScanStatus" class="camera-scan-status">노란 촬영틀에 맞춰주세요</div>
+          <div class="guide-text">장비서류는 A4 노란틀 기준으로 저장합니다</div>
+        </div>
+      </div>
+      <div class="camera-actions">
+        <button type="button" class="camera-btn secondary" onclick="closeCameraGuide()">취소</button>
+        <button type="button" class="camera-btn capture" onclick="takeCameraPhoto(false)">촬영하기</button>
+        <button type="button" class="camera-btn usefile" onclick="fallbackCameraFile()">기본 카메라</button>
+      </div>
+      <div id="cameraRuntimeNote" class="camera-note">노란틀에 맞춰 촬영하면 용지·카드 크기만 맞춥니다. 밝기/색상/선명도 자동보정은 하지 않습니다.</div>
+    </div>
+  </div>
+
+  <div id="previewModal" class="preview-modal" onclick="closePreviewModal()">
+    <button type="button" onclick="closePreviewModal(); event.stopPropagation();">닫기</button>
+    <img id="previewModalImg" alt="첨부 이미지 크게 보기"  title="SitePass 이미지" />
+    <iframe id="previewModalFrame" title="PDF 미리보기" onclick="event.stopPropagation();"></iframe>
+  </div>
+
+  <div id="pageEditModal" class="page-edit-modal hidden" onclick="if(event.target.id==='pageEditModal') closePageEditModal()">
+    <div class="page-edit-sheet">
+      <div class="page-edit-head">
+        <div>
+          <h3>수정편집</h3>
+          <p>용지 밖 배경이나 옆 테두리는 자르기로 정리하세요. 적용하면 원본은 남기지 않고 수정본 1장만 저장됩니다.</p>
+        </div>
+        <button type="button" class="camera-close" onclick="closePageEditModal()">닫기</button>
+      </div>
+      <div class="page-edit-preview"><img id="pageEditImage" alt="수정편집 미리보기"  title="SitePass 이미지" /></div>
+      <div class="page-crop-panel">
+        <div class="page-crop-title">자르기</div>
+        <div class="page-crop-help">자르기 버튼 옆의 되돌리기를 누르면 해당 방향만 원래대로 돌아갑니다. 카드형 서류는 아래 여백을 더 줄이고 A4 상단 1/2 칸에 크게 정리됩니다.</div>
+        <div class="page-crop-controls">
+          <div class="page-control-pair"><button type="button" class="secondary" onclick="changeCropValue('left', 2)">왼쪽 자르기</button><button type="button" class="ghost" onclick="resetCropSide('left')">왼쪽 되돌리기</button></div>
+          <div class="page-control-pair"><button type="button" class="secondary" onclick="changeCropValue('right', 2)">오른쪽 자르기</button><button type="button" class="ghost" onclick="resetCropSide('right')">오른쪽 되돌리기</button></div>
+          <div class="page-control-pair"><button type="button" class="secondary" onclick="changeCropValue('top', 2)">위쪽 자르기</button><button type="button" class="ghost" onclick="resetCropSide('top')">위쪽 되돌리기</button></div>
+          <div class="page-control-pair"><button type="button" class="secondary" onclick="changeCropValue('bottom', 2)">아래쪽 자르기</button><button type="button" class="ghost" onclick="resetCropSide('bottom')">아래쪽 되돌리기</button></div>
+        </div>
+      </div>
+      <div class="page-edit-controls">
+        <div class="page-control-pair"><button type="button" class="secondary" onclick="changeEditValue('brightness', -0.08)">밝기 -</button><button type="button" class="ghost" onclick="resetEditValue('brightness')">밝기 되돌리기</button></div>
+        <div class="page-control-pair"><button type="button" class="secondary" onclick="changeEditValue('brightness', 0.08)">밝기 +</button><button type="button" class="ghost" onclick="resetEditValue('brightness')">밝기 되돌리기</button></div>
+        <div class="page-control-pair"><button type="button" class="secondary" onclick="changeEditValue('contrast', -0.08)">선명도 -</button><button type="button" class="ghost" onclick="resetEditValue('contrast')">선명도 되돌리기</button></div>
+        <div class="page-control-pair"><button type="button" class="secondary" onclick="changeEditValue('contrast', 0.08)">선명도 +</button><button type="button" class="ghost" onclick="resetEditValue('contrast')">선명도 되돌리기</button></div>
+        <div class="page-save-row"><button type="button" class="primary" onclick="applyPageEdit()">수정본만 저장</button></div>
+      </div>
+      <div id="pageEditInfo" class="page-edit-info"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  var SITEPASS_FIRST_AUTO_LOGIN_KEY = 'sitepass:first:auto-login';
+  var SITEPASS_FIRST_AUTO_LOGIN_ID_KEY = 'sitepass:first:auto-login-id';
+  var SITEPASS_FIRST_REMEMBER_ID_KEY = 'sitepass:first:remember-login-id';
+  var SITEPASS_FIRST_AUTH_ROUTE_KEY = 'sitepass:first:auth-route';
+
+  function normalizeFirstAuthRoute(route){
+    route = String(route || '').replace(/^#/, '').trim();
+    if (route === 'signup' || route === 'sitepass-join') return 'join';
+    if (route === 'id-find' || route === 'sitepass-find-id') return 'find-id';
+    if (route === 'password-find' || route === 'sitepass-find-password') return 'find-password';
+    if (route === 'join' || route === 'find-id' || route === 'find-password') return route;
+    return '';
+  }
+  function routeFromHash(){
+    return normalizeFirstAuthRoute(window.location.hash || '');
+  }
+  function routeToHash(route){
+    route = normalizeFirstAuthRoute(route);
+    return route ? '#' + route : '';
+  }
+  function setStoredRoute(route){
+    route = normalizeFirstAuthRoute(route);
+    try {
+      if (route) sessionStorage.setItem(SITEPASS_FIRST_AUTH_ROUTE_KEY, route);
+      else sessionStorage.removeItem(SITEPASS_FIRST_AUTH_ROUTE_KEY);
+    } catch(e) {}
+  }
+  function pushFirstAuthRoute(route){
+    route = normalizeFirstAuthRoute(route);
+    if (!route) return;
+    setStoredRoute(route);
+    var hash = routeToHash(route);
+    if (window.location.hash === hash) return;
+    try {
+      if (window.history && window.history.pushState) {
+        window.history.pushState({ sitepassFirstAuthRoute: route }, document.title || 'SitePass', window.location.pathname + window.location.search + hash);
+      } else {
+        window.location.hash = hash;
+      }
+    } catch(e) {
+      try { window.location.hash = hash; } catch(ignore) {}
+    }
+  }
+  function clearFirstAuthRouteInPlace(){
+    setStoredRoute('');
+    try { document.documentElement.classList.remove('sitepass-first-auth-route-boot'); } catch(e) {}
+  }
+  window.setSitePassFirstAuthRoute = function(route){
+    if (window.__sitepassRestoringFirstAuthRoute) return;
+    pushFirstAuthRoute(route);
+  };
+  window.clearSitePassFirstAuthRoute = clearFirstAuthRouteInPlace;
+
+  function revealAuthShell(){
+    var landing = document.getElementById('sitepassFirstLanding');
+    var shell = document.querySelector('#signupScreen .login-auth-shell');
+    if (landing) landing.classList.add('hidden');
+    if (shell) shell.classList.remove('hidden');
+  }
+  function hideAuthPanels(){
+    var join = document.getElementById('joinChoiceBox');
+    var find = document.getElementById('accountFindPanel');
+    if (join) join.classList.add('hidden');
+    if (find) find.classList.add('hidden');
+  }
+  function revealFirstLanding(){
+    var landing = document.getElementById('sitepassFirstLanding');
+    var shell = document.querySelector('#signupScreen .login-auth-shell');
+    hideAuthPanels();
+    if (landing) landing.classList.remove('hidden');
+    if (shell) shell.classList.add('hidden');
+    clearFirstAuthRouteInPlace();
+  }
+
+  window.openSitePassFirstLogin = function(){
+    revealAuthShell();
+    hideAuthPanels();
+    clearFirstAuthRouteInPlace();
+    var id = document.getElementById('sitepassLoginIdentifier');
+    setTimeout(function(){ try { id && id.focus(); } catch(e) {} }, 120);
+  };
+
+  function getSitePassFirstAutoLoginChecked(){
+    var autoLogin = document.getElementById('sitepassFirstAutoLogin') || document.getElementById('sitepassFirstRememberId');
+    return !!(autoLogin && autoLogin.checked);
+  }
+  function saveSitePassFirstAutoLogin(){
+    var firstId = document.getElementById('sitepassFirstLoginIdentifier');
+    var checked = getSitePassFirstAutoLoginChecked();
+    try {
+      if (checked) {
+        localStorage.setItem(SITEPASS_FIRST_AUTO_LOGIN_KEY, '1');
+        if (firstId && firstId.value.trim()) {
+          localStorage.setItem(SITEPASS_FIRST_AUTO_LOGIN_ID_KEY, firstId.value.trim());
+          localStorage.setItem(SITEPASS_FIRST_REMEMBER_ID_KEY, firstId.value.trim());
+        }
+      } else {
+        localStorage.removeItem(SITEPASS_FIRST_AUTO_LOGIN_KEY);
+        localStorage.removeItem(SITEPASS_FIRST_AUTO_LOGIN_ID_KEY);
+        localStorage.removeItem(SITEPASS_FIRST_REMEMBER_ID_KEY);
+        localStorage.removeItem('sitePass_v23_7_7_update_original_corrected_pwa_auto_member_v23_7_145');
+        localStorage.removeItem('sitePass_v23_7_7_update_original_corrected_currentMember');
+      }
+    } catch(e) {}
+  }
+  function loadSitePassFirstAutoLogin(){
+    var firstId = document.getElementById('sitepassFirstLoginIdentifier');
+    var autoLogin = document.getElementById('sitepassFirstAutoLogin') || document.getElementById('sitepassFirstRememberId');
+    try {
+      var enabled = localStorage.getItem(SITEPASS_FIRST_AUTO_LOGIN_KEY) === '1';
+      var saved = localStorage.getItem(SITEPASS_FIRST_AUTO_LOGIN_ID_KEY) || localStorage.getItem(SITEPASS_FIRST_REMEMBER_ID_KEY) || '';
+      if (saved && firstId && !firstId.value) firstId.value = saved;
+      if (autoLogin) autoLogin.checked = enabled;
+    } catch(e) {}
+  }
+  window.submitSitePassFirstLogin = function(event){
+    if (event && event.preventDefault) event.preventDefault();
+    var firstId = document.getElementById('sitepassFirstLoginIdentifier');
+    var firstPw = document.getElementById('sitepassFirstLoginPassword');
+    var realId = document.getElementById('sitepassLoginIdentifier');
+    var realPw = document.getElementById('sitepassLoginPassword');
+    saveSitePassFirstAutoLogin();
+    clearFirstAuthRouteInPlace();
+    if (realId) realId.value = firstId ? firstId.value : '';
+    if (realPw) realPw.value = firstPw ? firstPw.value : '';
+    if (typeof submitSitePassLoginTest === 'function') {
+      submitSitePassLoginTest();
+    } else {
+      openSitePassFirstLogin();
+    }
+    return false;
+  };
+  window.toggleSitePassFirstPassword = function(){
+    var pw = document.getElementById('sitepassFirstLoginPassword');
+    if (!pw) return;
+    pw.type = pw.type === 'password' ? 'text' : 'password';
+    try { pw.focus(); } catch(e) {}
+  };
+
+  function showFirstAuthRoute(route, pushRoute){
+    route = normalizeFirstAuthRoute(route);
+    if (!route) return false;
+    if (pushRoute) pushFirstAuthRoute(route);
+    else {
+      setStoredRoute(route);
+      var expectedHash = routeToHash(route);
+      if (expectedHash && window.location.hash !== expectedHash) {
+        try {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(window.history.state || { sitepassFirstAuthRoute: route }, document.title || 'SitePass', window.location.pathname + window.location.search + expectedHash);
+          } else {
+            window.location.hash = expectedHash;
+          }
+        } catch(e) {
+          try { window.location.hash = expectedHash; } catch(ignore) {}
+        }
+      }
+    }
+    revealAuthShell();
+    hideAuthPanels();
+    window.__sitepassRestoringFirstAuthRoute = true;
+    try {
+      if (route === 'join') {
+        if (typeof startJoinFlow === 'function') startJoinFlow();
+        else {
+          var join = document.getElementById('joinChoiceBox');
+          if (join) join.classList.remove('hidden');
+        }
+      } else if (typeof openAccountFindPanel === 'function') {
+        openAccountFindPanel(route === 'find-password' ? 'password' : 'id');
+      } else {
+        var find = document.getElementById('accountFindPanel');
+        if (find) find.classList.remove('hidden');
+      }
+    } finally {
+      window.__sitepassRestoringFirstAuthRoute = false;
+      try { document.documentElement.classList.remove('sitepass-first-auth-route-boot'); } catch(e) {}
+    }
+    try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch(e) { window.scrollTo(0, 0); }
+    return true;
+  }
+
+  window.restoreSitePassFirstAuthRoute = function(route){
+    route = normalizeFirstAuthRoute(route || routeFromHash() || window.__sitepassFirstAuthRouteOnBoot || '');
+    if (!route) return false;
+    return showFirstAuthRoute(route, false);
+  };
+  window.openSitePassFirstFind = function(type){
+    showFirstAuthRoute(type === 'password' ? 'find-password' : 'find-id', true);
+  };
+  window.openSitePassFirstJoin = function(){
+    showFirstAuthRoute('join', true);
+  };
+  window.backToSitePassFirstLanding = function(){
+    revealFirstLanding();
+    try {
+      if (window.history && window.history.replaceState && window.location.hash) {
+        window.history.replaceState({ sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);
+      }
+    } catch(e) {}
+  };
+
+  loadSitePassFirstAutoLogin();
+  var firstAuto = document.getElementById('sitepassFirstAutoLogin') || document.getElementById('sitepassFirstRememberId');
+  if (firstAuto) firstAuto.addEventListener('change', saveSitePassFirstAutoLogin);
+
+  function refreshFirstScreenClass(){
+    var signup = document.getElementById('signupScreen');
+    var active = !!(signup && !signup.classList.contains('hidden'));
+    document.body.classList.toggle('sitepass-first-screen-active', active);
+  }
+  setInterval(refreshFirstScreenClass, 250);
+  document.addEventListener('DOMContentLoaded', refreshFirstScreenClass);
+
+  var wrapTimer = setInterval(function(){
+    if (typeof window.showScreen !== 'function' || window.__sitepassFirstScreenWrapped) return;
+    var originalShowScreen = window.showScreen;
+    window.showScreen = function(id, options){
+      var result = originalShowScreen.apply(this, arguments);
+      if (id === 'signupScreen') {
+        if (!window.restoreSitePassFirstAuthRoute()) window.backToSitePassFirstLanding();
+      }
+      setTimeout(refreshFirstScreenClass, 20);
+      return result;
+    };
+    window.__sitepassFirstScreenWrapped = true;
+    clearInterval(wrapTimer);
+  }, 80);
+
+  window.addEventListener('hashchange', function(){
+    var route = routeFromHash();
+    if (route) window.restoreSitePassFirstAuthRoute(route);
+    else if (!window.__sitepassRestoringFirstAuthRoute) revealFirstLanding();
+  });
+})();
+</script>
+<script>
+(function(){
+  window.__SITEPASS_LOAD_ERRORS = [];
+  window.addEventListener('error', function(event){
+    var target = event && event.target;
+    if (target && target.tagName === 'SCRIPT') {
+      window.__SITEPASS_LOAD_ERRORS.push(target.src || 'script');
+      console.error('[SitePass] script load failed:', target.src || target);
+    }
+  }, true);
+  setTimeout(function(){
+    try {
+      if (document.body && document.body.classList.contains('sitepass-booting') && window.__SITEPASS_LOAD_ERRORS.length) {
+        document.body.classList.remove('sitepass-booting');
+        alert('SitePass 파일을 일부 불러오지 못했습니다.\n브라우저 캐시를 비우거나 새로고침 후 다시 접속해주세요.\n\n누락 파일: ' + window.__SITEPASS_LOAD_ERRORS.slice(0,3).join('\n'));
+      }
+    } catch(e) {}
+  }, 14000);
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="./assets/js/config.js?v=23.7.385" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.385" defer></script>
+<script src="./assets/js/storage.js?v=23.7.385" defer></script>
+<script src="./assets/js/terms.js?v=23.7.385" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.385" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.385" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.385" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.385" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.385" defer></script>
+<script src="./assets/js/archive.js?v=23.7.385" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.385" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.385" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.385" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.385" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.385" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.385" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.385" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.385" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.385" defer></script>
+
+<script>
+(function(){
+  function updateSitePassAuthPanelOnly(){
+    try {
+      var shell = document.querySelector('#signupScreen .login-auth-shell');
+      if (!shell) return;
+      var join = document.getElementById('joinChoiceBox');
+      var find = document.getElementById('accountFindPanel');
+      var joinOpen = !!(join && !join.classList.contains('hidden'));
+      var findOpen = !!(find && !find.classList.contains('hidden'));
+      shell.classList.toggle('sitepass-auth-panel-only', joinOpen || findOpen);
+    } catch(e) {}
+  }
+  window.updateSitePassAuthPanelOnly = updateSitePassAuthPanelOnly;
+  document.addEventListener('DOMContentLoaded', updateSitePassAuthPanelOnly);
+  window.addEventListener('load', updateSitePassAuthPanelOnly);
+  setInterval(updateSitePassAuthPanelOnly, 150);
+})();
+</script>
+
+
+<script>
+(function(){
+  function updateSitePassAuthCleanMode(){
+    try {
+      var signup = document.getElementById('signupScreen');
+      var shell = document.querySelector('#signupScreen .login-auth-shell');
+      var join = document.getElementById('joinChoiceBox');
+      var find = document.getElementById('accountFindPanel');
+      if (!signup || !shell) return;
+      var joinOpen = !!(join && !join.classList.contains('hidden'));
+      var findOpen = !!(find && !find.classList.contains('hidden'));
+      signup.classList.toggle('sitepass-auth-join-open', joinOpen);
+      shell.classList.toggle('sitepass-auth-find-open', findOpen);
+      shell.classList.toggle('sitepass-auth-panel-only', findOpen);
+    } catch(e) {}
+  }
+  window.updateSitePassAuthCleanMode = updateSitePassAuthCleanMode;
+  document.addEventListener('DOMContentLoaded', updateSitePassAuthCleanMode);
+  window.addEventListener('load', updateSitePassAuthCleanMode);
+  window.addEventListener('hashchange', function(){ setTimeout(updateSitePassAuthCleanMode, 30); });
+  setInterval(updateSitePassAuthCleanMode, 80);
+})();
+</script>
+
+
+<script>
+(function(){
+  window.continueSitePassSignupAfterTerms = function(){
+    try {
+      var required = Array.from(document.querySelectorAll('#joinChoiceBox .signup-required-term'));
+      var requiredOk = required.length > 0 && required.every(function(input){ return !!input.checked; });
+
+      if (!requiredOk) {
+        try {
+          if (typeof window.updateSignupTermsUi === 'function') window.updateSignupTermsUi();
+        } catch(e) {}
+        alert('회원가입을 진행하려면 필수 약관에 모두 동의해주세요.');
+        var termsBoxForAlert = document.querySelector('#joinChoiceBox .terms-box');
+        if (termsBoxForAlert) {
+          try { termsBoxForAlert.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) {}
+        }
+        return false;
+      }
+
+      var signupBox = document.getElementById('sitepassSignupBox');
+      if (signupBox) signupBox.classList.remove('hidden');
+
+      var termsBox = document.querySelector('#joinChoiceBox .terms-box');
+      var termsNote = document.getElementById('termsOkNote');
+      var nextActions = document.querySelector('#joinChoiceBox .terms-next-actions');
+      var nextHint = document.querySelector('#joinChoiceBox .terms-next-hint');
+
+      if (termsBox) termsBox.classList.add('hidden');
+      if (termsNote) termsNote.classList.add('hidden');
+      if (nextActions) nextActions.classList.add('hidden');
+      if (nextHint) nextHint.classList.add('hidden');
+
+      if (typeof window.updateSignupTermsUi === 'function') {
+        try { window.updateSignupTermsUi(); } catch(e) {}
+      }
+      if (typeof window.updateSitePassAuthCleanMode === 'function') {
+        try { window.updateSitePassAuthCleanMode(); } catch(e) {}
+      }
+      if (typeof window.resetSitePassSignupIdDuplicate === 'function') {
+        try { window.resetSitePassSignupIdDuplicate(); } catch(e) {}
+      }
+
+      setTimeout(function(){
+        try {
+          if (signupBox) signupBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          var name = document.getElementById('sitepassSignupName');
+          if (name) name.focus();
+        } catch(e) {}
+      }, 80);
+
+      return false;
+    } catch(e) {
+      console.error('continueSitePassSignupAfterTerms error', e);
+      alert('회원가입 입력 화면으로 넘어가는 중 오류가 발생했습니다. 새로고침 후 다시 시도해주세요.');
+      return false;
+    }
+  };
+})();
+</script>
+
+</body>
+</html>

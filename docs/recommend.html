@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>현장서류패스 설치하기</title>
+  <meta name="description" content="카톡에서 열렸다면 Chrome 또는 Safari로 열어 홈화면에 설치하세요. 장비서류·기사서류·인부서류 QR 공유 서비스입니다." />
+  <link rel="canonical" href="https://sitepass-js.github.io/sitepass/recommend.html" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="현장서류패스" />
+  <meta property="og:locale" content="ko_KR" />
+  <meta property="og:title" content="현장서류패스 설치하기" />
+  <meta property="og:description" content="장비서류·기사서류·인부서류를 휴대폰으로 등록하고 QR링크로 현장 담당자에게 바로 공유하세요." />
+  <meta property="og:url" content="https://sitepass-js.github.io/sitepass/recommend.html" />
+  <meta property="og:image" content="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview-v188.png" />
+  <meta property="og:image:secure_url" content="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview-v188.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="현장서류패스 추천 이미지" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="현장서류패스 설치하기" />
+  <meta name="twitter:description" content="카톡에서 열렸다면 Chrome 또는 Safari로 열어 홈화면에 설치하세요." />
+  <meta name="twitter:image" content="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview-v188.png" />
+
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",Arial,sans-serif;background:linear-gradient(180deg,#edf4ff,#f8fafc);color:#172033}
+    .wrap{max-width:620px;margin:0 auto}
+    .card{background:#fff;border:1px solid #d8e0ee;border-radius:24px;padding:22px;box-shadow:0 16px 42px rgba(23,32,51,.11);margin:18px 0}
+    .badge{display:inline-flex;align-items:center;background:#e8f0ff;color:#2457d6;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:900}
+    h1{font-size:28px;line-height:1.22;margin:15px 0 9px}
+    h2{font-size:18px;margin:0 0 12px}
+    p{line-height:1.62;margin:8px 0;color:#445066}
+    .hero{width:100%;border-radius:18px;border:1px solid #d8e0ee;margin:17px 0 12px;background:#f8fafc}
+    .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:16px;padding:16px 14px;text-decoration:none;font-weight:950;font-size:17px;margin:10px 0;cursor:pointer}
+    .primary{background:#2457d6;color:#fff}
+    .dark{background:#182230;color:#fff}
+    .light{background:#eef4ff;color:#2457d6;border:1px solid #cbd8ff}
+    .ghost{background:#fff;color:#344054;border:1px solid #d0d5dd}
+    .notice{background:#fff8e6;border:1px solid #ffd58a;border-radius:16px;padding:13px 14px;color:#694b00;font-size:14px;line-height:1.55;margin-top:12px}
+    .steps{margin:10px 0 0;padding-left:20px;color:#38475d;line-height:1.75}
+    .steps li{margin:4px 0}
+    .small{font-size:13px;color:#667085;line-height:1.55}
+    .copybox{word-break:break-all;background:#f8fafc;border:1px dashed #b9c5d8;border-radius:14px;padding:12px;font-size:14px;color:#344054;margin-top:10px}
+    .ok{display:none;margin-top:8px;color:#087443;font-weight:800;font-size:13px}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <span class="badge">추천 설치 링크</span>
+      <h1>현장서류패스 설치하기</h1>
+      <p>카톡에서 바로 설치창이 안 뜨면 아래 버튼으로 Chrome 또는 Safari에서 열어 설치하면 됩니다.</p>
+      <img class="hero" src="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview-v188.png" alt="현장서류패스 추천 이미지" />
+      <a class="btn primary" href="intent://sitepass-js.github.io/sitepass/?install=1&ref=recommend#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2Fsitepass-js.github.io%2Fsitepass%2F%3Finstall%3D1%26ref%3Drecommend;end">안드로이드 · Chrome으로 열고 설치하기</a>
+      <button class="btn dark" type="button" onclick="copyInstallLink()">설치주소 복사하기</button>
+      <a class="btn light" href="https://sitepass-js.github.io/sitepass/?install=1&ref=recommend">현재 브라우저에서 설치화면 열기</a>
+      <div id="copyOk" class="ok">설치주소를 복사했습니다. Chrome 또는 Safari 주소창에 붙여넣어 주세요.</div>
+      <div class="notice"><b>카톡에서 설치창이 안 뜰 때</b><br />카톡 오른쪽 위 <b>점 3개</b> → <b>다른 브라우저로 열기</b>를 누르거나, 설치주소를 복사해서 Chrome/Safari 주소창에 붙여넣어 주세요.</div>
+    </section>
+
+    <section class="card">
+      <h2>안드로이드폰 설치방법</h2>
+      <ol class="steps">
+        <li><b>Chrome으로 열고 설치하기</b> 버튼을 누릅니다.</li>
+        <li>Chrome에서 현장서류패스가 열리면 <b>바탕화면에 설치하기</b>를 누릅니다.</li>
+        <li>설치창이 안 뜨면 Chrome 오른쪽 위 <b>점 3개</b> → <b>앱 설치</b> 또는 <b>홈 화면에 추가</b>를 누릅니다.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>아이폰 설치방법</h2>
+      <ol class="steps">
+        <li>아래 설치주소를 복사합니다.</li>
+        <li><b>Safari</b>를 열고 주소창에 붙여넣습니다.</li>
+        <li>아래쪽 <b>공유 버튼</b> → <b>홈 화면에 추가</b>를 누릅니다.</li>
+      </ol>
+      <div class="copybox" id="installUrlText">https://sitepass-js.github.io/sitepass/?install=1&ref=recommend</div>
+      <button class="btn ghost" type="button" onclick="copyInstallLink()">설치주소 다시 복사</button>
+      <p class="small">아이폰은 보안상 카톡 안에서 버튼 하나로 홈화면 설치창을 바로 띄우기 어렵습니다. Safari에서 열어야 가장 안정적입니다.</p>
+    </section>
+  </main>
+
+  <script>
+    const INSTALL_URL = 'https://sitepass-js.github.io/sitepass/?install=1&ref=recommend';
+    function copyInstallLink() {
+      const showOk = () => { const el = document.getElementById('copyOk'); if (el) el.style.display = 'block'; };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(INSTALL_URL).then(showOk).catch(() => fallbackCopy());
+      } else { fallbackCopy(); }
+    }
+    function fallbackCopy() {
+      const ta = document.createElement('textarea');
+      ta.value = INSTALL_URL;
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      const el = document.getElementById('copyOk'); if (el) el.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
