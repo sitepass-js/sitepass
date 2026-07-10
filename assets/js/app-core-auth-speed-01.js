@@ -396,7 +396,20 @@ function memberLogout() {
       removeSessionValue(CURRENT_MEMBER_KEY);
       clearPwaAutoMemberTest();
       refreshMemberUi();
+      // v23.7.382: 로그아웃 후 회원가입 hash/화면이 남지 않게 첫 로그인 화면으로 보냅니다.
+      try {
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({ sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);
+        }
+      } catch (e) {}
       showScreen('signupScreen');
+      setTimeout(function(){
+        try {
+          if (typeof window.backToSitePassFirstLanding === 'function') {
+            window.backToSitePassFirstLanding();
+          }
+        } catch (e) {}
+      }, 40);
     }
 
     async function memberWithdraw() {
