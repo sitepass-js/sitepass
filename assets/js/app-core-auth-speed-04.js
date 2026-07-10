@@ -395,7 +395,7 @@ function adminLogout() {
       clearPwaAutoMemberTest();
       refreshAdminUi();
       alert('로그아웃했습니다.');
-      // v23.7.387: 관리자 로그아웃도 회원가입 화면이 아니라 첫 로그인 화면으로 이동합니다.
+      // v23.7.388: 관리자 로그아웃도 회원가입 화면이 아니라 첫 로그인 화면으로 이동합니다.
       try {
         if (window.history && window.history.replaceState) {
           window.history.replaceState({ sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);

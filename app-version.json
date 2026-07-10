@@ -1,11 +1,11 @@
 {
-  "version": "23.7.387",
+  "version": "23.7.388",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.387",
-  "stage": "3단계 작은틀 기준판 - compact",
-  "baselineFrom": "23.7.386",
-  "releaseType": "step3-small-frame-baseline-compact",
-  "runtimeChange": "none",
-  "purpose": "실제 수정 단위와 건드리면 안 되는 범위를 고정해 수정 충돌을 줄임"
+  "build": "v23.7.388",
+  "stage": "실제 수정 1차 - 바탕화면 아이콘/회원가입·찾기·홈 버튼 아이콘",
+  "baselineFrom": "23.7.387",
+  "releaseType": "pwa-icon-and-auth-button-icons",
+  "runtimeChange": "minor-ui",
+  "purpose": "바탕화면 아이콘 적용, 회원가입/아이디찾기/비밀번호찾기/홈 버튼 왼쪽 아이콘 추가, 홈 버튼 화살표 제거"
 }
