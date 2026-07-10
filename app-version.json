@@ -1,11 +1,11 @@
 {
-  "version": "23.7.393",
+  "version": "23.7.396",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.393",
-  "stage": "v393-test 상단 홈 아이콘 가운데/확대 정리",
-  "baselineFrom": "23.7.392",
-  "releaseType": "test-centered-big-home-icon",
+  "build": "v23.7.396",
+  "stage": "v396-test 회원가입/찾기 아이콘 확대",
+  "baselineFrom": "23.7.395",
+  "releaseType": "test-big-auth-link-icons",
   "runtimeChange": "minor-ui",
-  "purpose": "회원가입/찾기 화면 상단 홈 아이콘을 가운데 배치하고 크게 조정, 흰 바탕에 줄 없이 자연스럽게 표시"
+  "purpose": "회원가입, 아이디 찾기, 비밀번호 찾기 버튼/링크의 아이콘을 크게 확대"
 }

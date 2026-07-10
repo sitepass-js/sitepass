@@ -21,6 +21,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const MEMBER_STORAGE_KEY = STORAGE_KEY + '_members';
     const CURRENT_MEMBER_KEY = STORAGE_KEY + '_currentMember';
     const PWA_AUTO_MEMBER_KEY = STORAGE_KEY + '_pwa_auto_member_v23_7_145';
+    const BROWSER_AUTO_MEMBER_KEY = STORAGE_KEY + '_browser_auto_member_v23_7_395';
     const ADMIN_ID = 'sitepass@kakao.com'; // 지정 최고관리자 ID
     const LEGACY_ADMIN_ID = 'dream9473'; // 이전 임시 최고관리자 ID도 비상 접속용으로 유지
     const LEGACY_ADMIN_ID_2 = 'sitepassadmin'; // 더 이전 임시 최고관리자 ID도 비상 접속용으로 유지
@@ -291,6 +292,37 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
       try { return JSON.parse(localStorage.getItem(PWA_AUTO_MEMBER_KEY) || 'null'); } catch (e) { return null; }
     }
 
+    function setBrowserAutoMemberTest(member) {
+      if (!member) return;
+      const payload = {
+        name: member.name || member.signupId || 'SitePass 회원',
+        phone: member.phone || '',
+        id: member.id || '',
+        signupId: member.signupId || '',
+        providerId: member.providerId || '',
+        provider: member.provider || '',
+        signupMethod: member.signupMethod || member.provider || '',
+        securityMemo: '자동 로그인 사용 중',
+        loggedInAt: new Date().toISOString(),
+        autoLoginType: 'browser_auto_login'
+      };
+      const storage = getStorageModule();
+      if (storage.setJson) return storage.setJson(BROWSER_AUTO_MEMBER_KEY, payload);
+      try { localStorage.setItem(BROWSER_AUTO_MEMBER_KEY, JSON.stringify(payload)); } catch (e) {}
+    }
+
+    function getBrowserAutoMemberTest() {
+      const storage = getStorageModule();
+      if (storage.getJson) return storage.getJson(BROWSER_AUTO_MEMBER_KEY, null);
+      try { return JSON.parse(localStorage.getItem(BROWSER_AUTO_MEMBER_KEY) || 'null'); } catch (e) { return null; }
+    }
+
+    function clearBrowserAutoMemberTest() {
+      const storage = getStorageModule();
+      if (storage.removeItem) return storage.removeItem(BROWSER_AUTO_MEMBER_KEY);
+      try { localStorage.removeItem(BROWSER_AUTO_MEMBER_KEY); } catch (e) {}
+    }
+
     // v23.7.281 - 장비등록 저장 시 소유회원이 비어 있으면 가능한 회원정보로 보강합니다.
     // 회원으로 등록했는데 관리자 요약/회원 장비등록수에 0대로 보이는 문제를 줄이기 위한 안전장치입니다.
     function getEquipmentRegistrationOwnerMember() {
@@ -330,17 +362,18 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
       if (storage.removeItem) {
         storage.removeItem(PWA_AUTO_MEMBER_KEY);
         storage.removeItem(QUICK_AUTH_KEY);
+        storage.removeItem(BROWSER_AUTO_MEMBER_KEY);
         return;
       }
       try { localStorage.removeItem(PWA_AUTO_MEMBER_KEY); } catch (e) {}
       try { localStorage.removeItem(QUICK_AUTH_KEY); } catch (e) {}
+      try { localStorage.removeItem(BROWSER_AUTO_MEMBER_KEY); } catch (e) {}
     }
 
     function restorePwaAutoMemberSession() {
       if (!isSitePassAutoLoginEnabled()) return false;
-      if (!isSitePassInstalledAppMode()) return false;
       if (isMemberLoggedIn() || isAdminLoggedIn()) return true;
-      const saved = getPwaAutoMemberTest();
+      const saved = getPwaAutoMemberTest() || getBrowserAutoMemberTest();
       if (!saved) return false;
       setSessionValue(CURRENT_MEMBER_KEY, JSON.stringify(saved));
       return true;
@@ -382,7 +415,10 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
       const updatedMember = updateMemberLastLogin(member, member?.signupMethod || member?.provider || 'SitePass 로그인') || member;
       setCurrentMemberTest(updatedMember || {});
       const current = getCurrentMemberTest();
-      if (isSitePassInstalledAppMode() && isSitePassAutoLoginEnabled()) setPwaAutoMemberTest(current || updatedMember || {});
+      if (isSitePassAutoLoginEnabled()) {
+        setBrowserAutoMemberTest(current || updatedMember || {});
+        if (isSitePassInstalledAppMode()) setPwaAutoMemberTest(current || updatedMember || {});
+      }
       if (!isSitePassAutoLoginEnabled()) clearPwaAutoMemberTest();
       try { if (window.sitePassClearServerAuthoritativeEquipmentItems) window.sitePassClearServerAuthoritativeEquipmentItems(); } catch (e) {}
       try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
@@ -400,7 +436,7 @@ function memberLogout() {
       try { if (window.sitePassClearServerAuthoritativeEquipmentItems) window.sitePassClearServerAuthoritativeEquipmentItems(); } catch (e) {}
       try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
       refreshMemberUi();
-      // v23.7.393: 로그아웃 후 회원가입 hash/화면이 남지 않게 첫 로그인 화면으로 보냅니다.
+      // v23.7.396: 로그아웃 후 회원가입 hash/화면이 남지 않게 첫 로그인 화면으로 보냅니다.
       try {
         if (window.history && window.history.replaceState) {
           window.history.replaceState({ sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);
