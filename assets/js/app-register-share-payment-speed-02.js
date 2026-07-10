@@ -592,7 +592,7 @@ function resetForm(clearEdit = true) {
       return null;
     }
 
-    // v23.7.392: 일반회원 보관함은 현재 로그인 회원 소유 장비만 보여줍니다.
+    // v23.7.393: 일반회원 보관함은 현재 로그인 회원 소유 장비만 보여줍니다.
     // 신규가입 직후 이전 테스트/샘플/다른 회원 장비가 보관함에 섞여 보이는 것을 막습니다.
     function normalizeSitePassMemberStorageScopeKey(value) {
       return String(value || '').trim().toLowerCase().replace(/\s+/g, '').replace(/[^0-9a-z가-힣@._-]/g, '');

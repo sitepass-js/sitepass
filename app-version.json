@@ -1,11 +1,11 @@
 {
-  "version": "23.7.392",
+  "version": "23.7.393",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.392",
-  "stage": "v392-test 약관 안내문 한 줄 정리",
-  "baselineFrom": "23.7.391",
-  "releaseType": "test-terms-hint-one-line",
+  "build": "v23.7.393",
+  "stage": "v393-test 상단 홈 아이콘 가운데/확대 정리",
+  "baselineFrom": "23.7.392",
+  "releaseType": "test-centered-big-home-icon",
   "runtimeChange": "minor-ui",
-  "purpose": "회원가입 약관 다음 버튼 아래 안내문을 한 줄로 정리하고 줄맞춤"
+  "purpose": "회원가입/찾기 화면 상단 홈 아이콘을 가운데 배치하고 크게 조정, 흰 바탕에 줄 없이 자연스럽게 표시"
 }

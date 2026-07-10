@@ -1,12 +1,12 @@
-# v23.7.392 1단계 큰틀 체크리스트
+# v23.7.393 1단계 큰틀 체크리스트
 
 ## 업로드 확인
 - [ ] GitHub 루트에 index.html이 있다.
 - [ ] assets 폴더가 있다.
 - [ ] docs 폴더가 있다.
 - [ ] .nojekyll 파일이 있다.
-- [ ] app-version.json이 v23.7.392로 되어 있다.
-- [ ] deploy-version.txt가 v23.7.392로 되어 있다.
+- [ ] app-version.json이 v23.7.393로 되어 있다.
+- [ ] deploy-version.txt가 v23.7.393로 되어 있다.
 
 ## 실행 확인
 - [ ] https://sitepass-js.github.io/sitepass/?v=385 접속 가능.
