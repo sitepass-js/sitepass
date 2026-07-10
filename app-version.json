@@ -1,9 +1,11 @@
 {
-  "version": "23.7.384",
+  "version": "23.7.385",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.384",
-  "stage": "실사용 베타 안정화 + 구조 기준판",
-  "baselineFrom": "23.7.383",
-  "releaseType": "beta-stable-structure-baseline"
+  "build": "v23.7.385",
+  "stage": "1단계 큰틀 기준판",
+  "baselineFrom": "23.7.384",
+  "releaseType": "step1-big-frame-baseline",
+  "runtimeChange": "none",
+  "purpose": "수정을 쉽게 하고 서로 꼬이지 않게 큰 프로그램 영역과 수정 금지선을 고정"
 }
