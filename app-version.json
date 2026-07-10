@@ -1,11 +1,11 @@
 {
-  "version": "23.7.396",
+  "version": "23.7.398",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.396",
-  "stage": "v396-test 회원가입/찾기 아이콘 확대",
-  "baselineFrom": "23.7.395",
-  "releaseType": "test-big-auth-link-icons",
+  "build": "v23.7.398",
+  "stage": "v398-test 로그인 링크 아이콘 모바일 맞춤",
+  "baselineFrom": "23.7.397",
+  "releaseType": "test-login-link-icons-mobile-fit",
   "runtimeChange": "minor-ui",
-  "purpose": "회원가입, 아이디 찾기, 비밀번호 찾기 버튼/링크의 아이콘을 크게 확대"
+  "purpose": "로그인 첫 화면의 회원가입/아이디찾기/비밀번호찾기 아이콘을 모바일 화면에 맞게 줄이고 전체 카드가 보이도록 조정"
 }
