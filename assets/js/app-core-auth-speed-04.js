@@ -2,27 +2,23 @@
 // ---- merged from app-core-auth-16.js ----
 // SitePass v23.7.350 - app-core-auth finer split (16/19)
 function submitSitePassSignupTest() {
-      if (!requireSignupTerms()) return;
-      formatSitePassSignupJuminDisplay();
-      const identity = getSitePassSignupIdentity();
-      const name = identity.name;
-      const phone = identity.phone;
-      const carrier = identity.carrier;
-      const birth6 = identity.birth6;
-      const genderDigit = identity.genderDigit;
-      const signupId = (document.getElementById('sitepassSignupId')?.value || '').trim();
-      const pw = (document.getElementById('sitepassSignupPw')?.value || '').trim();
-      const pw2 = (document.getElementById('sitepassSignupPw2')?.value || '').trim();
-      if (!name || !phone || !birth6 || !genderDigit || !carrier || !signupId || !pw || !pw2) {
-        alert('이름/업체명, 생년월일, 휴대폰번호, 통신사, SitePass 아이디, 비밀번호를 모두 입력해주세요.');
+      const name = (document.getElementById('sitepassSignupName')?.value || '').trim();
+      const birth6 = (document.getElementById('sitepassSignupJuminMasked')?.value || '').replace(/[^0-9]/g, '').slice(0, 6);
+      const phone = (document.getElementById('sitepassSignupPhone')?.value || '').trim();
+      const carrier = (document.getElementById('sitepassSignupCarrier')?.value || '').trim();
+      const signupId = normalizeLoginText((document.getElementById('sitepassSignupId')?.value || '').trim());
+      const pw = document.getElementById('sitepassSignupPw')?.value || '';
+      const pw2 = document.getElementById('sitepassSignupPw2')?.value || '';
+      if (!name || !phone || !birth6 || !carrier || !signupId || !pw || !pw2) {
+        alert('이름, 주민번호 6자리, 휴대폰번호, 통신사, SitePass 아이디, 비밀번호를 모두 입력해주세요.');
         return;
       }
-      if (!/^\d{6}$/.test(birth6) || !/^[1-8]$/.test(genderDigit)) {
-        alert('생년월일은 840507-1처럼 앞 6자리와 성별확인 1자리까지만 입력해주세요. 저장/표시는 840507-1******로 처리됩니다.');
+      if (!/^\d{6}$/.test(birth6)) {
+        alert('주민번호는 앞 6자리만 입력해주세요.');
         return;
       }
       if (!sitepassSignupPhoneVerified) {
-        alert('SitePass 회원가입은 휴대폰 본인확인 후 완료할 수 있습니다. 인증요청 후 6자리 인증번호를 확인해주세요.');
+        alert('휴대폰 인증 완료 후 아이디/비밀번호를 입력하고 회원가입을 완료해주세요.');
         return;
       }
       if (signupId.length < 4) {
@@ -59,8 +55,8 @@ function submitSitePassSignupTest() {
         phone,
         carrier,
         birth6,
-        genderDigit,
-        juminMasked: birth6 + '-' + genderDigit + '******',
+        genderDigit:'',
+        juminMasked: birth6 + '******',
         identityVerified:true,
         identityVerifiedAt:new Date().toISOString(),
         phoneVerified:true,
@@ -74,7 +70,7 @@ function submitSitePassSignupTest() {
         agreements:getSignupAgreements()
       };
       saveMemberTest(member);
-      completeMemberLoginTest(member, 'SitePass 회원가입이 완료되었습니다.\n이제 SitePass 메인 화면으로 이동합니다.\n정식 서비스에서는 통신사 본인확인 결과값을 서버에 저장합니다.');
+      completeMemberLoginTest(member, 'SitePass 회원가입이 완료되었습니다.\n이제 SitePass 메인 화면으로 이동합니다.');
       ['sitepassSignupName','sitepassSignupPhone','sitepassSignupJuminMasked','sitepassSignupBirth6','sitepassSignupGenderDigit','sitepassSignupCarrier','sitepassSignupCode','sitepassSignupId','sitepassSignupPw','sitepassSignupPw2'].forEach(id => {
         const input = document.getElementById(id);
         if (input) input.value = '';
@@ -396,7 +392,7 @@ function adminLogout() {
       clearPwaAutoMemberTest();
       refreshAdminUi();
       alert('로그아웃했습니다.');
-      // v23.7.411: 관리자 로그아웃도 회원가입 화면이 아니라 첫 로그인 화면으로 이동합니다.
+      // v23.7.413: 관리자 로그아웃도 회원가입 화면이 아니라 첫 로그인 화면으로 이동합니다.
       try {
         if (window.history && window.history.replaceState) {
           window.history.replaceState({ sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);
