@@ -1,11 +1,11 @@
 {
-  "version": "23.7.410",
+  "version": "23.7.411",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.410",
-  "stage": "v410-test v405기준 새로고침 최소수정",
-  "baselineFrom": "23.7.405",
-  "releaseType": "test-signup-refresh-minimal-fix",
+  "build": "v23.7.411",
+  "stage": "v411-test 예전 로그인 UI 제거",
+  "baselineFrom": "23.7.410",
+  "releaseType": "test-retire-old-login-ui",
   "runtimeChange": "auth-ui-navigation",
-  "purpose": "v405 화면 구조를 유지하고 새로고침 때 sitepass-first-card 전체가 숨겨지는 원인만 제거"
+  "purpose": "이제 쓰지 않는 예전 로그인 화면은 화면에서 제거하고, 첫 로그인 화면/회원가입/아이디찾기/비밀번호찾기만 분리 표시"
 }

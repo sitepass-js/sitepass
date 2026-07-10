@@ -28,11 +28,11 @@
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
 <link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
 <link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.408" />
-<!-- v23.7.408: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
-<link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png?v=23.7.408" />
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.408" />
-<link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.408" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.411" />
+<!-- v23.7.411: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
+<link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png?v=23.7.411" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.411" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.411" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
 
 <script>
@@ -49,17 +49,16 @@
   if (route) {
     window.__sitepassFirstAuthRouteOnBoot = route;
     document.documentElement.classList.add('sitepass-first-auth-route-boot');
-    document.documentElement.setAttribute('data-sitepass-auth-boot-route', route);
   }
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.408 split complete from v23.7.408 -->
+  <!-- SitePass deploy-check: v23.7.411 split complete from v23.7.411 -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.408" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.411" />
 
   <style>
-    /* v23.7.408 first-screen hero cleanup */
+    /* v23.7.411 first-screen hero cleanup */
     #signupScreen .sitepass-first-hero,
     #signupScreen .sitepass-first-hero::before,
     #signupScreen .sitepass-first-hero::after {
@@ -96,7 +95,7 @@
       }
     }
 
-    /* v23.7.408 first-screen compact: title removed, subtitle changed, password icons removed */
+    /* v23.7.411 first-screen compact: title removed, subtitle changed, password icons removed */
     body.sitepass-first-screen-active {
       overflow-x: hidden !important;
     }
@@ -182,7 +181,7 @@
     }
 
 
-    /* v23.7.408 - subtitle font polish, input alignment, remember ID checkbox */
+    /* v23.7.411 - subtitle font polish, input alignment, remember ID checkbox */
     #signupScreen .sitepass-first-subtitle {
       display: flex !important;
       flex-direction: column !important;
@@ -306,7 +305,7 @@
       }
     }
 
-    /* v23.7.408 - subtitle left-edge alignment + smaller remember ID checkbox */
+    /* v23.7.411 - subtitle left-edge alignment + smaller remember ID checkbox */
     #signupScreen .sitepass-first-subtitle {
       display: inline-flex !important;
       flex-direction: column !important;
@@ -367,7 +366,7 @@
       }
     }
 
-    /* v23.7.408 - 자동 로그인 체크박스: 작게, V 체크표시, 문구 앞줄 맞춤 */
+    /* v23.7.411 - 자동 로그인 체크박스: 작게, V 체크표시, 문구 앞줄 맞춤 */
     #signupScreen .sitepass-first-subtitle {
       display: inline-flex !important;
       flex-direction: column !important;
@@ -496,7 +495,7 @@
       }
     }
 
-    /* v23.7.408 - 회원가입/찾기 새로고침 시 첫 로그인화면 순간 노출 방지 */
+    /* v23.7.411 - 회원가입/찾기 새로고침 시 첫 로그인화면 순간 노출 방지 */
     html.sitepass-first-auth-route-boot #sitepassFirstLanding {
       display: none !important;
     }
@@ -507,9 +506,9 @@
       display: block !important;
     }
 
-    /* v23.7.408 - 반복 새로고침 시 회원가입/찾기 hash 유지 보정 */
+    /* v23.7.411 - 반복 새로고침 시 회원가입/찾기 hash 유지 보정 */
 
-    /* v23.7.408 - 브라우저 뒤로가기 대신 안전한 화면 내 처음화면 버튼 */
+    /* v23.7.411 - 브라우저 뒤로가기 대신 안전한 화면 내 처음화면 버튼 */
     #signupScreen .sitepass-auth-safe-back {
       display: inline-flex !important;
       align-items: center !important;
@@ -536,8 +535,8 @@
       margin-bottom: 10px !important;
     }
 
-    /* v23.7.408 - 홈화면/홈으로가기 역할 분리 */
-    /* v23.7.408 - 회원가입/아이디찾기/비밀번호찾기 화면에서는 위 로그인 박스 숨김 */
+    /* v23.7.411 - 홈화면/홈으로가기 역할 분리 */
+    /* v23.7.411 - 회원가입/아이디찾기/비밀번호찾기 화면에서는 위 로그인 박스 숨김 */
     #signupScreen .login-auth-shell.sitepass-auth-panel-only > :not(#joinChoiceBox):not(#accountFindPanel) {
       display: none !important;
     }
@@ -553,7 +552,7 @@
       display: none !important;
     }
 
-    /* v23.7.408 - 회원가입/찾기 화면에서 로그인창 완전 제거 */
+    /* v23.7.411 - 회원가입/찾기 화면에서 로그인창 완전 제거 */
     #signupScreen.sitepass-auth-join-open .login-auth-shell {
       display: none !important;
     }
@@ -571,7 +570,7 @@
       display: none !important;
     }
 
-    /* v23.7.408 - 회원가입 약관 다음 버튼 */
+    /* v23.7.411 - 회원가입 약관 다음 버튼 */
     #signupScreen .terms-next-actions {
       display: flex !important;
       align-items: center !important;
@@ -608,7 +607,7 @@
       display: block !important;
     }
 
-    /* v23.7.408 - 회원가입 약관 다음 버튼 동작 보정 */
+    /* v23.7.411 - 회원가입 약관 다음 버튼 동작 보정 */
     #signupScreen .terms-next-actions {
       display: flex !important;
       align-items: center !important;
@@ -645,13 +644,13 @@
       display: block !important;
     }
 
-    /* v23.7.408 - 회원가입 약관과 서류 등록 약관 분리 */
+    /* v23.7.411 - 회원가입 약관과 서류 등록 약관 분리 */
     #signupScreen .terms-guide {
       word-break: keep-all !important;
     }
 
   
-    /* v23.7.408 - auth buttons icon and home arrow removal */
+    /* v23.7.411 - auth buttons icon and home arrow removal */
     #signupScreen .sitepass-button-icon {
       width: 18px !important;
       height: 18px !important;
@@ -686,16 +685,16 @@
     }
 
   
-    /* v23.7.408 - signup terms simplified: required kept, optional marketing combined */
+    /* v23.7.411 - signup terms simplified: required kept, optional marketing combined */
     #signupScreen .terms-guide {
       word-break: keep-all !important;
     }
 
   
-    /* v23.7.408-test - natural auth history: signup/find routes refresh/back safe */
+    /* v23.7.411-test - natural auth history: signup/find routes refresh/back safe */
 
   
-    /* v23.7.408-test - auth home button icon-only */
+    /* v23.7.411-test - auth home button icon-only */
     #signupScreen .sitepass-icon-only-home-button,
     #signupScreen .account-find-close.sitepass-icon-only-home-button {
       width: 42px !important;
@@ -718,7 +717,7 @@
     }
 
   
-    /* v23.7.408-test - centered bigger auth home icon on white background */
+    /* v23.7.411-test - centered bigger auth home icon on white background */
     #signupScreen .join-choice-head,
     #signupScreen .account-find-head {
       position: relative !important;
@@ -764,10 +763,8 @@
     }
 
   
-    /* v23.7.408-test - 회원가입/찾기 새로고침 시 로그인 첫 화면 순간 노출 차단 */
-    html.sitepass-first-auth-route-boot body.sitepass-booting #signupScreen .sitepass-first-card,
+    /* v23.7.411-test - 회원가입/찾기 새로고침 시 로그인 첫 화면 순간 노출 차단 */
     html.sitepass-first-auth-route-boot body.sitepass-booting #signupScreen .sitepass-first-landing,
-    html.sitepass-first-auth-route-boot #signupScreen .sitepass-first-card,
     html.sitepass-first-auth-route-boot #signupScreen .sitepass-first-landing {
       display: none !important;
       visibility: hidden !important;
@@ -790,7 +787,7 @@
     }
 
   
-    /* v23.7.408-test - 회원가입/아이디찾기/비밀번호찾기 아이콘 크게 확대 */
+    /* v23.7.411-test - 회원가입/아이디찾기/비밀번호찾기 아이콘 크게 확대 */
     #signupScreen .sitepass-first-link-row .sitepass-icon-text-button,
     #signupScreen .login-help-row .sitepass-icon-text-button,
     #signupScreen .login-link-row .sitepass-icon-text-button {
@@ -809,7 +806,7 @@
     }
 
   
-    /* v23.7.408-test - 로그인 첫 화면 링크 아이콘 모바일 맞춤 */
+    /* v23.7.411-test - 로그인 첫 화면 링크 아이콘 모바일 맞춤 */
     #signupScreen .sitepass-first-link-row {
       display: flex !important;
       align-items: center !important;
@@ -856,7 +853,7 @@
     }
 
   
-    /* v23.7.408-test - 회원가입/찾기 상단 홈 아이콘 크게 확대 */
+    /* v23.7.411-test - 회원가입/찾기 상단 홈 아이콘 크게 확대 */
     #signupScreen .join-choice-head .sitepass-icon-only-home-button,
     #signupScreen .account-find-head .sitepass-icon-only-home-button {
       width: 156px !important;
@@ -899,7 +896,7 @@
     }
 
   
-    /* v23.7.408-test - 상단 홈 아이콘 더 크게, 더 잘 보이게 */
+    /* v23.7.411-test - 상단 홈 아이콘 더 크게, 더 잘 보이게 */
     #signupScreen .join-choice-head .sitepass-icon-only-home-button,
     #signupScreen .account-find-head .sitepass-icon-only-home-button {
       width: 220px !important;
@@ -945,7 +942,7 @@
     }
 
   
-    /* v23.7.408-test - 원본 로고 파일 사용, 상단 홈 아이콘 더 선명하고 크게 */
+    /* v23.7.411-test - 원본 로고 파일 사용, 상단 홈 아이콘 더 선명하고 크게 */
     #signupScreen .join-choice-head .sitepass-icon-only-home-button,
     #signupScreen .account-find-head .sitepass-icon-only-home-button {
       width: 360px !important;
@@ -993,7 +990,7 @@
     }
 
   
-    /* v23.7.408-test - 상단 원본 로고 가로폭 더 크게 확장 */
+    /* v23.7.411-test - 상단 원본 로고 가로폭 더 크게 확장 */
     #signupScreen .join-choice-head .sitepass-icon-only-home-button,
     #signupScreen .account-find-head .sitepass-icon-only-home-button {
       width: 470px !important;
@@ -1041,7 +1038,7 @@
     }
 
   
-    /* v23.7.408-test - v402 크기 유지, 상단 로고 주변 박스/줄 제거 */
+    /* v23.7.411-test - v402 크기 유지, 상단 로고 주변 박스/줄 제거 */
     #signupScreen .join-choice-head .sitepass-icon-only-home-button,
     #signupScreen .account-find-head .sitepass-icon-only-home-button {
       background: transparent !important;
@@ -1068,7 +1065,7 @@
     }
 
   
-    /* v23.7.408-test - 아이디/비밀번호 찾기 로고는 찾기창 크기에 맞춤 */
+    /* v23.7.411-test - 아이디/비밀번호 찾기 로고는 찾기창 크기에 맞춤 */
     #signupScreen .account-find-head .sitepass-icon-only-home-button {
       width: min(100%, 360px) !important;
       min-width: 0 !important;
@@ -1109,103 +1106,7 @@
     }
 
   
-    /* v23.7.408-test - 회원가입/찾기 새로고침 화면 사라짐 방지 + 로고 배경 자연스럽게 */
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-password"] #signupScreen,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen.hidden,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen.hidden,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen.hidden,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-password"] #signupScreen.hidden {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen #joinChoiceBox,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen #joinChoiceBox,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen #joinChoiceBox.hidden,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen #joinChoiceBox.hidden {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen #accountFindPanel,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-password"] #signupScreen #accountFindPanel,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen #accountFindPanel.hidden,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-password"] #signupScreen #accountFindPanel.hidden {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-    #signupScreen .join-choice-head .sitepass-icon-only-home-button,
-    #signupScreen .account-find-head .sitepass-icon-only-home-button {
-      background: transparent !important;
-      box-shadow: none !important;
-      border: 0 !important;
-      outline: 0 !important;
-      overflow: visible !important;
-    }
-    #signupScreen .join-choice-head .sitepass-icon-only-home-button .sitepass-button-icon,
-    #signupScreen .account-find-head .sitepass-icon-only-home-button .sitepass-button-icon {
-      background: transparent !important;
-      border: 0 !important;
-      outline: 0 !important;
-      box-shadow: none !important;
-      border-radius: 0 !important;
-    }
-
-  
-    /* v23.7.408-test - 회원가입/찾기 새로고침 후 화면 사라짐 최종 보정 */
-    #signupScreen.sitepass-auth-join-open .login-auth-shell,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen .login-auth-shell,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen .login-auth-shell {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      padding-top: 22px !important;
-    }
-    #signupScreen.sitepass-auth-join-open .login-auth-shell > :not(#joinChoiceBox),
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen .login-auth-shell > :not(#joinChoiceBox),
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen .login-auth-shell > :not(#joinChoiceBox) {
-      display: none !important;
-    }
-    #signupScreen.sitepass-auth-join-open #joinChoiceBox,
-    #signupScreen.sitepass-auth-join-open #joinChoiceBox.hidden,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen #joinChoiceBox,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen #joinChoiceBox.hidden,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen #joinChoiceBox,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen #joinChoiceBox.hidden {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      margin-top: 0 !important;
-    }
-    #signupScreen.sitepass-auth-find-open .login-auth-shell,
-    #signupScreen .login-auth-shell.sitepass-auth-find-open,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen .login-auth-shell,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-password"] #signupScreen .login-auth-shell {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      padding-top: 22px !important;
-    }
-    #signupScreen.sitepass-auth-find-open #accountFindPanel,
-    #signupScreen.sitepass-auth-find-open #accountFindPanel.hidden,
-    #signupScreen .login-auth-shell.sitepass-auth-find-open #accountFindPanel,
-    #signupScreen .login-auth-shell.sitepass-auth-find-open #accountFindPanel.hidden,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen #accountFindPanel,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen #accountFindPanel.hidden,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-password"] #signupScreen #accountFindPanel,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-password"] #signupScreen #accountFindPanel.hidden {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      margin-top: 0 !important;
-    }
-
-  
-    /* v23.7.408-test - 가입/찾기 새로고침 때 카드 전체 숨김 방지 */
+    /* v23.7.411-test - v405 구조 유지, 새로고침 때 바깥 카드 숨김 금지 */
     html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen .sitepass-first-card,
     html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen .sitepass-first-card,
     html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen .sitepass-first-card,
@@ -1215,19 +1116,81 @@
       opacity: 1 !important;
       pointer-events: auto !important;
     }
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen #sitepassFirstLanding,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen #sitepassFirstLanding,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen #sitepassFirstLanding,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-password"] #signupScreen #sitepassFirstLanding {
+    #signupScreen .join-choice-head .sitepass-icon-only-home-button,
+    #signupScreen .account-find-head .sitepass-icon-only-home-button,
+    #signupScreen .join-choice-head .sitepass-icon-only-home-button .sitepass-button-icon,
+    #signupScreen .account-find-head .sitepass-icon-only-home-button .sitepass-button-icon {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: 0 !important;
+      outline: 0 !important;
+    }
+
+  
+    /* v23.7.411-test - 안 쓰는 예전 로그인 화면 UI는 화면에서 제거 */
+    #signupScreen .login-auth-shell > .login-auth-brand,
+    #signupScreen .login-auth-shell > .login-auth-title,
+    #signupScreen .login-auth-shell > .login-auth-subtitle,
+    #signupScreen .login-auth-shell > .login-password-show,
+    #signupScreen .login-auth-shell > .login-help-row,
+    #signupScreen .login-auth-shell > #quickLoginPanel,
+    #signupScreen .login-auth-shell > #quickBrowserNote,
+    #signupScreen .login-auth-shell > .login-redirect-help,
+    #signupScreen .login-auth-shell > .login-link-row,
+    #signupScreen .login-auth-shell > .company-channel-note {
       display: none !important;
       visibility: hidden !important;
       opacity: 0 !important;
       pointer-events: none !important;
     }
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="join"] #signupScreen .login-auth-shell,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="signup"] #signupScreen .login-auth-shell,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-id"] #signupScreen .login-auth-shell,
-    html.sitepass-first-auth-route-boot[data-sitepass-auth-boot-route="find-password"] #signupScreen .login-auth-shell {
+
+    /* 내부 로그인 함수가 쓰는 예전 입력폼은 보이지 않게만 유지 */
+    #signupScreen .login-auth-shell > #normalLoginFormArea {
+      position: absolute !important;
+      left: -9999px !important;
+      top: auto !important;
+      width: 1px !important;
+      height: 1px !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+    }
+
+    /* 기본 첫 로그인 화면에서는 예전 로그인 shell 자체를 숨김 */
+    #signupScreen:not(.sitepass-auth-find-open) .login-auth-shell:not(.sitepass-auth-find-open) {
+      display: none !important;
+    }
+
+    /* 아이디/비번찾기에서는 shell 안에서 찾기창만 보이게 */
+    #signupScreen.sitepass-auth-find-open .login-auth-shell,
+    #signupScreen .login-auth-shell.sitepass-auth-find-open {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      padding-top: 0 !important;
+    }
+    #signupScreen.sitepass-auth-find-open .login-auth-shell > :not(#normalLoginFormArea):not(#accountFindPanel),
+    #signupScreen .login-auth-shell.sitepass-auth-find-open > :not(#normalLoginFormArea):not(#accountFindPanel) {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
+    #signupScreen.sitepass-auth-find-open #accountFindPanel,
+    #signupScreen .login-auth-shell.sitepass-auth-find-open #accountFindPanel {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      margin-top: 0 !important;
+    }
+
+    /* 회원가입에서는 예전 로그인 shell은 숨기고 약관창만 보이게 */
+    #signupScreen.sitepass-auth-join-open .login-auth-shell {
+      display: none !important;
+    }
+    #signupScreen.sitepass-auth-join-open #joinChoiceBox {
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
@@ -1650,7 +1613,7 @@
       <div class="card sitepass-first-card">
         <div id="sitepassFirstLanding" class="sitepass-first-landing">
           <div class="sitepass-first-hero">
-            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.408" alt="SitePass 장비서류 간편 전송" />
+            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.411" alt="SitePass 장비서류 간편 전송" />
           </div>
           <p class="sitepass-first-subtitle"><span>현장에 제출할 장비 서류를</span><span>빠르게 공유할 수 있습니다.</span></p>
 
@@ -1672,24 +1635,24 @@
           </form>
 
           <div class="sitepass-first-link-row">
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstJoin()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.408" alt="" class="sitepass-button-icon" />회원가입</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstJoin()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.411" alt="" class="sitepass-button-icon" />회원가입</button>
             <span aria-hidden="true">|</span>
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.408" alt="" class="sitepass-button-icon" />아이디 찾기</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.411" alt="" class="sitepass-button-icon" />아이디 찾기</button>
             <span aria-hidden="true">|</span>
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.408" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.411" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
           </div>
 
           <button type="button" class="sitepass-first-install" onclick="addSitePassToHomeScreen(event)"><span aria-hidden="true">⇩</span> 바탕화면에 설치하기</button>
 
           <div class="sitepass-first-company">
-            <img src="./assets/img/js-construction-badge.png?v=23.7.408" alt="제이에스건설 J.S CONSTRUCTION" />
+            <img src="./assets/img/js-construction-badge.png?v=23.7.411" alt="제이에스건설 J.S CONSTRUCTION" />
             <span class="sitepass-company-divider" aria-hidden="true"></span>
             <span>경상남도 김해시 삼문동 1275</span>
             <span>사업자등록번호 402-33-15497</span>
           </div>
         </div>
         <div class="login-auth-shell hidden">
-          <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.408" alt="" class="sitepass-button-icon" /></button>
+          <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.411" alt="" class="sitepass-button-icon" /></button>
           <div class="login-auth-brand">
             <svg class="sitepass-logo-mark" viewBox="0 0 64 64" role="img" aria-hidden="true" focusable="false">
               <defs>
@@ -1731,9 +1694,9 @@
             <span>비밀번호 표시</span>
           </label>
           <div class="login-help-row normal-login-area">
-            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.408" alt="" class="sitepass-button-icon" />아이디 찾기</button>
+            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.411" alt="" class="sitepass-button-icon" />아이디 찾기</button>
             <span class="divider-dot">|</span>
-            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.408" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
+            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.411" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
           </div>
           <div id="quickLoginPanel" class="quick-login-panel hidden">
             <div class="quick-login-head">
@@ -1764,7 +1727,7 @@
                 <b>아이디/비밀번호 찾기</b>
                 <span>현재 테스트 파일에서는 이 휴대폰 브라우저에 저장된 회원정보 기준으로 확인합니다. 정식 서비스에서는 카카오/문자/PASS 본인확인으로 연결합니다.</span>
               </div>
-              <button type="button" class="account-find-close sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.408" alt="" class="sitepass-button-icon" /></button>
+              <button type="button" class="account-find-close sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.411" alt="" class="sitepass-button-icon" /></button>
             </div>
             <div class="account-find-tabs">
               <button id="findIdTab" type="button" onclick="openAccountFindPanel('id')">아이디 찾기</button>
@@ -1818,7 +1781,7 @@
             <button type="button" class="login-social-button naver" onclick="handleNaverLogin()">N 네이버 계정으로 계속하기</button>
           </div>
           <div id="oauthRedirectHelp" class="oauth-redirect-help normal-login-area" aria-live="polite"></div>
-          <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link sitepass-icon-text-button" onclick="startJoinFlow()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.408" alt="" class="sitepass-button-icon" />회원가입</button></div>
+          <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link sitepass-icon-text-button" onclick="startJoinFlow()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.411" alt="" class="sitepass-button-icon" />회원가입</button></div>
           <div class="company-channel-note normal-login-area">
             <div class="js-company-logo" aria-label="제이에스건설 로고">
               <div class="js-construction-logo-inline" aria-label="제이에스건설 로고">
@@ -1833,7 +1796,7 @@
 
         <div id="joinChoiceBox" class="join-choice-box hidden">
           <div class="join-choice-head">
-            <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.408" alt="" class="sitepass-button-icon" /></button>
+            <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.411" alt="" class="sitepass-button-icon" /></button>
             <h3>회원가입</h3>
             <p>처음 사용하는 분은 약관 동의 후 원하는 가입을 진행해주세요.</p>
           </div>
@@ -2462,39 +2425,39 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.408" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.408" defer></script>
-<script src="./assets/js/storage.js?v=23.7.408" defer></script>
-<script src="./assets/js/terms.js?v=23.7.408" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.408" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.408" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.408" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.408" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.408" defer></script>
-<script src="./assets/js/archive.js?v=23.7.408" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.408" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.408" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.408" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.408" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.408" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.408" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.408" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.408" defer></script>
-<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.408" defer></script>
+<script src="./assets/js/config.js?v=23.7.411" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.411" defer></script>
+<script src="./assets/js/storage.js?v=23.7.411" defer></script>
+<script src="./assets/js/terms.js?v=23.7.411" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.411" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.411" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.411" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.411" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.411" defer></script>
+<script src="./assets/js/archive.js?v=23.7.411" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.411" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.411" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.411" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.411" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.411" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.411" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.411" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.411" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.411" defer></script>
 
 <script>
 (function(){
@@ -2604,7 +2567,7 @@
 
 
   <script>
-  /* v23.7.408-test: 새로고침 때 회원가입/찾기 화면 복구를 더 일찍 실행해서 로그인 화면 깜빡임을 줄입니다. */
+  /* v23.7.411-test: 새로고침 때 회원가입/찾기 화면 복구를 더 일찍 실행해서 로그인 화면 깜빡임을 줄입니다. */
   (function(){
     function normalizeAuthBootRoute(){
       var h = String(window.location.hash || '').replace(/^#/, '').trim();
@@ -2617,7 +2580,7 @@
       var route = normalizeAuthBootRoute();
       if (!route) return;
       try {
-        /* v23.7.408: boot class 재추가 금지 */
+        document.documentElement.classList.add('sitepass-first-auth-route-boot');
         document.documentElement.setAttribute('data-sitepass-auth-boot-route', route);
         var signup = document.getElementById('signupScreen');
         if (signup) {
@@ -2626,7 +2589,9 @@
           signup.classList.toggle('sitepass-auth-find-open', route === 'find-id' || route === 'find-password');
         }
         var firstCard = document.querySelector('#signupScreen .sitepass-first-card');
-        if (firstCard) firstCard.classList.add('hidden');
+        if (firstCard) firstCard.classList.remove('hidden');
+        var firstLanding = document.getElementById('sitepassFirstLanding');
+        if (firstLanding) firstLanding.classList.add('hidden');
         var shell = document.querySelector('#signupScreen .login-auth-shell');
         if (shell) {
           shell.classList.remove('hidden');
@@ -2649,152 +2614,16 @@
 
 
   <script>
-  /* v23.7.408-test: 회원가입/찾기 화면 새로고침 시 화면 사라짐 방지 보강 */
-  (function(){
-    function authRoute(){
-      var h = String(window.location.hash || '').replace(/^#/, '').trim();
-      if (h === 'signup' || h === 'join' || h === 'sitepass-join') return 'join';
-      if (h === 'find-id' || h === 'id-find' || h === 'sitepass-find-id') return 'find-id';
-      if (h === 'find-password' || h === 'password-find' || h === 'sitepass-find-password') return 'find-password';
-      return '';
-    }
-    function forceVisible(){
-      var route = authRoute();
-      if (!route) return false;
-      try {
-        /* v23.7.408: boot class 재추가 금지 */
-        document.documentElement.setAttribute('data-sitepass-auth-boot-route', route);
-        var signup = document.getElementById('signupScreen');
-        var first = document.getElementById('sitepassFirstLanding') || document.querySelector('#signupScreen .sitepass-first-card');
-        var shell = document.querySelector('#signupScreen .login-auth-shell');
-        var join = document.getElementById('joinChoiceBox');
-        var find = document.getElementById('accountFindPanel');
-        if (signup) {
-          signup.classList.remove('hidden');
-          signup.classList.toggle('sitepass-auth-join-open', route === 'join');
-          signup.classList.toggle('sitepass-auth-find-open', route === 'find-id' || route === 'find-password');
-        }
-        if (first) first.classList.add('hidden');
-        if (route === 'join') {
-          if (join) join.classList.remove('hidden');
-          if (find) find.classList.add('hidden');
-          if (shell) shell.classList.add('hidden');
-        } else {
-          if (join) join.classList.add('hidden');
-          if (find) find.classList.remove('hidden');
-          if (shell) {
-            shell.classList.remove('hidden');
-            shell.classList.add('sitepass-auth-find-open');
-            shell.classList.remove('sitepass-auth-panel-only');
-          }
-          if (typeof window.openAccountFindPanel === 'function') {
-            try { window.openAccountFindPanel(route === 'find-password' ? 'password' : 'id'); } catch(e) {}
-          }
-        }
-      } catch(e) {}
-      return true;
-    }
-    function run(){
-      if (!forceVisible()) return;
-      var count = 0;
-      var timer = setInterval(function(){
-        count += 1;
-        if (!forceVisible() || count > 10) clearInterval(timer);
-      }, 100);
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', run, { once:true });
-    } else {
-      run();
-    }
-  })();
-  </script>
-
-
-  <script>
-  /* v23.7.408-test: 가입/찾기 화면 새로고침 후 숨김 클래스 재발생 방지 */
-  (function(){
-    function normalizeRoute(){
-      var h = String(window.location.hash || '').replace(/^#/, '').trim();
-      if (h === 'signup' || h === 'join' || h === 'sitepass-join') return 'join';
-      if (h === 'find-id' || h === 'id-find' || h === 'sitepass-find-id') return 'find-id';
-      if (h === 'find-password' || h === 'password-find' || h === 'sitepass-find-password') return 'find-password';
-      return '';
-    }
-    function lockPanel(){
-      var route = normalizeRoute();
-      if (!route) return false;
-      var signup = document.getElementById('signupScreen');
-      var landing = document.getElementById('sitepassFirstLanding') || document.querySelector('#signupScreen .sitepass-first-card');
-      var shell = document.querySelector('#signupScreen .login-auth-shell');
-      var join = document.getElementById('joinChoiceBox');
-      var find = document.getElementById('accountFindPanel');
-      if (signup) {
-        signup.classList.remove('hidden');
-        signup.classList.toggle('sitepass-auth-join-open', route === 'join');
-        signup.classList.toggle('sitepass-auth-find-open', route !== 'join');
-      }
-      if (landing) landing.classList.add('hidden');
-      if (shell) {
-        shell.classList.remove('hidden');
-        shell.classList.toggle('sitepass-auth-panel-only', route === 'join');
-        shell.classList.toggle('sitepass-auth-find-open', route !== 'join');
-        shell.style.display = 'block';
-        shell.style.visibility = 'visible';
-        shell.style.opacity = '1';
-      }
-      if (route === 'join') {
-        if (join) {
-          join.classList.remove('hidden');
-          join.style.display = 'block';
-          join.style.visibility = 'visible';
-          join.style.opacity = '1';
-        }
-        if (find) {
-          find.classList.add('hidden');
-          find.style.display = 'none';
-        }
-      } else {
-        if (join) {
-          join.classList.add('hidden');
-          join.style.display = 'none';
-        }
-        if (find) {
-          find.classList.remove('hidden');
-          find.style.display = 'block';
-          find.style.visibility = 'visible';
-          find.style.opacity = '1';
-        }
-      }
-      return true;
-    }
-    function runLock(){
-      if (!lockPanel()) return;
-      var tries = 0;
-      var timer = setInterval(function(){
-        tries += 1;
-        if (!lockPanel() || tries >= 25) clearInterval(timer);
-      }, 120);
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', runLock, { once:true });
-    else runLock();
-    window.addEventListener('load', runLock);
-    window.addEventListener('hashchange', function(){ setTimeout(runLock, 30); });
-  })();
-  </script>
-
-
-  <script>
-  /* v23.7.408-test: 가입/찾기 새로고침 카드 숨김 최종 방지 */
+  /* v23.7.411-test: 새로고침 시 카드 전체가 숨겨지는 문제만 최소 보정 */
   (function(){
     function route(){
-      var h = String(location.hash || '').replace(/^#/, '').trim();
+      var h = String(window.location.hash || '').replace(/^#/, '').trim();
       if (h === 'signup' || h === 'join' || h === 'sitepass-join') return 'join';
       if (h === 'find-id' || h === 'id-find' || h === 'sitepass-find-id') return 'find-id';
       if (h === 'find-password' || h === 'password-find' || h === 'sitepass-find-password') return 'find-password';
       return '';
     }
-    function showAuthPanel(){
+    function keepAuthCardVisible(){
       var r = route();
       if (!r) return false;
       var signup = document.getElementById('signupScreen');
@@ -2807,68 +2636,108 @@
       if (signup) {
         signup.classList.remove('hidden');
         signup.classList.toggle('sitepass-auth-join-open', r === 'join');
-        signup.classList.toggle('sitepass-auth-find-open', r !== 'join');
-        signup.style.display = 'block';
-        signup.style.visibility = 'visible';
-        signup.style.opacity = '1';
       }
-      if (card) {
-        card.classList.remove('hidden');
-        card.style.display = 'block';
-        card.style.visibility = 'visible';
-        card.style.opacity = '1';
-        card.style.pointerEvents = 'auto';
-      }
-      if (landing) {
-        landing.classList.add('hidden');
-        landing.style.display = 'none';
-      }
-      if (shell) {
-        shell.classList.remove('hidden');
-        shell.style.display = 'block';
-        shell.style.visibility = 'visible';
-        shell.style.opacity = '1';
-        shell.classList.toggle('sitepass-auth-panel-only', r === 'join');
-        shell.classList.toggle('sitepass-auth-find-open', r !== 'join');
-      }
+      if (card) card.classList.remove('hidden');
+      if (landing) landing.classList.add('hidden');
+
       if (r === 'join') {
-        if (join) {
-          join.classList.remove('hidden');
-          join.style.display = 'block';
-          join.style.visibility = 'visible';
-          join.style.opacity = '1';
-        }
-        if (find) {
-          find.classList.add('hidden');
-          find.style.display = 'none';
-        }
+        if (join) join.classList.remove('hidden');
+        if (find) find.classList.add('hidden');
       } else {
-        if (join) {
-          join.classList.add('hidden');
-          join.style.display = 'none';
+        if (shell) {
+          shell.classList.remove('hidden');
+          shell.classList.add('sitepass-auth-find-open');
         }
-        if (find) {
-          find.classList.remove('hidden');
-          find.style.display = 'block';
-          find.style.visibility = 'visible';
-          find.style.opacity = '1';
+        if (join) join.classList.add('hidden');
+        if (find) find.classList.remove('hidden');
+        if (typeof window.openAccountFindPanel === 'function') {
+          try { window.openAccountFindPanel(r === 'find-password' ? 'password' : 'id'); } catch(e) {}
         }
       }
-      try { document.documentElement.classList.remove('sitepass-first-auth-route-boot'); } catch(e) {}
-      try { document.body.classList.remove('sitepass-booting'); } catch(e) {}
+      try { if (document.body) document.body.classList.remove('sitepass-booting'); } catch(e) {}
       return true;
     }
     function run(){
-      if (!showAuthPanel()) return;
+      if (!keepAuthCardVisible()) return;
       var n = 0;
-      var timer = setInterval(function(){
+      var t = setInterval(function(){
         n += 1;
-        if (!showAuthPanel() || n >= 30) clearInterval(timer);
-      }, 100);
+        if (!keepAuthCardVisible() || n > 15) clearInterval(t);
+      }, 120);
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, { once:true });
     else run();
     window.addEventListener('load', run);
+    window.addEventListener('pageshow', run);
+    window.addEventListener('hashchange', function(){ setTimeout(run, 30); });
+  })();
+  </script>
+
+
+  <script>
+  /* v23.7.411-test: 예전 로그인 UI는 쓰지 않고 회원가입/찾기 화면만 분리 표시 */
+  (function(){
+    function route(){
+      var h = String(location.hash || '').replace(/^#/, '').trim();
+      if (h === 'signup' || h === 'join' || h === 'sitepass-join') return 'join';
+      if (h === 'find-id' || h === 'id-find' || h === 'sitepass-find-id') return 'find-id';
+      if (h === 'find-password' || h === 'password-find' || h === 'sitepass-find-password') return 'find-password';
+      return '';
+    }
+    function apply(){
+      var r = route();
+      var signup = document.getElementById('signupScreen');
+      var card = document.querySelector('#signupScreen .sitepass-first-card');
+      var landing = document.getElementById('sitepassFirstLanding');
+      var shell = document.querySelector('#signupScreen .login-auth-shell');
+      var join = document.getElementById('joinChoiceBox');
+      var find = document.getElementById('accountFindPanel');
+
+      if (signup) {
+        signup.classList.remove('hidden');
+        signup.classList.toggle('sitepass-auth-join-open', r === 'join');
+        signup.classList.toggle('sitepass-auth-find-open', r === 'find-id' || r === 'find-password');
+      }
+      if (card) card.classList.remove('hidden');
+
+      if (!r) {
+        if (landing) { landing.classList.remove('hidden'); landing.style.display = ''; }
+        if (shell) { shell.classList.add('hidden'); shell.classList.remove('sitepass-auth-find-open'); }
+        if (join) join.classList.add('hidden');
+        if (find) find.classList.add('hidden');
+        return false;
+      }
+
+      if (landing) landing.classList.add('hidden');
+
+      if (r === 'join') {
+        if (shell) { shell.classList.add('hidden'); shell.classList.remove('sitepass-auth-find-open'); }
+        if (join) join.classList.remove('hidden');
+        if (find) find.classList.add('hidden');
+      } else {
+        if (shell) { shell.classList.remove('hidden'); shell.classList.add('sitepass-auth-find-open'); }
+        if (join) join.classList.add('hidden');
+        if (find) find.classList.remove('hidden');
+        if (typeof window.openAccountFindPanel === 'function') {
+          try { window.openAccountFindPanel(r === 'find-password' ? 'password' : 'id'); } catch(e) {}
+        }
+      }
+      try { if (document.body) document.body.classList.remove('sitepass-booting'); } catch(e) {}
+      return true;
+    }
+    function run(){
+      apply();
+      var n = 0;
+      var timer = setInterval(function(){
+        n += 1;
+        apply();
+        if (n >= 12) clearInterval(timer);
+      }, 120);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, { once:true });
+    else run();
+    window.addEventListener('load', run);
+    window.addEventListener('pageshow', run);
     window.addEventListener('hashchange', function(){ setTimeout(run, 30); });
   })();
   </script>
