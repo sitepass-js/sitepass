@@ -801,6 +801,15 @@ function expireUnpaidPaymentTestData() {
         renderPublic(code);
         return true;
       }
+      if (hash === '#login' || hash === '#sitepass-login') {
+        showScreen('signupScreen', { skipHistory:true });
+        setTimeout(function(){
+          try {
+            if (typeof window.backToSitePassFirstLanding === 'function') window.backToSitePassFirstLanding();
+          } catch (e) {}
+        }, 20);
+        return true;
+      }
       if (hash === '#join' || hash === '#signup' || hash === '#sitepass-join' || hash === '#find-id' || hash === '#id-find' || hash === '#sitepass-find-id' || hash === '#find-password' || hash === '#password-find' || hash === '#sitepass-find-password') {
         showScreen('signupScreen', { skipHistory:true });
         setTimeout(function(){

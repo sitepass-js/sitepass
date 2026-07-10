@@ -239,6 +239,7 @@ function renderAdminContactManager() {
       const hash = window.location.hash || '';
       const search = window.location.search || '';
       const authHashRouteActive =
+        hash === '#login' || hash === '#sitepass-login' ||
         hash === '#join' || hash === '#signup' || hash === '#sitepass-join' ||
         hash === '#find-id' || hash === '#id-find' || hash === '#sitepass-find-id' ||
         hash === '#find-password' || hash === '#password-find' || hash === '#sitepass-find-password';
@@ -247,7 +248,7 @@ function renderAdminContactManager() {
 
     function rememberSitePassScreen(id, options) {
       if (!id || !window.history || !window.history.replaceState) return;
-      if (sitePassHandlingPopState || isSitePassHashRouteActive()) return;
+      if (sitePassHandlingPopState || (options && options.skipHistory) || isSitePassHashRouteActive()) return;
       const state = { sitepassScreen: id };
       const title = document.title || 'SitePass';
       try {
@@ -395,7 +396,7 @@ function adminLogout() {
       clearPwaAutoMemberTest();
       refreshAdminUi();
       alert('로그아웃했습니다.');
-      // v23.7.388: 관리자 로그아웃도 회원가입 화면이 아니라 첫 로그인 화면으로 이동합니다.
+      // v23.7.390: 관리자 로그아웃도 회원가입 화면이 아니라 첫 로그인 화면으로 이동합니다.
       try {
         if (window.history && window.history.replaceState) {
           window.history.replaceState({ sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);

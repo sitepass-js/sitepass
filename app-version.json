@@ -1,11 +1,11 @@
 {
-  "version": "23.7.388",
+  "version": "23.7.390",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.388",
-  "stage": "실제 수정 1차 - 바탕화면 아이콘/회원가입·찾기·홈 버튼 아이콘",
-  "baselineFrom": "23.7.387",
-  "releaseType": "pwa-icon-and-auth-button-icons",
-  "runtimeChange": "minor-ui",
-  "purpose": "바탕화면 아이콘 적용, 회원가입/아이디찾기/비밀번호찾기/홈 버튼 왼쪽 아이콘 추가, 홈 버튼 화살표 제거"
+  "build": "v23.7.390",
+  "stage": "v390-test 자연스러운 로그인전 뒤로가기/새로고침",
+  "baselineFrom": "23.7.389",
+  "releaseType": "test-natural-auth-history",
+  "runtimeChange": "auth-navigation-only",
+  "purpose": "회원가입/아이디찾기/비밀번호찾기 화면을 브라우저 주소와 기록 기준으로 자연스럽게 이동"
 }
