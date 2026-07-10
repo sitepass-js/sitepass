@@ -1,11 +1,11 @@
 {
-  "version": "23.7.406",
+  "version": "23.7.407",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.406",
-  "stage": "v406-test 가입/찾기 새로고침 복구 + 로고 배경 자연화",
-  "baselineFrom": "23.7.405",
-  "releaseType": "test-refresh-fix-and-blended-logo",
+  "build": "v23.7.407",
+  "stage": "v407-test 가입/찾기 새로고침 화면 사라짐 최종 보정",
+  "baselineFrom": "23.7.406",
+  "releaseType": "test-signup-refresh-show-fix",
   "runtimeChange": "auth-ui-navigation",
-  "purpose": "회원가입/아이디찾기/비밀번호찾기 화면 새로고침 시 화면 사라짐을 방지하고, 찾기창 로고 흰 배경을 자연스럽게 처리"
+  "purpose": "회원가입/아이디찾기/비밀번호찾기 화면에서 새로고침 후 패널이 숨겨지는 문제를 보정"
 }
