@@ -1,11 +1,11 @@
 {
-  "version": "23.7.399",
+  "version": "23.7.400",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.399",
-  "stage": "v399-test 회원가입 상단 아이콘 크게 확대",
-  "baselineFrom": "23.7.398",
-  "releaseType": "test-huge-signup-top-icon",
+  "build": "v23.7.400",
+  "stage": "v400-test 상단 아이콘 초대형/가시성 강화",
+  "baselineFrom": "23.7.399",
+  "releaseType": "test-extra-large-visible-top-icon",
   "runtimeChange": "minor-ui",
-  "purpose": "회원가입/아이디찾기/비밀번호찾기 상단 가운데 아이콘을 매우 크게 확대하여 쉽게 누를 수 있게 조정"
+  "purpose": "회원가입/아이디찾기/비밀번호찾기 상단 아이콘을 훨씬 크게 만들고 더 잘 보이게 조정"
 }
