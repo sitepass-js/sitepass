@@ -1,11 +1,11 @@
 {
-  "version": "23.7.419",
+  "version": "23.7.420",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.419",
-  "stage": "v419-test 아이디/비번찾기 버튼 복구",
-  "baselineFrom": "23.7.418",
-  "releaseType": "test-find-buttons-fix",
+  "build": "v23.7.420",
+  "stage": "v420-test 찾기 첫클릭 복구",
+  "baselineFrom": "23.7.419",
+  "releaseType": "test-find-retry-click-fix",
   "runtimeChange": "auth-find-buttons",
-  "purpose": "첫 로그인 화면에서 아이디 찾기/비밀번호 찾기 버튼이 반응하지 않는 문제를 보정"
+  "purpose": "아이디/비밀번호 찾기에서 홈 복귀 후 다시 찾기 버튼을 눌렀을 때 첫 클릭이 무시되고 두 번째 클릭에서 열리는 문제 보정"
 }
