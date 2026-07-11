@@ -1,11 +1,11 @@
 {
-  "version": "23.7.415",
+  "version": "23.7.417",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.415",
-  "stage": "v415-test 회원가입 다음후완료",
-  "baselineFrom": "23.7.414",
-  "releaseType": "test-signup-next-then-complete",
-  "runtimeChange": "signup-step-ui",
-  "purpose": "휴대폰 인증 단계에서는 다음 버튼을 보여주고, 아이디/비밀번호 입력 단계에서만 회원가입완료 버튼을 보여줌"
+  "build": "v23.7.417",
+  "stage": "v417-test 홈아이콘 강제초기화",
+  "baselineFrom": "23.7.416",
+  "releaseType": "test-home-icon-strong-reset",
+  "runtimeChange": "auth-home-reset",
+  "purpose": "회원가입 화면에서 홈 아이콘 클릭 후 로그인 첫화면과 회원가입폼이 같이 보이는 문제를 강제로 초기화"
 }
