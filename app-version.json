@@ -1,11 +1,11 @@
 {
-  "version": "23.7.417",
+  "version": "23.7.419",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.417",
-  "stage": "v417-test 홈아이콘 강제초기화",
-  "baselineFrom": "23.7.416",
-  "releaseType": "test-home-icon-strong-reset",
-  "runtimeChange": "auth-home-reset",
-  "purpose": "회원가입 화면에서 홈 아이콘 클릭 후 로그인 첫화면과 회원가입폼이 같이 보이는 문제를 강제로 초기화"
+  "build": "v23.7.419",
+  "stage": "v419-test 아이디/비번찾기 버튼 복구",
+  "baselineFrom": "23.7.418",
+  "releaseType": "test-find-buttons-fix",
+  "runtimeChange": "auth-find-buttons",
+  "purpose": "첫 로그인 화면에서 아이디 찾기/비밀번호 찾기 버튼이 반응하지 않는 문제를 보정"
 }

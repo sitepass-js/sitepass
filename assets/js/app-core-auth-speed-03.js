@@ -879,9 +879,15 @@ function fillFoundLoginIdTest() {
           window.setSitePassFirstAuthRoute('join');
         }
       } catch (e) {}
+      try { if (document.body) document.body.classList.remove('sitepass-force-landing'); } catch (e) {}
+      try { document.documentElement.setAttribute('data-sitepass-auth-view', 'join'); } catch (e) {}
       const box = document.getElementById('joinChoiceBox');
       if (!box) return;
       box.classList.remove('hidden');
+      box.style.display = 'block';
+      box.style.visibility = 'visible';
+      box.style.opacity = '1';
+      box.style.pointerEvents = 'auto';
       box.scrollIntoView({ behavior:'smooth', block:'start' });
     }
 
@@ -1227,7 +1233,7 @@ function formatSitePassSignupJuminDisplay() {
       if (status) status.textContent = '네이버 SENS로 인증번호를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.';
       try {
         let signupTermsUrl = '';
-        try { signupTermsUrl = new URL('./terms/person-consent.html?role=member&v=23.7.417', window.location.href).href; } catch (e) { signupTermsUrl = './terms/person-consent.html?role=member&v=23.7.417'; }
+        try { signupTermsUrl = new URL('./terms/person-consent.html?role=member&v=23.7.419', window.location.href).href; } catch (e) { signupTermsUrl = './terms/person-consent.html?role=member&v=23.7.419'; }
         const data = await sens.sendPhoneCode({
           purpose: 'member_signup_phone_verification',
           subjectType: 'member',
@@ -1240,7 +1246,7 @@ function formatSitePassSignupJuminDisplay() {
           privacyAgreed: true,
           smsAgreed: true,
           identityTermsAgreed: true,
-          termsVersion: 'v23.7.417',
+          termsVersion: 'v23.7.419',
           termsUrl: signupTermsUrl
         });
         window.__sitepassV351SignupVerificationId = data.verificationId || '';
