@@ -1,10 +1,9 @@
 {
-  "version": "23.7.449",
-  "updatedAt": "2026-07-13T20:00:00+09:00",
-  "note": "rebuild 27 equipment thumbnails from corrected card crops and widen recent equipment preview",
-  "build": "v23.7.449",
-  "stage": "v449-test 장비이미지재절단",
-  "baselineFrom": "23.7.448",
-  "releaseType": "test-rebuild-equipment-thumbnails",
-  "purpose": "등록된 장비 썸네일이 계속 잘려 보이는 문제를 해결하기 위해 27종 원본 카드에서 장비 영역을 다시 절단하고, 홈 썸네일 영역을 더 넓게 변경"
+  "version": "23.7.450",
+  "updatedAt": "2026-07-13T20:20:00+09:00",
+  "note": "equipment thumbnails cropped directly from each card and cache-busted",
+  "build": "v23.7.450",
+  "stage": "v450-test 카드기준재절단",
+  "baselineFrom": "23.7.449",
+  "releaseType": "test-equipment-thumbnail-cardcrop-fix"
 }
