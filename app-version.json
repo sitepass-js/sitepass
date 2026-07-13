@@ -1,11 +1,11 @@
 {
-  "version": "23.7.428",
-  "updatedAt": "2026-07-09T20:10:00+09:00",
-  "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.428",
-  "stage": "v428-test 원본로고/가입이름/로그아웃버튼",
-  "baselineFrom": "23.7.427",
-  "releaseType": "test-home-header-original-logo-name-logout",
-  "runtimeChange": "home-header-user-name-logout",
-  "purpose": "로그인 후 홈 상단을 업로드한 원본 로고 이미지로 교체하고, 회원님 대신 가입 이름을 표시하며, 그 아래 로그아웃 버튼을 추가"
+  "version": "23.7.430",
+  "updatedAt": "2026-07-13T12:30:00+09:00",
+  "note": "after-login home header tune: smaller blended logo, real member-name greeting, bottom home nav restored",
+  "build": "v23.7.430",
+  "stage": "v430-test 헤더로고축소/회원이름/하단홈복원",
+  "baselineFrom": "23.7.429",
+  "releaseType": "test-home-logo-name-bottom-home",
+  "runtimeChange": "smaller-header-logo-real-name-bottom-home-button",
+  "purpose": "로그인 후 홈 상단 로고를 더 작고 자연스럽게 조정하고, 안녕하세요에 실제 회원 이름을 표시하며, 보관함/알림/내정보 화면에서도 하단 홈 버튼으로 복귀할 수 있게 수정"
 }

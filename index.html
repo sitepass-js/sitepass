@@ -28,11 +28,11 @@
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
 <link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
 <link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.428" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.430" />
 <!-- v23.7.429: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
-<link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png?v=23.7.428" />
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.428" />
-<link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.428" />
+<link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png?v=23.7.430" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.430" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.430" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
 
 <script>
@@ -55,7 +55,7 @@
 
   <!-- SitePass deploy-check: v23.7.429 split complete from v23.7.429 -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.428" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.430" />
 
   <style>
     /* v23.7.429 first-screen hero cleanup */
@@ -1988,11 +1988,12 @@
     }
     .sitepass-home-brand-image {
       display: block;
-      width: min(340px, 56vw);
+      width: min(176px, 30vw);
       max-width: 100%;
       height: auto;
       object-fit: contain;
-      filter: drop-shadow(0 8px 18px rgba(15, 23, 42, 0.08));
+      filter: none;
+      opacity: 0.98;
     }
     .sitepass-home-hero-actions {
       display: flex;
@@ -2040,7 +2041,7 @@
     }
     @media (max-width: 640px) {
       .sitepass-home-brand-image {
-        width: min(250px, 54vw);
+        width: min(158px, 40vw);
       }
       .sitepass-home-hero-actions {
         gap: 8px;
@@ -2124,7 +2125,7 @@
         
         <div class="sitepass-home-hero-header">
           <div class="sitepass-home-brand-wrap">
-            <img class="sitepass-home-brand-image" src="assets/img/sitepass-home-dashboard-logo.png" alt="SitePass 로고">
+            <img class="sitepass-home-brand-image" src="assets/img/sitepass-home-original-logo-640x360.png" alt="SitePass 로고">
           </div>
           <div class="sitepass-home-hero-actions">
             <div class="sitepass-home-user-row">
@@ -2508,7 +2509,7 @@
       <div class="card sitepass-first-card">
         <div id="sitepassFirstLanding" class="sitepass-first-landing">
           <div class="sitepass-first-hero">
-            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.428" alt="SitePass 장비서류 간편 전송" />
+            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.430" alt="SitePass 장비서류 간편 전송" />
           </div>
           <p class="sitepass-first-subtitle"><span>현장에 제출할 장비 서류를</span><span>빠르게 공유할 수 있습니다.</span></p>
 
@@ -2530,24 +2531,24 @@
           </form>
 
           <div class="sitepass-first-link-row">
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstJoin()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.428" alt="" class="sitepass-button-icon" />회원가입</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstJoin()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.430" alt="" class="sitepass-button-icon" />회원가입</button>
             <span aria-hidden="true">|</span>
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.428" alt="" class="sitepass-button-icon" />아이디 찾기</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.430" alt="" class="sitepass-button-icon" />아이디 찾기</button>
             <span aria-hidden="true">|</span>
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.428" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.430" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
           </div>
 
           <button type="button" class="sitepass-first-install" onclick="addSitePassToHomeScreen(event)"><span aria-hidden="true">⇩</span> 바탕화면에 설치하기</button>
 
           <div class="sitepass-first-company">
-            <img src="./assets/img/js-construction-badge.png?v=23.7.428" alt="제이에스건설 J.S CONSTRUCTION" />
+            <img src="./assets/img/js-construction-badge.png?v=23.7.430" alt="제이에스건설 J.S CONSTRUCTION" />
             <span class="sitepass-company-divider" aria-hidden="true"></span>
             <span>경상남도 김해시 삼문동 1275</span>
             <span>사업자등록번호 402-33-15497</span>
           </div>
         </div>
         <div class="login-auth-shell hidden">
-          <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.428" alt="" class="sitepass-button-icon" /></button>
+          <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.430" alt="" class="sitepass-button-icon" /></button>
           <div class="login-auth-brand">
             <svg class="sitepass-logo-mark" viewBox="0 0 64 64" role="img" aria-hidden="true" focusable="false">
               <defs>
@@ -2589,9 +2590,9 @@
             <span>비밀번호 표시</span>
           </label>
           <div class="login-help-row normal-login-area">
-            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.428" alt="" class="sitepass-button-icon" />아이디 찾기</button>
+            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.430" alt="" class="sitepass-button-icon" />아이디 찾기</button>
             <span class="divider-dot">|</span>
-            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.428" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
+            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.430" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
           </div>
           <div id="quickLoginPanel" class="quick-login-panel hidden">
             <div class="quick-login-head">
@@ -2622,7 +2623,7 @@
                 <b>아이디/비밀번호 찾기</b>
                 <span>현재 테스트 파일에서는 이 휴대폰 브라우저에 저장된 회원정보 기준으로 확인합니다. 정식 서비스에서는 카카오/문자/PASS 본인확인으로 연결합니다.</span>
               </div>
-              <button type="button" class="account-find-close sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.428" alt="" class="sitepass-button-icon" /></button>
+              <button type="button" class="account-find-close sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.430" alt="" class="sitepass-button-icon" /></button>
             </div>
             <div class="account-find-tabs">
               <button id="findIdTab" type="button" onclick="openAccountFindPanel('id')">아이디 찾기</button>
@@ -2676,7 +2677,7 @@
             <button type="button" class="login-social-button naver" onclick="handleNaverLogin()">N 네이버 계정으로 계속하기</button>
           </div>
           <div id="oauthRedirectHelp" class="oauth-redirect-help normal-login-area" aria-live="polite"></div>
-          <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link sitepass-icon-text-button" onclick="startJoinFlow()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.428" alt="" class="sitepass-button-icon" />회원가입</button></div>
+          <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link sitepass-icon-text-button" onclick="startJoinFlow()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.430" alt="" class="sitepass-button-icon" />회원가입</button></div>
           <div class="company-channel-note normal-login-area">
             <div class="js-company-logo" aria-label="제이에스건설 로고">
               <div class="js-construction-logo-inline" aria-label="제이에스건설 로고">
@@ -2691,7 +2692,7 @@
 
         <div id="joinChoiceBox" class="join-choice-box hidden">
           <div class="join-choice-head">
-            <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.428" alt="" class="sitepass-button-icon" /></button>
+            <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.430" alt="" class="sitepass-button-icon" /></button>
             <h3>회원가입</h3>
           </div>
 
@@ -2852,7 +2853,8 @@
 
 
     
-    <nav id="sitepassBottomAppNav" class="sitepass-bottom-nav hidden" aria-label="SitePass 하단 메뉴">
+        <nav id="sitepassBottomAppNav" class="sitepass-bottom-nav hidden" aria-label="SitePass 하단 메뉴">
+      <button type="button" data-target="homeScreen" onclick="sitepassBottomNavGo('homeScreen')"><span>⌂</span><b>홈</b></button>
       <button type="button" data-target="registerScreen" onclick="sitepassBottomNavGo('registerScreen')"><span>✎</span><b>등록</b></button>
       <button type="button" data-target="listScreen" onclick="sitepassBottomNavGo('listScreen')"><span>▣</span><b>보관함</b></button>
       <button type="button" data-target="usageGuideScreen" onclick="sitepassBottomNavGo('usageGuideScreen')"><span>🔔</span><b>알림/쪽지함</b></button>
@@ -3331,39 +3333,39 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.428" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.428" defer></script>
-<script src="./assets/js/storage.js?v=23.7.428" defer></script>
-<script src="./assets/js/terms.js?v=23.7.428" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.428" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.428" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.428" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.428" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.428" defer></script>
-<script src="./assets/js/archive.js?v=23.7.428" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.428" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.428" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.428" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.428" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.428" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.428" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.428" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.428" defer></script>
-<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.428" defer></script>
+<script src="./assets/js/config.js?v=23.7.430" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.430" defer></script>
+<script src="./assets/js/storage.js?v=23.7.430" defer></script>
+<script src="./assets/js/terms.js?v=23.7.430" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.430" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.430" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.430" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.430" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.430" defer></script>
+<script src="./assets/js/archive.js?v=23.7.430" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.430" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.430" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.430" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.430" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.430" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.430" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.430" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.430" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.430" defer></script>
 
 <script>
 (function(){
@@ -4340,7 +4342,7 @@
       var active = screens.find(function(screen){ return !screen.classList.contains('hidden'); });
       return active ? active.id : '';
     }
-    function updateBottomNav425(){
+    function updateBottomNav430(){
       var nav = document.getElementById('sitepassBottomAppNav');
       if (!nav) return;
       var activeId = currentVisibleScreenId();
@@ -4364,7 +4366,7 @@
       } else if (typeof showScreen === 'function') {
         showScreen(target);
       }
-      setTimeout(function(){ renderAppRecentEquipment(); updateBottomNav425(); }, 80);
+      setTimeout(function(){ renderAppRecentEquipment(); updateBottomNav430(); }, 80);
     };
     var originalShowScreen = window.showScreen;
     if (typeof originalShowScreen === 'function' && !window.__sitepassShowScreenAppHome425Wrapped) {
@@ -4373,23 +4375,23 @@
         var result = originalShowScreen.apply(this, arguments);
         setTimeout(function(){
           if (id === 'homeScreen') renderAppRecentEquipment();
-          updateBottomNav425();
+          updateBottomNav430();
         }, 60);
         return result;
       };
     }
-    window.renderSitePassAppHome425 = function(){
+    window.renderSitePassAppHome430 = function(){
       renderAppRecentEquipment();
-      updateBottomNav425();
+      updateBottomNav430();
     };
     document.addEventListener('DOMContentLoaded', function(){
-      setTimeout(window.renderSitePassAppHome425, 120);
+      setTimeout(window.renderSitePassAppHome430, 120);
       setInterval(function(){
         if (currentVisibleScreenId() === 'homeScreen') renderAppRecentEquipment();
-        updateBottomNav425();
+        updateBottomNav430();
       }, 700);
     });
-    window.addEventListener('pageshow', function(){ setTimeout(window.renderSitePassAppHome425, 120); });
+    window.addEventListener('pageshow', function(){ setTimeout(window.renderSitePassAppHome430, 120); });
   })();
   </script>
 
@@ -4442,31 +4444,63 @@
 
 
   <script>
-  /* v23.7.429 - 홈 상단 인사말 이름 반영 */
+  /* v23.7.430 - 홈 상단 인사말 이름 반영 */
   (function(){
-    function pickMemberName427(){
+    window.sitepassCollectMemberNameCandidates430 = function(){
       var candidates = [];
-      try {
-        if (typeof getCurrentMemberProfile === 'function') {
-          var profile = getCurrentMemberProfile();
-          if (profile && typeof profile === 'object') {
-            candidates.push(profile.name, profile.memberName, profile.userName, profile.nickname);
-          }
+      function pushValue(v){
+        if (v === undefined || v === null) return;
+        if (typeof v === 'object') {
+          try {
+            candidates.push(v.name, v.memberName, v.userName, v.nickname, v.fullName, v.adminName, v.signupName);
+          } catch(e) {}
+          return;
         }
+        candidates.push(v);
+        var raw = String(v || '').trim();
+        if (!raw) return;
+        if ((raw[0] === '{' && raw[raw.length-1] === '}') || (raw[0] === '[' && raw[raw.length-1] === ']')) {
+          try {
+            var parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') pushValue(parsed);
+          } catch(e) {}
+        }
+      }
+      try {
+        if (typeof getCurrentMemberProfile === 'function') pushValue(getCurrentMemberProfile());
       } catch(e) {}
       try {
-        candidates.push(localStorage.getItem('sitepass_member_name'));
-        candidates.push(localStorage.getItem('sitepassUserName'));
-        candidates.push(localStorage.getItem('memberName'));
+        if (typeof getCurrentMemberTest === 'function') pushValue(getCurrentMemberTest());
       } catch(e) {}
-      for (var i=0; i<candidates.length; i++) {
+      try {
+        if (typeof getCurrentAdminName === 'function') pushValue(getCurrentAdminName());
+      } catch(e) {}
+      [localStorage, sessionStorage].forEach(function(store){
+        try {
+          for (var i = 0; i < store.length; i++) {
+            var key = String(store.key(i) || '');
+            if (!/(member|signup|admin_session|currentmember|currentMember|username|name)/i.test(key)) continue;
+            pushValue(store.getItem(key));
+          }
+        } catch(e) {}
+      });
+      return candidates;
+    }
+    window.sitepassPickMemberName430 = function(){
+      var candidates = window.sitepassCollectMemberNameCandidates430();
+      for (var i = 0; i < candidates.length; i++) {
         var raw = String(candidates[i] || '').trim();
         if (!raw) continue;
-        raw = raw.replace(/\s+/g, '');
-        if (raw.endsWith('님')) return raw;
-        return raw + '님';
+        raw = raw.replace(/\s+/g, ' ').trim();
+        if (!raw) continue;
+        if (/^(관리자|admin)$/i.test(raw)) continue;
+        if (/임시 회원/.test(raw)) continue;
+        return /님$/.test(raw) ? raw : raw + '님';
       }
       return '회원님';
+    }
+    function pickMemberName427(){
+      return window.sitepassPickMemberName430();
     }
     function renderHomeGreeting427(){
       var el = document.getElementById('sitepassHomeGreetingText');
@@ -4489,33 +4523,10 @@
 
 
   <script>
-  /* v23.7.429 - 홈 상단 인사말에 가입 이름 사용 */
+  /* v23.7.430 - 홈 상단 인사말에 가입 이름 사용 */
   (function(){
     function pickMemberName428(){
-      var candidates = [];
-      try {
-        if (typeof getCurrentMemberProfile === 'function') {
-          var profile = getCurrentMemberProfile();
-          if (profile && typeof profile === 'object') {
-            candidates.push(profile.name, profile.memberName, profile.userName, profile.nickname, profile.fullName);
-          }
-        }
-      } catch(e) {}
-      try {
-        candidates.push(localStorage.getItem('sitepass_member_name'));
-        candidates.push(localStorage.getItem('sitepass_signup_name'));
-        candidates.push(localStorage.getItem('sitepass_signup_form_name'));
-        candidates.push(localStorage.getItem('sitepassUserName'));
-        candidates.push(localStorage.getItem('memberName'));
-      } catch(e) {}
-      for (var i=0; i<candidates.length; i++) {
-        var raw = String(candidates[i] || '').trim();
-        if (!raw) continue;
-        raw = raw.replace(/\s+/g, ' ').trim();
-        if (/님$/.test(raw)) return raw;
-        return raw + '님';
-      }
-      return '회원님';
+      return window.sitepassPickMemberName430();
     }
     function renderHomeGreeting428(){
       var el = document.getElementById('sitepassHomeGreetingText');
