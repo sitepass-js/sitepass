@@ -1,10 +1,10 @@
 {
-  "version": "23.7.460",
-  "updatedAt": "2026-07-13T23:30:00+09:00",
-  "note": "fix false DB-missing including post-signup save race, inbox bottom-nav reset, expiry delete, auto-identified Kakao-style admin chat, signup verify hard block",
-  "build": "v23.7.460-test",
-  "stage": "v460-test 알림쪽지함채팅회원조회오판수정",
+  "version": "23.7.461",
+  "updatedAt": "2026-07-13T23:50:00+09:00",
+  "note": "fix empty registration screen being mistaken for an in-progress equipment draft and ensure cancel permanently clears draft timers/data",
+  "build": "v23.7.461-test",
+  "stage": "v461-test 빈장비등록초안오판및취소재생성수정",
   "baselineFrom": "23.7.459-test",
-  "releaseType": "test-inbox-chat-member-guard-fix",
-  "purpose": "하단 알림/쪽지함 재클릭 시 방 목록 복귀, 만료알림 개별/전체삭제, 관리자 문의 개인정보 재입력 제거 및 로그인회원 자동식별 채팅형 표시, 기존회원 RLS 오판과 신규가입 직후 서버저장 순서충돌 방지, 회원가입 인증 실패 저장 차단"
+  "releaseType": "test-registration-draft-cancel-fix",
+  "purpose": "빈 장비등록 화면의 기본 인증값을 작성중 데이터로 오판하지 않도록 수정하고, 임시등록 안내에서 취소 시 예약된 자동저장과 초안을 완전히 삭제"
 }

@@ -90,12 +90,25 @@
     }
 
     function hasRegistrationDraft() {
-      return hasMeaningfulRegistrationDraftData(getRegistrationDraft());
+      const draft = getRegistrationDraft();
+      const meaningful = hasMeaningfulRegistrationDraftData(draft);
+      // v23.7.461: 예전 버전이 빈 화면을 초안으로 잘못 저장한 자료도 발견 즉시 정리합니다.
+      if (draft && !meaningful) clearRegistrationDraft();
+      return meaningful;
     }
 
     function clearRegistrationDraft() {
       try { localStorage.removeItem(REGISTRATION_DRAFT_KEY); } catch (e) {}
       updateRegistrationDraftNotice();
+    }
+
+    // v23.7.461: 사용자가 임시등록 안내에서 취소를 누르면
+    // 이미 예약된 자동저장 타이머까지 끊어 삭제한 초안이 다시 생기지 않게 합니다.
+    function discardRegistrationDraftCompletely() {
+      try { window.clearTimeout(registrationDraftSaveTimer); } catch (e) {}
+      registrationDraftSaveTimer = null;
+      clearRegistrationDraft();
+      try { window.__sitePassRegistrationDraftStorageFull = false; } catch (e) {}
     }
 
     function hasMeaningfulRegistrationDraftData(draft) {
@@ -106,7 +119,13 @@
       const docs = draft.docs || {};
       return Object.values(docs).some(doc => {
         if (!doc) return false;
-        return !!(doc.fileName || doc.expireDate || doc.driverPhone || doc.workerPhone || doc.personPhone || doc.workerTask || doc.authVerified || (Array.isArray(doc.pages) && doc.pages.length));
+        if (doc.fileName || doc.expireDate || doc.driverPhone || doc.workerPhone || doc.personPhone || doc.workerTask) return true;
+        if (Array.isArray(doc.pages) && doc.pages.length) return true;
+        if (doc.previewDataUrl || doc.editDataUrl || doc.originalDataUrl || doc.correctedDataUrl || doc.fileDataUrl || doc.storagePath || doc.storageKey) return true;
+        // 빈 등록화면의 일반 장비서류 카드는 기본값으로 authVerified=true가 들어갑니다.
+        // 인증 일시·전화번호·이름 등 실제 인증 흔적이 있을 때만 작성 중 데이터로 인정합니다.
+        if (doc.authVerified && (doc.authVerifiedAt || doc.authPhone || doc.authPersonName || doc.authBirth6 || doc.authGenderDigit || doc.authCarrier)) return true;
+        return false;
       });
     }
 
@@ -217,7 +236,7 @@
       const savedAt = draft?.savedAt ? formatDateTimeForDraft(draft.savedAt) : '';
       note.innerHTML = savedAt
         ? '작성 중 내용이 <b>자동저장됨</b> · ' + escapeHtml(savedAt) + '<br><span class="small">앱을 닫아도 다음 접속 때 “등록중인 장비가 있습니다” 안내창에서 이어서 작성할 수 있습니다.</span>'
-        : '작성 중 화면을 나가도 자동저장됩니다. 다시 접속하면 <b>등록중인 장비가 있습니다</b> 안내가 뜨고, 확인은 이어서 등록 / 취소는 새로 시작입니다.';
+        : '장비번호·장비종류·서류 등 <b>실제로 입력한 내용이 있을 때만</b> 자동저장됩니다. 안내창에서 취소를 누르면 임시저장이 완전히 삭제됩니다.';
     }
 
     function formatDateTimeForDraft(iso) {
@@ -353,7 +372,7 @@ function promptRegistrationDraftIfNeeded(reason) {
             try {
               if (!isMemberLoggedIn() && !isAdminLoggedIn()) return;
               if (confirm(message)) openPendingRegistrationPaymentScreen(pendingPay);
-              else { clearPendingRegistration(); clearRegistrationDraft(); resetForm(false); }
+              else { clearPendingRegistration(); discardRegistrationDraftCompletely(); resetForm(false); discardRegistrationDraftCompletely(); }
             } finally { registrationDraftPromptOpen = false; }
           }, reason === 'login' ? 250 : 450);
           return true;
@@ -372,8 +391,9 @@ function promptRegistrationDraftIfNeeded(reason) {
           if (confirm(message)) {
             restoreRegistrationDraft(draft);
           } else {
-            clearRegistrationDraft();
+            discardRegistrationDraftCompletely();
             resetForm(false);
+            discardRegistrationDraftCompletely();
             editingCode = '';
             updateRegisterModeUi();
           }
@@ -393,7 +413,9 @@ function promptRegistrationDraftIfNeeded(reason) {
           return;
         }
         clearPendingRegistration();
-        clearRegistrationDraft();
+        discardRegistrationDraftCompletely();
+        resetForm(false);
+        discardRegistrationDraftCompletely();
       }
       const draft = getRegistrationDraft();
       if (hasMeaningfulRegistrationDraftData(draft)) {
@@ -402,10 +424,13 @@ function promptRegistrationDraftIfNeeded(reason) {
           restoreRegistrationDraft(draft);
           return;
         }
-        clearRegistrationDraft();
+        discardRegistrationDraftCompletely();
+        resetForm(false);
+        discardRegistrationDraftCompletely();
       }
       editingCode = '';
       resetForm(false);
+      discardRegistrationDraftCompletely();
       updateRegisterModeUi();
       showScreen('registerScreen');
     }
@@ -429,7 +454,9 @@ function promptRegistrationDraftIfNeeded(reason) {
     function cancelEditMode() {
       if (editingCode && !confirm('수정 중인 내용을 취소하고 처음 등록 화면으로 돌아갈까요?')) return;
       editingCode = '';
+      discardRegistrationDraftCompletely();
       resetForm(false);
+      discardRegistrationDraftCompletely();
       updateRegisterModeUi();
       showScreen('registerScreen');
     }
