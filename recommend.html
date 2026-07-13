@@ -61,7 +61,7 @@
     }
 
   
-    /* v23.7.439 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
+    /* v23.7.440 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
     body.sitepass-app-nav-active #signupScreen {
       display: none !important;
       visibility: hidden !important;
@@ -114,7 +114,7 @@
     }
 
   
-    /* v23.7.439 - 하단탭/홈카드 이동 후 빈창 방지 */
+    /* v23.7.440 - 하단탭/홈카드 이동 후 빈창 방지 */
     body.sitepass-app-nav-active #signupScreen {
       display: none !important;
       visibility: hidden !important;
@@ -156,7 +156,7 @@
     }
 
   
-    /* v23.7.439 - 홈 상단 알림/쪽지함 종 아이콘 제거 */
+    /* v23.7.440 - 홈 상단 알림/쪽지함 종 아이콘 제거 */
     .sitepass-home-hero-header .sitepass-home-bell-btn {
       display: none !important;
     }
@@ -166,7 +166,7 @@
     }
 
   
-    /* v23.7.439 - 오늘 확인할 항목 헤더 버튼 제거 */
+    /* v23.7.440 - 오늘 확인할 항목 헤더 버튼 제거 */
     #homeScreen .sitepass-app-section .sitepass-section-head.sitepass-today-section-head > button {
       display: none !important;
     }
@@ -230,7 +230,7 @@
   </script>
 
   <script>
-  /* v23.7.439 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
+  /* v23.7.440 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
   (function(){
     function isLoggedIn431(){
       try { if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn()) return true; } catch(e) {}
@@ -328,7 +328,7 @@
 
 
   <script>
-  /* v23.7.439 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
+  /* v23.7.440 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
   (function(){
     window.handleLogout = function(){
       try { sessionStorage.removeItem('sitepass_bottom_nav_last_target_v432'); } catch(e) {}
@@ -406,7 +406,7 @@
 
 
   <script>
-  /* v23.7.439 - 오늘 확인할 항목 전체보기 빈창 방지 */
+  /* v23.7.440 - 오늘 확인할 항목 전체보기 빈창 방지 */
   (function(){
     function patchTodayViewButtons433(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -471,7 +471,7 @@
 
 
   <script>
-  /* v23.7.439 - 등록/보관함/알림쪽지함/내정보/오늘확인 빈창 방지 */
+  /* v23.7.440 - 등록/보관함/알림쪽지함/내정보/오늘확인 빈창 방지 */
   (function(){
     function clearScreenInline434(screen){
       if (!screen) return;
@@ -641,7 +641,7 @@
 
 
   <script>
-  /* v23.7.439 - 바로가기 링크설정 제거 / 업데이트중 표시 */
+  /* v23.7.440 - 바로가기 링크설정 제거 / 업데이트중 표시 */
   (function(){
     function patchShortcutSection435(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -665,7 +665,7 @@
 
 
   <script>
-  /* v23.7.439 - 상단 종 아이콘 런타임 제거 */
+  /* v23.7.440 - 상단 종 아이콘 런타임 제거 */
   (function(){
     function removeTopBell436(){
       document.querySelectorAll('.sitepass-home-hero-header .sitepass-home-bell-btn').forEach(function(btn){
@@ -682,7 +682,7 @@
 
 
   <script>
-  /* v23.7.439 - 오늘 확인할 항목 제목 변경 + 알림/쪽지함 버튼 제거 */
+  /* v23.7.440 - 오늘 확인할 항목 제목 변경 + 알림/쪽지함 버튼 제거 */
   (function(){
     function applyTodaySection437(){
       var home = document.getElementById('homeScreen') || document;

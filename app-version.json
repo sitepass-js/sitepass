@@ -1,10 +1,10 @@
 {
-  "version": "23.7.439",
-  "updatedAt": "2026-07-13T14:20:00+09:00",
-  "note": "version metadata fixed after bottom nav icon update",
-  "build": "v23.7.439",
-  "stage": "v439-test 하단아이콘버전표시수정",
-  "baselineFrom": "23.7.438",
-  "releaseType": "test-version-fix-bottom-icons",
-  "purpose": "하단탭 아이콘 변경은 반영됐지만 버전 표시가 이전 버전으로 남던 문제 수정"
+  "version": "23.7.440",
+  "updatedAt": "2026-07-13T14:30:00+09:00",
+  "note": "fix JavaScript syntax error caused by over-escaped inline quote",
+  "build": "v23.7.440",
+  "stage": "v440-test 문법오류수정",
+  "baselineFrom": "23.7.439",
+  "releaseType": "test-syntax-error-fix",
+  "purpose": "하단탭 아이콘 변경 후 발생한 Uncaught SyntaxError: Invalid or unexpected token 오류 수정"
 }
