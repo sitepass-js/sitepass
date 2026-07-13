@@ -61,7 +61,7 @@
     }
 
   
-    /* v23.7.431 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
+    /* v23.7.432 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
     body.sitepass-app-nav-active #signupScreen {
       display: none !important;
       visibility: hidden !important;
@@ -172,7 +172,7 @@
   </script>
 
   <script>
-  /* v23.7.431 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
+  /* v23.7.432 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
   (function(){
     function isLoggedIn431(){
       try { if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn()) return true; } catch(e) {}
@@ -265,6 +265,84 @@
       setInterval(refreshAppMode431, 700);
     });
     window.addEventListener('pageshow', function(){ setTimeout(refreshAppMode431, 80); });
+  })();
+  </script>
+
+
+  <script>
+  /* v23.7.432 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
+  (function(){
+    window.handleLogout = function(){
+      try { sessionStorage.removeItem('sitepass_bottom_nav_last_target_v432'); } catch(e) {}
+      try {
+        if (typeof isAdminLoggedIn === 'function' && isAdminLoggedIn()) {
+          if (typeof adminLogout === 'function') adminLogout();
+          return false;
+        }
+      } catch(e) {}
+      try {
+        if (typeof memberLogout === 'function') memberLogout();
+      } catch(e) {}
+      return false;
+    };
+
+    try {
+      window.__sitepassOriginalPromptRegistrationDraftIfNeeded_v432 = window.promptRegistrationDraftIfNeeded;
+      window.promptRegistrationDraftIfNeeded = function(reason){
+        /* 자동으로 뜨는 "등록중인 장비가 있습니다" 팝업은 막고,
+           사용자가 등록 버튼을 눌렀을 때는 startNewRegistration() 안에서만 확인합니다. */
+        return false;
+      };
+    } catch(e) {}
+
+    function refreshAlertNav432(){
+      var homeBell = document.querySelector('.sitepass-home-bell-btn');
+      if (homeBell) {
+        homeBell.setAttribute('onclick', "sitepassBottomNavGo('contactScreen')");
+        homeBell.setAttribute('aria-label', '알림/쪽지함 열기');
+      }
+      document.querySelectorAll('#sitepassBottomAppNav button[data-target]').forEach(function(btn){
+        if (btn.getAttribute('data-target') === 'usageGuideScreen') {
+          btn.setAttribute('data-target', 'contactScreen');
+          btn.setAttribute('onclick', "sitepassBottomNavGo('contactScreen')");
+          var label = btn.querySelector('b');
+          if (label) label.textContent = '알림/쪽지함';
+        }
+      });
+    }
+
+    var originalNavGo = window.sitepassBottomNavGo;
+    window.sitepassBottomNavGo = function(target){
+      if (target === 'usageGuideScreen') target = 'contactScreen';
+      try { sessionStorage.setItem('sitepass_bottom_nav_last_target_v432', target || ''); } catch(e) {}
+      if (typeof originalNavGo === 'function') return originalNavGo(target);
+      if (typeof showScreen === 'function') showScreen(target);
+      return false;
+    };
+
+    function tweakContactScreen432(){
+      var contact = document.getElementById('contactScreen');
+      if (!contact) return;
+      var h2 = contact.querySelector('h2');
+      if (h2) h2.textContent = '알림 / 쪽지함';
+      var p = contact.querySelector('p');
+      if (p) p.textContent = '중요 알림을 확인하고, 궁금한 점이나 오류 내용을 1:1 문의처럼 남길 수 있는 화면입니다.';
+      var notice = contact.querySelector('.notice');
+      if (notice) {
+        notice.textContent = '현재 베타버전에서는 알림/문의 내용이 이 브라우저 안에 저장됩니다. 서버 연결 후에는 앱 안 쪽지함과 관리자페이지로 함께 연결합니다.';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      refreshAlertNav432();
+      tweakContactScreen432();
+      setTimeout(refreshAlertNav432, 80);
+      setTimeout(tweakContactScreen432, 80);
+    });
+    window.addEventListener('pageshow', function(){
+      setTimeout(refreshAlertNav432, 80);
+      setTimeout(tweakContactScreen432, 80);
+    });
   })();
   </script>
 

@@ -1,11 +1,10 @@
 {
-  "version": "23.7.431",
-  "updatedAt": "2026-07-13T12:45:00+09:00",
-  "note": "fix after-login home overlap, transparent blended logo, stronger bottom nav",
-  "build": "v23.7.431",
-  "stage": "v431-test 로그인겹침제거/투명로고/하단탭보강",
-  "baselineFrom": "23.7.430",
-  "releaseType": "test-hide-login-blend-logo-nav-fix",
-  "runtimeChange": "after-login-home-screen-cleanup",
-  "purpose": "로그인 후 홈 아래에 로그인 화면이 같이 보이는 문제를 막고, 상단 로고를 투명 원본으로 자연스럽게 줄이며, 하단 홈/등록/보관함/알림·쪽지함/내정보 클릭을 보강"
+  "version": "23.7.432",
+  "updatedAt": "2026-07-13T13:10:00+09:00",
+  "note": "logout works, alert-message nav uses contact screen, auto registration draft popup disabled",
+  "build": "v23.7.432",
+  "stage": "v432-test 로그아웃/알림쪽지함/등록중팝업수정",
+  "baselineFrom": "23.7.431",
+  "releaseType": "test-logout-alert-draft-fix",
+  "purpose": "홈 로그아웃 버튼 동작, 알림/쪽지함에서 사용법 대신 알림/문의 화면으로 이동, 자동으로 반복되던 등록중 장비 팝업 중단"
 }
