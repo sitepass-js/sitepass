@@ -1,11 +1,11 @@
 {
-  "version": "23.7.421",
+  "version": "23.7.424",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.421",
-  "stage": "v421-test 홈버튼 첫클릭 복귀",
-  "baselineFrom": "23.7.420",
-  "releaseType": "test-home-first-click-fix",
-  "runtimeChange": "auth-home-reset",
-  "purpose": "회원가입/아이디찾기/비밀번호찾기 화면에서 홈버튼을 눌렀을 때 첫 클릭부터 바로 로그인 첫화면으로 복귀하도록 보정"
+  "build": "v23.7.424",
+  "stage": "v424-test 건설기계 27종 장비종류",
+  "baselineFrom": "23.7.423",
+  "releaseType": "test-official-equipment-27-types",
+  "runtimeChange": "registration-equipment-type-list",
+  "purpose": "장비종류 선택 목록을 사용자 제공 건설기계 27종 큰틀 기준으로 변경"
 }

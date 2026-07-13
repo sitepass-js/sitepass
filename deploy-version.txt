@@ -1,5 +1,5 @@
-SitePass v23.7.421-test
-홈버튼 첫클릭 복귀 테스트판
-기준: v23.7.420-test
-수정: 회원가입/아이디찾기/비밀번호찾기에서 홈버튼 첫 클릭이 안 먹히는 문제 보정
-건드리지 않음: Supabase SQL, Edge Functions, SMS 발송, 장비등록, 보관함, QR
+SitePass v23.7.424-test
+건설기계 27종 장비종류 테스트판
+기준: v23.7.423-test
+수정: 장비종류 선택 목록을 불도저~타워크레인 27종 큰틀 기준으로 교체. 별칭은 option 표시와 JS 메타데이터에 포함.
+건드리지 않음: 회원가입/아이디찾기/비밀번호찾기, Supabase SQL, Edge Functions, SMS 발송, QR 공유 로직
