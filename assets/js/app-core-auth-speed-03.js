@@ -860,11 +860,11 @@ function fillFoundLoginIdTest() {
         let serverMemberForLogin460 = null;
         let serverLookupState460 = null;
         try {
-          if (typeof window.sitePassLookupLoginState460 === 'function') {
-            serverLookupState460 = await window.sitePassLookupLoginState460(loginId);
+          if (typeof (window.sitePassLookupLoginState463 || window.sitePassLookupLoginState460) === 'function') {
+            serverLookupState460 = await (window.sitePassLookupLoginState463 || window.sitePassLookupLoginState460)(loginId);
             if (serverLookupState460 && serverLookupState460.state === 'found') serverMemberForLogin460 = serverLookupState460.row;
-          } else if (typeof window.sitePassFetchActiveMemberForLogin460 === 'function') {
-            serverMemberForLogin460 = await window.sitePassFetchActiveMemberForLogin460(loginId);
+          } else if (typeof (window.sitePassFetchActiveMemberForLogin463 || window.sitePassFetchActiveMemberForLogin460) === 'function') {
+            serverMemberForLogin460 = await (window.sitePassFetchActiveMemberForLogin463 || window.sitePassFetchActiveMemberForLogin460)(loginId);
           }
         } catch (serverLoginCheckError460) {
           console.warn('서버 회원 확인 실패:', serverLoginCheckError460);
@@ -872,8 +872,8 @@ function fillFoundLoginIdTest() {
         if (!serverMemberForLogin460) {
           if (serverLookupState460 && serverLookupState460.state === 'missing') {
             try {
-              if (typeof window.sitePassInvalidateDeletedMemberSession460 === 'function') {
-                await window.sitePassInvalidateDeletedMemberSession460('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
+              if (typeof (window.sitePassInvalidateDeletedMemberSession463 || window.sitePassInvalidateDeletedMemberSession460) === 'function') {
+                await (window.sitePassInvalidateDeletedMemberSession463 || window.sitePassInvalidateDeletedMemberSession460)('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
               } else {
                 alert('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
               }
@@ -898,7 +898,8 @@ function fillFoundLoginIdTest() {
           providerId: serverMemberForLogin460.provider_id || ('SITEPASS-LOGIN-' + loginId),
           signupId: serverMemberForLogin460.login_id || loginId,
           signupMethod: serverMemberForLogin460.signup_method || 'SitePass 로그인',
-          testPassword: password
+          testPassword: password,
+          __sitepassLoadedFromServer463: true
         };
         saveMemberTest(member);
         member = findMemberForLogin(loginId) || findMemberForLogin(member.signupId) || member;

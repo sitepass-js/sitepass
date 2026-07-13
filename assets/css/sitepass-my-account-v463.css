@@ -1,0 +1,170 @@
+/* SitePass v23.7.463-test - 내정보 비밀번호 재확인 + 간소화 UI */
+.my-account-card-v462 {
+  max-width:760px;
+  margin:0 auto;
+}
+.my-account-intro-v462 {
+  margin-bottom:14px;
+  color:#53627b;
+  line-height:1.55;
+}
+.my-account-summary-v462 {
+  border:1px solid #d7e1f1;
+  border-radius:18px;
+  background:#fff;
+  padding:0 16px;
+  overflow:hidden;
+}
+.my-account-summary-v462 > .line {
+  min-height:48px;
+  align-items:center;
+  margin:0;
+}
+.my-account-summary-v462 > .line:last-of-type {
+  border-bottom:1px solid #edf0f5;
+}
+.my-account-value-action-v462 {
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:9px;
+  min-width:0;
+}
+.my-account-value-action-v462 > span {
+  color:#53627b;
+}
+.my-account-inline-link-v462 {
+  width:auto;
+  min-height:32px;
+  padding:5px 11px;
+  border:1px solid #b9cdfb;
+  border-radius:999px;
+  background:#f6f9ff;
+  color:#1f56cf;
+  font-size:13px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.my-account-menu-row-v462 {
+  width:100%;
+  min-height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 0;
+  border:0;
+  border-radius:0;
+  border-bottom:0;
+  background:transparent;
+  color:#26334d;
+  text-align:left;
+  font-size:14px;
+  font-weight:950;
+}
+.my-account-menu-row-v462 em {
+  color:#1f56cf;
+  font-style:normal;
+  font-size:13px;
+  font-weight:950;
+}
+.my-account-compact-panel-v462 {
+  margin:0 -4px 12px;
+  padding:14px;
+  border:1px solid #dbe6ff;
+  border-radius:15px;
+  background:#f8fbff;
+}
+.my-account-compact-panel-v462 label {
+  display:block;
+  margin:0 0 6px;
+  color:#26334d;
+  font-size:13px;
+  font-weight:950;
+}
+.my-account-compact-panel-v462 input {
+  margin-bottom:10px;
+}
+.my-account-compact-panel-v462 .small {
+  margin:0 0 12px;
+}
+.my-account-compact-actions-v462 {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:2px;
+}
+.my-account-compact-actions-v462 button {
+  min-height:44px;
+}
+.my-account-status:empty {
+  display:none;
+}
+.my-account-bottom-actions-v462 {
+  margin-top:16px;
+}
+.my-account-gate-v462 {
+  position:fixed;
+  inset:0;
+  z-index:5000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(20,31,54,.58);
+  backdrop-filter:blur(3px);
+}
+.my-account-gate-v462.hidden {
+  display:none !important;
+}
+.my-account-gate-sheet-v462 {
+  width:min(100%, 430px);
+  max-height:calc(100vh - 36px);
+  overflow:auto;
+  padding:22px;
+  border:1px solid #d6e0f0;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 24px 70px rgba(16,35,73,.28);
+}
+.my-account-gate-sheet-v462 h2 {
+  margin:8px 0 8px;
+  font-size:23px;
+  line-height:1.35;
+}
+.my-account-gate-sheet-v462 > p {
+  margin:0 0 16px;
+  color:#53627b;
+  line-height:1.55;
+}
+.my-account-gate-actions-v462 {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+.my-account-gate-actions-v462 button {
+  min-height:46px;
+}
+body.my-account-gate-open-v462 {
+  overflow:hidden;
+}
+@media (max-width:560px) {
+  .my-account-card-v462 {
+    padding-left:16px;
+    padding-right:16px;
+  }
+  .my-account-summary-v462 {
+    padding:0 13px;
+  }
+  .my-account-gate-sheet-v462 {
+    padding:18px;
+    border-radius:20px;
+  }
+  .my-account-bottom-actions-v462 {
+    grid-template-columns:1fr 1fr;
+  }
+  .my-account-bottom-actions-v462 .dangerBtn {
+    grid-column:1 / -1;
+  }
+}

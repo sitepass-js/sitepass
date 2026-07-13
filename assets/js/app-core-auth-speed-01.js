@@ -909,6 +909,19 @@ function getAdminSampleEquipmentOwner() {
         const normalizedSignupMethod = normalizeSignupProviderKey(member.signupMethod || member.provider || 'sitepass') || 'sitepass';
         const loginId = makeStableMemberLoginId({ ...member, signupMethod: normalizedSignupMethod });
 
+        // v23.7.463: 서버에서 로그인 행만 복원된 경우 이름=아이디/휴대폰 공백으로
+        // 기존 정상 프로필을 다시 덮어쓰지 않습니다. v463 조회 RPC가 있으면 먼저 프로필을 보강합니다.
+        let serverProfile463 = null;
+        try {
+          const lookupFn463 = window.sitePassLookupLoginState463 || window.sitePassLookupLoginState460;
+          if (loginId && typeof lookupFn463 === 'function') {
+            const lookupState463 = await lookupFn463(loginId);
+            if (lookupState463 && lookupState463.state === 'found' && lookupState463.row) serverProfile463 = lookupState463.row;
+          }
+        } catch (profileLookupError463) {
+          console.warn('v463 서버 프로필 사전 확인 실패:', profileLookupError463?.message || profileLookupError463);
+        }
+
         const localWithdrawnRecord = findWithdrawnMemberRecord(member);
         if (localWithdrawnRecord && !member.rejoinConfirmedAt) {
           // v23.7.225 테스트기간: 탈퇴 후 같은 카카오/네이버 계정으로 재가입 테스트가 가능해야 하므로
@@ -920,7 +933,32 @@ function getAdminSampleEquipmentOwner() {
           member.memberStatus = 'active';
           member.plan_type = 'beta';
         }
-        const cleanPhone = String(member.phone || '').replace(/[^0-9]/g, '');
+        const incomingName463 = String(member.name || '').trim();
+        const incomingNameKey463 = incomingName463.toLowerCase();
+        const loginKey463 = String(loginId || '').trim().toLowerCase();
+        const localNamePlaceholder463 = !incomingName463 || incomingNameKey463 === loginKey463 || ['이름없음','sitepass 회원','탈퇴회원'].includes(incomingNameKey463);
+        const serverName463 = String(serverProfile463?.name || '').trim();
+        const serverNameKey463 = serverName463.toLowerCase();
+        const validServerName463 = !!serverName463 && serverNameKey463 !== loginKey463 && !['이름없음','sitepass 회원','탈퇴회원'].includes(serverNameKey463);
+        const serverPhone463 = String(serverProfile463?.phone || '').replace(/[^0-9]/g, '');
+        const cleanPhone = String(member.phone || '').replace(/[^0-9]/g, '') || serverPhone463;
+        const finalName463 = localNamePlaceholder463 && validServerName463 ? serverName463 : incomingName463;
+
+        if (member.__sitepassLoadedFromServer463 && localNamePlaceholder463 && !cleanPhone && !validServerName463) {
+          console.warn('v463: 서버 프로필이 없는 복원 로그인 행은 기존 DB 이름/휴대폰을 덮어쓰지 않습니다:', loginId);
+          return;
+        }
+
+        if (validServerName463 && localNamePlaceholder463) {
+          member.name = serverName463;
+          member.signupIdentityName = member.signupIdentityName || serverName463;
+          member.verifiedName = member.verifiedName || serverName463;
+        }
+        if (serverPhone463 && !String(member.phone || '').replace(/[^0-9]/g, '')) {
+          member.phone = serverPhone463;
+          member.signupIdentityPhone = member.signupIdentityPhone || serverPhone463;
+          member.verifiedPhone = member.verifiedPhone || serverPhone463;
+        }
         const agreements = member.agreements || {};
         const kakaoAppMarketingAgreed = !!(agreements.kakaoAppMarketing || agreements.marketingKakaoApp || agreements.marketing);
         const emailMarketingAgreed = !!(agreements.emailMarketing || agreements.emailAd || agreements.marketingEmail);
@@ -941,7 +979,7 @@ function getAdminSampleEquipmentOwner() {
 
         const row = {
           login_id: loginId || null,
-          name: String(member.name || '').trim() || '이름없음',
+          name: String(finalName463 || member.name || '').trim() || '이름없음',
           phone: cleanPhone || null,
           email: String(member.email || '').trim() || null,
           provider_id: getStableProviderRawId({ ...member, signupMethod: normalizedSignupMethod }, normalizedSignupMethod) || String(member.providerId || '').trim() || null,

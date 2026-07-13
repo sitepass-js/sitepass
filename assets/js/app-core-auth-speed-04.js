@@ -83,9 +83,9 @@ function submitSitePassSignupTest() {
         agreements:getSignupAgreements()
       };
       try {
-        if (typeof window.sitePassMarkNewSignupGrace460 === 'function') window.sitePassMarkNewSignupGrace460(member);
+        if (typeof window.sitePassMarkNewSignupGrace463 === 'function') window.sitePassMarkNewSignupGrace463(member); else if (typeof window.sitePassMarkNewSignupGrace460 === 'function') window.sitePassMarkNewSignupGrace460(member);
       } catch (e) {}
-      try { if (typeof window.sitePassStoreSignupProfile462 === 'function') window.sitePassStoreSignupProfile462(member); } catch (e) {}
+      try { if (typeof window.sitePassStoreSignupProfile463 === 'function') window.sitePassStoreSignupProfile463(member); else if (typeof window.sitePassStoreSignupProfile462 === 'function') window.sitePassStoreSignupProfile462(member); } catch (e) {}
       saveMemberTest(member);
       completeMemberLoginTest(member, 'SitePass 회원가입이 완료되었습니다.\n이제 SitePass 메인 화면으로 이동합니다.');
       ['sitepassSignupName','sitepassSignupPhone','sitepassSignupJuminMasked','sitepassSignupBirth6','sitepassSignupGenderDigit','sitepassSignupCarrier','sitepassSignupCode','sitepassSignupId','sitepassSignupPw','sitepassSignupPw2'].forEach(id => {
@@ -280,7 +280,7 @@ function renderAdminContactManager() {
     }
 
     function showScreen(id, options) {
-      // v23.7.462: 내정보는 화면을 열기 전에 현재 비밀번호를 다시 확인합니다.
+      // v23.7.463: 내정보는 화면을 열기 전에 현재 비밀번호를 다시 확인합니다.
       if (sitePassCurrentScreenId === 'myAccountScreen' && id !== 'myAccountScreen') {
         try { if (typeof window.sitePassLockMyAccount462 === 'function') window.sitePassLockMyAccount462(); } catch (e) {}
       }

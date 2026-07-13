@@ -1,10 +1,10 @@
 {
-  "version": "23.7.462",
-  "updatedAt": "2026-07-14T00:20:00+09:00",
-  "note": "require password re-entry before My Info, show verified signup name/phone, and simplify phone/password editing",
-  "build": "v23.7.462-test",
-  "stage": "v462-test 내정보비밀번호재확인및가입인증정보표시",
-  "baselineFrom": "23.7.461-test",
-  "releaseType": "test-my-account-password-gate-profile-ui",
-  "purpose": "내정보 진입 전 현재 비밀번호 재확인, 회원가입 인증 이름·휴대폰 표시, 휴대폰 옆 수정 및 비밀번호 변경 간소화"
+  "version": "23.7.463",
+  "updatedAt": "2026-07-14T23:30:00+09:00",
+  "note": "hydrate existing member name and phone from Supabase, preserve verified profile values, and keep the v462 My Info password gate UI",
+  "build": "v23.7.463-test",
+  "stage": "v463-test 기존회원이름휴대폰서버복원및덮어쓰기방지",
+  "baselineFrom": "23.7.462-test",
+  "releaseType": "test-existing-member-profile-server-hydration",
+  "purpose": "v462 이전 가입자의 이름·휴대폰을 서버에서 다시 불러와 내정보에 표시하고 빈 로컬값이 서버 프로필을 덮어쓰지 않도록 보호"
 }

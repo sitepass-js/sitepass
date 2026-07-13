@@ -3,7 +3,7 @@
 (function(){
   'use strict';
 
-  const APP_VERSION = 'v23.7.462';
+  const APP_VERSION = 'v23.7.463';
   const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_283';
   const SUBSCRIPTION_KEY = STORAGE_PREFIX + '_subscription';
   const PERMISSION_LOG_KEY = STORAGE_PREFIX + '_permission_log';
