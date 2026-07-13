@@ -96,7 +96,7 @@
     const specialWorkerCount = workerPeople.filter(p => p && p.type === 'special').length;
     const includedGroupNames = docGroups.filter(group => includedGroups.includes(group.key)).map(group => group.title);
     return {
-      unit:'통합 서류함 1건',
+      unit:'장비등록 1건',
       includedGroups,
       includedGroupNames,
       workerPeopleCount: workerPeople.length,

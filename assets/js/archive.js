@@ -253,7 +253,7 @@ function renderList() {
       : '<button class="secondary" onclick="showScreen(\'homeScreen\')">홈화면</button><button class="dangerBtn" onclick="clearAll()">전체 삭제</button>';
   }
   if (allItems.length === 0) {
-    box.innerHTML = '<div class="empty">' + (isAdminMode ? '아직 등록된 장비서류가 없습니다.<br>회원이 직접 등록한 장비서류가 생기면 여기서 확인할 수 있습니다.' : '아직 저장된 통합 서류함이 없습니다.<br>통합 서류함 등록에서 먼저 저장해보세요.') + '</div>';
+    box.innerHTML = '<div class="empty">' + (isAdminMode ? '아직 등록된 장비서류가 없습니다.<br>회원이 직접 등록한 장비서류가 생기면 여기서 확인할 수 있습니다.' : '아직 저장된 장비등록이 없습니다.<br>장비등록 등록에서 먼저 저장해보세요.') + '</div>';
     return;
   }
   const items = allItems.filter(item => itemMatchesAdminListQuickFilter(item, adminListQuickFilter));
@@ -302,7 +302,7 @@ function renderList() {
       '<div class="list-item-head"><strong>' + escapeHtml(getItemTitle(item)) + '</strong><label class="list-select-label"><input type="checkbox" data-list-share-check value="' + escapeHtml(item.code) + '" /> 선택</label></div>' +
       ownerInfo +
       '<div class="small">포함서류: ' + escapeHtml(getIncludedGroupText(item)) + '</div>' +
-      '<div class="small">결제단위: ' + escapeHtml(item?.bundleMeta?.paymentText || '통합 서류함 1건') + '</div>' +
+      '<div class="small">결제단위: ' + escapeHtml(item?.bundleMeta?.paymentText || '장비등록 1건') + '</div>' +
       '<div class="small">서비스상태: ' + escapeHtml(getServiceStatusText(item)) + '</div>' +
       '<div class="small">담당자 QR·링크 만료: ' + escapeHtml(getManagerExpireText(getManagerExpireAt(item))) + '</div>' +
       '<div class="small">' + escapeHtml(makeAlertSummary(item.docs)) + '</div>' +

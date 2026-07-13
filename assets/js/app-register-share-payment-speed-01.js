@@ -68,7 +68,7 @@
       const specialWorkerCount = workerPeople.filter(p => p.type === 'special').length;
       const includedGroupNames = DOC_GROUPS.filter(group => included.includes(group.key)).map(group => group.title);
       return {
-        unit:'통합 서류함 1건',
+        unit:'장비등록 1건',
         includedGroups: included,
         includedGroupNames,
         workerPeopleCount: workerPeople.length,
@@ -416,7 +416,7 @@ function promptRegistrationDraftIfNeeded(reason) {
       const noInput = document.getElementById('equipmentNo');
       if (banner) {
         banner.classList.toggle('hidden', !editingCode);
-        if (editingCode) banner.innerHTML = '기존 통합 서류함 수정/갱신 중입니다. 장비는 그대로 두고 기사 교체, 보험증·검사증 날짜 갱신, 제원표·비파괴·특수건강검진 파일 교체가 가능합니다. <button type="button" class="mini-button" onclick="cancelEditMode()">수정취소</button>';
+        if (editingCode) banner.innerHTML = '기존 장비등록 수정/갱신 중입니다. 장비는 그대로 두고 기사 교체, 보험증·검사증 날짜 갱신, 제원표·비파괴·특수건강검진 파일 교체가 가능합니다. <button type="button" class="mini-button" onclick="cancelEditMode()">수정취소</button>';
       }
       if (saveButton) {
         if (editingCode) saveButton.textContent = '수정내용 저장';
@@ -442,7 +442,7 @@ function promptRegistrationDraftIfNeeded(reason) {
 
     function startEditEquipment(code) {
       const item = getItemByCode(code);
-      if (!item) { alert('수정할 통합 서류함을 찾을 수 없습니다.'); return; }
+      if (!item) { alert('수정할 장비등록을 찾을 수 없습니다.'); return; }
       editingCode = code;
       const includeDriver = document.getElementById('includeDriverDocs');
       const includeWorker = document.getElementById('includeWorkerDocs');

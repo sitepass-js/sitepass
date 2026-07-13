@@ -416,7 +416,7 @@ function makeDemoDoc(key, groupKey, groupTitle, title, required, expiry, expireD
         ownerProviderId:owner.providerId,
         ownerName:owner.name,
         ownerPhone:owner.phone,
-        bundleMeta:{ unit:'통합 서류함 1건', includedGroups:['equipment','driver'], includedGroupNames:['장비서류','장비기사서류'], workerPeopleCount:0, normalWorkerCount:0, specialWorkerCount:0, workerPeople:[], paymentText:'실사용 베타 운영 중입니다' },
+        bundleMeta:{ unit:'장비등록 1건', includedGroups:['equipment','driver'], includedGroupNames:['장비서류','장비기사서류'], workerPeopleCount:0, normalWorkerCount:0, specialWorkerCount:0, workerPeople:[], paymentText:'실사용 베타 운영 중입니다' },
         workerPeople:[],
         qrLink:makeQrLink(DEMO_MANAGER_CODE),
         docs:demoDocs,
@@ -531,7 +531,7 @@ function makeDemoDoc(key, groupKey, groupTitle, title, required, expiry, expireD
         ownerProviderId:member.providerId,
         ownerName:member.name,
         ownerPhone:member.phone,
-        bundleMeta:{ unit:'통합 서류함 1건', includedGroups:['equipment'], includedGroupNames:['장비서류'], workerPeopleCount:0, normalWorkerCount:0, specialWorkerCount:0, workerPeople:[], paymentText:paid ? '1개월권 결제완료' : '실사용베타 후 미결제 예정' },
+        bundleMeta:{ unit:'장비등록 1건', includedGroups:['equipment'], includedGroupNames:['장비서류'], workerPeopleCount:0, normalWorkerCount:0, specialWorkerCount:0, workerPeople:[], paymentText:paid ? '1개월권 결제완료' : '실사용베타 후 미결제 예정' },
         workerPeople:[],
         qrLink:makeQrLink(code),
         docs:{

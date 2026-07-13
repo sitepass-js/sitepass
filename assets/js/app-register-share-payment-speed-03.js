@@ -405,7 +405,7 @@ function normalizePhoneForShare(phone) {
 
     function renderDetail(code) {
       const item = getItems().find(x => x.code === code);
-      if (!item) { alert('통합 서류함 정보를 찾을 수 없습니다.'); showScreen('listScreen'); return; }
+      if (!item) { alert('장비등록 정보를 찾을 수 없습니다.'); showScreen('listScreen'); return; }
       currentDetailLink = makeManagerLink(item.code, getManagerExpireAt(item));
       const qrUrl = makeQrUrl(currentDetailLink, 180);
       const docHtml = getDisplayDocs(item).map(doc => renderDocDetail(doc)).join('');

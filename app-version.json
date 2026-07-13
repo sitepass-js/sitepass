@@ -1,9 +1,10 @@
 {
-  "version": "23.7.450",
-  "updatedAt": "2026-07-13T20:20:00+09:00",
-  "note": "equipment thumbnails cropped directly from each card and cache-busted",
-  "build": "v23.7.450",
-  "stage": "v450-test 카드기준재절단",
-  "baselineFrom": "23.7.449",
-  "releaseType": "test-equipment-thumbnail-cardcrop-fix"
+  "version": "23.7.452",
+  "updatedAt": "2026-07-13T20:45:00+09:00",
+  "note": "rename visible 통합 서류함 wording to 장비등록",
+  "build": "v23.7.452",
+  "stage": "v452-test 장비등록명칭변경",
+  "baselineFrom": "23.7.451",
+  "releaseType": "test-rename-bundle-to-equipment-register",
+  "purpose": "화면에 보이는 통합 서류함 문구를 장비등록으로 변경"
 }
