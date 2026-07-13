@@ -1,10 +1,10 @@
 {
-  "version": "23.7.435",
-  "updatedAt": "2026-07-13T13:55:00+09:00",
-  "note": "shortcut settings removed and external link labels changed to updating",
-  "build": "v23.7.435",
-  "stage": "v435-test 바로가기업데이트중",
-  "baselineFrom": "23.7.434",
-  "releaseType": "test-shortcut-update-label",
-  "purpose": "홈 바로가기의 링크설정 버튼을 제거하고 외부링크 1~6 문구를 업데이트중으로 변경"
+  "version": "23.7.436",
+  "updatedAt": "2026-07-13T14:05:00+09:00",
+  "note": "remove top header alert bell icon",
+  "build": "v23.7.436",
+  "stage": "v436-test 상단종아이콘제거",
+  "baselineFrom": "23.7.435",
+  "releaseType": "test-remove-top-bell",
+  "purpose": "홈 상단 인사말 옆 알림/쪽지함 종 아이콘 제거"
 }
