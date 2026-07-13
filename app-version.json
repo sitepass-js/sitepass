@@ -1,10 +1,10 @@
 {
-  "version": "23.7.445",
-  "updatedAt": "2026-07-13T19:10:00+09:00",
-  "note": "chat room style alert/message screen with per-room notification toggle; split CSS/JS files",
-  "build": "v23.7.445",
-  "stage": "v445-test 채팅방알림온오프분리",
-  "baselineFrom": "23.7.444",
-  "releaseType": "test-chat-room-notification-toggle-split",
-  "purpose": "알림/쪽지함을 회원↔관리자 채팅방 구조로 바꾸고, 각 채팅방 안에 알림 ON/OFF 버튼 추가. 관련 CSS/JS를 GitHub 파일로 분리"
+  "version": "23.7.447",
+  "updatedAt": "2026-07-13T19:40:00+09:00",
+  "note": "registered equipment home preview changed from 5 to 3 items",
+  "build": "v23.7.447",
+  "stage": "v447-test 등록장비3대더보기",
+  "baselineFrom": "23.7.446",
+  "releaseType": "test-registered-equipment-3-items",
+  "purpose": "홈 등록된 장비 영역을 기본 3대만 보이게 하고, 장비가 3대보다 많으면 더보기 표시"
 }
