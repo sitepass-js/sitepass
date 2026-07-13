@@ -1,10 +1,10 @@
 {
-  "version": "23.7.452",
-  "updatedAt": "2026-07-13T20:45:00+09:00",
-  "note": "rename visible 통합 서류함 wording to 장비등록",
-  "build": "v23.7.452",
-  "stage": "v452-test 장비등록명칭변경",
-  "baselineFrom": "23.7.451",
-  "releaseType": "test-rename-bundle-to-equipment-register",
-  "purpose": "화면에 보이는 통합 서류함 문구를 장비등록으로 변경"
+  "version": "23.7.454",
+  "updatedAt": "2026-07-13T21:05:00+09:00",
+  "note": "restore horizontal sizing and adjust vertical height only",
+  "build": "v23.7.454",
+  "stage": "v454-test 등록상단세로폭보정",
+  "baselineFrom": "23.7.453",
+  "releaseType": "test-register-vertical-height-fix",
+  "purpose": "장비 등록번호/장비종류 가로폭은 유지하고 세로폭만 키움. 장비서류/기사서류/인부서류와 포함구역/필수서류/선택서류 칸도 세로 높이만 보정"
 }

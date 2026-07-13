@@ -61,7 +61,7 @@
     }
 
   
-    /* v23.7.452 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
+    /* v23.7.454 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
     body.sitepass-app-nav-active #signupScreen {
       display: none !important;
       visibility: hidden !important;
@@ -114,7 +114,7 @@
     }
 
   
-    /* v23.7.452 - 하단탭/홈카드 이동 후 빈창 방지 */
+    /* v23.7.454 - 하단탭/홈카드 이동 후 빈창 방지 */
     body.sitepass-app-nav-active #signupScreen {
       display: none !important;
       visibility: hidden !important;
@@ -156,7 +156,7 @@
     }
 
   
-    /* v23.7.452 - 홈 상단 알림/쪽지함 종 아이콘 제거 */
+    /* v23.7.454 - 홈 상단 알림/쪽지함 종 아이콘 제거 */
     .sitepass-home-hero-header .sitepass-home-bell-btn {
       display: none !important;
     }
@@ -166,13 +166,13 @@
     }
 
   
-    /* v23.7.452 - 오늘 확인할 항목 헤더 버튼 제거 */
+    /* v23.7.454 - 오늘 확인할 항목 헤더 버튼 제거 */
     #homeScreen .sitepass-app-section .sitepass-section-head.sitepass-today-section-head > button {
       display: none !important;
     }
 
   
-    /* v23.7.452 - 최근 등록 장비 이모티콘 + 우측 버튼 제거 */
+    /* v23.7.454 - 최근 등록 장비 이모티콘 + 우측 버튼 제거 */
     #homeScreen .sitepass-section-head:has(h2) button {
       white-space: nowrap;
     }
@@ -187,7 +187,7 @@
     }
 
   
-    /* v23.7.452 - 최근 장비 상세 조합 이모지 */
+    /* v23.7.454 - 최근 장비 상세 조합 이모지 */
     .sitepass-equipment-initial.sitepass-equipment-emoji {
       font-size: 19px !important;
       letter-spacing: -4px;
@@ -198,7 +198,7 @@
     }
 
   
-    /* v23.7.452 - 최근 등록 장비 실제 이미지 썸네일 */
+    /* v23.7.454 - 최근 등록 장비 실제 이미지 썸네일 */
     .sitepass-recent-row {
       grid-template-columns: 72px 1fr auto !important;
       gap: 12px !important;
@@ -218,7 +218,7 @@
     }
 
   
-    /* v23.7.452 - 등록된 장비 3대 + 더보기 */
+    /* v23.7.454 - 등록된 장비 3대 + 더보기 */
     .sitepass-recent-more-wrap {
       display: flex;
       justify-content: flex-end;
@@ -240,7 +240,7 @@
     }
 
   
-    /* v23.7.452 - 등록된 장비 썸네일 잘림/작게보임 최종 보정 */
+    /* v23.7.454 - 등록된 장비 썸네일 잘림/작게보임 최종 보정 */
     .sitepass-recent-row {
       grid-template-columns: 116px 1fr auto !important;
       gap: 14px !important;
@@ -275,7 +275,7 @@
     }
 
   
-    /* v23.7.452 - 장비 이미지 원본 카드 재절단 + 전체 보이기 */
+    /* v23.7.454 - 장비 이미지 원본 카드 재절단 + 전체 보이기 */
     .sitepass-recent-row {
       grid-template-columns: 132px 1fr auto !important;
       gap: 14px !important;
@@ -310,7 +310,7 @@
     }
 
   
-    /* v23.7.452 - 장비 썸네일 카드 기준 재절단 + 캐시무효화 */
+    /* v23.7.454 - 장비 썸네일 카드 기준 재절단 + 캐시무효화 */
     .sitepass-recent-row {
       grid-template-columns: 136px 1fr auto !important;
       gap: 16px !important;
@@ -338,7 +338,7 @@
     }
 
       
-    /* v23.7.452 - 등록 기본정보 상단 압축 / 모바일 2칸+3칸 */
+    /* v23.7.454 - 등록 기본정보 상단 압축 / 모바일 2칸+3칸 */
     #registerScreen > .card:first-of-type > h2:first-child,
     #registerScreen > .card:first-of-type > h2:first-child + p {
       display: none !important;
@@ -427,8 +427,173 @@
       }
     }
     
+      
+    /* v23.7.454 - 등록 상단 입력칸/요약칸 가로 정렬 보정 */
+    #registerScreen > .card:first-of-type {
+      padding-left: 14px !important;
+      padding-right: 14px !important;
+    }
+    #registerScreen > .card:first-of-type .form-grid {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.05fr) !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+    #registerScreen > .card:first-of-type .field {
+      min-width: 0 !important;
+    }
+    #registerScreen > .card:first-of-type #equipmentNo,
+    #registerScreen > .card:first-of-type #equipmentName {
+      width: 100% !important;
+      min-height: 46px !important;
+      height: 46px !important;
+      border-radius: 14px !important;
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+      font-size: 14px !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-toggle-grid,
+    #registerScreen > .card:first-of-type .bundle-summary {
+      display: grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-toggle-grid {
+      margin-top: 8px !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-summary {
+      margin-top: 8px !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-toggle,
+    #registerScreen > .card:first-of-type .bundle-summary > div {
+      width: 100% !important;
+      min-width: 0 !important;
+      min-height: 58px !important;
+      border-radius: 14px !important;
+      box-sizing: border-box !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-toggle {
+      padding: 8px 5px !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-summary > div {
+      padding: 8px 5px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-summary b {
+      font-size: 18px !important;
+      line-height: 1.05 !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-summary span {
+      font-size: 11px !important;
+      line-height: 1.05 !important;
+      margin-top: 4px !important;
+      white-space: nowrap !important;
+    }
+    @media (max-width: 420px) {
+      #registerScreen > .card:first-of-type {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+      }
+      #registerScreen > .card:first-of-type .form-grid {
+        gap: 6px !important;
+      }
+      #registerScreen > .card:first-of-type .bundle-toggle-grid,
+      #registerScreen > .card:first-of-type .bundle-summary {
+        gap: 6px !important;
+      }
+      #registerScreen > .card:first-of-type #equipmentNo,
+      #registerScreen > .card:first-of-type #equipmentName {
+        height: 44px !important;
+        min-height: 44px !important;
+        padding-left: 9px !important;
+        padding-right: 9px !important;
+        font-size: 13px !important;
+      }
+      #registerScreen > .card:first-of-type .bundle-toggle,
+      #registerScreen > .card:first-of-type .bundle-summary > div {
+        min-height: 56px !important;
+        padding-left: 3px !important;
+        padding-right: 3px !important;
+      }
+    }
+    
+      
+    /* v23.7.454 - 등록 상단 가로폭 원위치 / 세로폭만 보정 */
+    #registerScreen > .card:first-of-type {
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+    #registerScreen > .card:first-of-type .form-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+    #registerScreen > .card:first-of-type #equipmentNo,
+    #registerScreen > .card:first-of-type #equipmentName {
+      min-height: 50px !important;
+      height: 50px !important;
+      border-radius: 14px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+      font-size: 13px !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-toggle-grid,
+    #registerScreen > .card:first-of-type .bundle-summary {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-toggle,
+    #registerScreen > .card:first-of-type .bundle-summary > div {
+      min-height: 66px !important;
+      border-radius: 14px !important;
+      box-sizing: border-box !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-toggle {
+      padding-top: 10px !important;
+      padding-bottom: 10px !important;
+    }
+    #registerScreen > .card:first-of-type .bundle-summary > div {
+      padding-top: 10px !important;
+      padding-bottom: 10px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    @media (max-width: 420px) {
+      #registerScreen > .card:first-of-type {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+      }
+      #registerScreen > .card:first-of-type .form-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        gap: 6px !important;
+      }
+      #registerScreen > .card:first-of-type #equipmentNo,
+      #registerScreen > .card:first-of-type #equipmentName {
+        min-height: 48px !important;
+        height: 48px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        font-size: 12px !important;
+      }
+      #registerScreen > .card:first-of-type .bundle-toggle-grid,
+      #registerScreen > .card:first-of-type .bundle-summary {
+        gap: 6px !important;
+      }
+      #registerScreen > .card:first-of-type .bundle-toggle,
+      #registerScreen > .card:first-of-type .bundle-summary > div {
+        min-height: 64px !important;
+      }
+    }
+    
   </style>
-  <link rel="stylesheet" href="./assets/css/sitepass-chat-v445.css?v=23.7.452">
+  <link rel="stylesheet" href="./assets/css/sitepass-chat-v445.css?v=23.7.454">
 </head>
 <body>
   <main class="wrap">
@@ -487,7 +652,7 @@
   </script>
 
   <script>
-  /* v23.7.452 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
+  /* v23.7.454 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
   (function(){
     function isLoggedIn431(){
       try { if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn()) return true; } catch(e) {}
@@ -585,7 +750,7 @@
 
 
   <script>
-  /* v23.7.452 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
+  /* v23.7.454 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
   (function(){
     window.handleLogout = function(){
       try { sessionStorage.removeItem('sitepass_bottom_nav_last_target_v432'); } catch(e) {}
@@ -663,7 +828,7 @@
 
 
   <script>
-  /* v23.7.452 - 오늘 확인할 항목 전체보기 빈창 방지 */
+  /* v23.7.454 - 오늘 확인할 항목 전체보기 빈창 방지 */
   (function(){
     function patchTodayViewButtons433(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -728,7 +893,7 @@
 
 
   <script>
-  /* v23.7.452 - 등록/보관함/알림쪽지함/내정보/오늘확인 빈창 방지 */
+  /* v23.7.454 - 등록/보관함/알림쪽지함/내정보/오늘확인 빈창 방지 */
   (function(){
     function clearScreenInline434(screen){
       if (!screen) return;
@@ -898,7 +1063,7 @@
 
 
   <script>
-  /* v23.7.452 - 바로가기 링크설정 제거 / 업데이트중 표시 */
+  /* v23.7.454 - 바로가기 링크설정 제거 / 업데이트중 표시 */
   (function(){
     function patchShortcutSection435(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -922,7 +1087,7 @@
 
 
   <script>
-  /* v23.7.452 - 상단 종 아이콘 런타임 제거 */
+  /* v23.7.454 - 상단 종 아이콘 런타임 제거 */
   (function(){
     function removeTopBell436(){
       document.querySelectorAll('.sitepass-home-hero-header .sitepass-home-bell-btn').forEach(function(btn){
@@ -939,7 +1104,7 @@
 
 
   <script>
-  /* v23.7.452 - 오늘 확인할 항목 제목 변경 + 알림/쪽지함 버튼 제거 */
+  /* v23.7.454 - 오늘 확인할 항목 제목 변경 + 알림/쪽지함 버튼 제거 */
   (function(){
     function applyTodaySection437(){
       var home = document.getElementById('homeScreen') || document;
@@ -969,7 +1134,7 @@
 
 
   <script>
-  /* v23.7.452 - 최근 등록 장비 우측 버튼 제거 안전 보정 */
+  /* v23.7.454 - 최근 등록 장비 우측 버튼 제거 안전 보정 */
   (function(){
     function patchRecentEquipmentHeader441(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -989,7 +1154,7 @@
 
 
   <script>
-  /* v23.7.452 - 최근 등록된 장비 우측 버튼 제거 안전 보정 */
+  /* v23.7.454 - 최근 등록된 장비 우측 버튼 제거 안전 보정 */
   (function(){
     function patchRecentHeader443(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -1009,7 +1174,7 @@
 
 
   <script>
-  /* v23.7.452 - 등록된 장비 제목/더보기 안전 보정 */
+  /* v23.7.454 - 등록된 장비 제목/더보기 안전 보정 */
   (function(){
     function patchRegisteredEquipment444(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -1030,6 +1195,6 @@
   })();
   </script>
 
-  <script src="./assets/js/sitepass-chat-v445.js?v=23.7.452"></script>
+  <script src="./assets/js/sitepass-chat-v445.js?v=23.7.454"></script>
 </body>
 </html>
