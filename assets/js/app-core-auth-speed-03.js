@@ -857,35 +857,43 @@ function fillFoundLoginIdTest() {
       }
 
       if (!member) {
-        let serverMemberForLogin455 = null;
+        let serverMemberForLogin460 = null;
+        let serverLookupState460 = null;
         try {
-          if (typeof window.sitePassFetchActiveMemberForLogin458 === 'function') {
-            serverMemberForLogin455 = await window.sitePassFetchActiveMemberForLogin458(loginId);
+          if (typeof window.sitePassLookupLoginState460 === 'function') {
+            serverLookupState460 = await window.sitePassLookupLoginState460(loginId);
+            if (serverLookupState460 && serverLookupState460.state === 'found') serverMemberForLogin460 = serverLookupState460.row;
+          } else if (typeof window.sitePassFetchActiveMemberForLogin460 === 'function') {
+            serverMemberForLogin460 = await window.sitePassFetchActiveMemberForLogin460(loginId);
           }
-        } catch (serverLoginCheckError455) {
-          console.warn('서버 회원 확인 실패:', serverLoginCheckError455);
+        } catch (serverLoginCheckError460) {
+          console.warn('서버 회원 확인 실패:', serverLoginCheckError460);
         }
-        if (!serverMemberForLogin455) {
-          try {
-            if (typeof window.sitePassInvalidateDeletedMemberSession458 === 'function') {
-              await window.sitePassInvalidateDeletedMemberSession458('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
-            } else {
+        if (!serverMemberForLogin460) {
+          if (serverLookupState460 && serverLookupState460.state === 'missing') {
+            try {
+              if (typeof window.sitePassInvalidateDeletedMemberSession460 === 'function') {
+                await window.sitePassInvalidateDeletedMemberSession460('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
+              } else {
+                alert('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
+              }
+            } catch (ignore) {
               alert('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
             }
-          } catch (ignore) {
-            alert('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
+            showScreen('signupScreen');
+          } else {
+            alert('서버 회원정보를 확정해서 확인하지 못했습니다.\n기존 가입기기의 로그인 정보는 지우지 않았습니다. 잠시 후 다시 시도해주세요.');
           }
-          showScreen('signupScreen');
           return;
         }
         member = {
-          name: serverMemberForLogin455.name || loginId,
-          phone: serverMemberForLogin455.phone || '',
-          email: serverMemberForLogin455.email || '',
-          provider: serverMemberForLogin455.signup_method || 'SitePass',
-          providerId: serverMemberForLogin455.provider_id || ('SITEPASS-LOGIN-' + loginId),
-          signupId: serverMemberForLogin455.login_id || loginId,
-          signupMethod: serverMemberForLogin455.signup_method || 'SitePass 로그인',
+          name: serverMemberForLogin460.name || loginId,
+          phone: serverMemberForLogin460.phone || '',
+          email: serverMemberForLogin460.email || '',
+          provider: serverMemberForLogin460.signup_method || 'SitePass',
+          providerId: serverMemberForLogin460.provider_id || ('SITEPASS-LOGIN-' + loginId),
+          signupId: serverMemberForLogin460.login_id || loginId,
+          signupMethod: serverMemberForLogin460.signup_method || 'SitePass 로그인',
           testPassword: password
         };
         saveMemberTest(member);
@@ -1090,10 +1098,12 @@ function formatSitePassSignupJuminDisplay() {
     }
 
     function goSitePassSignupAccountStep() {
-      if (!sitepassSignupPhoneVerified) {
+      const verifiedMarker460 = window.__sitepassV460SignupVerifiedMarker;
+      if (!sitepassSignupPhoneVerified || !verifiedMarker460 || !verifiedMarker460.verificationId) {
+        sitepassSignupPhoneVerified = false;
         alert('휴대폰 인증을 완료한 뒤 다음으로 넘어갈 수 있습니다.');
         const status = document.getElementById('sitepassSignupVerifyStatus');
-        if (status) status.textContent = '먼저 인증요청을 누르고 문자 인증번호를 확인해주세요.';
+        if (status) status.textContent = '먼저 인증요청을 누르고 문자 인증번호를 정상 확인해주세요.';
         return false;
       }
       toggleSitePassSignupAccountStage(true);
@@ -1118,6 +1128,9 @@ function formatSitePassSignupJuminDisplay() {
     function resetSitePassSignupPhoneAuth() {
       sitepassSignupPhoneVerified = false;
       sitepassSignupPhoneRequestSent = false;
+      window.__sitepassV351SignupVerificationId = '';
+      window.__sitepassV351SignupVerifiedPayload = null;
+      window.__sitepassV460SignupVerifiedMarker = null;
       const codeBox = document.getElementById('sitepassSignupCodeBox');
       if (codeBox) codeBox.classList.add('hidden');
       const codeInput = document.getElementById('sitepassSignupCode');
@@ -1269,13 +1282,15 @@ function formatSitePassSignupJuminDisplay() {
           consentMode: 'phone_code_only',
           signupScope: 'member_account_only',
           documentTermsDeferred: true,
-          termsVersion: 'member-signup-v23.7.458',
+          termsVersion: 'member-signup-v23.7.460',
           termsUrl: ''
         });
-        window.__sitepassV351SignupVerificationId = data.verificationId || '';
+        window.__sitepassV351SignupVerificationId = data.verificationId || data.verification_id || '';
         window.__sitepassV351SignupVerifiedPayload = null;
-        sitepassSignupPhoneRequestSent = true;
+        window.__sitepassV460SignupVerifiedMarker = null;
+        sitepassSignupPhoneRequestSent = !!window.__sitepassV351SignupVerificationId;
         sitepassSignupPhoneVerified = false;
+        if (!window.__sitepassV351SignupVerificationId) throw new Error('verification_id_required');
         const codeBox = document.getElementById('sitepassSignupCodeBox');
         if (codeBox) codeBox.classList.remove('hidden');
         if (requestButton) requestButton.textContent = '인증번호 재전송';
@@ -1285,6 +1300,11 @@ function formatSitePassSignupJuminDisplay() {
         alert('[SitePass 휴대폰 인증]\n' + identity.name + '님 휴대폰으로 6자리 인증번호를 보냈습니다.\n5분 안에 입력해주세요.');
       } catch (err) {
         console.error(err);
+        sitepassSignupPhoneRequestSent = false;
+        sitepassSignupPhoneVerified = false;
+        window.__sitepassV351SignupVerificationId = '';
+        window.__sitepassV351SignupVerifiedPayload = null;
+        window.__sitepassV460SignupVerifiedMarker = null;
         if (status) status.textContent = '인증번호 발송 실패: ' + sens.koreanError(err);
         alert('인증번호 발송 실패: ' + sens.koreanError(err) + '\n\nSupabase Secrets, SENS Service ID, 발신번호 등록 상태를 확인해주세요.');
       } finally {
@@ -1309,11 +1329,24 @@ function formatSitePassSignupJuminDisplay() {
       }
       const status = document.getElementById('sitepassSignupVerifyStatus');
       if (status) status.textContent = '인증번호를 확인하고 있습니다.';
+      sitepassSignupPhoneVerified = false;
+      window.__sitepassV351SignupVerifiedPayload = null;
+      window.__sitepassV460SignupVerifiedMarker = null;
       try {
-        const data = await sens.verifyPhoneCode(window.__sitepassV351SignupVerificationId, code);
-        sitepassSignupPhoneVerified = true;
-        window.__sitepassV351SignupVerifiedPayload = data.phoneVerified || {};
+        const verificationId460 = window.__sitepassV351SignupVerificationId;
+        const data = await sens.verifyPhoneCode(verificationId460, code);
+        if (!data || data.ok === false || data.verified === false || data.success === false) {
+          throw new Error((data && data.error) || 'verify_phone_code_failed');
+        }
         const identity = getSitePassSignupIdentity();
+        sitepassSignupPhoneVerified = true;
+        window.__sitepassV351SignupVerifiedPayload = data.phoneVerified || data.verifiedPayload || data;
+        window.__sitepassV460SignupVerifiedMarker = {
+          verificationId: verificationId460,
+          phone: sens.cleanPhone(identity.phone),
+          verifiedAt: new Date().toISOString(),
+          responseOk: true
+        };
         if (status) status.textContent = '휴대폰 인증 완료: ' + identity.name + ' / ' + identity.juminMasked + ' / ' + identity.carrier + ' / ' + identity.phone;
         const codeBox = document.getElementById('sitepassSignupCodeBox');
         if (codeBox) codeBox.classList.add('hidden');
@@ -1332,8 +1365,12 @@ function formatSitePassSignupJuminDisplay() {
         alert('휴대폰 인증이 완료되었습니다.\n이제 아이디와 비밀번호를 입력한 뒤 회원가입을 완료해주세요.');
       } catch (err) {
         console.error(err);
+        sitepassSignupPhoneVerified = false;
+        window.__sitepassV351SignupVerifiedPayload = null;
+        window.__sitepassV460SignupVerifiedMarker = null;
+        toggleSitePassSignupAccountStage(false);
         if (status) status.textContent = '인증 실패: ' + sens.koreanError(err);
-        alert('인증 실패: ' + sens.koreanError(err));
+        alert('인증 실패: ' + sens.koreanError(err) + '\n인증에 실패한 상태에서는 회원정보가 저장되지 않습니다.');
       }
     }
 

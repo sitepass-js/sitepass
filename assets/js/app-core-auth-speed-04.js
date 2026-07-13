@@ -17,8 +17,17 @@ function submitSitePassSignupTest() {
         alert('주민번호는 앞 6자리만 입력해주세요.');
         return;
       }
-      if (!sitepassSignupPhoneVerified) {
-        alert('휴대폰 인증 완료 후 아이디/비밀번호를 입력하고 회원가입을 완료해주세요.');
+      const signupVerifiedMarker460 = window.__sitepassV460SignupVerifiedMarker;
+      const signupPhoneDigits460 = String(phone || '').replace(/[^0-9]/g, '');
+      const currentVerificationId460 = String(window.__sitepassV351SignupVerificationId || '');
+      if (!sitepassSignupPhoneVerified || !signupVerifiedMarker460 || !signupVerifiedMarker460.responseOk ||
+          !signupVerifiedMarker460.verificationId || signupVerifiedMarker460.verificationId !== currentVerificationId460 ||
+          signupVerifiedMarker460.phone !== signupPhoneDigits460) {
+        sitepassSignupPhoneVerified = false;
+        window.__sitepassV351SignupVerifiedPayload = null;
+        window.__sitepassV460SignupVerifiedMarker = null;
+        alert('휴대폰 인증 확인이 완료되지 않아 회원가입을 저장할 수 없습니다.\n인증번호를 다시 확인해주세요.');
+        toggleSitePassSignupAccountStage(false);
         return;
       }
       if (signupId.length < 4) {
@@ -69,6 +78,9 @@ function submitSitePassSignupTest() {
         signupMethod:'SitePass 회원가입',
         agreements:getSignupAgreements()
       };
+      try {
+        if (typeof window.sitePassMarkNewSignupGrace460 === 'function') window.sitePassMarkNewSignupGrace460(member);
+      } catch (e) {}
       saveMemberTest(member);
       completeMemberLoginTest(member, 'SitePass 회원가입이 완료되었습니다.\n이제 SitePass 메인 화면으로 이동합니다.');
       ['sitepassSignupName','sitepassSignupPhone','sitepassSignupJuminMasked','sitepassSignupBirth6','sitepassSignupGenderDigit','sitepassSignupCarrier','sitepassSignupCode','sitepassSignupId','sitepassSignupPw','sitepassSignupPw2'].forEach(id => {
@@ -176,18 +188,19 @@ function renderAdminContactManager() {
       const contacts = getContacts();
       const waiting = contacts.filter(x => x.status !== '답변완료').length;
       if (!contacts.length) {
-        return '<div class="card" style="box-shadow:none;margin-top:14px;"><h3>문의관리</h3><div class="notice blue-note">관리자는 제이에스건설 회사 계정으로 운영하고, 정식 서비스에서는 앱 문의와 회사 카카오톡 채널 문의를 같이 확인하는 구조로 연결합니다.</div><div class="empty">접수된 문의가 없습니다.</div></div>';
+        return '<div class="card" style="box-shadow:none;margin-top:14px;"><h3>문의관리</h3><div class="notice blue-note">관리자 문의방은 로그인 회원 아이디로 문의자를 자동 구분합니다. 회원이 이름·전화번호·이메일을 다시 입력하지 않아도 됩니다.</div><div class="empty">접수된 문의가 없습니다.</div></div>';
       }
       const rows = contacts.map(item => {
         const statusClass = item.status === '답변완료' ? 'done' : 'need';
+        const memberLabel = item.memberLoginId || item.member_login_id || item.memberKey || item.name || '회원정보 없음';
         return '<div class="list-item" data-contact-id="' + escapeHtml(item.id) + '">' +
-          '<div class="doc-head"><div><strong>' + escapeHtml(item.type || '문의') + ' · ' + escapeHtml(item.name || '') + '</strong><div class="small">연락처: ' + escapeHtml(item.phone || '') + '<br>접수일: ' + escapeHtml(formatDateTime(item.createdAt)) + '</div></div><span class="badge ' + statusClass + '">' + escapeHtml(item.status || '답변대기') + '</span></div>' +
+          '<div class="doc-head"><div><strong>' + escapeHtml(item.type || '문의') + ' · ' + escapeHtml(memberLabel) + '</strong><div class="small">회원명: ' + escapeHtml(item.name || '미확인') + '<br>접수일: ' + escapeHtml(formatDateTime(item.createdAt)) + '</div></div><span class="badge ' + statusClass + '">' + escapeHtml(item.status || '답변대기') + '</span></div>' +
           '<div class="date-note"><b>문의내용</b><br>' + escapeHtml(item.message || '').replace(/\n/g, '<br>') + '</div>' +
           '<div class="field" style="margin-top:10px;"><label>관리자 답변</label><textarea id="reply_' + escapeHtml(item.id) + '" rows="4" style="min-height:96px; resize:vertical;" placeholder="답변 내용을 입력하세요.">' + escapeHtml(item.reply || '') + '</textarea></div>' +
           '<div class="actions"><button class="primary" onclick="saveContactReply(\'' + escapeJs(item.id) + '\')">답변 저장</button><button class="okBtn" onclick="markContactDone(\'' + escapeJs(item.id) + '\')">처리완료</button><button class="dangerBtn" onclick="deleteContact(\'' + escapeJs(item.id) + '\')">문의 삭제</button></div>' +
         '</div>';
       }).join('');
-      return '<div id="adminContactManagerCard" class="card" style="box-shadow:none;margin-top:14px;"><h3>문의관리</h3><div class="notice blue-note">관리자는 제이에스건설 회사 계정으로 운영합니다. 정식 서비스에서는 회사 카카오톡 채널 1:1 채팅 문의도 이 관리자 문의관리와 연결하는 방향입니다.</div><div class="line"><b>답변대기</b><span>' + waiting + '건</span></div>' + rows + '</div>';
+      return '<div id="adminContactManagerCard" class="card" style="box-shadow:none;margin-top:14px;"><h3>문의관리</h3><div class="notice blue-note">로그인 회원 아이디로 문의자를 자동 식별합니다. 답변을 저장하면 해당 회원의 관리자 문의방에 관리자 말풍선으로 표시됩니다.</div><div class="line"><b>답변대기</b><span>' + waiting + '건</span></div>' + rows + '</div>';
     }
 
     function saveContactReply(id) {
@@ -663,7 +676,7 @@ function setPersonAuthStatus(kind, text, mode) {
       setPersonAuthStatus(kind, '네이버 SENS로 약관/개인정보 동의 링크를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.', 'pending');
       try {
         const subjectId = buildPersonConsentSubjectId458(kind, values);
-        // v23.7.458: 기사/인부 등록 인증 문자는 약관/개인정보 동의 링크 유지.
+        // v23.7.460: 기사/인부 등록 인증 문자는 약관/개인정보 동의 링크 유지.
         const termsUrl = personAuth.buildConsentLink ? personAuth.buildConsentLink(kind, subjectId) : new URL('./terms/person-consent.html', window.location.href).href;
         const data = await sens.sendPhoneCode({
           purpose: kind + '_document_phone_verification',
@@ -678,7 +691,7 @@ function setPersonAuthStatus(kind, text, mode) {
           smsAgreed: true,
           identityTermsAgreed: false,
           consentMode: 'sms_link_checkbox_code_reveal',
-          termsVersion: 'v23.7.458',
+          termsVersion: 'v23.7.460',
           termsUrl: termsUrl
         });
         const sentDataset = personAuth.buildSentDataset ? personAuth.buildSentDataset(values) : null;

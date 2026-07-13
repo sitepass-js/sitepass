@@ -1,4 +1,4 @@
-/* SitePass v23.7.354 - 네이버 SENS 문자 인증/동의 후 코드표시 실제 연동 보조 모듈
+/* SitePass v23.7.460-test - 네이버 SENS 문자 인증/동의 후 코드표시 실제 연동 보조 모듈
  * - API Key/Secret은 절대 GitHub에 넣지 않습니다.
  * - 브라우저는 Supabase Edge Function만 호출합니다.
  * - Edge Function이 Supabase Secrets의 SENS 키로 네이버 SENS를 호출합니다.
@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  const VERSION = 'v23.7.354';
+  const VERSION = 'v23.7.460';
 
   function cleanPhone(value) {
     return String(value || '').replace(/[^0-9]/g, '');
@@ -142,7 +142,7 @@
     const body = Object.assign({ termsVersion: VERSION }, payload || {});
     body.phone = cleanPhone(body.phone);
 
-    // v23.7.458: 회원가입 휴대폰 인증 문자와 기사/인부 서류 동의 문자를 분리합니다.
+    // v23.7.460: 회원가입 휴대폰 인증 문자와 기사/인부 서류 동의 문자를 분리합니다.
     // 회원가입은 이미 회원가입 약관 화면에서 동의 후 진행하므로, 기사/인부용 person-consent 링크를 문자에 넣지 않습니다.
     if (body.subjectType === 'member' || body.purpose === 'member_signup_phone_verification') {
       body.subjectType = 'member';
@@ -154,7 +154,7 @@
       body.personConsentUrl = '';
       body.documentConsentUrl = '';
       body.driverWorkerTermsUrl = '';
-      body.termsVersion = 'member-signup-v23.7.458';
+      body.termsVersion = 'member-signup-v23.7.460';
     }
 
     return await invokeFunction('send-phone-code', body);
@@ -163,6 +163,7 @@
   async function verifyPhoneCode(verificationId, code) {
     return await invokeFunction('verify-phone-code', {
       verificationId: verificationId,
+      verification_id: verificationId,
       code: cleanPhone(code)
     });
   }
