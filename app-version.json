@@ -1,10 +1,10 @@
 {
-  "version": "23.7.436",
+  "version": "23.7.437",
   "updatedAt": "2026-07-13T14:05:00+09:00",
-  "note": "remove top header alert bell icon",
-  "build": "v23.7.436",
-  "stage": "v436-test 상단종아이콘제거",
-  "baselineFrom": "23.7.435",
-  "releaseType": "test-remove-top-bell",
-  "purpose": "홈 상단 인사말 옆 알림/쪽지함 종 아이콘 제거"
+  "note": "rename today section to 만료/최근공유한 자료 and remove alert/message button",
+  "build": "v23.7.437",
+  "stage": "v437-test 오늘확인항목수정",
+  "baselineFrom": "23.7.436",
+  "releaseType": "test-today-section-rename-remove-alert-btn",
+  "purpose": "홈 오늘 확인할 항목 영역 제목 변경 및 우측 알림/쪽지함 버튼 제거"
 }
