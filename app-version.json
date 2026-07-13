@@ -1,10 +1,10 @@
 {
-  "version": "23.7.447",
-  "updatedAt": "2026-07-13T19:40:00+09:00",
-  "note": "registered equipment home preview changed from 5 to 3 items",
-  "build": "v23.7.447",
-  "stage": "v447-test 등록장비3대더보기",
-  "baselineFrom": "23.7.446",
-  "releaseType": "test-registered-equipment-3-items",
-  "purpose": "홈 등록된 장비 영역을 기본 3대만 보이게 하고, 장비가 3대보다 많으면 더보기 표시"
+  "version": "23.7.448",
+  "updatedAt": "2026-07-13T19:50:00+09:00",
+  "note": "trim whitespace around equipment thumbnail assets and enlarge preview box",
+  "build": "v23.7.448",
+  "stage": "v448-test 장비썸네일여백제거확대",
+  "baselineFrom": "23.7.447",
+  "releaseType": "test-equipment-thumbnail-trim-fix",
+  "purpose": "등록된 장비 이미지가 잘리거나 작게 보이는 문제를 줄이기 위해 27종 썸네일 여백을 제거하고 홈 썸네일 박스를 확대"
 }
