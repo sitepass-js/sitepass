@@ -1,11 +1,11 @@
 {
-  "version": "23.7.427",
+  "version": "23.7.428",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.427",
-  "stage": "v427-test 홈 상단 로고/인사말/알림벨",
-  "baselineFrom": "23.7.426",
-  "releaseType": "test-home-header-logo-greeting-bell",
-  "runtimeChange": "home-header-hero-style",
-  "purpose": "로그인 후 홈 상단의 홈글자/내정보 버튼을 제거하고, 로고 + 안녕하세요 인사말 + 알림벨 구조로 변경"
+  "build": "v23.7.428",
+  "stage": "v428-test 원본로고/가입이름/로그아웃버튼",
+  "baselineFrom": "23.7.427",
+  "releaseType": "test-home-header-original-logo-name-logout",
+  "runtimeChange": "home-header-user-name-logout",
+  "purpose": "로그인 후 홈 상단을 업로드한 원본 로고 이미지로 교체하고, 회원님 대신 가입 이름을 표시하며, 그 아래 로그아웃 버튼을 추가"
 }
