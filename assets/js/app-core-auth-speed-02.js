@@ -434,7 +434,12 @@ function saveMemberTest(member) {
         const keep = {
           id: existing.id,
           createdAt: existing.createdAt,
+          name: existing.name,
           phone: existing.phone,
+          signupIdentityName: existing.signupIdentityName || existing.verifiedName || '',
+          signupIdentityPhone: existing.signupIdentityPhone || existing.verifiedPhone || existing.phone || '',
+          verifiedName: existing.verifiedName || existing.signupIdentityName || '',
+          verifiedPhone: existing.verifiedPhone || existing.signupIdentityPhone || existing.phone || '',
           testPassword: existing.testPassword,
           passwordSet: existing.passwordSet,
           passwordChangedAt: existing.passwordChangedAt,
@@ -446,7 +451,14 @@ function saveMemberTest(member) {
         Object.assign(existing, normalizedMember);
         if (keep.id) existing.id = keep.id;
         if (keep.createdAt) existing.createdAt = keep.createdAt;
+        const incomingNameKey462 = String(member.name || '').trim().toLowerCase();
+        const incomingLoginKey462 = String(member.signupId || member.login_id || '').trim().toLowerCase();
+        if ((!member.name || (incomingNameKey462 && incomingLoginKey462 && incomingNameKey462 === incomingLoginKey462)) && keep.name) existing.name = keep.name;
         if (!member.phone && keep.phone) existing.phone = keep.phone;
+        if (!member.signupIdentityName && keep.signupIdentityName) existing.signupIdentityName = keep.signupIdentityName;
+        if (!member.signupIdentityPhone && keep.signupIdentityPhone) existing.signupIdentityPhone = keep.signupIdentityPhone;
+        if (!member.verifiedName && keep.verifiedName) existing.verifiedName = keep.verifiedName;
+        if (!member.verifiedPhone && keep.verifiedPhone) existing.verifiedPhone = keep.verifiedPhone;
         if (!member.testPassword && keep.testPassword) existing.testPassword = keep.testPassword;
         if (keep.passwordSet && !member.passwordSet) existing.passwordSet = keep.passwordSet;
         if (keep.passwordChangedAt && !member.passwordChangedAt) existing.passwordChangedAt = keep.passwordChangedAt;

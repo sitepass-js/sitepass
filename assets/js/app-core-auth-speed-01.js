@@ -296,7 +296,9 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
       if (!member) return;
       const payload = {
         name: member.name || member.signupId || 'SitePass 회원',
-        phone: member.phone || '',
+        phone: member.phone || member.signupIdentityPhone || member.verifiedPhone || '',
+        signupIdentityName: member.signupIdentityName || member.verifiedName || member.name || '',
+        signupIdentityPhone: member.signupIdentityPhone || member.verifiedPhone || member.phone || '',
         id: member.id || '',
         signupId: member.signupId || '',
         providerId: member.providerId || '',
@@ -342,7 +344,9 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
       if (!member) return;
       const payload = {
         name: member.name || member.signupId || 'SitePass 회원',
-        phone: member.phone || '',
+        phone: member.phone || member.signupIdentityPhone || member.verifiedPhone || '',
+        signupIdentityName: member.signupIdentityName || member.verifiedName || member.name || '',
+        signupIdentityPhone: member.signupIdentityPhone || member.verifiedPhone || member.phone || '',
         id: member.id || '',
         signupId: member.signupId || '',
         providerId: member.providerId || '',
@@ -382,7 +386,9 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
     function setCurrentMemberTest(member) {
       const current = {
         name: member?.name || member?.signupId || 'SitePass 회원',
-        phone: member?.phone || '',
+        phone: member?.phone || member?.signupIdentityPhone || member?.verifiedPhone || '',
+        signupIdentityName: member?.signupIdentityName || member?.verifiedName || member?.name || '',
+        signupIdentityPhone: member?.signupIdentityPhone || member?.verifiedPhone || member?.phone || '',
         id: member?.id || '',
         signupId: member?.signupId || '',
         providerId: member?.providerId || '',

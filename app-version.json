@@ -1,10 +1,10 @@
 {
-  "version": "23.7.461",
-  "updatedAt": "2026-07-13T23:50:00+09:00",
-  "note": "fix empty registration screen being mistaken for an in-progress equipment draft and ensure cancel permanently clears draft timers/data",
-  "build": "v23.7.461-test",
-  "stage": "v461-test 빈장비등록초안오판및취소재생성수정",
-  "baselineFrom": "23.7.459-test",
-  "releaseType": "test-registration-draft-cancel-fix",
-  "purpose": "빈 장비등록 화면의 기본 인증값을 작성중 데이터로 오판하지 않도록 수정하고, 임시등록 안내에서 취소 시 예약된 자동저장과 초안을 완전히 삭제"
+  "version": "23.7.462",
+  "updatedAt": "2026-07-14T00:20:00+09:00",
+  "note": "require password re-entry before My Info, show verified signup name/phone, and simplify phone/password editing",
+  "build": "v23.7.462-test",
+  "stage": "v462-test 내정보비밀번호재확인및가입인증정보표시",
+  "baselineFrom": "23.7.461-test",
+  "releaseType": "test-my-account-password-gate-profile-ui",
+  "purpose": "내정보 진입 전 현재 비밀번호 재확인, 회원가입 인증 이름·휴대폰 표시, 휴대폰 옆 수정 및 비밀번호 변경 간소화"
 }

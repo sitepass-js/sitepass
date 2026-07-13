@@ -28,11 +28,11 @@
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
 <link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
 <link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.461" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.462" />
 <!-- v23.7.460: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
-<link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png?v=23.7.461" />
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.461" />
-<link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.461" />
+<link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png?v=23.7.462" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.462" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.462" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
 
 <script>
@@ -53,9 +53,9 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.461 registration draft cancel fix from v23.7.460 -->
+  <!-- SitePass deploy-check: v23.7.462 my-account password gate and verified signup profile UI -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.461" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.462" />
 
   <style>
     /* v23.7.460 first-screen hero cleanup */
@@ -2621,7 +2621,8 @@
     }
     
   </style>
-  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.461">
+  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.462">
+  <link rel="stylesheet" href="./assets/css/sitepass-my-account-v462.css?v=23.7.462">
 </head>
 <body class="sitepass-booting">
   <main class="app">
@@ -2742,70 +2743,75 @@
 
 
     <section id="myAccountScreen" class="screen hidden">
-      <div class="card">
+      <div class="card my-account-card-v462">
         <div class="hero-eyebrow">계정 관리</div>
         <h2>내정보</h2>
-        <p>로그인한 계정 정보를 확인하고 비밀번호를 변경합니다. 최고관리자와 운영관리자도 같은 화면에서 자기 비밀번호를 바꿀 수 있습니다.</p>
-        <div class="notice blue-note">
-          <b>베타 안내</b><br>
-          현재 비밀번호 변경은 이 브라우저 테스트 회원정보에 먼저 저장됩니다. 정식 서비스에서는 Supabase 서버에서 암호화된 비밀번호 변경으로 연결해야 합니다. 카카오톡·네이버 계정 자체 비밀번호는 각 서비스에서 변경해야 합니다.
-        </div>
-        <div class="line"><b>계정구분</b><span id="myAccountType">-</span></div>
-        <div class="line"><b>이름/업체명</b><span id="myAccountName">-</span></div>
-        <div class="line"><b>아이디</b><span id="myAccountLoginId">-</span></div>
-        <div class="line"><b>가입방식</b><span id="myAccountProvider">-</span></div>
-        <div class="line"><b>휴대폰</b><span id="myAccountPhone">-</span></div>
+        <p class="my-account-intro-v462">회원가입 때 인증한 정보를 확인하고 필요한 항목만 수정합니다.</p>
 
-        <div class="card" style="box-shadow:none;margin-top:14px;">
-          <h3>휴대폰번호 수정</h3>
-          <p class="small">알림과 계정 확인에 사용할 휴대폰번호를 수정합니다.</p>
-          <div class="field">
-            <label for="myAccountPhoneInput">휴대폰번호</label>
-            <input id="myAccountPhoneInput" type="tel" placeholder="01012345678" inputmode="numeric" autocomplete="tel"  aria-label="01012345678" title="01012345678" name="myAccountPhoneInput" />
+        <div class="my-account-summary-v462">
+          <div class="line"><b>계정구분</b><span id="myAccountType">-</span></div>
+          <div class="line"><b>이름</b><span id="myAccountName">-</span></div>
+          <div class="line"><b>아이디</b><span id="myAccountLoginId">-</span></div>
+          <div class="line"><b>가입방식</b><span id="myAccountProvider">-</span></div>
+          <div class="line my-account-phone-line-v462">
+            <b>휴대폰번호</b>
+            <span class="my-account-value-action-v462">
+              <span id="myAccountPhone">-</span>
+              <button type="button" class="my-account-inline-link-v462" onclick="openMyAccountPhoneEdit462()">수정</button>
+            </span>
           </div>
-          <div class="actions">
-            <button type="button" class="primary" onclick="saveMyAccountPhone()">휴대폰번호 저장</button>
-          </div>
-          <div id="myAccountPhoneStatus" class="my-account-status">휴대폰번호를 수정한 뒤 저장을 눌러주세요.</div>
-        </div>
 
-        <div class="card" style="box-shadow:none;margin-top:14px;">
-          <h3>비밀번호 변경</h3>
-          <p class="small">현재 비밀번호를 먼저 확인한 뒤 새 비밀번호를 입력합니다. 카카오톡·네이버 자체 비밀번호는 각 서비스에서 변경해야 합니다.</p>
-          <div id="myPasswordStepCurrent">
-            <div class="field">
-              <label for="myCurrentPassword">현재 비밀번호</label>
-              <input id="myCurrentPassword" type="password" placeholder="현재 비밀번호 입력" autocomplete="current-password" onkeydown="if(event.key==='Enter') verifyMyAccountCurrentPassword()"  aria-label="현재 비밀번호 입력" title="현재 비밀번호 입력" name="myCurrentPassword" />
+          <div id="myAccountPhoneEditPanel" class="my-account-compact-panel-v462 hidden">
+            <label for="myAccountPhoneInput">새 휴대폰번호</label>
+            <input id="myAccountPhoneInput" type="tel" placeholder="01012345678" inputmode="numeric" autocomplete="tel" aria-label="새 휴대폰번호" name="myAccountPhoneInput" />
+            <div class="my-account-compact-actions-v462">
+              <button type="button" class="secondary" onclick="cancelMyAccountPhoneEdit462()">취소</button>
+              <button type="button" class="primary" onclick="saveMyAccountPhone()">저장</button>
             </div>
-            <div class="actions">
-              <button type="button" class="secondary" onclick="clearMyAccountPasswordInputs()">입력 지우기</button>
-              <button type="button" class="primary" onclick="verifyMyAccountCurrentPassword()">현재 비밀번호 확인</button>
-            </div>
+            <div id="myAccountPhoneStatus" class="my-account-status"></div>
           </div>
-          <div id="myPasswordStepNew" class="hidden">
-            <div class="field">
-              <label for="myNewPassword">새 비밀번호</label>
-              <input id="myNewPassword" type="password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password"  aria-label="새 비밀번호 6자 이상" title="새 비밀번호 6자 이상" name="myNewPassword" />
+
+          <button id="myAccountPasswordMenu" type="button" class="my-account-menu-row-v462" onclick="toggleMyAccountPasswordPanel462()">
+            <span>비밀번호 변경</span><em>변경</em>
+          </button>
+          <div id="myAccountPasswordPanel" class="my-account-compact-panel-v462 hidden">
+            <p class="small">내정보에 들어올 때 비밀번호를 확인했으므로 현재 비밀번호는 다시 입력하지 않아도 됩니다.</p>
+            <label for="myNewPassword">새 비밀번호</label>
+            <input id="myNewPassword" type="password" placeholder="새 비밀번호 6자 이상" autocomplete="new-password" aria-label="새 비밀번호 6자 이상" name="myNewPassword" />
+            <label for="myNewPassword2">새 비밀번호 확인</label>
+            <input id="myNewPassword2" type="password" placeholder="새 비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') changeMyAccountPassword()" aria-label="새 비밀번호 다시 입력" name="myNewPassword2" />
+            <div class="my-account-compact-actions-v462">
+              <button type="button" class="secondary" onclick="cancelMyAccountPasswordEdit462()">취소</button>
+              <button type="button" class="primary" onclick="changeMyAccountPassword()">변경 저장</button>
             </div>
-            <div class="field">
-              <label for="myNewPassword2">새 비밀번호 확인</label>
-              <input id="myNewPassword2" type="password" placeholder="새 비밀번호 다시 입력" autocomplete="new-password" onkeydown="if(event.key==='Enter') changeMyAccountPassword()"  aria-label="새 비밀번호 다시 입력" title="새 비밀번호 다시 입력" name="myNewPassword2" />
-            </div>
-            <div class="actions">
-              <button type="button" class="secondary" onclick="resetMyAccountPasswordStep()">현재 비밀번호 다시 확인</button>
-              <button type="button" class="primary" onclick="changeMyAccountPassword()">비밀번호 변경 저장</button>
-            </div>
+            <div id="myAccountPasswordStatus" class="my-account-status"></div>
           </div>
-          <div id="myAccountPasswordStatus" class="my-account-status">현재 비밀번호를 입력하고 확인을 눌러주세요.</div>
         </div>
 
-        <div class="actions">
+        <div class="actions my-account-bottom-actions-v462">
           <button class="secondary" onclick="goHome()">돌아가기</button>
           <button class="ghost" onclick="isAdminLoggedIn() ? adminLogout() : memberLogout()">로그아웃</button>
           <button id="myAccountWithdrawButton" class="dangerBtn" onclick="memberWithdraw()">회원탈퇴</button>
         </div>
       </div>
     </section>
+
+    <div id="myAccountPasswordGate462" class="my-account-gate-v462 hidden" role="dialog" aria-modal="true" aria-labelledby="myAccountGateTitle462">
+      <div class="my-account-gate-sheet-v462">
+        <div class="hero-eyebrow">본인 확인</div>
+        <h2 id="myAccountGateTitle462">비밀번호를 다시 입력해주세요</h2>
+        <p>내정보를 열기 전에 현재 로그인 비밀번호를 한 번 더 확인합니다.</p>
+        <div class="field">
+          <label for="myAccountEntryPassword462">비밀번호</label>
+          <input id="myAccountEntryPassword462" type="password" placeholder="현재 비밀번호 입력" autocomplete="current-password" onkeydown="if(event.key==='Enter') confirmMyAccountEntryPassword462()" aria-label="현재 비밀번호 입력" name="myAccountEntryPassword462" />
+        </div>
+        <div id="myAccountGateStatus462" class="my-account-status">비밀번호 확인 후 내정보가 열립니다.</div>
+        <div class="my-account-gate-actions-v462">
+          <button type="button" class="secondary" onclick="cancelMyAccountEntryPassword462()">취소</button>
+          <button type="button" class="primary" onclick="confirmMyAccountEntryPassword462()">확인</button>
+        </div>
+      </div>
+    </div>
 
     <section id="installScreen" class="screen hidden">
       <div class="card install-screen-card">
@@ -3053,7 +3059,7 @@
       <div class="card sitepass-first-card">
         <div id="sitepassFirstLanding" class="sitepass-first-landing">
           <div class="sitepass-first-hero">
-            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.461" alt="SitePass 장비서류 간편 전송" />
+            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.462" alt="SitePass 장비서류 간편 전송" />
           </div>
           <p class="sitepass-first-subtitle"><span>현장에 제출할 장비 서류를</span><span>빠르게 공유할 수 있습니다.</span></p>
 
@@ -3075,24 +3081,24 @@
           </form>
 
           <div class="sitepass-first-link-row">
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstJoin()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.461" alt="" class="sitepass-button-icon" />회원가입</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstJoin()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.462" alt="" class="sitepass-button-icon" />회원가입</button>
             <span aria-hidden="true">|</span>
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.461" alt="" class="sitepass-button-icon" />아이디 찾기</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.462" alt="" class="sitepass-button-icon" />아이디 찾기</button>
             <span aria-hidden="true">|</span>
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.461" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.462" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
           </div>
 
           <button type="button" class="sitepass-first-install" onclick="addSitePassToHomeScreen(event)"><span aria-hidden="true">⇩</span> 바탕화면에 설치하기</button>
 
           <div class="sitepass-first-company">
-            <img src="./assets/img/js-construction-badge.png?v=23.7.461" alt="제이에스건설 J.S CONSTRUCTION" />
+            <img src="./assets/img/js-construction-badge.png?v=23.7.462" alt="제이에스건설 J.S CONSTRUCTION" />
             <span class="sitepass-company-divider" aria-hidden="true"></span>
             <span>경상남도 김해시 삼문동 1275</span>
             <span>사업자등록번호 402-33-15497</span>
           </div>
         </div>
         <div class="login-auth-shell hidden">
-          <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.461" alt="" class="sitepass-button-icon" /></button>
+          <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.462" alt="" class="sitepass-button-icon" /></button>
           <div class="login-auth-brand">
             <svg class="sitepass-logo-mark" viewBox="0 0 64 64" role="img" aria-hidden="true" focusable="false">
               <defs>
@@ -3134,9 +3140,9 @@
             <span>비밀번호 표시</span>
           </label>
           <div class="login-help-row normal-login-area">
-            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.461" alt="" class="sitepass-button-icon" />아이디 찾기</button>
+            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.462" alt="" class="sitepass-button-icon" />아이디 찾기</button>
             <span class="divider-dot">|</span>
-            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.461" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
+            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.462" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
           </div>
           <div id="quickLoginPanel" class="quick-login-panel hidden">
             <div class="quick-login-head">
@@ -3167,7 +3173,7 @@
                 <b>아이디/비밀번호 찾기</b>
                 <span>현재 테스트 파일에서는 이 휴대폰 브라우저에 저장된 회원정보 기준으로 확인합니다. 정식 서비스에서는 카카오/문자/PASS 본인확인으로 연결합니다.</span>
               </div>
-              <button type="button" class="account-find-close sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.461" alt="" class="sitepass-button-icon" /></button>
+              <button type="button" class="account-find-close sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.462" alt="" class="sitepass-button-icon" /></button>
             </div>
             <div class="account-find-tabs">
               <button id="findIdTab" type="button" onclick="openAccountFindPanel('id')">아이디 찾기</button>
@@ -3221,7 +3227,7 @@
             <button type="button" class="login-social-button naver" onclick="handleNaverLogin()">N 네이버 계정으로 계속하기</button>
           </div>
           <div id="oauthRedirectHelp" class="oauth-redirect-help normal-login-area" aria-live="polite"></div>
-          <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link sitepass-icon-text-button" onclick="startJoinFlow()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.461" alt="" class="sitepass-button-icon" />회원가입</button></div>
+          <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link sitepass-icon-text-button" onclick="startJoinFlow()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.462" alt="" class="sitepass-button-icon" />회원가입</button></div>
           <div class="company-channel-note normal-login-area">
             <div class="js-company-logo" aria-label="제이에스건설 로고">
               <div class="js-construction-logo-inline" aria-label="제이에스건설 로고">
@@ -3236,7 +3242,7 @@
 
         <div id="joinChoiceBox" class="join-choice-box hidden">
           <div class="join-choice-head">
-            <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.461" alt="" class="sitepass-button-icon" /></button>
+            <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.462" alt="" class="sitepass-button-icon" /></button>
             <h3>회원가입</h3>
           </div>
 
@@ -3879,40 +3885,41 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.461" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.461" defer></script>
-<script src="./assets/js/storage.js?v=23.7.461" defer></script>
-<script src="./assets/js/terms.js?v=23.7.461" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.461" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.461" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.461" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.461" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.461" defer></script>
-<script src="./assets/js/archive.js?v=23.7.461" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.461" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.461" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.461" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.461" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.461" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.461" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.461" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.461" defer></script>
-<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.461" defer></script>
-<script src="./assets/js/sitepass-server-member-guard-v460.js?v=23.7.461" defer></script>
+<script src="./assets/js/config.js?v=23.7.462" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.462" defer></script>
+<script src="./assets/js/storage.js?v=23.7.462" defer></script>
+<script src="./assets/js/terms.js?v=23.7.462" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.462" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.462" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.462" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.462" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.462" defer></script>
+<script src="./assets/js/archive.js?v=23.7.462" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.462" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.462" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.462" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.462" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.462" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.462" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.462" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.462" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.462" defer></script>
+<script src="./assets/js/sitepass-server-member-guard-v460.js?v=23.7.462" defer></script>
+<script src="./assets/js/sitepass-my-account-v462.js?v=23.7.462" defer></script>
 
 <script>
 (function(){
@@ -5524,10 +5531,12 @@
         } catch(e) {}
         hideOtherScreens434('listScreen');
       } else if (targetId === 'myAccountScreen') {
+        var myAccountOpened434 = false;
         try {
-          if (typeof openMyAccountScreen === 'function') openMyAccountScreen();
-          else if (typeof showScreen === 'function') showScreen('myAccountScreen');
+          if (typeof openMyAccountScreen === 'function') myAccountOpened434 = openMyAccountScreen();
+          else if (typeof showScreen === 'function') { showScreen('myAccountScreen'); myAccountOpened434 = true; }
         } catch(e) {}
+        if (myAccountOpened434 !== true) return false;
         hideOtherScreens434('myAccountScreen');
       } else if (targetId === 'contactScreen') {
         try {
@@ -5753,6 +5762,6 @@
   })();
   </script>
 
-  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.461"></script>
+  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.462"></script>
 </body>
 </html>

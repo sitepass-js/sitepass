@@ -889,6 +889,10 @@ function fillFoundLoginIdTest() {
         member = {
           name: serverMemberForLogin460.name || loginId,
           phone: serverMemberForLogin460.phone || '',
+          signupIdentityName: serverMemberForLogin460.name || '',
+          signupIdentityPhone: String(serverMemberForLogin460.phone || '').replace(/[^0-9]/g, ''),
+          verifiedName: serverMemberForLogin460.name || '',
+          verifiedPhone: String(serverMemberForLogin460.phone || '').replace(/[^0-9]/g, ''),
           email: serverMemberForLogin460.email || '',
           provider: serverMemberForLogin460.signup_method || 'SitePass',
           providerId: serverMemberForLogin460.provider_id || ('SITEPASS-LOGIN-' + loginId),
@@ -1343,6 +1347,7 @@ function formatSitePassSignupJuminDisplay() {
         window.__sitepassV351SignupVerifiedPayload = data.phoneVerified || data.verifiedPayload || data;
         window.__sitepassV460SignupVerifiedMarker = {
           verificationId: verificationId460,
+          name: identity.name,
           phone: sens.cleanPhone(identity.phone),
           verifiedAt: new Date().toISOString(),
           responseOk: true

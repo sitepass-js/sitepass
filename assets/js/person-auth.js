@@ -42,10 +42,10 @@
       const url = new URL('./terms/person-consent.html', window.location.href);
       url.searchParams.set('role', role);
       if (code) url.searchParams.set('code', code);
-      url.searchParams.set('v', '23.7.461');
+      url.searchParams.set('v', '23.7.462');
       return url.href;
     } catch (e) {
-      return './terms/person-consent.html?role=' + role + '&v=23.7.461';
+      return './terms/person-consent.html?role=' + role + '&v=23.7.462';
     }
   }
 

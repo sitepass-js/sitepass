@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.461';
-const SITEPASS_CACHE = 'sitepass-v23.7.461';
+const SITEPASS_SW_VERSION = 'v23.7.462';
+const SITEPASS_CACHE = 'sitepass-v23.7.462';
 const SITEPASS_CORE = [
   './',
   './index.html',
@@ -43,8 +43,10 @@ const SITEPASS_CORE = [
   './assets/js/push-notify.js',
   './assets/js/sitepass-v23-7-351-sens-integration.js',
   './assets/js/sitepass-server-member-guard-v460.js',
+  './assets/js/sitepass-my-account-v462.js',
   './assets/js/sitepass-chat-v460.js',
   './assets/css/sitepass-chat-v460.css',
+  './assets/css/sitepass-my-account-v462.css',
   './assets/js/app.bundle.js'
 ];
 
