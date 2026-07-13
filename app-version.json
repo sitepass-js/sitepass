@@ -1,11 +1,11 @@
 {
-  "version": "23.7.426",
+  "version": "23.7.427",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.426",
-  "stage": "v426-test 로그인 후 홈 정리/구형헤더 제거",
-  "baselineFrom": "23.7.425",
-  "releaseType": "test-after-login-home-clean-header",
-  "runtimeChange": "logged-in-home-header-overlap",
-  "purpose": "로그인 후 카카오톡식 홈을 유지하면서 기존 상단 로고 이미지/구형 헤더를 숨기고 로그인화면과 보관함 겹침을 방지"
+  "build": "v23.7.427",
+  "stage": "v427-test 홈 상단 로고/인사말/알림벨",
+  "baselineFrom": "23.7.426",
+  "releaseType": "test-home-header-logo-greeting-bell",
+  "runtimeChange": "home-header-hero-style",
+  "purpose": "로그인 후 홈 상단의 홈글자/내정보 버튼을 제거하고, 로고 + 안녕하세요 인사말 + 알림벨 구조로 변경"
 }
