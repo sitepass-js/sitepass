@@ -61,7 +61,7 @@
     }
 
   
-    /* v23.7.432 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
+    /* v23.7.433 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
     body.sitepass-app-nav-active #signupScreen {
       display: none !important;
       visibility: hidden !important;
@@ -172,7 +172,7 @@
   </script>
 
   <script>
-  /* v23.7.432 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
+  /* v23.7.433 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
   (function(){
     function isLoggedIn431(){
       try { if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn()) return true; } catch(e) {}
@@ -270,7 +270,7 @@
 
 
   <script>
-  /* v23.7.432 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
+  /* v23.7.433 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
   (function(){
     window.handleLogout = function(){
       try { sessionStorage.removeItem('sitepass_bottom_nav_last_target_v432'); } catch(e) {}
@@ -342,6 +342,71 @@
     window.addEventListener('pageshow', function(){
       setTimeout(refreshAlertNav432, 80);
       setTimeout(tweakContactScreen432, 80);
+    });
+  })();
+  </script>
+
+
+  <script>
+  /* v23.7.433 - 오늘 확인할 항목 전체보기 빈창 방지 */
+  (function(){
+    function patchTodayViewButtons433(){
+      document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
+        var title = head.querySelector('h2');
+        if (!title || !/오늘\s*확인할\s*항목/.test(title.textContent || '')) return;
+        var btn = head.querySelector('button');
+        if (!btn) return;
+        btn.textContent = '알림/쪽지함';
+        btn.setAttribute('onclick', "sitepassBottomNavGo('contactScreen')");
+        btn.addEventListener('click', function(event){
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof window.sitepassBottomNavGo === 'function') window.sitepassBottomNavGo('contactScreen');
+          else if (typeof showScreen === 'function') showScreen('contactScreen');
+          return false;
+        }, true);
+      });
+
+      document.querySelectorAll('#homeScreen .sitepass-check-row').forEach(function(row){
+        var txt = row.textContent || '';
+        if (/만료일|최근\s*공유/.test(txt)) {
+          row.setAttribute('onclick', "sitepassBottomNavGo('contactScreen')");
+        }
+      });
+    }
+
+    function patchContactAsAlertInbox433(){
+      var contact = document.getElementById('contactScreen');
+      if (!contact) return;
+      var h2 = contact.querySelector('h2');
+      if (h2) h2.textContent = '알림 / 쪽지함';
+      var p = contact.querySelector('p');
+      if (p) p.textContent = '오늘 확인할 항목을 한곳에서 보고, 문의가 필요하면 아래에 내용을 남길 수 있습니다.';
+
+      if (!document.getElementById('sitepassAlertInboxIntro433')) {
+        var card = contact.querySelector('.card');
+        var formGrid = contact.querySelector('.form-grid');
+        if (card && formGrid) {
+          var box = document.createElement('div');
+          box.id = 'sitepassAlertInboxIntro433';
+          box.className = 'notice blue-note';
+          box.innerHTML = '<b>오늘 확인할 항목</b><br>'
+            + '등록된 장비가 있으면 만료 예정 서류와 최근 공유 서류가 이곳에 정리됩니다.<br>'
+            + '현재 표시할 상세 알림이 없으면 보관함이 비어 보일 수 있어, 빈 보관함 대신 이 알림/쪽지함 화면으로 연결했습니다.';
+          card.insertBefore(box, formGrid);
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      patchTodayViewButtons433();
+      patchContactAsAlertInbox433();
+      setTimeout(patchTodayViewButtons433, 150);
+      setTimeout(patchContactAsAlertInbox433, 150);
+    });
+    window.addEventListener('pageshow', function(){
+      setTimeout(patchTodayViewButtons433, 100);
+      setTimeout(patchContactAsAlertInbox433, 100);
     });
   })();
   </script>

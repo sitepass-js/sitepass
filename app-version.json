@@ -1,10 +1,10 @@
 {
-  "version": "23.7.432",
-  "updatedAt": "2026-07-13T13:10:00+09:00",
-  "note": "logout works, alert-message nav uses contact screen, auto registration draft popup disabled",
-  "build": "v23.7.432",
-  "stage": "v432-test 로그아웃/알림쪽지함/등록중팝업수정",
-  "baselineFrom": "23.7.431",
-  "releaseType": "test-logout-alert-draft-fix",
-  "purpose": "홈 로그아웃 버튼 동작, 알림/쪽지함에서 사용법 대신 알림/문의 화면으로 이동, 자동으로 반복되던 등록중 장비 팝업 중단"
+  "version": "23.7.433",
+  "updatedAt": "2026-07-13T13:25:00+09:00",
+  "note": "today check overall view no longer opens empty archive",
+  "build": "v23.7.433",
+  "stage": "v433-test 오늘확인전체보기빈창수정",
+  "baselineFrom": "23.7.432",
+  "releaseType": "test-today-view-alert-fix",
+  "purpose": "오늘 확인할 항목의 전체보기가 빈 보관함으로 이동하지 않도록 알림/쪽지함으로 연결"
 }
