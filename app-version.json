@@ -1,10 +1,10 @@
 {
-  "version": "23.7.433",
-  "updatedAt": "2026-07-13T13:25:00+09:00",
-  "note": "today check overall view no longer opens empty archive",
-  "build": "v23.7.433",
-  "stage": "v433-test 오늘확인전체보기빈창수정",
-  "baselineFrom": "23.7.432",
-  "releaseType": "test-today-view-alert-fix",
-  "purpose": "오늘 확인할 항목의 전체보기가 빈 보관함으로 이동하지 않도록 알림/쪽지함으로 연결"
+  "version": "23.7.434",
+  "updatedAt": "2026-07-13T13:40:00+09:00",
+  "note": "fix blank screens for register/archive/alert-message/profile and today items",
+  "build": "v23.7.434",
+  "stage": "v434-test 하단탭빈창전체수정",
+  "baselineFrom": "23.7.433",
+  "releaseType": "test-nav-blank-screen-fix",
+  "purpose": "등록/보관함/알림·쪽지함/내정보 및 오늘 확인 항목 클릭 시 빈창이 뜨는 문제를 강제 화면 전환으로 수정"
 }

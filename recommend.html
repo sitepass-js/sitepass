@@ -61,7 +61,7 @@
     }
 
   
-    /* v23.7.433 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
+    /* v23.7.434 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
     body.sitepass-app-nav-active #signupScreen {
       display: none !important;
       visibility: hidden !important;
@@ -111,6 +111,48 @@
       .sitepass-home-brand-image {
         width: min(128px, 38vw) !important;
       }
+    }
+
+  
+    /* v23.7.434 - 하단탭/홈카드 이동 후 빈창 방지 */
+    body.sitepass-app-nav-active #signupScreen {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      height: 0 !important;
+      overflow: hidden !important;
+    }
+    body.sitepass-app-nav-active .screen:not(.hidden):not(#signupScreen) {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      height: auto !important;
+      min-height: 0 !important;
+      overflow: visible !important;
+    }
+    .sitepass-empty-state-v434 {
+      padding: 22px 16px;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 18px;
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 850;
+      text-align: center;
+      line-height: 1.5;
+      margin: 10px 0;
+    }
+    .sitepass-empty-state-v434 small {
+      display: block;
+      margin-top: 6px;
+      color: #64748b;
+      font-weight: 700;
+    }
+    #sitepassBottomAppNav button {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+      touch-action: manipulation !important;
     }
 
   </style>
@@ -172,7 +214,7 @@
   </script>
 
   <script>
-  /* v23.7.433 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
+  /* v23.7.434 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
   (function(){
     function isLoggedIn431(){
       try { if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn()) return true; } catch(e) {}
@@ -270,7 +312,7 @@
 
 
   <script>
-  /* v23.7.433 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
+  /* v23.7.434 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
   (function(){
     window.handleLogout = function(){
       try { sessionStorage.removeItem('sitepass_bottom_nav_last_target_v432'); } catch(e) {}
@@ -348,7 +390,7 @@
 
 
   <script>
-  /* v23.7.433 - 오늘 확인할 항목 전체보기 빈창 방지 */
+  /* v23.7.434 - 오늘 확인할 항목 전체보기 빈창 방지 */
   (function(){
     function patchTodayViewButtons433(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -407,6 +449,176 @@
     window.addEventListener('pageshow', function(){
       setTimeout(patchTodayViewButtons433, 100);
       setTimeout(patchContactAsAlertInbox433, 100);
+    });
+  })();
+  </script>
+
+
+  <script>
+  /* v23.7.434 - 등록/보관함/알림쪽지함/내정보/오늘확인 빈창 방지 */
+  (function(){
+    function clearScreenInline434(screen){
+      if (!screen) return;
+      ['display','visibility','opacity','pointerEvents','height','minHeight','overflow','margin','padding'].forEach(function(prop){
+        try { screen.style[prop] = ''; } catch(e) {}
+      });
+    }
+
+    function hideOtherScreens434(targetId){
+      document.querySelectorAll('.screen').forEach(function(screen){
+        var keep = screen.id === targetId;
+        screen.classList.toggle('hidden', !keep);
+        if (keep) {
+          clearScreenInline434(screen);
+        } else {
+          try {
+            screen.style.display = 'none';
+            screen.style.visibility = 'hidden';
+            screen.style.opacity = '0';
+            screen.style.pointerEvents = 'none';
+          } catch(e) {}
+        }
+      });
+    }
+
+    function ensureEmptyStates434(){
+      var list = document.getElementById('equipmentList');
+      if (list && !String(list.innerHTML || '').trim()) {
+        list.innerHTML = '<div class="sitepass-empty-state-v434">아직 등록된 보관함 서류가 없습니다.<small>하단 등록 버튼을 눌러 장비/기사/인부 서류를 먼저 등록해주세요.</small></div>';
+      }
+
+      var contactHistory = document.getElementById('contactHistoryBox');
+      if (contactHistory && !String(contactHistory.innerHTML || '').trim()) {
+        contactHistory.innerHTML = '<div class="sitepass-empty-state-v434">아직 받은 쪽지나 알림이 없습니다.<small>문의 내용을 남기면 이곳에서 확인할 수 있게 정리됩니다.</small></div>';
+      }
+
+      var contact = document.getElementById('contactScreen');
+      if (contact) {
+        var h2 = contact.querySelector('h2');
+        if (h2) h2.textContent = '알림 / 쪽지함';
+        var p = contact.querySelector('p');
+        if (p) p.textContent = '중요 알림을 확인하고, 문의가 필요하면 1:1 쪽지처럼 내용을 남길 수 있습니다.';
+      }
+    }
+
+    function hardShowScreen434(targetId){
+      if (!targetId) targetId = 'homeScreen';
+      if (targetId === 'usageGuideScreen') targetId = 'contactScreen';
+
+      if (targetId === 'registerScreen') {
+        try {
+          if (typeof showScreen === 'function') showScreen('registerScreen');
+        } catch(e) {}
+        hideOtherScreens434('registerScreen');
+        try {
+          if (typeof renderDocCards === 'function') {
+            var docBox = document.getElementById('docCards');
+            if (docBox && !docBox.innerHTML.trim()) renderDocCards();
+          }
+          if (typeof renderAlertPreview === 'function') renderAlertPreview();
+          if (typeof renderBundleSummary === 'function') renderBundleSummary();
+          if (typeof updateRegisterModeUi === 'function') updateRegisterModeUi();
+          if (typeof updateRegistrationDraftNotice === 'function') updateRegistrationDraftNotice();
+        } catch(e) {}
+      } else if (targetId === 'listScreen') {
+        try {
+          if (typeof showScreen === 'function') showScreen('listScreen');
+          if (typeof renderList === 'function') renderList();
+          if (typeof renderEquipmentList === 'function') renderEquipmentList();
+        } catch(e) {}
+        hideOtherScreens434('listScreen');
+      } else if (targetId === 'myAccountScreen') {
+        try {
+          if (typeof openMyAccountScreen === 'function') openMyAccountScreen();
+          else if (typeof showScreen === 'function') showScreen('myAccountScreen');
+        } catch(e) {}
+        hideOtherScreens434('myAccountScreen');
+      } else if (targetId === 'contactScreen') {
+        try {
+          if (typeof showScreen === 'function') showScreen('contactScreen');
+        } catch(e) {}
+        hideOtherScreens434('contactScreen');
+      } else {
+        try {
+          if (typeof showScreen === 'function') showScreen(targetId);
+        } catch(e) {}
+        hideOtherScreens434(targetId);
+      }
+
+      try { document.body.classList.add('sitepass-app-nav-active'); } catch(e) {}
+      setTimeout(ensureEmptyStates434, 50);
+      setTimeout(ensureEmptyStates434, 180);
+      return false;
+    }
+
+    function patchClicks434(){
+      document.querySelectorAll('#sitepassBottomAppNav button[data-target]').forEach(function(btn){
+        var target = btn.getAttribute('data-target');
+        if (target === 'usageGuideScreen') {
+          btn.setAttribute('data-target', 'contactScreen');
+          target = 'contactScreen';
+        }
+        if (/알림/.test(btn.textContent || '')) {
+          btn.setAttribute('data-target', 'contactScreen');
+          target = 'contactScreen';
+          var label = btn.querySelector('b');
+          if (label) label.textContent = '알림/쪽지함';
+        }
+        btn.setAttribute('onclick', "return sitepassBottomNavGo('" + target + "')");
+      });
+
+      document.querySelectorAll('#homeScreen .sitepass-check-row').forEach(function(row){
+        row.setAttribute('onclick', "return sitepassBottomNavGo('contactScreen')");
+      });
+      document.querySelectorAll('#homeScreen .sitepass-section-head button').forEach(function(btn){
+        var head = btn.closest('.sitepass-section-head');
+        var title = head && head.querySelector('h2') ? head.querySelector('h2').textContent : '';
+        if (/오늘\s*확인할\s*항목/.test(title)) {
+          btn.textContent = '알림/쪽지함';
+          btn.setAttribute('onclick', "return sitepassBottomNavGo('contactScreen')");
+        }
+        if (/최근\s*등록된\s*장비/.test(title)) {
+          btn.setAttribute('onclick', "return sitepassBottomNavGo('listScreen')");
+        }
+      });
+    }
+
+    window.sitepassBottomNavGo = function(target){
+      return hardShowScreen434(target);
+    };
+
+    document.addEventListener('click', function(event){
+      var navBtn = event.target && event.target.closest ? event.target.closest('#sitepassBottomAppNav button[data-target]') : null;
+      if (navBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        return hardShowScreen434(navBtn.getAttribute('data-target'));
+      }
+
+      var todayBtn = event.target && event.target.closest ? event.target.closest('#homeScreen .sitepass-check-row, #homeScreen .sitepass-section-head button') : null;
+      if (todayBtn) {
+        var txt = todayBtn.textContent || '';
+        var head = todayBtn.closest('.sitepass-section-head');
+        var title = head && head.querySelector('h2') ? head.querySelector('h2').textContent : '';
+        if (/만료일|최근\s*공유|오늘\s*확인|알림\/쪽지함/.test(txt + title)) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+          return hardShowScreen434('contactScreen');
+        }
+      }
+    }, true);
+
+    document.addEventListener('DOMContentLoaded', function(){
+      patchClicks434();
+      ensureEmptyStates434();
+      setTimeout(patchClicks434, 100);
+      setTimeout(ensureEmptyStates434, 100);
+    });
+    window.addEventListener('pageshow', function(){
+      setTimeout(patchClicks434, 100);
+      setTimeout(ensureEmptyStates434, 100);
     });
   })();
   </script>
