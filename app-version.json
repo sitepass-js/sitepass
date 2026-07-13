@@ -1,11 +1,11 @@
 {
-  "version": "23.7.425",
+  "version": "23.7.426",
   "updatedAt": "2026-07-09T20:10:00+09:00",
   "note": "first screen: prettier/bolder subtitle, align ID/password fields, add remember ID checkbox below password",
-  "build": "v23.7.425",
-  "stage": "v425-test 로그인 후 카카오톡식 홈",
-  "baselineFrom": "23.7.424",
-  "releaseType": "test-kakaotalk-style-after-login-home",
-  "runtimeChange": "logged-in-home-dashboard",
-  "purpose": "장비등록 화면이 아니라 로그인 후 홈화면을 앱형 하단탭 구조로 강제 적용"
+  "build": "v23.7.426",
+  "stage": "v426-test 로그인 후 홈 정리/구형헤더 제거",
+  "baselineFrom": "23.7.425",
+  "releaseType": "test-after-login-home-clean-header",
+  "runtimeChange": "logged-in-home-header-overlap",
+  "purpose": "로그인 후 카카오톡식 홈을 유지하면서 기존 상단 로고 이미지/구형 헤더를 숨기고 로그인화면과 보관함 겹침을 방지"
 }

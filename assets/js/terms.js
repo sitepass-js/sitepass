@@ -122,7 +122,7 @@
       return {
         service: !!document.getElementById('agreeServiceTerms')?.checked,
         privacy: !!document.getElementById('agreePrivacyTerms')?.checked,
-        // v23.7.425: 회원가입 기본 약관과 서류 등록/공유 약관을 분리합니다.
+        // v23.7.426: 회원가입 기본 약관과 서류 등록/공유 약관을 분리합니다.
         // 서류 보관·현장 공유·고유식별/민감정보 동의는 각 서류 등록 화면에서 별도 동의로 받습니다.
         signupScope: 'member_account_only',
         documentStorage: false,
