@@ -1,10 +1,10 @@
 {
-  "version": "23.7.440",
-  "updatedAt": "2026-07-13T14:30:00+09:00",
-  "note": "fix JavaScript syntax error caused by over-escaped inline quote",
-  "build": "v23.7.440",
-  "stage": "v440-test 문법오류수정",
-  "baselineFrom": "23.7.439",
-  "releaseType": "test-syntax-error-fix",
-  "purpose": "하단탭 아이콘 변경 후 발생한 Uncaught SyntaxError: Invalid or unexpected token 오류 수정"
+  "version": "23.7.445",
+  "updatedAt": "2026-07-13T19:10:00+09:00",
+  "note": "chat room style alert/message screen with per-room notification toggle; split CSS/JS files",
+  "build": "v23.7.445",
+  "stage": "v445-test 채팅방알림온오프분리",
+  "baselineFrom": "23.7.444",
+  "releaseType": "test-chat-room-notification-toggle-split",
+  "purpose": "알림/쪽지함을 회원↔관리자 채팅방 구조로 바꾸고, 각 채팅방 안에 알림 ON/OFF 버튼 추가. 관련 CSS/JS를 GitHub 파일로 분리"
 }

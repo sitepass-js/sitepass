@@ -61,7 +61,7 @@
     }
 
   
-    /* v23.7.440 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
+    /* v23.7.445 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
     body.sitepass-app-nav-active #signupScreen {
       display: none !important;
       visibility: hidden !important;
@@ -114,7 +114,7 @@
     }
 
   
-    /* v23.7.440 - 하단탭/홈카드 이동 후 빈창 방지 */
+    /* v23.7.445 - 하단탭/홈카드 이동 후 빈창 방지 */
     body.sitepass-app-nav-active #signupScreen {
       display: none !important;
       visibility: hidden !important;
@@ -156,7 +156,7 @@
     }
 
   
-    /* v23.7.440 - 홈 상단 알림/쪽지함 종 아이콘 제거 */
+    /* v23.7.445 - 홈 상단 알림/쪽지함 종 아이콘 제거 */
     .sitepass-home-hero-header .sitepass-home-bell-btn {
       display: none !important;
     }
@@ -166,12 +166,81 @@
     }
 
   
-    /* v23.7.440 - 오늘 확인할 항목 헤더 버튼 제거 */
+    /* v23.7.445 - 오늘 확인할 항목 헤더 버튼 제거 */
     #homeScreen .sitepass-app-section .sitepass-section-head.sitepass-today-section-head > button {
       display: none !important;
     }
 
+  
+    /* v23.7.445 - 최근 등록 장비 이모티콘 + 우측 버튼 제거 */
+    #homeScreen .sitepass-section-head:has(h2) button {
+      white-space: nowrap;
+    }
+    #homeScreen .sitepass-section-head h2 + button[onclick*="contactScreen"] {
+      display: none;
+    }
+    .sitepass-equipment-initial.sitepass-equipment-emoji {
+      font-size: 24px !important;
+      background: #fff4d6 !important;
+      color: #111827 !important;
+      box-shadow: inset 0 0 0 1px rgba(245, 168, 0, 0.10);
+    }
+
+  
+    /* v23.7.445 - 최근 장비 상세 조합 이모지 */
+    .sitepass-equipment-initial.sitepass-equipment-emoji {
+      font-size: 19px !important;
+      letter-spacing: -4px;
+      padding-right: 3px;
+      background: #fff4d6 !important;
+      color: #111827 !important;
+      box-shadow: inset 0 0 0 1px rgba(245, 168, 0, 0.12);
+    }
+
+  
+    /* v23.7.445 - 최근 등록 장비 실제 이미지 썸네일 */
+    .sitepass-recent-row {
+      grid-template-columns: 72px 1fr auto !important;
+      gap: 12px !important;
+    }
+    .sitepass-equipment-photo {
+      width: 72px !important;
+      height: 52px !important;
+      border-radius: 14px !important;
+      background: #ffffff !important;
+      border: 1px solid #e5eaf2 !important;
+      object-fit: contain !important;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+      flex: 0 0 72px !important;
+    }
+    .sitepass-equipment-initial.sitepass-equipment-emoji {
+      display: none !important;
+    }
+
+  
+    /* v23.7.445 - 등록된 장비 5대 + 더보기 */
+    .sitepass-recent-more-wrap {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 4px;
+      padding-top: 8px;
+    }
+    .sitepass-recent-more-btn {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 950;
+      cursor: pointer;
+      padding: 8px 2px 2px;
+    }
+    .sitepass-recent-more-btn:active {
+      transform: translateY(1px);
+    }
+
   </style>
+  <link rel="stylesheet" href="./assets/css/sitepass-chat-v445.css?v=23.7.445">
 </head>
 <body>
   <main class="wrap">
@@ -230,7 +299,7 @@
   </script>
 
   <script>
-  /* v23.7.440 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
+  /* v23.7.445 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
   (function(){
     function isLoggedIn431(){
       try { if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn()) return true; } catch(e) {}
@@ -328,7 +397,7 @@
 
 
   <script>
-  /* v23.7.440 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
+  /* v23.7.445 - 로그아웃/알림쪽지함/등록중 팝업 반복 수정 */
   (function(){
     window.handleLogout = function(){
       try { sessionStorage.removeItem('sitepass_bottom_nav_last_target_v432'); } catch(e) {}
@@ -406,7 +475,7 @@
 
 
   <script>
-  /* v23.7.440 - 오늘 확인할 항목 전체보기 빈창 방지 */
+  /* v23.7.445 - 오늘 확인할 항목 전체보기 빈창 방지 */
   (function(){
     function patchTodayViewButtons433(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -471,7 +540,7 @@
 
 
   <script>
-  /* v23.7.440 - 등록/보관함/알림쪽지함/내정보/오늘확인 빈창 방지 */
+  /* v23.7.445 - 등록/보관함/알림쪽지함/내정보/오늘확인 빈창 방지 */
   (function(){
     function clearScreenInline434(screen){
       if (!screen) return;
@@ -641,7 +710,7 @@
 
 
   <script>
-  /* v23.7.440 - 바로가기 링크설정 제거 / 업데이트중 표시 */
+  /* v23.7.445 - 바로가기 링크설정 제거 / 업데이트중 표시 */
   (function(){
     function patchShortcutSection435(){
       document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
@@ -665,7 +734,7 @@
 
 
   <script>
-  /* v23.7.440 - 상단 종 아이콘 런타임 제거 */
+  /* v23.7.445 - 상단 종 아이콘 런타임 제거 */
   (function(){
     function removeTopBell436(){
       document.querySelectorAll('.sitepass-home-hero-header .sitepass-home-bell-btn').forEach(function(btn){
@@ -682,7 +751,7 @@
 
 
   <script>
-  /* v23.7.440 - 오늘 확인할 항목 제목 변경 + 알림/쪽지함 버튼 제거 */
+  /* v23.7.445 - 오늘 확인할 항목 제목 변경 + 알림/쪽지함 버튼 제거 */
   (function(){
     function applyTodaySection437(){
       var home = document.getElementById('homeScreen') || document;
@@ -710,5 +779,69 @@
   })();
   </script>
 
+
+  <script>
+  /* v23.7.445 - 최근 등록 장비 우측 버튼 제거 안전 보정 */
+  (function(){
+    function patchRecentEquipmentHeader441(){
+      document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
+        var h2 = head.querySelector('h2');
+        if (!h2 || !/최근\s*등록된\s*장비/.test(h2.textContent || '')) return;
+        head.querySelectorAll('button').forEach(function(btn){ btn.remove(); });
+      });
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      patchRecentEquipmentHeader441();
+      setTimeout(patchRecentEquipmentHeader441, 100);
+      setTimeout(patchRecentEquipmentHeader441, 400);
+    });
+    window.addEventListener('pageshow', function(){ setTimeout(patchRecentEquipmentHeader441, 100); });
+  })();
+  </script>
+
+
+  <script>
+  /* v23.7.445 - 최근 등록된 장비 우측 버튼 제거 안전 보정 */
+  (function(){
+    function patchRecentHeader443(){
+      document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
+        var h2 = head.querySelector('h2');
+        if (!h2 || !/최근\s*등록된\s*장비/.test(h2.textContent || '')) return;
+        head.querySelectorAll('button').forEach(function(btn){ btn.remove(); });
+      });
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      patchRecentHeader443();
+      setTimeout(patchRecentHeader443, 100);
+      setTimeout(patchRecentHeader443, 500);
+    });
+    window.addEventListener('pageshow', function(){ setTimeout(patchRecentHeader443, 100); });
+  })();
+  </script>
+
+
+  <script>
+  /* v23.7.445 - 등록된 장비 제목/더보기 안전 보정 */
+  (function(){
+    function patchRegisteredEquipment444(){
+      document.querySelectorAll('#homeScreen .sitepass-section-head').forEach(function(head){
+        var h2 = head.querySelector('h2');
+        if (!h2) return;
+        if (/최근\s*등록된\s*장비|등록된\s*장비/.test(h2.textContent || '')) {
+          h2.textContent = '등록된 장비';
+          head.querySelectorAll('button').forEach(function(btn){ btn.remove(); });
+        }
+      });
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      patchRegisteredEquipment444();
+      setTimeout(patchRegisteredEquipment444, 100);
+      setTimeout(patchRegisteredEquipment444, 500);
+    });
+    window.addEventListener('pageshow', function(){ setTimeout(patchRegisteredEquipment444, 100); });
+  })();
+  </script>
+
+  <script src="./assets/js/sitepass-chat-v445.js?v=23.7.445"></script>
 </body>
 </html>
