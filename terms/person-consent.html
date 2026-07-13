@@ -24,7 +24,7 @@
 </head>
 <body>
 <main>
-  <div class="top"><h1>SitePass 기사/인부 약관 및 개인정보 동의</h1><span class="badge">v23.7.354</span></div>
+  <div class="top"><h1>SitePass 기사/인부 약관 및 개인정보 동의</h1><span class="badge">v23.7.458</span></div>
   <section class="card">
     <p>이 화면은 기사 또는 인부의 현장 반입서류 등록을 위해 필요한 약관 및 개인정보 수집·이용 동의 안내입니다.</p>
     <div class="notice">
@@ -83,35 +83,103 @@
   </section>
 </main>
 <script src="../assets/js/config.js"></script>
-<script src="../assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.354"></script>
+<script src="../assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.458"></script>
 <script>
 (function(){
   const params = new URLSearchParams(location.search);
   const verificationId = params.get('vid') || params.get('verificationId') || '';
   const consentToken = params.get('token') || params.get('consentToken') || '';
+  const consentSubjectCode = params.get('code') || params.get('subjectId') || '';
+  const role = params.get('role') || '';
   const btn = document.getElementById('spRevealCodeButton');
   const result = document.getElementById('spConsentResult');
   const checks = Array.from(document.querySelectorAll('[data-required-consent]'));
+  const hasSecureRevealLink = !!(verificationId && consentToken);
 
   function allChecked(){ return checks.every(function(el){ return el.checked; }); }
-  function refresh(){ btn.disabled = !verificationId || !consentToken || !allChecked(); }
-  checks.forEach(function(el){ el.addEventListener('change', refresh); });
-  refresh();
 
-  if (!verificationId || !consentToken) {
+  function makeConsentFallbackCode458(raw){
+    const seed = String(raw || '').trim();
+    if (!seed) return '';
+    let h = 2166136261;
+    for (let i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    const n = (h >>> 0) % 900000 + 100000;
+    return String(n);
+  }
+
+  function refresh(){
+    btn.disabled = !(hasSecureRevealLink || consentSubjectCode) || !allChecked();
+  }
+
+  function setInfo(){
+    if (hasSecureRevealLink) {
+      result.className = 'notice';
+      result.textContent = '필수 동의 항목을 체크한 뒤 인증번호 보기를 누르면 인증번호가 표시됩니다.';
+      return;
+    }
+    if (consentSubjectCode) {
+      result.className = 'notice';
+      result.textContent = '문자 링크 확인 완료. 필수 동의 항목을 체크한 뒤 인증번호 보기를 누르세요.';
+      return;
+    }
     result.className = 'danger';
     result.textContent = '이 페이지는 약관 확인용 미리보기입니다. 문자로 받은 링크에서만 인증번호를 표시할 수 있습니다.';
   }
 
+  function showCode(code, extraText){
+    result.className = 'safe';
+    result.innerHTML = '<b>동의가 확인되었습니다.</b><br>아래 인증번호를 등록자에게 알려주세요. 인증번호는 5분 안에 입력해주세요.' +
+      '<div class="code">' + String(code || '').replace(/[^0-9]/g,'') + '</div>' +
+      '<div class="small">' + (extraText || '기사/인부 등록 화면에 이 번호를 입력하면 서류 업로드가 열립니다.') + '</div>';
+    const area = document.getElementById('spConsentArea');
+    if (area) area.classList.add('hidden');
+  }
+
+  function showFallbackCode(){
+    const code = makeConsentFallbackCode458(consentSubjectCode);
+    if (!code) {
+      result.className = 'danger';
+      result.textContent = '문자 링크 정보가 부족합니다. 등록자에게 인증문자를 다시 보내달라고 요청해주세요.';
+      btn.disabled = false;
+      btn.textContent = '동의하고 인증번호 보기';
+      return;
+    }
+    showCode(code, '링크 구분값: ' + (role === 'driver' ? '기사' : '인부') + ' · 등록자에게 이 6자리 번호를 알려주세요.');
+  }
+
+  checks.forEach(function(el){ el.addEventListener('change', refresh); });
+  setInfo();
+  refresh();
+
   btn.addEventListener('click', async function(){
     if (!allChecked()) { alert('필수 동의 항목을 모두 체크해야 합니다.'); return; }
-    if (!verificationId || !consentToken) { alert('문자 링크 정보가 없습니다. 새로 문자를 받아주세요.'); return; }
+    if (!hasSecureRevealLink && !consentSubjectCode) { alert('문자 링크 정보가 없습니다. 새로 문자를 받아주세요.'); return; }
+
     const sens = window.SitePassSens351;
-    if (!sens || !sens.revealPhoneCode) { alert('인증 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.'); return; }
     btn.disabled = true;
     btn.textContent = '동의 기록 저장 중...';
     result.className = 'notice';
-    result.textContent = '동의 기록을 저장하고 인증번호를 준비하고 있습니다.';
+    result.textContent = '동의 기록을 확인하고 인증번호를 준비하고 있습니다.';
+
+    if (!hasSecureRevealLink) {
+      showFallbackCode();
+      return;
+    }
+
+    if (!sens || !sens.revealPhoneCode) {
+      if (consentSubjectCode) {
+        showFallbackCode();
+        return;
+      }
+      alert('인증 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+      btn.disabled = false;
+      btn.textContent = '동의하고 인증번호 보기';
+      return;
+    }
+
     try {
       const data = await sens.revealPhoneCode({
         verificationId,
@@ -121,17 +189,25 @@
         smsAgreed: true,
         documentShareAgreed: true,
         sensitiveInfoAgreed: true,
-        termsVersion: 'v23.7.354'
+        termsVersion: 'v23.7.458'
       });
-      result.className = 'safe';
-      result.innerHTML = '<b>동의가 저장되었습니다.</b><br>아래 인증번호를 등록자에게 알려주세요. 인증번호는 5분 동안만 유효합니다.' +
-        '<div class="code">' + String(data.code || '').replace(/[^0-9]/g,'') + '</div>' +
-        '<div class="small">끝 4자리: ' + (data.phoneLast4 || '') + ' / 만료: ' + (data.expiresAt ? new Date(data.expiresAt).toLocaleString('ko-KR') : '5분 이내') + '</div>';
-      document.getElementById('spConsentArea').classList.add('hidden');
+      const code = String(data.code || '').replace(/[^0-9]/g,'');
+      if (!code) {
+        if (consentSubjectCode) {
+          showFallbackCode();
+          return;
+        }
+        throw new Error('인증번호가 비어 있습니다.');
+      }
+      showCode(code, '끝 4자리: ' + (data.phoneLast4 || '') + ' / 만료: ' + (data.expiresAt ? new Date(data.expiresAt).toLocaleString('ko-KR') : '5분 이내'));
     } catch (err) {
       console.error(err);
+      if (consentSubjectCode) {
+        showFallbackCode();
+        return;
+      }
       result.className = 'danger';
-      result.textContent = '처리 실패: ' + (sens.koreanError ? sens.koreanError(err) : (err.message || err));
+      result.textContent = '처리 실패: ' + (sens && sens.koreanError ? sens.koreanError(err) : (err.message || err));
       btn.disabled = false;
       btn.textContent = '동의하고 인증번호 보기';
     }

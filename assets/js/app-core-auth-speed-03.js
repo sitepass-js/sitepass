@@ -859,19 +859,22 @@ function fillFoundLoginIdTest() {
       if (!member) {
         let serverMemberForLogin455 = null;
         try {
-          if (typeof window.sitePassFetchActiveMemberForLogin455 === 'function') {
-            serverMemberForLogin455 = await window.sitePassFetchActiveMemberForLogin455(loginId);
+          if (typeof window.sitePassFetchActiveMemberForLogin458 === 'function') {
+            serverMemberForLogin455 = await window.sitePassFetchActiveMemberForLogin458(loginId);
           }
         } catch (serverLoginCheckError455) {
           console.warn('서버 회원 확인 실패:', serverLoginCheckError455);
         }
         if (!serverMemberForLogin455) {
           try {
-            if (typeof window.sitePassInvalidateDeletedMemberSession455 === 'function') {
-              await window.sitePassInvalidateDeletedMemberSession455('서버 회원정보가 없습니다.\n초기화되었거나 삭제된 회원은 로그인할 수 없습니다.\n회원가입을 새로 진행해주세요.');
+            if (typeof window.sitePassInvalidateDeletedMemberSession458 === 'function') {
+              await window.sitePassInvalidateDeletedMemberSession458('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
+            } else {
+              alert('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
             }
-          } catch (ignore) {}
-          alert('서버 회원정보가 없습니다.\n초기화되었거나 삭제된 회원은 로그인할 수 없습니다.\n회원가입을 새로 진행해주세요.');
+          } catch (ignore) {
+            alert('DB에 회원정보가 없습니다.\n회원가입을 새로 진행해주세요.');
+          }
           showScreen('signupScreen');
           return;
         }
@@ -1249,10 +1252,8 @@ function formatSitePassSignupJuminDisplay() {
       const requestButton = document.getElementById('sitepassSignupRequestButton');
       const status = document.getElementById('sitepassSignupVerifyStatus');
       if (requestButton) requestButton.disabled = true;
-      if (status) status.textContent = '네이버 SENS로 인증번호를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.';
+      if (status) status.textContent = '네이버 SENS로 회원가입 휴대폰 인증번호만 발송하고 있습니다. 기사/인부 약관 링크는 회원가입 문자에 포함하지 않습니다.';
       try {
-        let signupTermsUrl = '';
-        try { signupTermsUrl = new URL('./terms/person-consent.html?role=member&v=23.7.428', window.location.href).href; } catch (e) { signupTermsUrl = './terms/person-consent.html?role=member&v=23.7.428'; }
         const data = await sens.sendPhoneCode({
           purpose: 'member_signup_phone_verification',
           subjectType: 'member',
@@ -1265,8 +1266,11 @@ function formatSitePassSignupJuminDisplay() {
           privacyAgreed: true,
           smsAgreed: true,
           identityTermsAgreed: true,
-          termsVersion: 'v23.7.428',
-          termsUrl: signupTermsUrl
+          consentMode: 'phone_code_only',
+          signupScope: 'member_account_only',
+          documentTermsDeferred: true,
+          termsVersion: 'member-signup-v23.7.458',
+          termsUrl: ''
         });
         window.__sitepassV351SignupVerificationId = data.verificationId || '';
         window.__sitepassV351SignupVerifiedPayload = null;
@@ -1275,7 +1279,7 @@ function formatSitePassSignupJuminDisplay() {
         const codeBox = document.getElementById('sitepassSignupCodeBox');
         if (codeBox) codeBox.classList.remove('hidden');
         if (requestButton) requestButton.textContent = '인증번호 재전송';
-        if (status) status.textContent = identity.carrier + ' 휴대폰 인증번호를 발송했습니다. 5분 안에 입력해주세요. 끝 4자리: ' + (data.phoneLast4 || sens.cleanPhone(identity.phone).slice(-4));
+        if (status) status.textContent = identity.carrier + ' 회원가입 인증번호를 발송했습니다. 5분 안에 입력해주세요. 기사/인부 약관 링크는 포함하지 않습니다. 끝 4자리: ' + (data.phoneLast4 || sens.cleanPhone(identity.phone).slice(-4));
         const codeInput = document.getElementById('sitepassSignupCode');
         if (codeInput) setTimeout(() => codeInput.focus(), 80);
         alert('[SitePass 휴대폰 인증]\n' + identity.name + '님 휴대폰으로 6자리 인증번호를 보냈습니다.\n5분 안에 입력해주세요.');

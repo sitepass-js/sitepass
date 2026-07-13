@@ -35,16 +35,17 @@
     return kind === 'driver' ? '기사님' : '인부님';
   }
 
+  // v23.7.458: 이 링크는 회원가입용이 아니라 기사/인부 서류등록용입니다.
   function buildConsentLink(kind, code) {
     const role = kind === 'driver' ? 'driver' : 'worker';
     try {
       const url = new URL('./terms/person-consent.html', window.location.href);
       url.searchParams.set('role', role);
       if (code) url.searchParams.set('code', code);
-      url.searchParams.set('v', '23.7.354');
+      url.searchParams.set('v', '23.7.458');
       return url.href;
     } catch (e) {
-      return './terms/person-consent.html?role=' + role + '&v=23.7.354';
+      return './terms/person-consent.html?role=' + role + '&v=23.7.458';
     }
   }
 

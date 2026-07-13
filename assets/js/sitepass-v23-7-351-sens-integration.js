@@ -141,6 +141,22 @@
   async function sendPhoneCode(payload) {
     const body = Object.assign({ termsVersion: VERSION }, payload || {});
     body.phone = cleanPhone(body.phone);
+
+    // v23.7.458: 회원가입 휴대폰 인증 문자와 기사/인부 서류 동의 문자를 분리합니다.
+    // 회원가입은 이미 회원가입 약관 화면에서 동의 후 진행하므로, 기사/인부용 person-consent 링크를 문자에 넣지 않습니다.
+    if (body.subjectType === 'member' || body.purpose === 'member_signup_phone_verification') {
+      body.subjectType = 'member';
+      body.purpose = 'member_signup_phone_verification';
+      body.consentMode = 'phone_code_only';
+      body.signupScope = 'member_account_only';
+      body.documentTermsDeferred = true;
+      body.termsUrl = '';
+      body.personConsentUrl = '';
+      body.documentConsentUrl = '';
+      body.driverWorkerTermsUrl = '';
+      body.termsVersion = 'member-signup-v23.7.458';
+    }
+
     return await invokeFunction('send-phone-code', body);
   }
 

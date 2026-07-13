@@ -1,10 +1,10 @@
 {
-  "version": "23.7.455",
-  "updatedAt": "2026-07-13T21:25:00+09:00",
-  "note": "server-authoritative member login guard",
-  "build": "v23.7.455",
-  "stage": "v455-test 서버회원없음로그인차단",
-  "baselineFrom": "23.7.454",
-  "releaseType": "test-server-member-login-guard",
-  "purpose": "서버 sitepass_members/auth 초기화 후 기존 기기 localStorage 자동로그인으로 홈에 들어가는 문제 차단. 서버 회원정보가 없으면 자동 로그아웃하고 회원가입 화면으로 이동"
+  "version": "23.7.458",
+  "updatedAt": "2026-07-13T21:55:00+09:00",
+  "note": "fix driver/worker consent reveal code button when link has only role/code",
+  "build": "v23.7.458",
+  "stage": "v458-test 기사인부동의인증번호보기수정",
+  "baselineFrom": "23.7.457",
+  "releaseType": "test-driver-worker-consent-code-click-fix",
+  "purpose": "기사/인부 약관 동의 링크에서 vid/token이 없는 문자 링크라도 필수 동의 후 인증번호 보기 버튼이 작동하도록 보정하고, 등록화면에서도 해당 6자리 번호를 인정"
 }

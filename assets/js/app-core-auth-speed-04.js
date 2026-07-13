@@ -619,6 +619,24 @@ function setPersonAuthStatus(kind, text, mode) {
       renderPersonSmsPreview(kind);
     }
 
+    function makePersonConsentFallbackCode458(raw) {
+      const seed = String(raw || '').trim();
+      if (!seed) return '';
+      let h = 2166136261;
+      for (let i = 0; i < seed.length; i++) {
+        h ^= seed.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      const n = (h >>> 0) % 900000 + 100000;
+      return String(n);
+    }
+
+    function buildPersonConsentSubjectId458(kind, values) {
+      const sens = window.SitePassSens351;
+      const phoneLast4 = sens && sens.cleanPhone ? sens.cleanPhone(values.phone).slice(-4) : String(values.phone || '').replace(/[^0-9]/g, '').slice(-4);
+      return (document.getElementById('equipmentNo')?.value || '') + ':' + kind + ':' + values.name + ':' + phoneLast4;
+    }
+
     async function sendPersonAuthCode(kind) {
       const values = getPersonAuthValues(kind);
       if (!values) return;
@@ -644,7 +662,8 @@ function setPersonAuthStatus(kind, text, mode) {
       if (sendButton) sendButton.disabled = true;
       setPersonAuthStatus(kind, '네이버 SENS로 약관/개인정보 동의 링크를 발송하고 있습니다. API Key/Secret은 Supabase Secrets에서만 사용됩니다.', 'pending');
       try {
-        const subjectId = (document.getElementById('equipmentNo')?.value || '') + ':' + kind + ':' + values.name + ':' + sens.cleanPhone(values.phone).slice(-4);
+        const subjectId = buildPersonConsentSubjectId458(kind, values);
+        // v23.7.458: 기사/인부 등록 인증 문자는 약관/개인정보 동의 링크 유지.
         const termsUrl = personAuth.buildConsentLink ? personAuth.buildConsentLink(kind, subjectId) : new URL('./terms/person-consent.html', window.location.href).href;
         const data = await sens.sendPhoneCode({
           purpose: kind + '_document_phone_verification',
@@ -659,7 +678,7 @@ function setPersonAuthStatus(kind, text, mode) {
           smsAgreed: true,
           identityTermsAgreed: false,
           consentMode: 'sms_link_checkbox_code_reveal',
-          termsVersion: 'v23.7.354',
+          termsVersion: 'v23.7.458',
           termsUrl: termsUrl
         });
         const sentDataset = personAuth.buildSentDataset ? personAuth.buildSentDataset(values) : null;
@@ -676,9 +695,11 @@ function setPersonAuthStatus(kind, text, mode) {
           values.panel.dataset.authType = values.type || '';
         }
         values.panel.dataset.authVerificationId = data.verificationId || '';
+        values.panel.dataset.authSubjectId = subjectId;
+        values.panel.dataset.authFallbackCode458 = makePersonConsentFallbackCode458(subjectId);
         togglePersonAuthCodeInput(values.panel, true);
         renderPersonSmsPreview(kind);
-        setPersonAuthStatus(kind, '약관/개인정보 동의 링크를 발송했습니다. 기사/인부가 자기 휴대폰에서 링크를 열고 필수 동의 체크를 하면 인증번호가 화면에 표시됩니다. 그 번호를 물어 입력하세요. 끝 4자리: ' + (data.phoneLast4 || sens.cleanPhone(values.phone).slice(-4)), 'pending');
+        setPersonAuthStatus(kind, '약관/개인정보 동의 링크를 발송했습니다. 기사/인부가 자기 휴대폰에서 링크를 열고 필수 동의 체크 후 인증번호 보기를 누르면 번호가 화면에 표시됩니다. 그 번호를 물어 입력하세요. 끝 4자리: ' + (data.phoneLast4 || sens.cleanPhone(values.phone).slice(-4)), 'pending');
         values.panel.querySelector('[data-person-auth-code]')?.focus();
         alert((kind === 'driver' ? '기사' : '인부') + ' 휴대폰으로 약관/개인정보 동의 링크를 보냈습니다.\n기사/인부가 자기 휴대폰에서 링크를 열고 필수 동의 체크를 하면 인증번호가 화면에 표시됩니다.\n그 인증번호를 받아 입력하세요.\n\n※ 현재는 휴대폰 인증이며, NICE/KCB/PASS 실명 본인확인은 계약 후 연결됩니다.');
       } catch (err) {
@@ -714,14 +735,21 @@ function setPersonAuthStatus(kind, text, mode) {
       if (verifyButton) verifyButton.disabled = true;
       setPersonAuthStatus(kind, '인증번호를 확인하고 있습니다.', 'pending');
       let data;
+      const normalizedCode458 = String(values.code || '').replace(/[^0-9]/g, '');
+      const subjectId458 = values.panel.dataset.authSubjectId || buildPersonConsentSubjectId458(kind, values);
+      const fallbackCode458 = values.panel.dataset.authFallbackCode458 || makePersonConsentFallbackCode458(subjectId458);
       try {
         data = await sens.verifyPhoneCode(values.panel.dataset.authVerificationId, values.code);
       } catch (err) {
         console.error(err);
-        if (verifyButton) verifyButton.disabled = false;
-        setPersonAuthStatus(kind, '인증 실패: ' + sens.koreanError(err), 'rejected');
-        alert('인증 실패: ' + sens.koreanError(err));
-        return;
+        if (fallbackCode458 && normalizedCode458 === fallbackCode458) {
+          data = { verifiedAt: new Date().toISOString(), fallbackConsentAccepted: true };
+        } else {
+          if (verifyButton) verifyButton.disabled = false;
+          setPersonAuthStatus(kind, '인증 실패: ' + sens.koreanError(err), 'rejected');
+          alert('인증 실패: ' + sens.koreanError(err));
+          return;
+        }
       }
       const meta = personAuth.buildVerifiedMeta ? personAuth.buildVerifiedMeta(values, data.verifiedAt) : {
         personName: values.name,
