@@ -1,10 +1,10 @@
 {
-  "version": "23.7.448",
-  "updatedAt": "2026-07-13T19:50:00+09:00",
-  "note": "trim whitespace around equipment thumbnail assets and enlarge preview box",
-  "build": "v23.7.448",
-  "stage": "v448-test 장비썸네일여백제거확대",
-  "baselineFrom": "23.7.447",
-  "releaseType": "test-equipment-thumbnail-trim-fix",
-  "purpose": "등록된 장비 이미지가 잘리거나 작게 보이는 문제를 줄이기 위해 27종 썸네일 여백을 제거하고 홈 썸네일 박스를 확대"
+  "version": "23.7.449",
+  "updatedAt": "2026-07-13T20:00:00+09:00",
+  "note": "rebuild 27 equipment thumbnails from corrected card crops and widen recent equipment preview",
+  "build": "v23.7.449",
+  "stage": "v449-test 장비이미지재절단",
+  "baselineFrom": "23.7.448",
+  "releaseType": "test-rebuild-equipment-thumbnails",
+  "purpose": "등록된 장비 썸네일이 계속 잘려 보이는 문제를 해결하기 위해 27종 원본 카드에서 장비 영역을 다시 절단하고, 홈 썸네일 영역을 더 넓게 변경"
 }
