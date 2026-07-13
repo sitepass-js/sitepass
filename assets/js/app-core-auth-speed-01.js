@@ -436,7 +436,7 @@ function memberLogout() {
       try { if (window.sitePassClearServerAuthoritativeEquipmentItems) window.sitePassClearServerAuthoritativeEquipmentItems(); } catch (e) {}
       try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
       refreshMemberUi();
-      // v23.7.424: 로그아웃 후 회원가입 hash/화면이 남지 않게 첫 로그인 화면으로 보냅니다.
+      // v23.7.425: 로그아웃 후 회원가입 hash/화면이 남지 않게 첫 로그인 화면으로 보냅니다.
       try {
         if (window.history && window.history.replaceState) {
           window.history.replaceState({ sitepassScreen: 'signupScreen' }, document.title || 'SitePass', window.location.pathname + window.location.search);
