@@ -60,6 +60,59 @@
       }
     }
 
+  
+    /* v23.7.431 - 로그인 후 홈에서 로그인화면 겹침 제거 / 투명 로고 / 하단탭 클릭 보강 */
+    body.sitepass-app-nav-active #signupScreen {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    body.sitepass-app-nav-active .topbar.sitepass-clean-header {
+      display: none !important;
+    }
+    body.sitepass-app-nav-active .app {
+      padding-top: 10px !important;
+      padding-bottom: 94px !important;
+    }
+    .sitepass-home-brand-image {
+      width: min(146px, 28vw) !important;
+      height: auto !important;
+      object-fit: contain !important;
+      background: transparent !important;
+      mix-blend-mode: multiply;
+      filter: none !important;
+      opacity: 0.96 !important;
+    }
+    .sitepass-home-brand-wrap {
+      background: transparent !important;
+    }
+    .sitepass-home-hero-header {
+      align-items: flex-start !important;
+      gap: 10px !important;
+      padding-top: 6px !important;
+      padding-bottom: 8px !important;
+    }
+    .sitepass-bottom-nav {
+      pointer-events: auto !important;
+      z-index: 2147483000 !important;
+    }
+    .sitepass-bottom-nav button {
+      pointer-events: auto !important;
+      min-height: 58px !important;
+      touch-action: manipulation !important;
+      cursor: pointer !important;
+    }
+    @media (max-width: 640px) {
+      .sitepass-home-brand-image {
+        width: min(128px, 38vw) !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -117,5 +170,103 @@
       const el = document.getElementById('copyOk'); if (el) el.style.display = 'block';
     }
   </script>
+
+  <script>
+  /* v23.7.431 - 로그인 후 로그인화면 겹침 제거 + 하단탭 클릭 보강 */
+  (function(){
+    function isLoggedIn431(){
+      try { if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn()) return true; } catch(e) {}
+      try { if (sessionStorage.getItem('sitePass_v23_7_7_update_original_corrected_admin_session') === 'yes') return true; } catch(e) {}
+      try { if (localStorage.getItem('sitePass_v23_7_7_update_original_corrected_currentMember')) return true; } catch(e) {}
+      return false;
+    }
+    function visibleScreen431(){
+      var screens = Array.from(document.querySelectorAll('.screen'));
+      var active = screens.find(function(s){ return !s.classList.contains('hidden') && s.id !== 'signupScreen'; });
+      if (active) return active.id;
+      var any = screens.find(function(s){ return !s.classList.contains('hidden'); });
+      return any ? any.id : '';
+    }
+    function forceOnlyScreen431(id){
+      if (!id) return;
+      document.querySelectorAll('.screen').forEach(function(screen){
+        var keep = screen.id === id;
+        screen.classList.toggle('hidden', !keep);
+        if (!keep) {
+          screen.style.display = 'none';
+          screen.style.visibility = 'hidden';
+          screen.style.opacity = '0';
+          screen.style.pointerEvents = 'none';
+        } else {
+          screen.style.display = '';
+          screen.style.visibility = '';
+          screen.style.opacity = '';
+          screen.style.pointerEvents = '';
+        }
+      });
+    }
+    function refreshAppMode431(){
+      var activeId = visibleScreen431();
+      var loggedIn = isLoggedIn431();
+      var appMode = loggedIn && !['signupScreen','managerAccessScreen','managerPrintScreen','publicScreen'].includes(activeId);
+      document.body.classList.toggle('sitepass-app-nav-active', appMode);
+      if (appMode && activeId) {
+        var signup = document.getElementById('signupScreen');
+        if (signup) {
+          signup.classList.add('hidden');
+          signup.style.display = 'none';
+          signup.style.visibility = 'hidden';
+          signup.style.opacity = '0';
+          signup.style.pointerEvents = 'none';
+        }
+      }
+      var topbar = document.querySelector('.topbar.sitepass-clean-header');
+      if (topbar) topbar.style.display = appMode ? 'none' : '';
+      var nav = document.getElementById('sitepassBottomAppNav');
+      if (nav) {
+        nav.classList.toggle('hidden', !appMode);
+        nav.querySelectorAll('button[data-target]').forEach(function(btn){
+          btn.classList.toggle('active', btn.getAttribute('data-target') === activeId);
+        });
+      }
+    }
+    window.sitepassBottomNavGo = function(target){
+      try {
+        if (target === 'homeScreen') {
+          if (typeof showScreen === 'function') showScreen('homeScreen');
+          forceOnlyScreen431('homeScreen');
+        } else if (target === 'registerScreen') {
+          if (typeof startNewRegistration === 'function') startNewRegistration();
+          else if (typeof showScreen === 'function') showScreen('registerScreen');
+        } else if (target === 'myAccountScreen') {
+          if (typeof openMyAccountScreen === 'function') openMyAccountScreen();
+          else if (typeof showScreen === 'function') showScreen('myAccountScreen');
+        } else if (typeof showScreen === 'function') {
+          showScreen(target);
+        }
+      } catch(e) {
+        try { if (typeof showScreen === 'function') showScreen(target); } catch(ignore) {}
+      }
+      setTimeout(refreshAppMode431, 40);
+      setTimeout(refreshAppMode431, 160);
+      return false;
+    };
+    document.addEventListener('click', function(event){
+      var btn = event.target && event.target.closest ? event.target.closest('#sitepassBottomAppNav button[data-target]') : null;
+      if (!btn) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+      window.sitepassBottomNavGo(btn.getAttribute('data-target'));
+      return false;
+    }, true);
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(refreshAppMode431, 80);
+      setInterval(refreshAppMode431, 700);
+    });
+    window.addEventListener('pageshow', function(){ setTimeout(refreshAppMode431, 80); });
+  })();
+  </script>
+
 </body>
 </html>
