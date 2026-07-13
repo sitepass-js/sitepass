@@ -857,17 +857,36 @@ function fillFoundLoginIdTest() {
       }
 
       if (!member) {
+        let serverMemberForLogin455 = null;
+        try {
+          if (typeof window.sitePassFetchActiveMemberForLogin455 === 'function') {
+            serverMemberForLogin455 = await window.sitePassFetchActiveMemberForLogin455(loginId);
+          }
+        } catch (serverLoginCheckError455) {
+          console.warn('서버 회원 확인 실패:', serverLoginCheckError455);
+        }
+        if (!serverMemberForLogin455) {
+          try {
+            if (typeof window.sitePassInvalidateDeletedMemberSession455 === 'function') {
+              await window.sitePassInvalidateDeletedMemberSession455('서버 회원정보가 없습니다.\n초기화되었거나 삭제된 회원은 로그인할 수 없습니다.\n회원가입을 새로 진행해주세요.');
+            }
+          } catch (ignore) {}
+          alert('서버 회원정보가 없습니다.\n초기화되었거나 삭제된 회원은 로그인할 수 없습니다.\n회원가입을 새로 진행해주세요.');
+          showScreen('signupScreen');
+          return;
+        }
         member = {
-          name: loginId,
-          phone: '',
-          provider: 'SitePass',
-          providerId: 'SITEPASS-LOGIN-' + Date.now(),
-          signupId: loginId,
-          signupMethod: 'SitePass 로그인',
+          name: serverMemberForLogin455.name || loginId,
+          phone: serverMemberForLogin455.phone || '',
+          email: serverMemberForLogin455.email || '',
+          provider: serverMemberForLogin455.signup_method || 'SitePass',
+          providerId: serverMemberForLogin455.provider_id || ('SITEPASS-LOGIN-' + loginId),
+          signupId: serverMemberForLogin455.login_id || loginId,
+          signupMethod: serverMemberForLogin455.signup_method || 'SitePass 로그인',
           testPassword: password
         };
         saveMemberTest(member);
-        member = findMemberForLogin(loginId) || member;
+        member = findMemberForLogin(loginId) || findMemberForLogin(member.signupId) || member;
       }
 
       completeMemberLoginTest(member, '로그인이 완료되었습니다.\nSitePass 메인 화면으로 이동합니다.');

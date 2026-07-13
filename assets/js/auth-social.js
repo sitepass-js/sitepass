@@ -347,7 +347,20 @@
         const hasPendingSocialAgreements = !!(pending && pending.agreements && pending.agreements.agreedAt);
         // v23.7.250: 이미 가입/약관동의가 끝난 네이버·카카오 회원이면 휴대폰에서도 약관창을 다시 띄우지 않습니다.
         // 서버 상태가 늦게 잡힐 때는 같은 브라우저의 local 약관동의 기록도 기존회원으로 봅니다.
-        const needsServerSignup = hasPendingSocialAgreements || !(alreadyActiveServerMember || localSocialTermsAgreed);
+        if (!alreadyActiveServerMember && !hasPendingSocialAgreements && !isExplicitSignup) {
+          try {
+            if (typeof window.sitePassInvalidateDeletedMemberSession455 === 'function') {
+              await window.sitePassInvalidateDeletedMemberSession455('');
+            }
+          } catch (ignore) {}
+          removeSessionValue(getSitePassOAuthPendingKey());
+          try { history.replaceState({}, document.title, location.origin + location.pathname); } catch (ignore) {}
+          await signOutSupabaseAuthQuietly();
+          alert('서버 회원정보가 없습니다.\n초기화되었거나 삭제된 카카오/네이버 계정은 바로 로그인할 수 없습니다.\n회원가입을 새로 진행해주세요.');
+          showScreen('signupScreen');
+          return true;
+        }
+        const needsServerSignup = hasPendingSocialAgreements || !alreadyActiveServerMember;
         if (needsServerSignup) {
           let socialAgreements = hasPendingSocialAgreements ? pending.agreements : null;
           if (!socialAgreements) {

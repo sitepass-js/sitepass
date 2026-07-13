@@ -1,10 +1,10 @@
 {
-  "version": "23.7.454",
-  "updatedAt": "2026-07-13T21:05:00+09:00",
-  "note": "restore horizontal sizing and adjust vertical height only",
-  "build": "v23.7.454",
-  "stage": "v454-test 등록상단세로폭보정",
-  "baselineFrom": "23.7.453",
-  "releaseType": "test-register-vertical-height-fix",
-  "purpose": "장비 등록번호/장비종류 가로폭은 유지하고 세로폭만 키움. 장비서류/기사서류/인부서류와 포함구역/필수서류/선택서류 칸도 세로 높이만 보정"
+  "version": "23.7.455",
+  "updatedAt": "2026-07-13T21:25:00+09:00",
+  "note": "server-authoritative member login guard",
+  "build": "v23.7.455",
+  "stage": "v455-test 서버회원없음로그인차단",
+  "baselineFrom": "23.7.454",
+  "releaseType": "test-server-member-login-guard",
+  "purpose": "서버 sitepass_members/auth 초기화 후 기존 기기 localStorage 자동로그인으로 홈에 들어가는 문제 차단. 서버 회원정보가 없으면 자동 로그아웃하고 회원가입 화면으로 이동"
 }

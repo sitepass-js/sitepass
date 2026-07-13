@@ -1,4 +1,4 @@
-/* SitePass v23.7.454 - 회원 ↔ 관리자 채팅방 + 알림 ON/OFF */
+/* SitePass v23.7.455 - 회원 ↔ 관리자 채팅방 + 알림 ON/OFF */
 (function(){
   var NOTICE_KEY = 'sitepass_chat_notice_settings_v445';
   var ADMIN_MESSAGES_KEY = 'sitepass_admin_chat_messages_v445';

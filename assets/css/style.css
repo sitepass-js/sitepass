@@ -4186,7 +4186,7 @@ font-size: 25px !important;
 
 
 
-/* v23.7.454 - 등록 기본정보 상단 압축 / 모바일 2칸+3칸 */
+/* v23.7.455 - 등록 기본정보 상단 압축 / 모바일 2칸+3칸 */
 #registerScreen > .card:first-of-type > h2:first-child,
 #registerScreen > .card:first-of-type > h2:first-child + p {
   display: none !important;
@@ -4278,7 +4278,7 @@ font-size: 25px !important;
 
 
 
-/* v23.7.454 - 등록 상단 입력칸/요약칸 가로 정렬 보정 */
+/* v23.7.455 - 등록 상단 입력칸/요약칸 가로 정렬 보정 */
 #registerScreen > .card:first-of-type {
   padding-left: 14px !important;
   padding-right: 14px !important;
@@ -4374,7 +4374,7 @@ font-size: 25px !important;
 
 
 
-/* v23.7.454 - 등록 상단 가로폭 원위치 / 세로폭만 보정 */
+/* v23.7.455 - 등록 상단 가로폭 원위치 / 세로폭만 보정 */
 #registerScreen > .card:first-of-type {
   padding-left: 12px !important;
   padding-right: 12px !important;
