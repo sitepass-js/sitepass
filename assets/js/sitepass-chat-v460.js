@@ -1,4 +1,4 @@
-/* SitePass v23.7.481-test - 만료 알림 숫자·방·읽음 통합 + 즉시 테스트 */
+/* SitePass v23.7.482-test - 테스트 알림 4개 배지 유지·실제 방 열람 시에만 읽음 처리 */
 (function(){
   'use strict';
 
@@ -516,6 +516,18 @@
     return changed;
   }
 
+  function isChatScreenVisible482(){
+    var screen = $('contactScreen');
+    var panel = $('sitepassChatRoomPanel');
+    if (!screen || !panel) return false;
+    if (screen.classList.contains('hidden') || panel.classList.contains('sitepass-chat-hidden')) return false;
+    try {
+      var style = window.getComputedStyle(screen);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+    } catch(e) {}
+    return currentRoomId === 'expiry';
+  }
+
   function unreadCount(roomId){
     if (roomId === 'expiry') {
       return expiryMessages(false).filter(function(msg){ return !!msg.deletable && !msg.read; }).length;
@@ -747,13 +759,13 @@
     var stages = [30,15,7,0];
     var rows = stages.map(function(stage, index){
       var label = milestoneLabel467(stage);
-      var eventKey = 'v481-test|' + batch + '|' + stage;
+      var eventKey = 'v482-test|' + batch + '|' + stage;
       var due = new Date(now.getFullYear(), now.getMonth(), now.getDate() + stage);
       return {
         id: 'expiry-test-' + hashText(eventKey),
         readId: 'expiry-test-read-' + hashText(eventKey),
         eventKey: eventKey,
-        docBaseKey: 'v481-test-doc-' + stage,
+        docBaseKey: 'v482-test-doc-' + stage,
         type: 'test',
         milestone: stage,
         expireDate: localDateKey467(due),
@@ -762,15 +774,28 @@
       };
     });
     saveExpiryTestLogs479(rows);
+    // 같은 테스트 ID가 과거에 읽음 처리된 적이 있어도 새로 만든 4개는 반드시 안 읽음으로 시작합니다.
+    var newReadIds = rows.map(function(row){ return row.readId; });
+    saveReadExpiryIds(readExpiryIds().filter(function(id){ return newReadIds.indexOf(id) < 0; }));
     resetDeleteMode();
-    updateHomeExpiryUnread479(true);
     renderRoomList();
+    updateHomeExpiryUnread479(true);
+    updateBottomUnreadBadge();
+
+    // 테스트 버튼은 만료 알림방 안에서 누르므로, 홈으로 이동하기 전에 방을 닫아야
+    // 백그라운드 2.5초 읽음 타이머가 새 알림 4개를 즉시 읽음 처리하지 않습니다.
+    try { if (typeof window.sitepassBackToChatList460 === 'function') window.sitepassBackToChatList460(); } catch(e) {}
     try {
       if (typeof window.sitepassBottomNavGo === 'function') window.sitepassBottomNavGo('homeScreen');
       else if (typeof window.showScreen === 'function') window.showScreen('homeScreen');
     } catch(e) {}
-    setTimeout(function(){ updateHomeExpiryUnread479(true); }, 60);
-    try { alert('테스트 알림 4개를 만들었습니다. 홈의 숫자 4를 누르면 만료 알림방으로 바로 이동하고, 방을 열면 읽음 처리되어 숫자가 사라집니다.'); } catch(e) {}
+    [0, 60, 180, 500, 1200].forEach(function(delay){
+      setTimeout(function(){
+        updateHomeExpiryUnread479(true);
+        updateBottomUnreadBadge();
+      }, delay);
+    });
+    try { alert('테스트 알림 4개를 만들었습니다. 홈에 숫자 4가 표시됩니다. 숫자를 누르면 만료 알림방으로 이동하고, 실제로 방을 열었을 때만 읽음 처리되어 숫자가 사라집니다.'); } catch(e) {}
     return false;
   };
 
@@ -926,12 +951,16 @@
   });
   window.addEventListener('pageshow', function(){ setTimeout(init, 100); });
   setInterval(function(){
-    var panelOpen = !$('sitepassChatRoomPanel')?.classList.contains('sitepass-chat-hidden');
+    var screen = $('contactScreen');
+    var panelOpen = !!screen && !screen.classList.contains('hidden')
+      && !$('sitepassChatRoomPanel')?.classList.contains('sitepass-chat-hidden');
     if (!deleteMode && panelOpen && currentRoomId === 'admin') {
       markAdminRepliesReadByMember();
       renderMessages('admin');
     }
-    if (!deleteMode && panelOpen && currentRoomId === 'expiry') {
+    // 화면이 홈·등록·보관함으로 바뀐 뒤에도 내부 방 패널 상태만 남아 있으면
+    // 기존에는 알림이 자동으로 읽음 처리됐습니다. 실제 알림방이 보일 때만 읽습니다.
+    if (!deleteMode && isChatScreenVisible482()) {
       markExpiryRoomRead();
       renderMessages('expiry');
     }

@@ -1,12 +1,12 @@
 {
-  "version": "23.7.481",
+  "version": "23.7.482",
   "channel": "test",
-  "note": "expirytest 파라미터를 세션 테스트모드로 전환하고 알림/채팅 하단버튼을 최우선 직접 라우팅",
-  "build": "v23.7.481-test",
-  "stage": "테스트 주소 알림/채팅 진입 강제 복구",
+  "note": "테스트 알림 4개가 홈 배지에 유지되고 실제 만료 알림방을 열었을 때만 읽음 처리",
+  "build": "v23.7.482-test",
+  "stage": "만료 테스트 알림 숫자 4 표시 복구",
   "updatedAt": "2026-07-14",
-  "releaseType": "test-alert-chat-hard-route-fix",
-  "purpose": "expirytest 쿼리가 앱 라우팅에 간섭하지 않도록 제거하고 테스트 상태만 세션에 보존",
-  "notes": "테스트 주소 접속 즉시 expirytest=1을 세션에 저장한 뒤 URL에서 제거합니다. 하단 알림/채팅 클릭은 window 캡처 단계에서 직접 contactScreen과 방 목록을 열어 기존 이벤트 충돌을 우회합니다. Supabase 수정은 없습니다.",
-  "description": "테스트 주소 전용 알림/채팅 진입 불가 최종 복구"
+  "releaseType": "expiry-test-unread-badge-fix",
+  "purpose": "숨겨진 알림방 패널의 백그라운드 읽음 처리로 테스트 숫자가 사라지던 문제 방지",
+  "notes": "테스트 알림 생성 직후 알림방을 닫고 홈으로 이동하며, 홈·등록·보관함 화면에서는 만료알림을 읽음 처리하지 않습니다. 홈 숫자와 하단 알림/채팅 배지를 즉시 여러 번 갱신합니다. Supabase 수정은 없습니다.",
+  "description": "테스트 알림 4개 숫자 표시 및 실제 열람 읽음 처리 수정"
 }
