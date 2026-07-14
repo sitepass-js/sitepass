@@ -1,4 +1,4 @@
-/* SitePass v23.7.479-test - 만료 알림 숫자·방·읽음 통합 + 즉시 테스트 */
+/* SitePass v23.7.480-test - 만료 알림 숫자·방·읽음 통합 + 즉시 테스트 */
 (function(){
   'use strict';
 
@@ -313,7 +313,7 @@
       var existingMilestones = rowsForDoc.filter(function(row){ return row.type === 'milestone'; }).map(function(row){ return Number(row.milestone); });
       var toCreate = [];
       var currentMilestone = initialMilestone467(state.diffDays);
-      /* v23.7.479: 현재 날짜에 해당하는 가장 가까운 단계만 한 번 생성합니다.
+      /* v23.7.480: 현재 날짜에 해당하는 가장 가까운 단계만 한 번 생성합니다.
          D-DAY에 처음 앱을 열었다고 D-30·D-15·D-7 알림까지 한꺼번에 만들지 않습니다. */
       if (currentMilestone !== null && existingMilestones.indexOf(currentMilestone) < 0) {
         toCreate.push(currentMilestone);
@@ -725,7 +725,7 @@
       if (typeof window.sitepassBottomNavGo === 'function') window.sitepassBottomNavGo('contactScreen');
       else if (typeof window.showScreen === 'function') window.showScreen('contactScreen');
     } catch(e) {}
-    setTimeout(function(){ window.sitepassOpenChatRoom460('expiry'); }, 30);
+    setTimeout(function(){ window.sitepassOpenChatRoom460('expiry'); }, 80);
     return false;
   };
 
@@ -734,7 +734,7 @@
       if (typeof window.sitepassBottomNavGo === 'function') window.sitepassBottomNavGo('contactScreen');
       else if (typeof window.showScreen === 'function') window.showScreen('contactScreen');
     } catch(e) {}
-    setTimeout(function(){ window.sitepassOpenChatRoom460('share'); }, 30);
+    setTimeout(function(){ window.sitepassOpenChatRoom460('share'); }, 80);
     return false;
   };
 
@@ -745,13 +745,13 @@
     var stages = [30,15,7,0];
     var rows = stages.map(function(stage, index){
       var label = milestoneLabel467(stage);
-      var eventKey = 'v479-test|' + batch + '|' + stage;
+      var eventKey = 'v480-test|' + batch + '|' + stage;
       var due = new Date(now.getFullYear(), now.getMonth(), now.getDate() + stage);
       return {
         id: 'expiry-test-' + hashText(eventKey),
         readId: 'expiry-test-read-' + hashText(eventKey),
         eventKey: eventKey,
-        docBaseKey: 'v479-test-doc-' + stage,
+        docBaseKey: 'v480-test-doc-' + stage,
         type: 'test',
         milestone: stage,
         expireDate: localDateKey467(due),

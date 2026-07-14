@@ -1,4 +1,4 @@
-/* SitePass v23.7.460-test - 알림/쪽지함 채팅방 UI */
+/* SitePass v23.7.460-test - 알림/채팅 UI */
 .sitepass-chat-shell { padding: 0 0 88px; }
 .sitepass-chat-card {
   background: #f5f7fb;
@@ -548,7 +548,7 @@
 }
 
 
-/* v23.7.479-test - 즉시 만료알림 검증 도구 (?expirytest=1) */
+/* v23.7.480-test - 즉시 만료알림 검증 도구 (?expirytest=1) */
 .sitepass-expiry-test-tools479 {
   margin: 10px 14px 0; padding: 12px; border: 1px dashed #96b5ff; border-radius: 14px;
   background: #f5f8ff; display: grid; gap: 6px; color: #24436f;

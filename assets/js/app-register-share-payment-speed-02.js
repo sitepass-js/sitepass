@@ -1644,13 +1644,13 @@ function setItems(items) {
       clearNonEssentialRegistrationStorageForSave();
     }
 
-    function tryStoreCompactEquipmentList(list, limit) {
+    function tryStoreCompactEquipmentList(list, limit, quiet) {
       const compact = (Array.isArray(list) ? list : []).slice(0, limit).map(makeStorageTinyItem);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(compact));
         return true;
       } catch (e) {
-        console.info('장비 보관함 축약 저장 재시도 필요');
+        if (!quiet) console.warn('장비 보관함 축약 저장 실패:', e && (e.name || e.message || e));
         return false;
       }
     }
@@ -1700,9 +1700,9 @@ function setItems(items) {
       const tinyItems = list.map(makeStorageTinyItem);
       if (setItems(tinyItems)) return { ok:true, mode:'tiny' };
       clearLegacyEquipmentStorageForCompactSave();
-      if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
-      if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
-      if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
+      if (tryStoreCompactEquipmentList(list, 50, true)) return { ok:true, mode:'compact50' };
+      if (tryStoreCompactEquipmentList(list, 10, true)) return { ok:true, mode:'compact10' };
+      if (tryStoreCompactEquipmentList(list, 1, false)) return { ok:true, mode:'compact1' };
       // v23.7.350: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
       // 저장공간이 부족해도 기존 STORAGE_KEY/PREV_STORAGE_KEY를 지우지 않고 현재 화면 메모리 표시로 둡니다.
       return { ok:false, mode:'memory_preserve_existing' };
@@ -1816,22 +1816,25 @@ function setItems(items) {
     }
 
     function makeImmediateRegistrationFirstPagePreviewList(list) {
-      // 저장공간이 부족할 때의 2차 저장: 현재 등록건의 각 서류별 첫 미리보기 1장만 남깁니다.
+      // v23.7.480 2차 저장: 현재 등록건 전체에서 첫 번째 사진 한 장만 로컬에 남깁니다.
+      // 서버에는 원래 item의 모든 서류사진을 그대로 업로드하므로 로컬 용량 부족 때만 사용하는 안전망입니다.
       const raw = Array.isArray(list) ? list.filter(Boolean) : [];
       if (!raw.length) return [];
       const first = makeStorageLightItem(raw[0]);
+      var keptOnePreview = false;
       Object.values(first.docs || {}).forEach(function(doc) {
-        const pages = Array.isArray(doc.pages) ? doc.pages.filter(Boolean) : [];
-        if (pages.length > 1) doc.pages = [pages[0]];
-        const preview = (doc.pages && doc.pages[0] && (doc.pages[0].previewDataUrl || doc.pages[0].editDataUrl)) || doc.previewDataUrl || doc.editDataUrl || '';
-        doc.previewDataUrl = preview || '';
-        doc.editDataUrl = preview || '';
-        if (doc.pages && doc.pages[0]) {
-          doc.pages[0].previewDataUrl = doc.pages[0].previewDataUrl || preview || '';
-          doc.pages[0].editDataUrl = doc.pages[0].editDataUrl || doc.pages[0].previewDataUrl || '';
+        if (!keptOnePreview && doc && doc.previewDataUrl) {
+          keptOnePreview = true;
+          doc.storageNote = '저장공간 보호를 위해 현재 등록건의 첫 미리보기 한 장만 저장되었습니다.';
+          return;
         }
-        doc.storageNote = '저장공간 보호를 위해 이 서류는 첫 미리보기만 저장되었습니다.';
+        if (doc) {
+          doc.previewDataUrl = '';
+          doc.editDataUrl = '';
+          doc.storageNote = '사진 원본은 서버 저장 중이며 이 기기에는 서류정보만 저장되었습니다.';
+        }
       });
+      first.localSinglePreviewFallbackV480 = true;
       const out = [first];
       raw.slice(1, 30).forEach(function(x) {
         try { out.push(makeStorageTinyItem(x)); }
@@ -1847,7 +1850,7 @@ function setItems(items) {
         rememberRuntimeEquipmentItems(saveList);
         return { ok:true, mode:'preview' };
       } catch (e) {
-        console.info('현재 등록건 사진 미리보기 저장 실패: 첫 미리보기 저장으로 재시도합니다.');
+        console.warn('브라우저 미리보기 저장공간 부족: 중복 제거 미리보기로 한 번 더 저장합니다.');
         return { ok:false, error:e };
       }
     }
@@ -1859,7 +1862,7 @@ function setItems(items) {
         rememberRuntimeEquipmentItems(saveList);
         return { ok:true, mode:'preview_first_page' };
       } catch (e) {
-        console.info('현재 등록건 첫 미리보기 저장 실패: 목록정보 저장으로 재시도합니다.');
+        console.warn('브라우저 미리보기 저장공간 부족: 사진 없는 목록정보로 안전 저장합니다.');
         return { ok:false, error:e };
       }
     }
@@ -1874,9 +1877,9 @@ function setItems(items) {
       if (previewResult.ok) return previewResult;
       const firstPageResult = tryStoreImmediateRegistrationFirstPagePreviewList(list);
       if (firstPageResult.ok) return firstPageResult;
-      if (tryStoreCompactEquipmentList(list, 50)) return { ok:true, mode:'compact50' };
-      if (tryStoreCompactEquipmentList(list, 10)) return { ok:true, mode:'compact10' };
-      if (tryStoreCompactEquipmentList(list, 1)) return { ok:true, mode:'compact1' };
+      if (tryStoreCompactEquipmentList(list, 50, true)) return { ok:true, mode:'compact50' };
+      if (tryStoreCompactEquipmentList(list, 10, true)) return { ok:true, mode:'compact10' };
+      if (tryStoreCompactEquipmentList(list, 1, false)) return { ok:true, mode:'compact1' };
       // v23.7.350: 즉시 등록 경로에서는 기존 보관함 보호가 우선입니다.
       // 저장공간이 부족해도 기존 STORAGE_KEY/PREV_STORAGE_KEY를 지우지 않고 현재 화면 메모리 표시로 둡니다.
       return { ok:false, mode:'memory_preserve_existing' };
@@ -2036,37 +2039,93 @@ function setItems(items) {
       return docs.filter(doc => keySet.has(String(doc?.key || '')));
     }
 
-    function makeStorageLightItem(item) {
-      const light = JSON.parse(JSON.stringify(item));
-      Object.values(light.docs || {}).forEach(doc => {
-        const pages = Array.isArray(doc.pages) ? doc.pages : [];
-        const firstPreview = pages.map(getStoredAttachmentUrl).find(Boolean) || pages.find(page => page.previewDataUrl)?.previewDataUrl || doc.previewDataUrl || doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || '';
-        doc.previewDataUrl = firstPreview;
-        doc.editDataUrl = firstPreview;
-        if (firstPreview && firstPreview.indexOf('data:') !== 0) {
-          doc.fileUrl = doc.fileUrl || firstPreview;
-          doc.downloadUrl = doc.downloadUrl || firstPreview;
-          doc.storagePublicUrl = doc.storagePublicUrl || firstPreview;
+    function isEmbeddedPreviewDataV480(value) {
+      return typeof value === 'string' && /^data:/i.test(value);
+    }
+
+    function clearEmbeddedImageCopiesV480(value, seen) {
+      if (!value || typeof value !== 'object') return value;
+      seen = seen || new WeakSet();
+      if (seen.has(value)) return value;
+      seen.add(value);
+      if (Array.isArray(value)) {
+        value.forEach(function(row){ clearEmbeddedImageCopiesV480(row, seen); });
+        return value;
+      }
+      Object.keys(value).forEach(function(key){
+        var current = value[key];
+        if (isEmbeddedPreviewDataV480(current)) {
+          value[key] = '';
+          return;
         }
+        if (current && typeof current === 'object') clearEmbeddedImageCopiesV480(current, seen);
+      });
+      return value;
+    }
+
+    function getFirstLocalOrStoredPreviewV480(doc) {
+      doc = doc && typeof doc === 'object' ? doc : {};
+      var pages = Array.isArray(doc.pages) ? doc.pages : [];
+      var candidates = [];
+      pages.forEach(function(page){
+        if (!page || typeof page !== 'object') return;
+        candidates.push(page.storagePublicUrl, page.publicUrl, page.fileUrl, page.downloadUrl,
+          page.previewDataUrl, page.editDataUrl, page.correctedDataUrl, page.originalDataUrl, page.dataUrl, page.fileDataUrl);
+      });
+      candidates.push(doc.storagePublicUrl, doc.publicUrl, doc.fileUrl, doc.downloadUrl,
+        doc.previewDataUrl, doc.editDataUrl, doc.correctedDataUrl, doc.originalDataUrl, doc.dataUrl, doc.fileDataUrl);
+      return String(candidates.find(function(value){ return typeof value === 'string' && value.trim(); }) || '');
+    }
+
+    function makeStorageLightItem(item) {
+      // v23.7.480: 같은 base64 미리보기가 doc.preview/edit/pages 등에 여러 번 복제되면
+      // 사진 한 장도 localStorage에서는 여러 장 크기로 계산되어 QuotaExceededError가 발생했습니다.
+      // 각 서류별 첫 미리보기 한 개만 doc.previewDataUrl에 남기고 나머지 중복 사본은 제거합니다.
+      const source = item && typeof item === 'object' ? item : {};
+      const light = JSON.parse(JSON.stringify(source));
+      clearEmbeddedImageCopiesV480(light);
+      light.docs = light.docs && typeof light.docs === 'object' ? light.docs : {};
+      Object.keys(light.docs).forEach(function(docKey) {
+        const sourceDoc = source.docs && source.docs[docKey] && typeof source.docs[docKey] === 'object' ? source.docs[docKey] : {};
+        const doc = light.docs[docKey] && typeof light.docs[docKey] === 'object' ? light.docs[docKey] : {};
+        const firstPreview = getFirstLocalOrStoredPreviewV480(sourceDoc);
+        const sourcePages = Array.isArray(sourceDoc.pages) ? sourceDoc.pages : [];
+        const lightPages = Array.isArray(doc.pages) ? doc.pages : [];
+
+        doc.previewDataUrl = firstPreview || '';
+        doc.editDataUrl = '';
         doc.originalDataUrl = '';
         doc.correctedDataUrl = '';
-        if (Array.isArray(doc.pages)) {
-          doc.pages.forEach(page => {
-            const pageUrl = getStoredAttachmentUrl(page) || page.previewDataUrl || firstPreview || '';
-            page.previewDataUrl = pageUrl || '';
-            page.editDataUrl = page.editDataUrl || page.previewDataUrl || '';
-            if (pageUrl && pageUrl.indexOf('data:') !== 0) {
-              page.fileUrl = page.fileUrl || pageUrl;
-              page.downloadUrl = page.downloadUrl || pageUrl;
-              page.storagePublicUrl = page.storagePublicUrl || pageUrl;
-            }
-            page.originalDataUrl = '';
-            page.correctedDataUrl = '';
-            page.previewChoice = page.previewDataUrl ? (page.previewChoice || (pageUrl.indexOf('data:') === 0 ? 'preview' : 'storage')) : (page.previewChoice || '');
-          });
+        doc.dataUrl = '';
+        doc.fileDataUrl = '';
+        doc.pageCount = Number(doc.pageCount || sourcePages.length || lightPages.length || (firstPreview ? 1 : 0));
+
+        // 페이지 배열은 파일명·페이지수 등 메타정보만 남기고 이미지 문자열은 doc.previewDataUrl 한 곳에만 둡니다.
+        doc.pages = lightPages.map(function(page, index){
+          page = page && typeof page === 'object' ? page : {};
+          clearEmbeddedImageCopiesV480(page);
+          page.previewDataUrl = '';
+          page.editDataUrl = '';
+          page.originalDataUrl = '';
+          page.correctedDataUrl = '';
+          page.dataUrl = '';
+          page.fileDataUrl = '';
+          page.localPreviewStoredOnDocument = index === 0 && !!firstPreview;
+          return page;
+        });
+        if (!doc.pages.length && firstPreview) {
+          doc.pages = [{
+            fileName: doc.fileName || sourceDoc.fileName || '첨부파일',
+            previewDataUrl: '',
+            editDataUrl: '',
+            localPreviewStoredOnDocument: true
+          }];
         }
+        doc.storageNote = '브라우저에는 서류별 첫 미리보기 한 개만 저장하고 원본 파일은 서버 저장으로 처리합니다.';
+        light.docs[docKey] = doc;
       });
-      light.storageNote = '저장공간 절약을 위해 원본/보정본 비교데이터는 제외하고 담당자용 사진 미리보기만 저장됨';
+      light.storageNote = '저장공간 보호를 위해 중복 사진문자열을 제거하고 서류별 첫 미리보기만 저장됨';
+      light.localPreviewDeduplicatedV480 = true;
       return light;
     }
 

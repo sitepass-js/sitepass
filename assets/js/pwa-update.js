@@ -37,7 +37,13 @@
     if (!isOfficialGithubUrl()) return;
     const needsCleanUrl = /\/index\.html$/i.test(location.pathname) || /[?&]v=/.test(location.search || '');
     if (!needsCleanUrl) return;
-    try { history.replaceState(history.state || {}, document.title, '/sitepass/' + (location.hash || '')); } catch (e) {}
+    try {
+      const params = new URLSearchParams(location.search || '');
+      // v23.7.480: 캐시 확인용 v 값만 제거하고 expirytest 같은 실제 기능 파라미터는 보존합니다.
+      params.delete('v');
+      const query = params.toString();
+      history.replaceState(history.state || {}, document.title, '/sitepass/' + (query ? ('?' + query) : '') + (location.hash || ''));
+    } catch (e) {}
   }
 
   async function clearBrowserCache(){
