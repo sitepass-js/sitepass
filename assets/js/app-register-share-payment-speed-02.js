@@ -1816,7 +1816,7 @@ function setItems(items) {
     }
 
     function makeImmediateRegistrationFirstPagePreviewList(list) {
-      // v23.7.480 2차 저장: 현재 등록건 전체에서 첫 번째 사진 한 장만 로컬에 남깁니다.
+      // v23.7.481 2차 저장: 현재 등록건 전체에서 첫 번째 사진 한 장만 로컬에 남깁니다.
       // 서버에는 원래 item의 모든 서류사진을 그대로 업로드하므로 로컬 용량 부족 때만 사용하는 안전망입니다.
       const raw = Array.isArray(list) ? list.filter(Boolean) : [];
       if (!raw.length) return [];
@@ -2078,7 +2078,7 @@ function setItems(items) {
     }
 
     function makeStorageLightItem(item) {
-      // v23.7.480: 같은 base64 미리보기가 doc.preview/edit/pages 등에 여러 번 복제되면
+      // v23.7.481: 같은 base64 미리보기가 doc.preview/edit/pages 등에 여러 번 복제되면
       // 사진 한 장도 localStorage에서는 여러 장 크기로 계산되어 QuotaExceededError가 발생했습니다.
       // 각 서류별 첫 미리보기 한 개만 doc.previewDataUrl에 남기고 나머지 중복 사본은 제거합니다.
       const source = item && typeof item === 'object' ? item : {};

@@ -1,12 +1,12 @@
 {
-  "version": "23.7.480",
+  "version": "23.7.481",
   "channel": "test",
-  "note": "expirytest 주소에서도 알림/채팅 진입 정상화, 사진 미리보기 base64 중복 저장 제거",
-  "build": "v23.7.480-test",
-  "stage": "알림/채팅 테스트 진입 및 미리보기 저장 안정화",
+  "note": "expirytest 파라미터를 세션 테스트모드로 전환하고 알림/채팅 하단버튼을 최우선 직접 라우팅",
+  "build": "v23.7.481-test",
+  "stage": "테스트 주소 알림/채팅 진입 강제 복구",
   "updatedAt": "2026-07-14",
-  "releaseType": "test-alert-chat-route-preview-quota-fix",
-  "purpose": "테스트 주소의 알림/채팅 라우팅과 등록 직후 미리보기 저장공간 오류를 함께 수정",
-  "notes": "?expirytest=1 파라미터를 보존합니다. 하단 명칭을 알림/채팅으로 통일했습니다. 서류별 미리보기는 중복 base64를 제거하고, 용량 부족 시 첫 사진 한 장 또는 목록정보로 단계적으로 안전 저장합니다. 서버 원본 저장 흐름은 유지하며 Supabase 수정은 없습니다.",
-  "description": "알림/채팅 진입 복구, 테스트 파라미터 보존, 등록 미리보기 로컬 저장공간 안정화"
+  "releaseType": "test-alert-chat-hard-route-fix",
+  "purpose": "expirytest 쿼리가 앱 라우팅에 간섭하지 않도록 제거하고 테스트 상태만 세션에 보존",
+  "notes": "테스트 주소 접속 즉시 expirytest=1을 세션에 저장한 뒤 URL에서 제거합니다. 하단 알림/채팅 클릭은 window 캡처 단계에서 직접 contactScreen과 방 목록을 열어 기존 이벤트 충돌을 우회합니다. Supabase 수정은 없습니다.",
+  "description": "테스트 주소 전용 알림/채팅 진입 불가 최종 복구"
 }

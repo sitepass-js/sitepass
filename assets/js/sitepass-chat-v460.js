@@ -1,4 +1,4 @@
-/* SitePass v23.7.480-test - 만료 알림 숫자·방·읽음 통합 + 즉시 테스트 */
+/* SitePass v23.7.481-test - 만료 알림 숫자·방·읽음 통합 + 즉시 테스트 */
 (function(){
   'use strict';
 
@@ -140,8 +140,10 @@
   function expiryTestKey479(){ return EXPIRY_TEST_PREFIX + (currentIdentity().key || 'guest'); }
   function adminDeletedKey(){ return ADMIN_DELETED_PREFIX + (currentIdentity().key || 'guest'); }
   function expiryTestMode479(){
-    try { return new URLSearchParams(window.location.search || '').get('expirytest') === '1'; }
-    catch(e) { return false; }
+    try {
+      if (sessionStorage.getItem('sitepass_expiry_test_mode_v481') === '1') return true;
+      return new URLSearchParams(window.location.search || '').get('expirytest') === '1';
+    } catch(e) { return false; }
   }
   function loadExpiryTestLogs479(){
     var rows = loadJson(expiryTestKey479(), []);
@@ -313,7 +315,7 @@
       var existingMilestones = rowsForDoc.filter(function(row){ return row.type === 'milestone'; }).map(function(row){ return Number(row.milestone); });
       var toCreate = [];
       var currentMilestone = initialMilestone467(state.diffDays);
-      /* v23.7.480: 현재 날짜에 해당하는 가장 가까운 단계만 한 번 생성합니다.
+      /* v23.7.481: 현재 날짜에 해당하는 가장 가까운 단계만 한 번 생성합니다.
          D-DAY에 처음 앱을 열었다고 D-30·D-15·D-7 알림까지 한꺼번에 만들지 않습니다. */
       if (currentMilestone !== null && existingMilestones.indexOf(currentMilestone) < 0) {
         toCreate.push(currentMilestone);
@@ -745,13 +747,13 @@
     var stages = [30,15,7,0];
     var rows = stages.map(function(stage, index){
       var label = milestoneLabel467(stage);
-      var eventKey = 'v480-test|' + batch + '|' + stage;
+      var eventKey = 'v481-test|' + batch + '|' + stage;
       var due = new Date(now.getFullYear(), now.getMonth(), now.getDate() + stage);
       return {
         id: 'expiry-test-' + hashText(eventKey),
         readId: 'expiry-test-read-' + hashText(eventKey),
         eventKey: eventKey,
-        docBaseKey: 'v480-test-doc-' + stage,
+        docBaseKey: 'v481-test-doc-' + stage,
         type: 'test',
         milestone: stage,
         expireDate: localDateKey467(due),
