@@ -4487,7 +4487,7 @@ font-size: 25px !important;
    A4형 서류는 JS 저장단계에서 사업자등록증과 동일한 전체용지 맞춤을 사용합니다.
    미리보기 틀은 v473 크기를 유지하고 내부에 중복 생성되던 흰 여백만 제거합니다. */
 
-/* v23.7.475-test - 월 이동과 날짜 확정을 분리한 만료날짜 달력 */
+/* v23.7.476-test - 월 이동과 날짜 확정을 분리한 만료날짜 달력 */
 .sitepass-clean-calendar-overlay475{
   position:fixed;
   inset:0;

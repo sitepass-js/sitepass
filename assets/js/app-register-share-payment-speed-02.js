@@ -23,7 +23,7 @@ async function completePendingRegistrationPayment(plan) {
         const now = new Date();
         const nowIso = now.toISOString();
         const equipmentRegister = getEquipmentRegisterModule();
-        const paidItem = equipmentRegister.buildPaidRegistrationItem
+        let paidItem = equipmentRegister.buildPaidRegistrationItem
           ? equipmentRegister.buildPaidRegistrationItem({
               item,
               info,
@@ -49,6 +49,7 @@ async function completePendingRegistrationPayment(plan) {
               updatedAt: nowIso
             };
         if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
+        if (window.SITEPASS_TEST_NO_PAYMENT_MODE) paidItem = markSitePassEquipmentUnsyncedV476(applyCurrentMemberOwnerForEquipmentSync(paidItem, true), 'test_registration_pending');
 
         if (existingIndex >= 0) items[existingIndex] = paidItem;
         else items.unshift(paidItem);
@@ -396,7 +397,7 @@ function resetForm(clearEdit = true) {
         if (isSitePassMemberServerAuthoritativeMode()) {
           // v23.7.350: 일반회원 보관함은 서버목록만 최종 기준으로 사용합니다.
           // PC에 남은 구버전 localStorage 장비를 섞으면 삭제/휴대폰/다른PC 동기화가 계속 꼬입니다.
-          return filterBrokenNoPhotoRegistrationItems(filterCurrentMemberEquipmentStorageScope(mergePendingRegistrationIntoItems(getSitePassServerAuthoritativeEquipmentItems())));
+          return filterBrokenNoPhotoRegistrationItems(filterCurrentMemberEquipmentStorageScope(mergePendingRegistrationIntoItems(mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems(), getSitePassUnsyncedEquipmentItemsV476()))));
         }
         const localLists = [
           readLocalJsonArray(PREV_STORAGE_KEY),
@@ -411,7 +412,7 @@ function resetForm(clearEdit = true) {
         return filterBrokenNoPhotoRegistrationItems(mergePendingRegistrationIntoItems(mergeEquipmentItemLists.apply(null, localLists.concat([runtimeEquipmentItems]))));
       }
       catch (error) {
-        if (isSitePassMemberServerAuthoritativeMode()) return filterBrokenNoPhotoRegistrationItems(filterCurrentMemberEquipmentStorageScope(mergePendingRegistrationIntoItems(getSitePassServerAuthoritativeEquipmentItems())));
+        if (isSitePassMemberServerAuthoritativeMode()) return filterBrokenNoPhotoRegistrationItems(filterCurrentMemberEquipmentStorageScope(mergePendingRegistrationIntoItems(mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems(), getSitePassUnsyncedEquipmentItemsV476()))));
         return filterBrokenNoPhotoRegistrationItems(mergePendingRegistrationIntoItems(runtimeEquipmentItems));
       }
     }
@@ -625,6 +626,25 @@ function resetForm(clearEdit = true) {
       return Array.from(new Set(ownerValues.map(normalizeSitePassMemberStorageScopeKey).filter(Boolean)));
     }
 
+    function getCurrentSitePassMemberStrongStorageScopeKeys() {
+      const member = getCurrentSitePassMemberForEquipmentSync();
+      if (!member || typeof member !== 'object') return [];
+      return Array.from(new Set([
+        member.id, member.memberId, member.userId,
+        member.authUserId, member.auth_user_id, member.supabaseAuthUserId,
+        member.providerId, member.provider_id
+      ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean)));
+    }
+
+    function getEquipmentOwnerStrongStorageScopeKeys(item) {
+      item = item && typeof item === 'object' ? item : {};
+      return Array.from(new Set([
+        item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id,
+        item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id,
+        item.ownerProviderId, item.owner_provider_id, item.providerId, item.provider_id
+      ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean)));
+    }
+
     function equipmentItemBelongsToCurrentMemberStorageScope(item) {
       try {
         if (!isSitePassMemberServerAuthoritativeMode()) return true;
@@ -633,10 +653,30 @@ function resetForm(clearEdit = true) {
       }
       if (!item || typeof item !== 'object') return false;
       if (sitePassEquipmentStatusLooksDeleted(item)) return false;
+
+      const member = getCurrentSitePassMemberForEquipmentSync() || {};
+      const currentPrimary = [member.id, member.memberId, member.userId, member.authUserId, member.auth_user_id, member.supabaseAuthUserId]
+        .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+      const ownerPrimary = [item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
+        .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+      // v23.7.476: 탈퇴 후 같은 아이디/전화번호로 재가입해도 예전 회원 장비가 섞이지 않도록
+      // 이전 회원의 고유 회원ID가 들어 있는 자료는 현재 고유 회원ID와 정확히 일치해야 합니다.
+      if (ownerPrimary.length) {
+        if (!currentPrimary.length) return false;
+        return ownerPrimary.some(function(key) { return currentPrimary.indexOf(key) >= 0; });
+      }
+
+      const currentProvider = [member.providerId, member.provider_id].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+      const ownerProvider = [item.ownerProviderId, item.owner_provider_id, item.providerId, item.provider_id].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+      if (ownerProvider.length) {
+        if (!currentProvider.length) return false;
+        return ownerProvider.some(function(key) { return currentProvider.indexOf(key) >= 0; });
+      }
+
+      // 강한 식별자가 없는 아주 오래된 자료만 로그인ID/전화번호 등 구버전 키로 보조 판정합니다.
       const currentKeys = getCurrentSitePassMemberStorageScopeKeys();
       if (!currentKeys.length) return false;
       const ownerKeys = getEquipmentOwnerStorageScopeKeys(item);
-      // owner가 없는 구버전/샘플 자료는 신규 회원 보관함에 보여주지 않습니다.
       if (!ownerKeys.length) return false;
       return ownerKeys.some(function(key) { return currentKeys.indexOf(key) >= 0; });
     }
@@ -654,6 +694,92 @@ function resetForm(clearEdit = true) {
     try {
       window.sitePassFilterCurrentMemberEquipmentStorageScope = filterCurrentMemberEquipmentStorageScope;
       window.sitePassEquipmentItemBelongsToCurrentMemberStorageScope = equipmentItemBelongsToCurrentMemberStorageScope;
+    } catch (e) {}
+
+
+    // v23.7.476: 등록 직후 서버 저장이 끝나기 전에 서버목록이 빈 값으로 돌아와도
+    // 새 장비를 지우지 않고 보관함/상세보기에서 유지하는 회원별 미동기화 대기열입니다.
+    const SITEPASS_UNSYNCED_EQUIPMENT_PREFIX_V476 = 'sitepass_unsynced_equipment_v476_';
+    const sitePassUnsyncedRetryingCodesV476 = new Set();
+
+    function getSitePassUnsyncedEquipmentScopeKeyV476() {
+      const member = getCurrentSitePassMemberForEquipmentSync();
+      const strong = getCurrentSitePassMemberStrongStorageScopeKeys();
+      const fallback = member && (member.signupId || member.loginId || member.email || member.phone);
+      return SITEPASS_UNSYNCED_EQUIPMENT_PREFIX_V476 + normalizeSitePassMemberStorageScopeKey(strong[0] || fallback || 'anonymous');
+    }
+
+    function readSitePassUnsyncedCodesV476() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(getSitePassUnsyncedEquipmentScopeKeyV476()) || '[]');
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+      } catch (e) { return []; }
+    }
+
+    function writeSitePassUnsyncedCodesV476(rows) {
+      try {
+        const clean = (Array.isArray(rows) ? rows : []).filter(function(row){ return row && row.code; }).slice(0, 50);
+        localStorage.setItem(getSitePassUnsyncedEquipmentScopeKeyV476(), JSON.stringify(clean));
+      } catch (e) {}
+    }
+
+    function markSitePassEquipmentUnsyncedV476(item, reason) {
+      if (!item || !item.code) return item;
+      item = applyCurrentMemberOwnerForEquipmentSync(item, true);
+      item.sitePassServerSyncPending = true;
+      item.sitePassServerSyncPendingAt = item.sitePassServerSyncPendingAt || new Date().toISOString();
+      item.sitePassServerSyncReason = String(reason || 'registration_pending');
+      const rows = readSitePassUnsyncedCodesV476().filter(function(row){ return String(row.code) !== String(item.code); });
+      rows.unshift({ code:String(item.code), savedAt:new Date().toISOString(), reason:item.sitePassServerSyncReason });
+      writeSitePassUnsyncedCodesV476(rows);
+      return item;
+    }
+
+    function clearSitePassEquipmentUnsyncedV476(code) {
+      const target = String(code || '').trim();
+      if (!target) return;
+      writeSitePassUnsyncedCodesV476(readSitePassUnsyncedCodesV476().filter(function(row){ return String(row.code || '') !== target; }));
+    }
+
+    function getLocalCurrentMemberEquipmentItemsV476() {
+      const lists = [];
+      try { lists.push(readLocalJsonArray(STORAGE_KEY)); } catch (e) {}
+      try { lists.push(Array.isArray(runtimeEquipmentItems) ? runtimeEquipmentItems : []); } catch (e) {}
+      try { if (Array.isArray(window.sitePassFastCompletionItems)) lists.push(window.sitePassFastCompletionItems); } catch (e) {}
+      try { if (window.sitePassFastCompletionItem) lists.push([window.sitePassFastCompletionItem]); } catch (e) {}
+      return filterCurrentMemberEquipmentStorageScope(mergeEquipmentItemLists.apply(null, lists));
+    }
+
+    function getSitePassUnsyncedEquipmentItemsV476() {
+      const local = getLocalCurrentMemberEquipmentItemsV476();
+      const rows = readSitePassUnsyncedCodesV476();
+      const codes = new Set(rows.map(function(row){ return String(row.code || ''); }).filter(Boolean));
+      // v475에서 등록 직후 사라진 현재 회원 자료도 한 번 복구합니다.
+      // 강한 회원 식별자가 일치하고 최근 72시간 이내인 로컬 자료만 복구 대상으로 삼습니다.
+      const now = Date.now();
+      local.forEach(function(item){
+        const t = Date.parse(item.updatedAt || item.createdAt || item.paidAt || '') || 0;
+        if (item && item.code && t && now - t <= 72 * 60 * 60 * 1000) codes.add(String(item.code));
+      });
+      return local.filter(function(item){ return item && codes.has(String(item.code || '')); });
+    }
+
+    function scheduleSitePassUnsyncedRetryV476(items) {
+      (Array.isArray(items) ? items : []).slice(0, 3).forEach(function(item, index){
+        const code = String(item && item.code || '');
+        if (!code || sitePassUnsyncedRetryingCodesV476.has(code)) return;
+        sitePassUnsyncedRetryingCodesV476.add(code);
+        setTimeout(function(){
+          Promise.resolve(uploadAndPersistEquipmentItemDocsInBackground(item, 'v476_unsynced_recovery')).then(function(result){
+            if (result && result.ok) clearSitePassEquipmentUnsyncedV476(code);
+          }).catch(function(){}).finally(function(){ sitePassUnsyncedRetryingCodesV476.delete(code); });
+        }, 1200 + index * 900);
+      });
+    }
+
+    try {
+      window.sitePassMarkEquipmentUnsyncedV476 = markSitePassEquipmentUnsyncedV476;
+      window.sitePassGetUnsyncedEquipmentItemsV476 = getSitePassUnsyncedEquipmentItemsV476;
     } catch (e) {}
 
     function normalizeEquipmentNoForSync(value) {
@@ -927,24 +1053,29 @@ function resetForm(clearEdit = true) {
           return { ok:false, error };
         }
         const serverItems = filterCurrentMemberEquipmentStorageScope(rows.map(normalizeSupabaseEquipmentRow).filter(Boolean));
+        const serverCodes = new Set(serverItems.map(function(item){ return String(item && item.code || ''); }).filter(Boolean));
+        readSitePassUnsyncedCodesV476().forEach(function(row){ if (serverCodes.has(String(row.code || ''))) clearSitePassEquipmentUnsyncedV476(row.code); });
+        const unsyncedItems = getSitePassUnsyncedEquipmentItemsV476().filter(function(item){ return !serverCodes.has(String(item && item.code || '')); });
+        const visibleItems = mergeEquipmentItemLists(serverItems, unsyncedItems);
         try { setServerEquipmentCache(serverItems); } catch (e) {}
-        setSitePassServerAuthoritativeEquipmentItems(serverItems);
-        try { runtimeEquipmentItems = mergeEquipmentItemLists(serverItems); } catch (e) { runtimeEquipmentItems = Array.isArray(serverItems) ? serverItems.slice(0, 100) : []; }
+        setSitePassServerAuthoritativeEquipmentItems(visibleItems);
+        try { runtimeEquipmentItems = mergeEquipmentItemLists(visibleItems); } catch (e) { runtimeEquipmentItems = Array.isArray(visibleItems) ? visibleItems.slice(0, 100) : []; }
         sitePassMemberEquipmentSyncedAt = Date.now();
-        if (!serverItems.length) {
+        if (unsyncedItems.length) scheduleSitePassUnsyncedRetryV476(unsyncedItems);
+        if (!visibleItems.length) {
           sitePassEquipmentSyncMessage = '서버 기준 보관함: 저장된 내 장비가 없습니다.';
           try { updateHomeRegistrationButton(); } catch (e) {}
           try { refreshMemberUi(); } catch (e) {}
           try { if (sitePassCurrentScreenId === 'listScreen' && !window.sitePassFastCompletingRegistration) renderList(); } catch (e) {}
           return { ok:true, count:0, visibleCount:0 };
         }
-        sitePassEquipmentSyncMessage = '서버 기준 보관함: 서버 ' + serverItems.length + '건 표시';
+        sitePassEquipmentSyncMessage = unsyncedItems.length ? ('보관함: 서버 ' + serverItems.length + '건 / 저장 확인 중 ' + unsyncedItems.length + '건') : ('서버 기준 보관함: 서버 ' + serverItems.length + '건 표시');
         try { updateHomeRegistrationButton(); } catch (e) {}
         try { refreshMemberUi(); } catch (e) {}
         try {
           if (sitePassCurrentScreenId === 'listScreen' && !window.sitePassFastCompletingRegistration) renderList();
         } catch (e) {}
-        return { ok:true, count:serverItems.length, visibleCount:serverItems.length };
+        return { ok:true, count:serverItems.length, visibleCount:visibleItems.length, pendingCount:unsyncedItems.length };
       } catch (e) {
         sitePassEquipmentSyncMessage = '내 보관함 서버목록 불러오기 예외: ' + (e?.message || e);
         if (!silent) alert(sitePassEquipmentSyncMessage);
@@ -1376,7 +1507,14 @@ function setItems(items) {
       try {
         const storageItem = await uploadEquipmentItemDocsToSupabaseStorage(item);
         const serverItem = stripItemDataUrlsForServerStorage(storageItem);
-        try { await saveEquipmentItemToSupabase(serverItem, reason || 'storage_background'); } catch (e) { console.warn('Storage 업로드 후 서버저장 실패:', e); }
+        let persistResult = null;
+        try { persistResult = await saveEquipmentItemToSupabase(serverItem, reason || 'storage_background'); } catch (e) { console.warn('Storage 업로드 후 서버저장 실패:', e); persistResult = { ok:false, error:e }; }
+        if (!persistResult || !persistResult.ok) {
+          markSitePassEquipmentUnsyncedV476(serverItem, 'storage_persist_retry');
+          return { ok:false, item:serverItem, error:(persistResult && persistResult.error) || '서버 저장 실패' };
+        }
+        clearSitePassEquipmentUnsyncedV476(serverItem.code);
+        serverItem.sitePassServerSyncPending = false;
         try {
           const current = getImmediateRegistrationCompletionItems(serverItem);
           const merged = current.map(function(x) { return String(x.code || '') === String(serverItem.code || '') ? serverItem : x; });
@@ -1546,7 +1684,7 @@ function setItems(items) {
       try { sources.push((Array.isArray(runtimeEquipmentItems) ? runtimeEquipmentItems : []).slice(0, 30)); } catch (e) {}
       const merged = [];
       sources.forEach(function(list) {
-        (Array.isArray(list) ? list : []).forEach(function(x) {
+        filterCurrentMemberEquipmentStorageScope(Array.isArray(list) ? list : []).forEach(function(x) {
           if (!x || !x.code) return;
           if (String(x.code || '') === code) return;
           // v23.7.350: 추가등록 직후 기존 보관함이 사라져 보이지 않도록
@@ -1748,7 +1886,7 @@ function setItems(items) {
       const nowIso = now.toISOString();
       const info = { key:'test-free', label:'테스트 무료등록', price:'결제없음', days:60, serviceStatus:'실사용베타', planText:'테스트 무료등록 · 결제없음', additional: paymentTier === 'additional' };
       const equipmentRegister = getEquipmentRegisterModule ? getEquipmentRegisterModule() : {};
-      const paidItem = equipmentRegister && equipmentRegister.buildPaidRegistrationItem
+      let paidItem = equipmentRegister && equipmentRegister.buildPaidRegistrationItem
         ? equipmentRegister.buildPaidRegistrationItem({
             item,
             info,
@@ -1774,6 +1912,8 @@ function setItems(items) {
             updatedAt: nowIso
           };
       if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
+      paidItem = markSitePassEquipmentUnsyncedV476(applyCurrentMemberOwnerForEquipmentSync(paidItem, true), 'test_registration');
+      try { sitePassUnsyncedRetryingCodesV476.add(String(paidItem.code || '')); } catch (e) {}
 
       // v23.7.350: 등록완료 화면 전환을 어떤 저장/병합 작업보다 먼저 실행합니다.
       // v325에서 기존 보관함 보존 병합이 등록완료 흐름을 붙잡아 보관함으로 안 넘어가는 문제가 있었습니다.
@@ -1822,7 +1962,7 @@ function setItems(items) {
           }).catch(function(e){
             console.warn('테스트 즉시 등록완료 후 Storage 백그라운드 저장 실패:', e);
             sitePassEquipmentSyncMessage = '서류파일 서버저장 확인 필요: ' + (e?.message || e);
-          });
+          }).finally(function(){ try { sitePassUnsyncedRetryingCodesV476.delete(String(paidItem.code || '')); } catch (e) {} });
         } catch (e) {}
       }, 3500);
     }
@@ -1844,7 +1984,15 @@ function setItems(items) {
     function getItemByCode(code) {
       const targetCode = String(code || '').trim();
       if (!targetCode) return null;
-      return getItems().find(item => String(item?.code || '').trim() === targetCode) || null;
+      const found = getItems().find(item => String(item?.code || '').trim() === targetCode);
+      if (found) return found;
+      try {
+        const fast = [];
+        if (window.sitePassFastCompletionItem) fast.push(window.sitePassFastCompletionItem);
+        if (Array.isArray(window.sitePassFastCompletionItems)) fast.push.apply(fast, window.sitePassFastCompletionItems);
+        fast.push.apply(fast, getSitePassUnsyncedEquipmentItemsV476());
+        return fast.find(function(item){ return String(item && item.code || '').trim() === targetCode; }) || null;
+      } catch (e) { return null; }
     }
 
     function getDocsByKeys(item, keys) {

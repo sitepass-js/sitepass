@@ -1,11 +1,11 @@
 {
-  "version": "23.7.475",
+  "version": "23.7.476",
   "channel": "test",
-  "note": "expiry date calendar month navigation no longer commits or closes the picker",
-  "build": "v23.7.475-test",
-  "stage": "만료날짜 달력 선택 동작 수정",
+  "note": "회원탈퇴 후 재가입 보관함 분리 및 등록 직후 서버 저장 전 자료 보호",
+  "build": "v23.7.476-test",
+  "stage": "보관함 회원분리·신규등록 저장보호 수정",
   "updatedAt": "2026-07-14",
-  "releaseType": "test-date-picker-confirm-on-day-click",
-  "purpose": "달력의 이전달·다음달 이동과 실제 날짜 선택을 분리",
-  "notes": "월 이동 화살표는 달력 보기만 바꾸며 날짜 입력값을 변경하지 않습니다. 날짜 숫자를 클릭한 경우에만 만료일이 저장되고 달력이 닫힙니다. 날짜 지우기와 닫기 버튼도 제공합니다."
+  "releaseType": "test-member-archive-race-recovery",
+  "purpose": "탈퇴 전 장비가 새 회원 보관함에 섞이는 문제와 신규 등록건이 서버 동기화 전에 사라지는 문제 수정",
+  "notes": "강한 회원 식별자로 보관함 소유자를 판정하고, 새 등록건은 서버 저장이 확인될 때까지 회원별 미동기화 대기열과 로컬 미리보기에서 유지합니다. 상세보기에서도 대기 중 자료를 조회하며 서버 저장 실패 시 자동 재시도합니다."
 }

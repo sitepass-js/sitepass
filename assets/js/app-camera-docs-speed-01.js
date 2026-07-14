@@ -533,7 +533,7 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       }, 0);
     }
 
-    // v23.7.475-test: 브라우저 기본 달력은 월 이동 화살표에서도 input 이벤트를
+    // v23.7.476-test: 브라우저 기본 달력은 월 이동 화살표에서도 input 이벤트를
     // 발생시키는 기기가 있어, 선택 중인 날짜가 저장되고 달력이 닫히는 문제가 있었습니다.
     // 월 이동은 보기만 바꾸고 날짜 숫자를 눌렀을 때만 값을 확정하는 전용 달력을 사용합니다.
     const sitePassCleanCalendar475 = {
@@ -713,7 +713,7 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       });
       target.querySelectorAll('[data-clean-date-real]').forEach(input => {
         if (input.dataset.boundDateReal === 'yes') return;
-        // v23.7.475: 전용 달력에서 날짜 숫자를 선택했을 때만 값이 확정됩니다.
+        // v23.7.476: 전용 달력에서 날짜 숫자를 선택했을 때만 값이 확정됩니다.
         // 기본 input/blur 이벤트로 달력을 닫지 않습니다.
         input.dataset.boundDateReal = 'yes';
       });
