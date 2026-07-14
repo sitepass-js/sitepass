@@ -389,6 +389,61 @@ function fitDocumentImageToDataUrl(file, maxSize, quality, docKey) {
                 usedCrop = crop.w < source.width * 0.96 || crop.h < source.height * 0.96;
               }
 
+              // v23.7.469: 사업자등록증은 자동 여백 제거가 글자·도장·용지 끝을 자를 수 있어
+              // 전체 이미지를 우선 보존합니다. 문서영역이 충분히 크게 잡힌 경우에만
+              // 넉넉한 안전 여백을 더한 범위를 사용하고, 이후 강제 자르기는 하지 않습니다.
+              if (String(docKey || '') === 'businessLicense') {
+                let safeCrop = { x:0, y:0, w:source.width, h:source.height };
+                if (bbox) {
+                  const sx = source.width / scan.canvas.width;
+                  const sy = source.height / scan.canvas.height;
+                  const rawX = bbox.x * sx;
+                  const rawY = bbox.y * sy;
+                  const rawW = bbox.w * sx;
+                  const rawH = bbox.h * sy;
+                  const widthRatio = rawW / Math.max(1, source.width);
+                  const heightRatio = rawH / Math.max(1, source.height);
+                  const areaRatio = (rawW * rawH) / Math.max(1, source.width * source.height);
+
+                  // 잘못 잡힌 작은 영역은 사용하지 않습니다.
+                  if (widthRatio >= 0.55 && heightRatio >= 0.55 && areaRatio >= 0.38) {
+                    const safePadX = rawW * 0.14;
+                    const safePadY = rawH * 0.14;
+                    safeCrop = {
+                      x: clamp(rawX - safePadX, 0, source.width - 1),
+                      y: clamp(rawY - safePadY, 0, source.height - 1),
+                      w: clamp(rawW + safePadX * 2, 1, source.width),
+                      h: clamp(rawH + safePadY * 2, 1, source.height)
+                    };
+                    if (safeCrop.x + safeCrop.w > source.width) safeCrop.w = source.width - safeCrop.x;
+                    if (safeCrop.y + safeCrop.h > source.height) safeCrop.h = source.height - safeCrop.y;
+                  }
+                }
+
+                const businessCanvas = document.createElement('canvas');
+                const safeScale = Math.min(1, maxSize / Math.max(safeCrop.w, safeCrop.h));
+                businessCanvas.width = Math.max(1, Math.round(safeCrop.w * safeScale));
+                businessCanvas.height = Math.max(1, Math.round(safeCrop.h * safeScale));
+                const businessCtx = businessCanvas.getContext('2d');
+                businessCtx.fillStyle = '#ffffff';
+                businessCtx.fillRect(0, 0, businessCanvas.width, businessCanvas.height);
+                businessCtx.drawImage(
+                  source,
+                  safeCrop.x, safeCrop.y, safeCrop.w, safeCrop.h,
+                  0, 0, businessCanvas.width, businessCanvas.height
+                );
+
+                const businessA4 = resizeCanvasIfNeeded(forceToA4Canvas(businessCanvas), maxSize);
+                resolve({
+                  dataUrl: businessA4.toDataURL('image/jpeg', quality),
+                  editDataUrl: businessCanvas.toDataURL('image/jpeg', quality),
+                  method: 'business-license-safe-full-fit',
+                  fitText: '사업자등록증 전체 보존 · 자동 잘림 방지',
+                  ratioText: '용지 가장자리와 글자를 남기고 A4 안에 맞춤'
+                });
+                return;
+              }
+
               // v23.7.172: 카드형 서류는 비율/크기 판정에 실패해도 무조건 A4 상단 1/2 칸에 배치합니다.
               // 신분증/면허증/이수증이 일반 A4 전체나 예전 1/4 배치처럼 보이는 문제를 막습니다.
               if (isCardQuarterDoc(docKey || '')) {
