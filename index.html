@@ -28,11 +28,11 @@
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
 <link rel="preconnect" href="https://fipbgzvdwgjsmazmswaj.supabase.co" crossorigin />
 <link rel="dns-prefetch" href="//fipbgzvdwgjsmazmswaj.supabase.co" />
-<link rel="manifest" href="./sitepass.webmanifest?v=23.7.471" />
+<link rel="manifest" href="./sitepass.webmanifest?v=23.7.472" />
 <!-- v23.7.460: PWA 설치 안정화를 위해 실제 sitepass.webmanifest 파일을 사용합니다. -->
-<link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png?v=23.7.471" />
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.471" />
-<link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.471" />
+<link rel="apple-touch-icon" href="./icons/sitepass-icon-180.png?v=23.7.472" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.472" />
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.472" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
 
 <script>
@@ -53,10 +53,10 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.471 selected registration flow -->
+  <!-- SitePass deploy-check: v23.7.472 selected registration flow -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.471" />
-  <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v471.css?v=23.7.471" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.472" />
+  <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.472" />
 
   <style>
     /* v23.7.460 first-screen hero cleanup */
@@ -2643,8 +2643,8 @@
     }
     
   </style>
-  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.471">
-  <link rel="stylesheet" href="./assets/css/sitepass-my-account-v463.css?v=23.7.471">
+  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.472">
+  <link rel="stylesheet" href="./assets/css/sitepass-my-account-v463.css?v=23.7.472">
 </head>
 <body class="sitepass-booting">
   <main class="app">
@@ -2955,31 +2955,35 @@
             </select>
           </div>
         </div>
-        <div id="registrationWizardProgress470" class="sitepass-registration-wizard470">
-          <div class="sitepass-registration-wizard-head470">
-            <div><b id="registrationWizardStepTitle470">1. 장비서류</b><span id="registrationWizardStepDesc470">장비 기본정보와 장비서류만 먼저 등록합니다.</span></div>
+        <div id="registrationWizardProgress472" class="sitepass-registration-wizard472">
+          <div class="sitepass-registration-wizard-head472">
+            <div><b id="registrationWizardStepTitle472">1. 장비서류</b><span id="registrationWizardStepDesc472">장비서류는 필수입니다. 기사·인부 서류도 등록할 경우 먼저 체크한 뒤 장비서류를 작성해주세요.</span></div>
           </div>
-          <div class="sitepass-registration-progress470">
-            <div data-wizard-stage="1" class="active" role="button" tabindex="0" aria-current="step"><i>1</i>장비서류</div>
-            <div data-wizard-stage="2" role="button" tabindex="0"><i>2</i>기사서류</div>
-            <div data-wizard-stage="3" role="button" tabindex="0"><i>3</i>인부서류</div>
+          <div class="sitepass-registration-progress472" aria-label="등록할 서류 선택">
+            <label class="sitepass-registration-target472 selected active" data-registration-target="equipment" data-wizard-stage="1" aria-current="step">
+              <input id="includeEquipmentDocs472" type="checkbox" checked disabled />
+              <span class="target-check472">✓</span><i>1</i><span>장비서류 · 필수</span>
+            </label>
+            <label class="sitepass-registration-target472 not-selected" data-registration-target="driver" data-wizard-stage="2">
+              <input id="includeDriverDocs" type="checkbox" onchange="sitePassRegistrationTargetChanged472('driver')" name="includeDriverDocs" />
+              <span class="target-check472">✓</span><i>2</i><span>기사서류 · 선택</span>
+            </label>
+            <label class="sitepass-registration-target472 not-selected" data-registration-target="worker" data-wizard-stage="3">
+              <input id="includeWorkerDocs" type="checkbox" onchange="sitePassRegistrationTargetChanged472('worker')" name="includeWorkerDocs" />
+              <span class="target-check472">✓</span><i>3</i><span>인부서류 · 선택</span>
+            </label>
           </div>
-        </div>
-        <div class="sitepass-wizard-hidden-controls470" aria-hidden="true">
-          <input id="includeDriverDocs" type="checkbox" onchange="toggleBundleGroup('driver')" name="includeDriverDocs" />
-          <input id="includeWorkerDocs" type="checkbox" onchange="toggleBundleGroup('worker')" name="includeWorkerDocs" />
         </div>
         <div class="bundle-summary" id="bundleSummary"></div>
       </div>
 
       <div class="card" id="documentSection">
         <h2>장비서류 등록</h2>
-        <div id="registrationChoicePanel470" class="sitepass-wizard-choice470 hidden"></div>
         <div id="registrationWizardPrivateHint470" class="notice blue-note hidden"></div>
-        <div class="doc-check-title">✅ 기사·인부 서류는 위 단계 버튼을 미리 눌러 작성할 수 있습니다</div>
+        <div class="doc-check-title">✅ 처음에 체크한 서류만 장비 → 기사 → 인부 순서로 등록합니다</div>
         <div id="docCards"></div>
         <div class="notice">
-          장비만 등록하면 장비서류 마지막에 등록완료가 표시됩니다. 기사·인부 단계 버튼을 미리 누르면 해당 서류를 함께 등록하는 것으로 선택되며, 장비서류 저장 후 선택한 다음 단계로 이동합니다. 실제 마지막 단계에서만 등록완료가 표시되고 모든 서류는 같은 장비 QR 안에 묶여 저장됩니다.
+          장비서류는 필수이며 기사·인부 서류는 처음 화면에서 선택합니다. 장비서류 작성 후 저장하고 다음을 누르면 선택한 기사 또는 인부의 인증화면으로 이동하고, 인증 완료 후 해당 서류등록칸이 열립니다. 선택한 마지막 단계에서 저장완료가 표시되며 모든 서류는 같은 장비 QR 안에 묶여 저장됩니다.
         </div>
       </div>
 
@@ -2990,8 +2994,8 @@
       </div>
       <div class="card">
         <div class="sitepass-wizard-actions470">
-          <button id="wizardBackButton470" type="button" class="secondary hidden" onclick="sitePassRegistrationWizardBack470()">이전 단계</button>
-          <button id="saveBundleButton" type="button" class="primary" onclick="sitePassRegistrationWizardNext470()">등록완료</button>
+          <button id="wizardBackButton470" type="button" class="secondary hidden" onclick="sitePassRegistrationWizardBack472()">이전 단계</button>
+          <button id="saveBundleButton" type="button" class="primary" onclick="sitePassRegistrationWizardNext472()">등록완료</button>
         </div>
       </div>
     </section>
@@ -3084,7 +3088,7 @@
       <div class="card sitepass-first-card">
         <div id="sitepassFirstLanding" class="sitepass-first-landing">
           <div class="sitepass-first-hero">
-            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.471" alt="SitePass 장비서류 간편 전송" />
+            <img src="./assets/img/sitepass-hero-logo-clean.png?v=23.7.472" alt="SitePass 장비서류 간편 전송" />
           </div>
           <p class="sitepass-first-subtitle"><span>현장에 제출할 장비 서류를</span><span>빠르게 공유할 수 있습니다.</span></p>
 
@@ -3106,24 +3110,24 @@
           </form>
 
           <div class="sitepass-first-link-row">
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstJoin()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.471" alt="" class="sitepass-button-icon" />회원가입</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstJoin()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.472" alt="" class="sitepass-button-icon" />회원가입</button>
             <span aria-hidden="true">|</span>
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.471" alt="" class="sitepass-button-icon" />아이디 찾기</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.472" alt="" class="sitepass-button-icon" />아이디 찾기</button>
             <span aria-hidden="true">|</span>
-            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.471" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
+            <button type="button" class="sitepass-icon-text-button" onclick="openSitePassFirstFind('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.472" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
           </div>
 
           <button type="button" class="sitepass-first-install" onclick="addSitePassToHomeScreen(event)"><span aria-hidden="true">⇩</span> 바탕화면에 설치하기</button>
 
           <div class="sitepass-first-company">
-            <img src="./assets/img/js-construction-badge.png?v=23.7.471" alt="제이에스건설 J.S CONSTRUCTION" />
+            <img src="./assets/img/js-construction-badge.png?v=23.7.472" alt="제이에스건설 J.S CONSTRUCTION" />
             <span class="sitepass-company-divider" aria-hidden="true"></span>
             <span>경상남도 김해시 삼문동 1275</span>
             <span>사업자등록번호 402-33-15497</span>
           </div>
         </div>
         <div class="login-auth-shell hidden">
-          <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.471" alt="" class="sitepass-button-icon" /></button>
+          <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.472" alt="" class="sitepass-button-icon" /></button>
           <div class="login-auth-brand">
             <svg class="sitepass-logo-mark" viewBox="0 0 64 64" role="img" aria-hidden="true" focusable="false">
               <defs>
@@ -3165,9 +3169,9 @@
             <span>비밀번호 표시</span>
           </label>
           <div class="login-help-row normal-login-area">
-            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.471" alt="" class="sitepass-button-icon" />아이디 찾기</button>
+            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('id')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.472" alt="" class="sitepass-button-icon" />아이디 찾기</button>
             <span class="divider-dot">|</span>
-            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.471" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
+            <button type="button" class="login-text-link sitepass-icon-text-button" onclick="openAccountFindPanel('password')"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.472" alt="" class="sitepass-button-icon" />비밀번호 찾기</button>
           </div>
           <div id="quickLoginPanel" class="quick-login-panel hidden">
             <div class="quick-login-head">
@@ -3198,7 +3202,7 @@
                 <b>아이디/비밀번호 찾기</b>
                 <span>현재 테스트 파일에서는 이 휴대폰 브라우저에 저장된 회원정보 기준으로 확인합니다. 정식 서비스에서는 카카오/문자/PASS 본인확인으로 연결합니다.</span>
               </div>
-              <button type="button" class="account-find-close sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.471" alt="" class="sitepass-button-icon" /></button>
+              <button type="button" class="account-find-close sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.472" alt="" class="sitepass-button-icon" /></button>
             </div>
             <div class="account-find-tabs">
               <button id="findIdTab" type="button" onclick="openAccountFindPanel('id')">아이디 찾기</button>
@@ -3252,7 +3256,7 @@
             <button type="button" class="login-social-button naver" onclick="handleNaverLogin()">N 네이버 계정으로 계속하기</button>
           </div>
           <div id="oauthRedirectHelp" class="oauth-redirect-help normal-login-area" aria-live="polite"></div>
-          <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link sitepass-icon-text-button" onclick="startJoinFlow()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.471" alt="" class="sitepass-button-icon" />회원가입</button></div>
+          <div class="login-link-row normal-login-area">계정이 없나요? <button type="button" class="login-text-link sitepass-icon-text-button" onclick="startJoinFlow()"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.472" alt="" class="sitepass-button-icon" />회원가입</button></div>
           <div class="company-channel-note normal-login-area">
             <div class="js-company-logo" aria-label="제이에스건설 로고">
               <div class="js-construction-logo-inline" aria-label="제이에스건설 로고">
@@ -3267,7 +3271,7 @@
 
         <div id="joinChoiceBox" class="join-choice-box hidden">
           <div class="join-choice-head">
-            <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.471" alt="" class="sitepass-button-icon" /></button>
+            <button type="button" class="sitepass-auth-safe-back sitepass-icon-home-button sitepass-icon-only-home-button" onclick="backToSitePassFirstLanding()" aria-label="홈으로 이동" title="홈으로 이동"><img src="./assets/img/sitepass-home-original-logo-transparent.png?v=23.7.472" alt="" class="sitepass-button-icon" /></button>
             <h3>회원가입</h3>
           </div>
 
@@ -3915,42 +3919,42 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.471" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.471" defer></script>
-<script src="./assets/js/storage.js?v=23.7.471" defer></script>
-<script src="./assets/js/terms.js?v=23.7.471" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.471" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.471" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.471" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.471" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.471" defer></script>
-<script src="./assets/js/archive.js?v=23.7.471" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.471" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.471" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.471" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.471" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.471" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.471" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.471" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.471" defer></script>
-<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.471" defer></script>
-<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.471" defer></script>
-<script src="./assets/js/sitepass-my-account-v463.js?v=23.7.471" defer></script>
-<script src="./assets/js/sitepass-registration-wizard-v471.js?v=23.7.471" defer></script>
+<script src="./assets/js/config.js?v=23.7.472" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.472" defer></script>
+<script src="./assets/js/storage.js?v=23.7.472" defer></script>
+<script src="./assets/js/terms.js?v=23.7.472" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.472" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.472" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.472" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.472" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.472" defer></script>
+<script src="./assets/js/archive.js?v=23.7.472" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.472" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.472" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.472" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.472" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.472" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.472" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.472" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.472" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.472" defer></script>
+<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.472" defer></script>
+<script src="./assets/js/sitepass-my-account-v463.js?v=23.7.472" defer></script>
+<script src="./assets/js/sitepass-registration-wizard-v472.js?v=23.7.472" defer></script>
 
 <script>
 (function(){
@@ -5865,6 +5869,6 @@
   })();
   </script>
 
-  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.471"></script>
+  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.472"></script>
 </body>
 </html>

@@ -1,0 +1,35 @@
+/* SitePass v23.7.472-test - 첫 화면 등록대상 체크 후 순차 등록 */
+.sitepass-registration-wizard472{margin:14px 0 4px;padding:14px;border:1px solid #cfe0ff;border-radius:18px;background:#f7faff}
+.sitepass-registration-wizard-head472{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.sitepass-registration-wizard-head472 b{display:block;font-size:17px;color:#10213b}
+.sitepass-registration-wizard-head472 span{display:block;margin-top:4px;font-size:13px;line-height:1.5;color:#60718f}
+.sitepass-registration-progress472{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sitepass-registration-target472{position:relative;display:flex;align-items:center;justify-content:center;gap:7px;min-height:48px;padding:7px 9px;border:1px solid #d9e4f5;border-radius:13px;background:#fff;color:#75839a;font-size:13px;font-weight:900;text-align:center;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:border-color .12s ease,background .12s ease,transform .12s ease}
+.sitepass-registration-target472:active{transform:scale(.985)}
+.sitepass-registration-target472 input{position:absolute;opacity:0;pointer-events:none}
+.sitepass-registration-target472 i{display:inline-grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#edf2f9;color:#718096;font-style:normal;font-size:12px}
+.sitepass-registration-target472 .target-check472{display:inline-grid;place-items:center;width:20px;height:20px;border:2px solid #c6d2e5;border-radius:6px;background:#fff;color:transparent;font-size:13px;line-height:1}
+.sitepass-registration-target472.selected{border-color:#9fcfb6;background:#f0faf5;color:#087a42}
+.sitepass-registration-target472.selected i{background:#12a05c;color:#fff}
+.sitepass-registration-target472.selected .target-check472{border-color:#12a05c;background:#12a05c;color:#fff}
+.sitepass-registration-target472.active{box-shadow:0 0 0 2px rgba(44,91,215,.14);border-color:#2c5bd7;background:#eef4ff;color:#1748bd}
+.sitepass-registration-target472.active i{background:#2c5bd7;color:#fff}
+.sitepass-registration-target472.locked{cursor:default;opacity:.82}
+.sitepass-registration-target472[data-wizard-stage="1"]{cursor:default}
+.sitepass-registration-target472.not-selected{background:#fff;color:#8995a9}
+.sitepass-wizard-group-hidden472{display:none!important}
+.sitepass-wizard-basic-collapsed472 .form-grid,.sitepass-wizard-basic-collapsed472 .bundle-summary,.sitepass-wizard-basic-collapsed472 #registrationDraftNotice,.sitepass-wizard-basic-collapsed472 #editModeBanner{display:none!important}
+.sitepass-wizard-basic-collapsed472{padding-bottom:8px!important}
+#registrationWizardPrivateHint470{margin:10px 0 14px}
+#registerScreen .bundle-group{margin-top:0}
+.sitepass-wizard-actions470{display:grid;grid-template-columns:1fr 1.45fr;gap:10px}
+.sitepass-wizard-actions470 .hidden{display:none!important}
+.sitepass-wizard-actions470 button:only-child{grid-column:1/-1}
+#registerScreen.sitepass-wizard-driver-auth-pending472 .bundle-group[data-bundle-group="driver"] .doc-card[data-group-key="driver"]{display:none!important}
+#registerScreen.sitepass-wizard-driver-auth-pending472 .bundle-group[data-bundle-group="driver"] .bundle-group-head{margin-bottom:8px}
+@media(max-width:520px){
+  .sitepass-registration-progress472{grid-template-columns:1fr}
+  .sitepass-registration-target472{justify-content:flex-start;padding-left:16px}
+  .sitepass-registration-wizard-head472{display:block}
+  .sitepass-wizard-actions470{grid-template-columns:1fr}
+}
