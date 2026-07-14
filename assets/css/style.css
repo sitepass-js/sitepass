@@ -4444,7 +4444,7 @@ font-size: 25px !important;
   }
 }
 
-/* v23.7.469-test 사업자등록증 미리보기 전체 보존 */
+/* v23.7.470-test 사업자등록증 미리보기 전체 보존 */
 .doc-card[data-doc-key="businessLicense"] .paper-frame {
   overflow: visible;
   background: #f8fbff;

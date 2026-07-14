@@ -389,7 +389,7 @@ function fitDocumentImageToDataUrl(file, maxSize, quality, docKey) {
                 usedCrop = crop.w < source.width * 0.96 || crop.h < source.height * 0.96;
               }
 
-              // v23.7.469: 사업자등록증은 자동 여백 제거가 글자·도장·용지 끝을 자를 수 있어
+              // v23.7.470: 사업자등록증은 자동 여백 제거가 글자·도장·용지 끝을 자를 수 있어
               // 전체 이미지를 우선 보존합니다. 문서영역이 충분히 크게 잡힌 경우에만
               // 넉넉한 안전 여백을 더한 범위를 사용하고, 이후 강제 자르기는 하지 않습니다.
               if (String(docKey || '') === 'businessLicense') {

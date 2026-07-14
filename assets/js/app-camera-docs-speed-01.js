@@ -174,7 +174,7 @@
             const scanBox = finalBox || guideBox;
             const isBusinessLicense = String(docKey || '') === 'businessLicense';
             if (scanBox) {
-              // v23.7.469: 사업자등록증은 글자·도장·가장자리가 자동 자르기에 잘리지 않도록
+              // v23.7.470: 사업자등록증은 글자·도장·가장자리가 자동 자르기에 잘리지 않도록
               // 사용자가 보는 촬영틀 전체를 여유 있게 보존하고 A4 안에 축소 배치합니다.
               const padRatio = isBusinessLicense ? 0.035 : 0.012;
               const pad = Math.round(Math.max(scanBox.w, scanBox.h) * padRatio);
