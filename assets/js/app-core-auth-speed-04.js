@@ -193,7 +193,7 @@ function renderAdminContactManager() {
       const contacts = getContacts();
       const waiting = contacts.filter(x => x.status !== '답변완료').length;
       if (!contacts.length) {
-        return '<div class="card" style="box-shadow:none;margin-top:14px;"><h3>문의관리</h3><div class="notice blue-note">관리자 문의방은 로그인 회원 아이디로 문의자를 자동 구분합니다. 회원이 이름·전화번호·이메일을 다시 입력하지 않아도 됩니다.</div><div class="empty">접수된 문의가 없습니다.</div></div>';
+        return '<div class="card" style="box-shadow:none;margin-top:14px;"><h3>채팅관리</h3><div class="notice blue-note">관리자 채팅방은 로그인 회원 아이디로 문의자를 자동 구분합니다. 회원이 이름·전화번호·이메일을 다시 입력하지 않아도 됩니다.</div><div class="empty">접수된 문의가 없습니다.</div></div>';
       }
       const rows = contacts.map(item => {
         const statusClass = item.status === '답변완료' ? 'done' : 'need';
@@ -205,7 +205,7 @@ function renderAdminContactManager() {
           '<div class="actions"><button class="primary" onclick="saveContactReply(\'' + escapeJs(item.id) + '\')">답변 저장</button><button class="okBtn" onclick="markContactDone(\'' + escapeJs(item.id) + '\')">처리완료</button><button class="dangerBtn" onclick="deleteContact(\'' + escapeJs(item.id) + '\')">문의 삭제</button></div>' +
         '</div>';
       }).join('');
-      return '<div id="adminContactManagerCard" class="card" style="box-shadow:none;margin-top:14px;"><h3>문의관리</h3><div class="notice blue-note">로그인 회원 아이디로 문의자를 자동 식별합니다. 답변을 저장하면 해당 회원의 관리자 문의방에 관리자 말풍선으로 표시됩니다.</div><div class="line"><b>답변대기</b><span>' + waiting + '건</span></div>' + rows + '</div>';
+      return '<div id="adminContactManagerCard" class="card" style="box-shadow:none;margin-top:14px;"><h3>채팅관리</h3><div class="notice blue-note">로그인 회원 아이디로 문의자를 자동 식별합니다. 답변을 저장하면 해당 회원의 관리자 채팅방에 관리자 말풍선으로 표시됩니다.</div><div class="line"><b>답변대기</b><span>' + waiting + '건</span></div>' + rows + '</div>';
     }
 
     function saveContactReply(id) {

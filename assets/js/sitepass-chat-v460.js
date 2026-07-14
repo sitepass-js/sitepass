@@ -1,4 +1,4 @@
-/* SitePass v23.7.460-test - 알림/쪽지함 목록복귀 + 만료알림 삭제 + 로그인회원 자동식별 관리자 채팅 */
+/* SitePass v23.7.465-test - 선택삭제형 만료알림/관리자 채팅방 */
 (function(){
   'use strict';
 
@@ -12,13 +12,16 @@
     'sitePass_v23_7_7_update_original_corrected_browser_auto_member_v23_7_395'
   ];
   var EXPIRY_DELETED_PREFIX = 'sitepass_expiry_deleted_v460:';
+  var ADMIN_DELETED_PREFIX = 'sitepass_admin_chat_deleted_v465:';
   var currentRoomId = '';
   var navWrapped = false;
+  var deleteMode = false;
+  var selectedDeleteGroups = Object.create(null);
 
   var ROOMS = {
-    expiry: { title: '만료 알림방', icon: '⏰', desc: '만료가 가까운 서류 알림을 확인하고 필요 없는 알림은 삭제합니다.', type: 'system' },
+    expiry: { title: '만료 알림방', icon: '⏰', desc: '만료가 가까운 서류 알림을 확인하고 필요한 항목만 선택해 삭제합니다.', type: 'system' },
     share: { title: '공유 기록방', icon: '🔗', desc: '누구에게 언제 링크를 보냈는지 확인합니다.', type: 'system' },
-    admin: { title: '관리자 문의방', icon: '👨‍💼', desc: '로그인한 회원 계정으로 관리자와 1:1 대화합니다.', type: 'admin' }
+    admin: { title: '관리자 채팅방', icon: '👨‍💼', desc: '관리자와 1:1로 메시지를 주고받습니다.', type: 'admin' }
   };
 
   function $(id){ return document.getElementById(id); }
@@ -33,6 +36,7 @@
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
+  function escapeAttr(value){ return escapeHtml(value); }
   function loadJson(key, fallback){
     try {
       var raw = localStorage.getItem(key);
@@ -127,29 +131,48 @@
   }
 
   function expiryDeletedKey(){ return EXPIRY_DELETED_PREFIX + (currentIdentity().key || 'guest'); }
-  function deletedExpiryIds(){
-    var rows = loadJson(expiryDeletedKey(), []);
+  function adminDeletedKey(){ return ADMIN_DELETED_PREFIX + (currentIdentity().key || 'guest'); }
+  function deletedIds(key){
+    var rows = loadJson(key, []);
     return Array.isArray(rows) ? rows : [];
   }
-  function saveDeletedExpiryIds(rows){ saveJson(expiryDeletedKey(), Array.from(new Set(rows || []))); }
+  function saveDeletedIds(key, rows){ saveJson(key, Array.from(new Set(rows || []))); }
+  function deletedExpiryIds(){ return deletedIds(expiryDeletedKey()); }
+  function saveDeletedExpiryIds(rows){ saveDeletedIds(expiryDeletedKey(), rows); }
+  function deletedAdminGroups(){ return deletedIds(adminDeletedKey()); }
+  function saveDeletedAdminGroups(rows){ saveDeletedIds(adminDeletedKey(), rows); }
 
   function expiryMessages(includeDeleted){
     var items = safeItems460();
     var deleted = deletedExpiryIds();
     var messages = [{
       id: 'expiry-guide', from: 'SitePass', kind: 'system', time: '안내',
-      text: '보험증·검사증·안전교육 등 만료 알림이 이곳에 쌓입니다. 확인이 끝난 알림은 삭제할 수 있습니다.',
+      text: '보험증·검사증·안전교육 등 만료 알림이 이곳에 쌓입니다. 삭제 버튼을 누른 뒤 필요한 알림만 선택해 삭제할 수 있습니다.',
       deletable: false
     }];
     var actual = [];
-    items.slice(0, 30).forEach(function(item, index){
-      var rawId = String(item && (item.code || item.id || item.shareCode || '')) + '|' + itemTitle(item) + '|' + itemNo(item) + '|' + index;
+    var attentionRows = [];
+    try {
+      if (typeof window.sitepassGetExpiryAttentionRows465 === 'function') attentionRows = window.sitepassGetExpiryAttentionRows465() || [];
+    } catch(e) { attentionRows = []; }
+    attentionRows.slice(0, 60).forEach(function(row, index){
+      var item = row.item || {};
+      var doc = row.doc || {};
+      var rawId = String(item.code || item.id || item.shareCode || '') + '|' + String(row.docKey || doc.key || '') + '|' + String(row.expireDate || '') + '|' + index;
       var id = 'expiry-' + hashText(rawId);
       if (!includeDeleted && deleted.indexOf(id) >= 0) return;
+      var detail = '';
+      if (row.reason === '만료일 미입력') detail = '만료일이 입력되지 않았습니다.';
+      else if (row.reason === '만료일 확인 필요') detail = '만료일 형식을 확인해주세요.';
+      else if (typeof row.diffDays === 'number' && row.diffDays < 0) detail = Math.abs(row.diffDays) + '일 전에 만료되었습니다.';
+      else if (row.diffDays === 0) detail = '오늘 만료됩니다.';
+      else if (typeof row.diffDays === 'number') detail = '만료까지 D-' + row.diffDays + '입니다.';
+      else detail = row.reason === '만료' ? '만료된 서류입니다.' : '만료가 가까운 서류입니다.';
       actual.push({
         id: id,
+        deleteGroupId: id,
         from: 'SitePass', kind: 'system', time: '자동알림', deletable: true,
-        text: itemTitle(item) + ' ' + itemNo(item) + ' 서류 만료일을 확인해주세요.'
+        text: String(row.itemTitle || itemTitle(item)) + ' ' + String(row.itemNo || itemNo(item)) + '\n' + String(row.docTitle || doc.title || '서류') + ' · ' + detail
       });
     });
     if (!items.length) {
@@ -160,7 +183,7 @@
     } else if (!actual.length) {
       actual.push({
         id: 'expiry-cleared', from: 'SitePass', kind: 'system', time: '안내', deletable: false,
-        text: '현재 표시할 만료 알림이 없습니다. 삭제한 알림은 같은 자료가 새 알림 조건이 되면 다시 표시되도록 개선할 예정입니다.'
+        text: '현재 표시할 만료 알림이 없습니다.'
       });
     }
     return messages.concat(actual);
@@ -211,28 +234,33 @@
 
   function adminMessages(){
     var identity = currentIdentity();
+    var deleted = deletedAdminGroups();
     var base = [{
-      id: 'admin-guide', from: '관리자', kind: 'admin', time: '안내',
-      text: identity.loginId
-        ? identity.loginId + ' 회원님, 문의 내용을 보내면 이 방에서 관리자 답변을 이어서 확인할 수 있습니다.'
-        : '로그인 회원정보를 확인하고 있습니다. 로그인 후 문의를 보내주세요.'
+      id: 'admin-guide', from: '관리자', kind: 'admin', time: '안내', deletable: false,
+      text: '관리자와 1:1로 대화할 수 있습니다. 메시지를 보내면 관리자 답변이 이 방에 이어서 표시됩니다.'
     }];
     var contacts = getContactsSafe().filter(function(item){ return isContactForIdentity(item, identity); });
     contacts.sort(function(a,b){ return new Date(a.createdAt || 0) - new Date(b.createdAt || 0); });
     contacts.forEach(function(item){
+      var rawContactId = String(item.id || hashText((item.message || '') + '|' + (item.createdAt || '')));
+      var deleteGroupId = 'contact-' + rawContactId;
+      if (deleted.indexOf(deleteGroupId) >= 0) return;
       base.push({
-        id: 'member-' + String(item.id || hashText(item.message)),
-        from: '나', kind: 'me', time: nowText(item.createdAt), text: item.message || ''
+        id: 'member-' + rawContactId,
+        deleteGroupId: deleteGroupId,
+        from: '나', kind: 'me', time: nowText(item.createdAt), text: item.message || '', deletable: true
       });
       if (item.reply) {
         base.push({
-          id: 'admin-' + String(item.id || hashText(item.reply)),
-          from: '관리자', kind: 'admin', time: nowText(item.repliedAt), text: item.reply || ''
+          id: 'admin-' + rawContactId,
+          deleteGroupId: deleteGroupId,
+          from: '관리자', kind: 'admin', time: nowText(item.repliedAt), text: item.reply || '', deletable: true
         });
       } else {
         base.push({
-          id: 'pending-' + String(item.id || hashText(item.message)),
-          from: 'SitePass', kind: 'status', time: '전송됨', text: '관리자가 확인하면 이 대화 아래에 답변이 표시됩니다.'
+          id: 'pending-' + rawContactId,
+          deleteGroupId: deleteGroupId,
+          from: 'SitePass', kind: 'status', time: '전송됨', text: '관리자가 확인하면 이 대화 아래에 답변이 표시됩니다.', deletable: true
         });
       }
     });
@@ -242,7 +270,13 @@
       if (Array.isArray(legacy)) {
         legacy.forEach(function(msg, index){
           if (!msg || !msg.text) return;
-          base.push({ id:'legacy-' + index, from:msg.from || '나', kind:msg.kind || 'me', time:msg.time || '', text:msg.text });
+          var groupId = 'legacy-' + index;
+          if (deleted.indexOf(groupId) >= 0) return;
+          base.push({
+            id: groupId,
+            deleteGroupId: groupId,
+            from: msg.from || '나', kind: msg.kind || 'me', time: msg.time || '', text: msg.text, deletable: true
+          });
         });
       }
     }
@@ -276,44 +310,64 @@
     }).join('');
   }
 
+  function selectedCount(){
+    return Object.keys(selectedDeleteGroups).filter(function(key){ return !!selectedDeleteGroups[key]; }).length;
+  }
+
+  function updateDeleteBar(){
+    var bar = $('sitepassChatDeleteBar');
+    var count = $('sitepassChatDeleteCount');
+    var confirmButton = $('sitepassChatDeleteConfirm');
+    var headerButton = $('sitepassChatDeleteSelect');
+    if (bar) bar.classList.toggle('sitepass-chat-hidden', !deleteMode);
+    if (count) count.textContent = selectedCount() + '개 선택';
+    if (confirmButton) confirmButton.disabled = selectedCount() === 0;
+    if (headerButton) headerButton.classList.toggle('sitepass-chat-hidden', deleteMode || (currentRoomId !== 'expiry' && currentRoomId !== 'admin'));
+  }
+
+  function resetDeleteMode(){
+    deleteMode = false;
+    selectedDeleteGroups = Object.create(null);
+    updateDeleteBar();
+  }
+
   function renderMessages(roomId){
     var box = $('sitepassChatMessages');
     if (!box) return;
     var messages = messagesFor(roomId);
+    box.classList.toggle('selecting', deleteMode);
     box.innerHTML = messages.map(function(msg){
-      var deleteHtml = (roomId === 'expiry' && msg.deletable)
-        ? '<button type="button" class="sitepass-chat-message-delete" onclick="return sitepassDeleteChatMessage460(\'' + escapeHtml(msg.id) + '\')">삭제</button>'
+      var kind = escapeHtml(msg.kind || 'system');
+      var groupId = String(msg.deleteGroupId || msg.id || '');
+      var checkboxHtml = (deleteMode && msg.deletable)
+        ? '<label class="sitepass-chat-select-check" title="선택"><input type="checkbox" data-delete-group="' + escapeAttr(groupId) + '" onchange="return sitepassToggleChatMessageSelect465(\'' + escapeAttr(groupId) + '\', this.checked)"' + (selectedDeleteGroups[groupId] ? ' checked' : '') + '><span aria-hidden="true">✓</span></label>'
         : '';
-      return '<div class="sitepass-chat-bubble ' + escapeHtml(msg.kind || 'system') + '" data-message-id="' + escapeHtml(msg.id || '') + '">'
+      return '<div class="sitepass-chat-message-row ' + kind + '" data-message-id="' + escapeAttr(msg.id || '') + '" data-delete-group="' + escapeAttr(groupId) + '">'
+        + checkboxHtml
+        + '<div class="sitepass-chat-bubble ' + kind + '">'
         + '<span class="meta">' + escapeHtml(msg.from || 'SitePass') + ' · ' + escapeHtml(msg.time || '') + '</span>'
         + '<div class="sitepass-chat-bubble-text">' + escapeHtml(msg.text || '').replace(/\n/g, '<br>') + '</div>'
-        + deleteHtml
-        + '</div>';
+        + '</div></div>';
     }).join('');
-    setTimeout(function(){ try { box.scrollTop = box.scrollHeight; } catch(e) {} }, 30);
-  }
-
-  function renderIdentity(){
-    var box = $('sitepassChatMemberIdentity');
-    if (!box) return;
-    var identity = currentIdentity();
-    if (identity.loginId) {
-      box.innerHTML = '<b>로그인 회원</b><span>' + escapeHtml(identity.name || '회원') + ' · ' + escapeHtml(identity.loginId) + '</span>';
-      box.classList.remove('warn');
-    } else {
-      box.innerHTML = '<b>회원정보 확인 필요</b><span>로그인 후 관리자 문의를 이용해주세요.</span>';
-      box.classList.add('warn');
-    }
+    updateDeleteBar();
+    if (!deleteMode) setTimeout(function(){ try { box.scrollTop = box.scrollHeight; } catch(e) {} }, 30);
   }
 
   function showRoomActions(roomId){
-    var deleteAll = $('sitepassChatDeleteAll');
-    if (deleteAll) deleteAll.classList.toggle('sitepass-chat-hidden', roomId !== 'expiry');
+    var deleteSelect = $('sitepassChatDeleteSelect');
+    if (deleteSelect) deleteSelect.classList.toggle('sitepass-chat-hidden', roomId !== 'expiry' && roomId !== 'admin');
+    updateDeleteBar();
+  }
+
+  function refreshComposerVisibility(){
+    var composer = $('sitepassChatComposer');
+    if (composer) composer.classList.toggle('sitepass-chat-hidden', currentRoomId !== 'admin' || deleteMode);
   }
 
   window.sitepassOpenChatRoom460 = function(roomId){
     if (!ROOMS[roomId]) roomId = 'admin';
     currentRoomId = roomId;
+    resetDeleteMode();
     var room = ROOMS[roomId];
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
@@ -324,7 +378,6 @@
     var title = $('sitepassChatRoomTitle');
     var desc = $('sitepassChatRoomDesc');
     var toggle = $('sitepassChatNoticeToggle');
-    var composer = $('sitepassChatComposer');
 
     if (icon) icon.textContent = room.icon;
     if (title) title.textContent = room.title;
@@ -334,15 +387,15 @@
       toggle.textContent = roomNoticeOn(roomId) ? '알림 ON' : '알림 OFF';
       toggle.classList.toggle('off', !roomNoticeOn(roomId));
     }
-    if (composer) composer.classList.toggle('sitepass-chat-hidden', roomId !== 'admin');
     showRoomActions(roomId);
-    renderIdentity();
+    refreshComposerVisibility();
     renderMessages(roomId);
     return false;
   };
 
   window.sitepassBackToChatList460 = function(){
     currentRoomId = '';
+    resetDeleteMode();
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
     if (roomPanel) roomPanel.classList.add('sitepass-chat-hidden');
@@ -370,47 +423,80 @@
     return false;
   };
 
-  window.sitepassDeleteChatMessage460 = function(messageId){
-    var id = String(messageId || '');
-    if (!id || id.indexOf('expiry-') !== 0) return false;
-    if (!confirm('이 만료 알림을 삭제할까요?')) return false;
-    var deleted = deletedExpiryIds();
-    if (deleted.indexOf(id) < 0) deleted.push(id);
-    saveDeletedExpiryIds(deleted);
-    renderMessages('expiry');
+  window.sitepassStartDeleteMode465 = function(){
+    if (currentRoomId !== 'expiry' && currentRoomId !== 'admin') return false;
+    var deletable = messagesFor(currentRoomId).some(function(msg){ return !!msg.deletable; });
+    if (!deletable) {
+      alert(currentRoomId === 'expiry' ? '삭제할 만료 알림이 없습니다.' : '삭제할 채팅이 없습니다.');
+      return false;
+    }
+    deleteMode = true;
+    selectedDeleteGroups = Object.create(null);
+    refreshComposerVisibility();
+    renderMessages(currentRoomId);
+    return false;
+  };
+
+  window.sitepassToggleChatMessageSelect465 = function(groupId, checked){
+    var id = String(groupId || '');
+    if (!id) return false;
+    if (checked) selectedDeleteGroups[id] = true;
+    else delete selectedDeleteGroups[id];
+    var boxes = document.querySelectorAll('#sitepassChatMessages input[data-delete-group="' + (window.CSS && CSS.escape ? CSS.escape(id) : id.replace(/"/g, '\\"')) + '"]');
+    Array.prototype.forEach.call(boxes, function(box){ box.checked = !!checked; });
+    updateDeleteBar();
+    return false;
+  };
+
+  window.sitepassCancelDeleteMode465 = function(){
+    resetDeleteMode();
+    refreshComposerVisibility();
+    renderMessages(currentRoomId);
+    return false;
+  };
+
+  window.sitepassConfirmSelectedDelete465 = function(){
+    var groups = Object.keys(selectedDeleteGroups).filter(function(key){ return !!selectedDeleteGroups[key]; });
+    if (!groups.length) {
+      alert('삭제할 항목을 선택해주세요.');
+      return false;
+    }
+    var message = currentRoomId === 'admin'
+      ? '선택한 대화를 삭제할까요? 질문과 답변이 같은 대화로 연결된 경우 함께 숨겨집니다.'
+      : '선택한 만료 알림을 삭제할까요?';
+    if (!confirm(message)) return false;
+    if (currentRoomId === 'expiry') {
+      saveDeletedExpiryIds(deletedExpiryIds().concat(groups));
+    } else if (currentRoomId === 'admin') {
+      saveDeletedAdminGroups(deletedAdminGroups().concat(groups));
+    }
+    resetDeleteMode();
+    refreshComposerVisibility();
+    renderMessages(currentRoomId);
     renderRoomList();
     return false;
   };
 
-  window.sitepassDeleteAllExpiry460 = function(){
-    var all = expiryMessages(true).filter(function(msg){ return msg.deletable; }).map(function(msg){ return msg.id; });
-    if (!all.length) {
-      alert('삭제할 만료 알림이 없습니다.');
-      return false;
-    }
-    if (!confirm('현재 만료 알림을 모두 삭제할까요?')) return false;
-    saveDeletedExpiryIds(deletedExpiryIds().concat(all));
-    renderMessages('expiry');
-    renderRoomList();
-    return false;
-  };
+  // 이전 버전 개별/전체삭제 호출이 남아 있어도 선택삭제 모드로 연결합니다.
+  window.sitepassDeleteChatMessage460 = function(){ return window.sitepassStartDeleteMode465(); };
+  window.sitepassDeleteAllExpiry460 = function(){ return window.sitepassStartDeleteMode465(); };
 
   window.sitepassSubmitAdminChat460 = function(){
     var identity = currentIdentity();
     var text = $('sitepassChatText') ? $('sitepassChatText').value.trim() : '';
     if (!identity.loginId) {
-      alert('로그인 회원정보를 확인할 수 없습니다. 다시 로그인한 뒤 문의해주세요.');
+      alert('로그인 회원정보를 확인할 수 없습니다. 다시 로그인한 뒤 이용해주세요.');
       return false;
     }
     if (!text) {
-      alert('문의 내용을 입력해주세요.');
+      alert('메시지 내용을 입력해주세요.');
       return false;
     }
     var contacts = getContactsSafe();
     if (!Array.isArray(contacts)) contacts = [];
     contacts.push({
       id: 'CHAT' + Date.now() + '_' + Math.random().toString(36).slice(2, 7).toUpperCase(),
-      type: '관리자 문의',
+      type: '관리자 채팅',
       message: text,
       reply: '',
       status: '답변대기',
@@ -446,11 +532,9 @@
 
   function init(){
     renderRoomList();
-    renderIdentity();
     wrapBottomNav();
   }
 
-  // 이전 HTML/캐시에서 호출해도 v460 구현으로 연결합니다.
   window.sitepassOpenChatRoom445 = window.sitepassOpenChatRoom460;
   window.sitepassBackToChatList445 = window.sitepassBackToChatList460;
   window.sitepassToggleChatNotice445 = window.sitepassToggleChatNotice460;
@@ -463,6 +547,6 @@
   });
   window.addEventListener('pageshow', function(){ setTimeout(init, 100); });
   setInterval(function(){
-    if (currentRoomId === 'admin' && !$('sitepassChatRoomPanel')?.classList.contains('sitepass-chat-hidden')) renderMessages('admin');
+    if (!deleteMode && currentRoomId === 'admin' && !$('sitepassChatRoomPanel')?.classList.contains('sitepass-chat-hidden')) renderMessages('admin');
   }, 2500);
 })();
