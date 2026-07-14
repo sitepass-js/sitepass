@@ -1,10 +1,10 @@
 {
-  "version": "23.7.463",
-  "updatedAt": "2026-07-14T23:30:00+09:00",
-  "note": "hydrate existing member name and phone from Supabase, preserve verified profile values, and keep the v462 My Info password gate UI",
-  "build": "v23.7.463-test",
-  "stage": "v463-test 기존회원이름휴대폰서버복원및덮어쓰기방지",
-  "baselineFrom": "23.7.462-test",
-  "releaseType": "test-existing-member-profile-server-hydration",
-  "purpose": "v462 이전 가입자의 이름·휴대폰을 서버에서 다시 불러와 내정보에 표시하고 빈 로컬값이 서버 프로필을 덮어쓰지 않도록 보호"
+  "version": "23.7.464",
+  "updatedAt": "2026-07-14T10:46:18+09:00",
+  "note": "remove the redundant My Info back button because the fixed bottom Home button already returns to the main screen",
+  "build": "v23.7.464-test",
+  "stage": "v464-test 내정보돌아가기버튼제거및하단버튼전체너비정리",
+  "baselineFrom": "23.7.463-test",
+  "releaseType": "test-my-account-back-button-cleanup",
+  "purpose": "내정보 화면의 중복 돌아가기 버튼을 제거하고 로그아웃·회원탈퇴 버튼을 전체 너비로 정리"
 }

@@ -1,4 +1,4 @@
-/* SitePass v23.7.463-test - 내정보 비밀번호 재확인 + 간소화 UI */
+/* SitePass v23.7.464-test - 내정보 돌아가기 제거 + 하단 버튼 한 줄 정리 */
 .my-account-card-v462 {
   max-width:760px;
   margin:0 auto;
@@ -101,7 +101,11 @@
   display:none;
 }
 .my-account-bottom-actions-v462 {
+  grid-template-columns:1fr;
   margin-top:16px;
+}
+.my-account-bottom-actions-v462 button {
+  width:100%;
 }
 .my-account-gate-v462 {
   position:fixed;
@@ -162,9 +166,9 @@ body.my-account-gate-open-v462 {
     border-radius:20px;
   }
   .my-account-bottom-actions-v462 {
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:1fr;
   }
   .my-account-bottom-actions-v462 .dangerBtn {
-    grid-column:1 / -1;
+    grid-column:auto;
   }
 }
