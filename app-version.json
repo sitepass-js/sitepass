@@ -1,11 +1,11 @@
 {
-  "version": "23.7.466",
-  "updatedAt": "2026-07-14T11:45:00+09:00",
-  "note": "admin chat read receipts and expiry notification unread counts",
-  "build": "v23.7.466-test",
-  "stage": "v466-test 채팅 읽음확인·만료알림 안읽음 표시",
-  "baselineFrom": "23.7.465-test",
-  "releaseType": "test-chat-read-receipts-and-unread-badges",
-  "purpose": "관리자·회원 채팅 읽음 상태와 만료 알림 안읽음 개수를 표시",
-  "notes": "회원 메시지는 관리자 읽음 여부를, 관리자 답변은 회원 읽음 여부를 표시합니다. 만료 알림방과 하단 알림/쪽지함에는 읽지 않은 알림 개수를 표시하고 방을 열면 읽음으로 처리합니다."
+  "version": "23.7.467",
+  "channel": "test",
+  "note": "expiry milestone alerts at D-30, D-15, D-7 and D-DAY",
+  "build": "v23.7.467-test",
+  "stage": "v467-test 만료 단계별 자동 알림",
+  "updatedAt": "2026-07-14",
+  "releaseType": "test-expiry-milestone-alerts",
+  "purpose": "만료일 기준 D-30·D-15·D-7·D-DAY에 각각 한 번씩 만료 알림을 생성",
+  "notes": "같은 단계 알림은 중복 생성되지 않으며 만료일을 수정하면 새 만료일 기준으로 알림 단계를 다시 계산합니다. 알림은 앱 접속 또는 새로고침 시 생성됩니다."
 }

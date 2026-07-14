@@ -356,7 +356,7 @@
   #sitepassChatComposer { bottom: 70px; }
 }
 
-/* v23.7.466-test 선택 삭제 UI */
+/* v23.7.467-test 선택 삭제 UI */
 .sitepass-chat-message-row {
   width: 100%;
   display: flex;
@@ -459,7 +459,7 @@
   .sitepass-chat-delete-confirm { padding: 8px 10px; font-size: 12px; }
 }
 
-/* v23.7.466-test 읽음 상태와 안 읽은 수 표시 */
+/* v23.7.467-test 읽음 상태와 안 읽은 수 표시 */
 .sitepass-chat-room-item b {
   display: flex;
   align-items: center;

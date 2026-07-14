@@ -1,4 +1,4 @@
-/* SitePass v23.7.466-test - 채팅 읽음확인 + 만료알림 안읽음 수 */
+/* SitePass v23.7.467-test - D-30·D-15·D-7·D-DAY 만료 단계 알림 */
 (function(){
   'use strict';
 
@@ -12,7 +12,8 @@
     'sitePass_v23_7_7_update_original_corrected_browser_auto_member_v23_7_395'
   ];
   var EXPIRY_DELETED_PREFIX = 'sitepass_expiry_deleted_v460:';
-  var EXPIRY_READ_PREFIX = 'sitepass_expiry_read_v466:';
+  var EXPIRY_READ_PREFIX = 'sitepass_expiry_read_v467:';
+  var EXPIRY_MILESTONE_LOG_PREFIX = 'sitepass_expiry_milestone_log_v467:';
   var ADMIN_DELETED_PREFIX = 'sitepass_admin_chat_deleted_v466:';
   var currentRoomId = '';
   var navWrapped = false;
@@ -20,7 +21,7 @@
   var selectedDeleteGroups = Object.create(null);
 
   var ROOMS = {
-    expiry: { title: '만료 알림방', icon: '⏰', desc: '만료가 가까운 서류 알림을 확인하고 필요한 항목만 선택해 삭제합니다.', type: 'system' },
+    expiry: { title: '만료 알림방', icon: '⏰', desc: 'D-30·D-15·D-7·D-DAY 만료 알림을 확인합니다.', type: 'system' },
     share: { title: '공유 기록방', icon: '🔗', desc: '누구에게 언제 링크를 보냈는지 확인합니다.', type: 'system' },
     admin: { title: '관리자 채팅방', icon: '👨‍💼', desc: '관리자와 1:1로 메시지를 주고받습니다.', type: 'admin' }
   };
@@ -133,6 +134,7 @@
 
   function expiryDeletedKey(){ return EXPIRY_DELETED_PREFIX + (currentIdentity().key || 'guest'); }
   function expiryReadKey(){ return EXPIRY_READ_PREFIX + (currentIdentity().key || 'guest'); }
+  function expiryMilestoneLogKey(){ return EXPIRY_MILESTONE_LOG_PREFIX + (currentIdentity().key || 'guest'); }
   function adminDeletedKey(){ return ADMIN_DELETED_PREFIX + (currentIdentity().key || 'guest'); }
   function deletedIds(key){
     var rows = loadJson(key, []);
@@ -146,44 +148,213 @@
   function deletedAdminGroups(){ return deletedIds(adminDeletedKey()); }
   function saveDeletedAdminGroups(rows){ saveDeletedIds(adminDeletedKey(), rows); }
 
+  function parseExpiryDate467(value){
+    var text = String(value || '').trim();
+    if (!text) return null;
+    var matched = text.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+    var date;
+    if (matched) date = new Date(Number(matched[1]), Number(matched[2]) - 1, Number(matched[3]));
+    else date = new Date(text);
+    if (!date || isNaN(date.getTime())) return null;
+    date.setHours(0,0,0,0);
+    return date;
+  }
+
+  function localDateKey467(date){
+    if (!date || isNaN(date.getTime())) return '';
+    return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+  }
+
+  function displayDate467(value){
+    var date = value instanceof Date ? value : parseExpiryDate467(value);
+    if (!date) return String(value || '미입력');
+    return date.getFullYear() + '.' + String(date.getMonth()+1).padStart(2,'0') + '.' + String(date.getDate()).padStart(2,'0');
+  }
+
+  function hasAttachedExpiryDocument467(doc){
+    if (!doc || typeof doc !== 'object') return false;
+    if (doc.fileName || doc.fileUrl || doc.dataUrl || doc.previewUrl || doc.storagePath || doc.storage_path || doc.attached === true || doc.uploaded === true) return true;
+    if (Array.isArray(doc.pages) && doc.pages.length) return true;
+    if (Array.isArray(doc.files) && doc.files.length) return true;
+    return false;
+  }
+
+  function expiryDocumentStates467(){
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    var states = [];
+    safeItems460().forEach(function(item, itemIndex){
+      var docsObject = item && item.docs && typeof item.docs === 'object' ? item.docs : {};
+      var itemStable = String(item.code || item.id || item.shareCode || item.equipmentNo || item.carNo || item.vehicleNo || itemNo(item) || ('item-' + itemIndex));
+      Object.keys(docsObject).forEach(function(docKey){
+        var doc = docsObject[docKey];
+        if (!doc || typeof doc !== 'object') return;
+        var status = String(doc.status || '').trim();
+        var raw = doc.expireDate || doc.expiryDate || doc.expiredAt || '';
+        var managed = doc.expiry === true || !!raw || status === '만료' || status === '만료임박';
+        if (!managed) return;
+        var base = itemStable + '|' + String(docKey || doc.key || doc.title || 'document');
+        var common = {
+          docBaseKey: base,
+          itemTitle: itemTitle(item),
+          itemNo: itemNo(item),
+          docTitle: String(doc.title || doc.label || doc.name || doc.fileName || docKey || '서류'),
+          rawExpireDate: String(raw || '')
+        };
+        if (!raw) {
+          if (!hasAttachedExpiryDocument467(doc)) return;
+          common.state = 'missing';
+          common.expireDate = '';
+          common.diffDays = null;
+          states.push(common);
+          return;
+        }
+        var end = parseExpiryDate467(raw);
+        if (!end) {
+          common.state = 'invalid';
+          common.expireDate = String(raw || '');
+          common.diffDays = null;
+          states.push(common);
+          return;
+        }
+        common.state = 'valid';
+        common.expireDate = localDateKey467(end);
+        common.diffDays = Math.round((end.getTime() - today.getTime()) / 86400000);
+        states.push(common);
+      });
+    });
+    return states;
+  }
+
+  function milestoneLabel467(value){ return Number(value) === 0 ? 'D-DAY' : 'D-' + Number(value); }
+
+  function initialMilestone467(diffDays){
+    if (typeof diffDays !== 'number' || diffDays > 30) return null;
+    if (diffDays <= 0) return 0;
+    if (diffDays <= 7) return 7;
+    if (diffDays <= 15) return 15;
+    return 30;
+  }
+
+  function expiryMilestoneText467(state, milestone){
+    var label = milestoneLabel467(milestone);
+    var lines = [
+      state.itemTitle + ' ' + state.itemNo,
+      state.docTitle + ' · ' + label + ' 알림',
+      '만료일: ' + displayDate467(state.expireDate)
+    ];
+    if (state.diffDays === milestone) {
+      lines.push(milestone === 0 ? '오늘 만료됩니다.' : '만료일까지 ' + milestone + '일 남았습니다.');
+    } else if (typeof state.diffDays === 'number' && state.diffDays > 0) {
+      lines.push('알림 기준일이 지나 현재 D-' + state.diffDays + '입니다.');
+    } else if (state.diffDays === 0) {
+      lines.push('오늘 만료됩니다.');
+    } else if (typeof state.diffDays === 'number') {
+      lines.push('현재 만료일이 ' + Math.abs(state.diffDays) + '일 지났습니다.');
+    }
+    return lines.join('\n');
+  }
+
+  function loadExpiryMilestoneLogs467(){
+    var rows = loadJson(expiryMilestoneLogKey(), []);
+    return Array.isArray(rows) ? rows.filter(function(row){ return row && typeof row === 'object' && row.id; }) : [];
+  }
+
+  function saveExpiryMilestoneLogs467(rows){
+    var list = Array.isArray(rows) ? rows.slice(-400) : [];
+    saveJson(expiryMilestoneLogKey(), list);
+  }
+
+  function syncExpiryMilestoneLogs467(){
+    var states = expiryDocumentStates467();
+    var currentByBase = Object.create(null);
+    states.forEach(function(state){ currentByBase[state.docBaseKey] = state; });
+    var logs = loadExpiryMilestoneLogs467().filter(function(row){
+      var state = currentByBase[row.docBaseKey];
+      if (!state) return false;
+      if (state.state === 'valid') return row.type === 'milestone' && row.expireDate === state.expireDate;
+      return row.type === state.state;
+    });
+    var changed = false;
+    var nowIso = new Date().toISOString();
+
+    states.forEach(function(state){
+      var rowsForDoc = logs.filter(function(row){ return row.docBaseKey === state.docBaseKey; });
+      if (state.state === 'missing' || state.state === 'invalid') {
+        if (!rowsForDoc.some(function(row){ return row.type === state.state; })) {
+          var stateEventKey = state.docBaseKey + '|' + state.state;
+          logs.push({
+            id: 'expiry-' + hashText(stateEventKey),
+            readId: 'expiry-read-' + hashText(stateEventKey),
+            eventKey: stateEventKey,
+            docBaseKey: state.docBaseKey,
+            type: state.state,
+            expireDate: state.expireDate || '',
+            createdAt: nowIso,
+            text: state.itemTitle + ' ' + state.itemNo + '\n' + state.docTitle + ' · ' + (state.state === 'missing' ? '만료일이 입력되지 않았습니다.' : '만료일 형식을 확인해주세요.')
+          });
+          changed = true;
+        }
+        return;
+      }
+      if (state.diffDays > 30) return;
+      var existingMilestones = rowsForDoc.filter(function(row){ return row.type === 'milestone'; }).map(function(row){ return Number(row.milestone); });
+      var toCreate = [];
+      if (!existingMilestones.length) {
+        var initial = initialMilestone467(state.diffDays);
+        if (initial !== null) toCreate.push(initial);
+      } else {
+        [30,15,7,0].forEach(function(milestone){
+          if (state.diffDays <= milestone && existingMilestones.indexOf(milestone) < 0) toCreate.push(milestone);
+        });
+      }
+      toCreate.forEach(function(milestone, offset){
+        var eventKey = state.docBaseKey + '|' + state.expireDate + '|D' + milestone;
+        logs.push({
+          id: 'expiry-' + hashText(eventKey),
+          readId: 'expiry-read-' + hashText(eventKey),
+          eventKey: eventKey,
+          docBaseKey: state.docBaseKey,
+          type: 'milestone',
+          milestone: milestone,
+          expireDate: state.expireDate,
+          createdAt: new Date(Date.now() + offset).toISOString(),
+          text: expiryMilestoneText467(state, milestone)
+        });
+        changed = true;
+      });
+    });
+
+    logs.sort(function(a,b){ return String(a.createdAt || '').localeCompare(String(b.createdAt || '')); });
+    if (changed || logs.length !== loadExpiryMilestoneLogs467().length) saveExpiryMilestoneLogs467(logs);
+    return logs;
+  }
+
   function expiryMessages(includeDeleted){
     var items = safeItems460();
     var deleted = deletedExpiryIds();
     var readIds = readExpiryIds();
     var messages = [{
       id: 'expiry-guide', from: 'SitePass', kind: 'system', time: '안내',
-      text: '보험증·검사증·안전교육 등 만료 알림이 이곳에 쌓입니다. 삭제 버튼을 누른 뒤 필요한 알림만 선택해 삭제할 수 있습니다.',
+      text: '만료일이 있는 서류는 D-30·D-15·D-7·D-DAY에 자동 알림이 생성됩니다. 삭제 버튼을 누른 뒤 필요한 알림만 선택해 삭제할 수 있습니다.',
       deletable: false
     }];
+    var logs = syncExpiryMilestoneLogs467();
     var actual = [];
-    var attentionRows = [];
-    try {
-      if (typeof window.sitepassGetExpiryAttentionRows465 === 'function') attentionRows = window.sitepassGetExpiryAttentionRows465() || [];
-    } catch(e) { attentionRows = []; }
-    attentionRows.slice(0, 60).forEach(function(row, index){
-      var item = row.item || {};
-      var doc = row.doc || {};
-      var stableRawId = String(item.code || item.id || item.shareCode || '') + '|' + String(row.docKey || doc.key || '') + '|' + String(row.expireDate || '') + '|' + String(row.reason || '');
-      var rawId = stableRawId + '|' + index;
-      var id = 'expiry-' + hashText(rawId);
-      var readId = 'expiry-read-' + hashText(stableRawId);
-      if (!includeDeleted && deleted.indexOf(id) >= 0) return;
-      var detail = '';
-      if (row.reason === '만료일 미입력') detail = '만료일이 입력되지 않았습니다.';
-      else if (row.reason === '만료일 확인 필요') detail = '만료일 형식을 확인해주세요.';
-      else if (typeof row.diffDays === 'number' && row.diffDays < 0) detail = Math.abs(row.diffDays) + '일 전에 만료되었습니다.';
-      else if (row.diffDays === 0) detail = '오늘 만료됩니다.';
-      else if (typeof row.diffDays === 'number') detail = '만료까지 D-' + row.diffDays + '입니다.';
-      else detail = row.reason === '만료' ? '만료된 서류입니다.' : '만료가 가까운 서류입니다.';
+    logs.forEach(function(row){
+      if (!includeDeleted && deleted.indexOf(row.id) >= 0) return;
       actual.push({
-        id: id,
-        readId: readId,
-        deleteGroupId: id,
-        from: 'SitePass', kind: 'system', time: '자동알림', deletable: true,
-        read: readIds.indexOf(readId) >= 0,
-        receipt: readIds.indexOf(readId) >= 0 ? '읽음' : '안 읽음',
-        receiptClass: readIds.indexOf(readId) >= 0 ? 'read' : 'unread',
-        text: String(row.itemTitle || itemTitle(item)) + ' ' + String(row.itemNo || itemNo(item)) + '\n' + String(row.docTitle || doc.title || '서류') + ' · ' + detail
+        id: row.id,
+        readId: row.readId,
+        deleteGroupId: row.id,
+        from: 'SitePass',
+        kind: 'system',
+        time: nowText(row.createdAt),
+        deletable: true,
+        read: readIds.indexOf(row.readId) >= 0,
+        receipt: readIds.indexOf(row.readId) >= 0 ? '읽음' : '안 읽음',
+        receiptClass: readIds.indexOf(row.readId) >= 0 ? 'read' : 'unread',
+        text: String(row.text || '')
       });
     });
     if (!items.length) {
@@ -194,7 +365,7 @@
     } else if (!actual.length) {
       actual.push({
         id: 'expiry-cleared', from: 'SitePass', kind: 'system', time: '안내', deletable: false,
-        text: '현재 표시할 만료 알림이 없습니다.'
+        text: '현재 새로 도착한 만료 알림이 없습니다. 다음 알림은 D-30·D-15·D-7·D-DAY에 생성됩니다.'
       });
     }
     return messages.concat(actual);
