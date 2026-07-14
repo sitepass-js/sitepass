@@ -146,7 +146,9 @@ function submitSitePassSignupTest() {
         reply:'',
         status:'답변대기',
         createdAt:new Date().toISOString(),
-        repliedAt:''
+        repliedAt:'',
+        adminReadAt:'',
+        memberReadAt:''
       });
       setContacts(contacts);
       alert('문의가 접수되었습니다.\n관리자모드에서 문의 내용을 확인하고 답변할 수 있습니다.');
@@ -191,6 +193,16 @@ function submitSitePassSignupTest() {
 // SitePass v23.7.350 - app-core-auth finer split (17/19)
 function renderAdminContactManager() {
       const contacts = getContacts();
+      const adminOpenedAt = new Date().toISOString();
+      let readStateChanged = false;
+      contacts.forEach(item => {
+        const isChat = item && (item.source === 'sitepass_chat_v460' || item.memberLoginId || item.member_login_id || item.memberKey);
+        if (isChat && item.message && !item.adminReadAt) {
+          item.adminReadAt = adminOpenedAt;
+          readStateChanged = true;
+        }
+      });
+      if (readStateChanged) setContacts(contacts);
       const waiting = contacts.filter(x => x.status !== '답변완료').length;
       if (!contacts.length) {
         return '<div class="card" style="box-shadow:none;margin-top:14px;"><h3>채팅관리</h3><div class="notice blue-note">관리자 채팅방은 로그인 회원 아이디로 문의자를 자동 구분합니다. 회원이 이름·전화번호·이메일을 다시 입력하지 않아도 됩니다.</div><div class="empty">접수된 문의가 없습니다.</div></div>';
@@ -198,8 +210,11 @@ function renderAdminContactManager() {
       const rows = contacts.map(item => {
         const statusClass = item.status === '답변완료' ? 'done' : 'need';
         const memberLabel = item.memberLoginId || item.member_login_id || item.memberKey || item.name || '회원정보 없음';
+        const adminReadLabel = item.adminReadAt ? '관리자 읽음' : '관리자 안 읽음';
+        const memberReadLabel = item.reply ? (item.memberReadAt ? '회원 읽음' : '회원 안 읽음') : '답변 전';
         return '<div class="list-item" data-contact-id="' + escapeHtml(item.id) + '">' +
           '<div class="doc-head"><div><strong>' + escapeHtml(item.type || '문의') + ' · ' + escapeHtml(memberLabel) + '</strong><div class="small">회원명: ' + escapeHtml(item.name || '미확인') + '<br>접수일: ' + escapeHtml(formatDateTime(item.createdAt)) + '</div></div><span class="badge ' + statusClass + '">' + escapeHtml(item.status || '답변대기') + '</span></div>' +
+          '<div class="sitepass-admin-chat-read-state"><span>' + escapeHtml(adminReadLabel) + '</span><span>' + escapeHtml(memberReadLabel) + '</span></div>' +
           '<div class="date-note"><b>문의내용</b><br>' + escapeHtml(item.message || '').replace(/\n/g, '<br>') + '</div>' +
           '<div class="field" style="margin-top:10px;"><label>관리자 답변</label><textarea id="reply_' + escapeHtml(item.id) + '" rows="4" style="min-height:96px; resize:vertical;" placeholder="답변 내용을 입력하세요.">' + escapeHtml(item.reply || '') + '</textarea></div>' +
           '<div class="actions"><button class="primary" onclick="saveContactReply(\'' + escapeJs(item.id) + '\')">답변 저장</button><button class="okBtn" onclick="markContactDone(\'' + escapeJs(item.id) + '\')">처리완료</button><button class="dangerBtn" onclick="deleteContact(\'' + escapeJs(item.id) + '\')">문의 삭제</button></div>' +
@@ -219,6 +234,8 @@ function renderAdminContactManager() {
       }
       target.reply = reply;
       target.status = '답변완료';
+      target.adminReadAt = target.adminReadAt || new Date().toISOString();
+      target.memberReadAt = '';
       target.repliedAt = new Date().toISOString();
       setContacts(contacts);
       alert('답변이 저장되었습니다.');
@@ -234,6 +251,7 @@ function renderAdminContactManager() {
         if (!ok) return;
       }
       target.status = '답변완료';
+      target.adminReadAt = target.adminReadAt || new Date().toISOString();
       target.repliedAt = target.repliedAt || new Date().toISOString();
       setContacts(contacts);
       renderAdmin();

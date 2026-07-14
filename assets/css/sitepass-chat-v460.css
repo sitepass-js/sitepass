@@ -356,7 +356,7 @@
   #sitepassChatComposer { bottom: 70px; }
 }
 
-/* v23.7.465-test 선택 삭제 UI */
+/* v23.7.466-test 선택 삭제 UI */
 .sitepass-chat-message-row {
   width: 100%;
   display: flex;
@@ -457,4 +457,92 @@
   .sitepass-chat-delete-bar { bottom: 70px; }
   .sitepass-chat-delete-cancel,
   .sitepass-chat-delete-confirm { padding: 8px 10px; font-size: 12px; }
+}
+
+/* v23.7.466-test 읽음 상태와 안 읽은 수 표시 */
+.sitepass-chat-room-item b {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.sitepass-chat-unread-count {
+  min-width: 21px;
+  height: 21px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 1000;
+  line-height: 1;
+  box-shadow: 0 3px 9px rgba(239, 68, 68, 0.25);
+}
+.sitepass-chat-read-receipt {
+  display: block;
+  margin-top: 6px;
+  text-align: right;
+  font-size: 10px;
+  font-weight: 950;
+  color: #64748b;
+}
+.sitepass-chat-read-receipt.unread {
+  color: #dc2626;
+}
+.sitepass-chat-read-receipt.read {
+  color: #2563eb;
+}
+.sitepass-chat-read-receipt.sent {
+  color: #7c5b00;
+}
+.sitepass-bottom-nav button {
+  position: relative;
+}
+.sitepass-bottom-unread-badge {
+  position: absolute;
+  top: 4px;
+  left: calc(50% + 9px);
+  z-index: 2;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 1000;
+  line-height: 1;
+  box-shadow: 0 3px 9px rgba(239, 68, 68, 0.28);
+}
+.sitepass-bottom-unread-badge.hidden {
+  display: none !important;
+}
+.sitepass-admin-chat-read-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 9px 0;
+}
+.sitepass-admin-chat-read-state span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 950;
+}
+@media (max-width: 560px) {
+  .sitepass-chat-room-item b { gap: 5px; }
+  .sitepass-chat-unread-count { min-width: 19px; height: 19px; padding: 0 5px; }
+  .sitepass-bottom-unread-badge { top: 2px; }
 }
