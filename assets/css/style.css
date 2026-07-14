@@ -593,6 +593,19 @@
       margin:0 0 12px;
     }
     .list-select-toolbar .actions { margin-top:10px; }
+    .list-share-actions {
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:8px;
+      margin-top:10px;
+    }
+    .list-share-actions button {
+      min-width:0;
+      padding:12px 6px;
+      font-size:13px;
+      line-height:1.25;
+      word-break:keep-all;
+    }
     .list-item-head {
       display:flex;
       align-items:flex-start;
@@ -771,6 +784,8 @@
       .card { padding:15px; border-radius:16px; }
       h1 { font-size:24px; }
       .menu-grid, .actions, .file-row, .compare-grid, .preview-actions { grid-template-columns:1fr; }
+      .list-share-actions { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
+      .list-share-actions button { font-size:12px; padding:11px 4px; }
       .paper-frame { width:min(100%,210px); height:298px; }
       .compare-grid .paper-frame { width:min(100%,210px); height:298px; }
       input, select { font-size:15px; }
