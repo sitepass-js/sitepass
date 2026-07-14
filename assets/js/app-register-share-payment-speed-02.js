@@ -701,7 +701,7 @@ function resetForm(clearEdit = true) {
       ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       const ownerPrimary = [item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
         .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
-      // v23.7.484: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
+      // v23.7.485: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
       // SB-로그인아이디 형식을 현재 회원 고유키로 함께 계산하여 정상 서버자료를 누락시키지 않습니다.
       if (ownerPrimary.length) {
         if (currentPrimary.length && ownerPrimary.some(function(key) { return currentPrimary.indexOf(key) >= 0; })) return true;
@@ -1095,6 +1095,36 @@ function resetForm(clearEdit = true) {
       return Array.isArray(rows) ? rows : [];
     }
 
+    function getSitePassMemberEquipmentRpcParamsV485() {
+      const member = getCurrentSitePassMemberForEquipmentSync() || {};
+      const loginId = String(member.signupId || member.loginId || member.signup_id || member.login_id || member.supabaseLoginId || '').trim();
+      function unique(values) {
+        return Array.from(new Set((values || []).map(function(value){ return String(value || '').trim(); }).filter(Boolean)));
+      }
+      return {
+        p_owner_member_ids: unique([
+          member.id, member.memberId, member.member_id, member.userId, member.user_id,
+          member.authUserId, member.auth_user_id, member.supabaseAuthUserId,
+          loginId ? ('SB-' + loginId) : ''
+        ]),
+        p_owner_signup_ids: unique([
+          member.signupId, member.loginId, member.signup_id, member.login_id, member.supabaseLoginId,
+          loginId
+        ]),
+        p_owner_provider_ids: unique([
+          member.providerId, member.provider_id,
+          loginId ? ('SITEPASS-' + loginId) : '',
+          loginId ? ('SITEPASS-LOGIN-' + loginId) : ''
+        ])
+      };
+    }
+
+    function isSitePassMemberEquipmentListRpcMissingV485(error) {
+      const code = String(error && error.code || '');
+      const message = String(error && (error.message || error.details || error.hint) || '').toLowerCase();
+      return code === 'PGRST202' || message.indexOf('could not find the function') >= 0 || message.indexOf('schema cache') >= 0;
+    }
+
     async function syncSupabaseMyEquipmentItems(silent) {
       const supabaseApi = window.SitePassSupabaseApi;
       if (!supabaseApi || sitePassMemberEquipmentSyncing) return { skipped:true, error:'Supabase API 연결 없음 또는 동기화 중' };
@@ -1104,14 +1134,24 @@ function resetForm(clearEdit = true) {
         let data = null;
         let error = null;
         if (supabaseApi.rpc) {
-          const rpcResult = await supabaseApi.rpc('sitepass_list_my_equipment_items', {});
-          error = rpcResult && rpcResult.error ? rpcResult.error : null;
-          data = rpcResult ? rpcResult.data : null;
-          if (error) console.warn('내 보관함 서버목록 RPC 실패:', error);
+          const rpcParams = getSitePassMemberEquipmentRpcParamsV485();
+          const hasMemberKey = rpcParams.p_owner_member_ids.length || rpcParams.p_owner_signup_ids.length || rpcParams.p_owner_provider_ids.length;
+          if (!hasMemberKey) {
+            error = { code:'SITEPASS_MEMBER_SCOPE_EMPTY', message:'현재 로그인 회원 식별값을 확인할 수 없습니다.' };
+          } else {
+            const rpcResult = await supabaseApi.rpc('sitepass_list_member_equipment_items_v485', rpcParams);
+            error = rpcResult && rpcResult.error ? rpcResult.error : null;
+            data = rpcResult ? rpcResult.data : null;
+          }
+          if (error) console.warn('내 보관함 회원별 서버목록 RPC 실패:', error);
         }
         const rows = parseSupabaseEquipmentRows(data);
         if (error) {
-          sitePassEquipmentSyncMessage = '내 보관함 서버목록 불러오기 실패: ' + (error.message || JSON.stringify(error));
+          if (isSitePassMemberEquipmentListRpcMissingV485(error)) {
+            sitePassEquipmentSyncMessage = 'Supabase v23.7.485 회원별 보관함 조회 SQL을 먼저 실행해주세요.';
+          } else {
+            sitePassEquipmentSyncMessage = '내 보관함 서버목록 불러오기 실패: ' + (error.message || JSON.stringify(error));
+          }
           if (!silent) alert(sitePassEquipmentSyncMessage);
           return { ok:false, error };
         }
@@ -1122,7 +1162,8 @@ function resetForm(clearEdit = true) {
           console.info('[SitePass 보관함 동기화]', {
             rpcRows: normalizedServerRows.length,
             currentMemberRows: serverItems.length,
-            currentMember: getCurrentSitePassMemberStrongStorageScopeKeys()
+            currentMember: getCurrentSitePassMemberStrongStorageScopeKeys(),
+            rpcScope: getSitePassMemberEquipmentRpcParamsV485()
           });
         } catch (e) {}
         readSitePassUnsyncedCodesV476().forEach(function(row){ if (serverCodes.has(String(row.code || ''))) clearSitePassEquipmentUnsyncedV476(row.code); });
