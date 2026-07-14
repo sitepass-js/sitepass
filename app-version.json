@@ -1,9 +1,9 @@
 {
-  "version": "23.7.472",
+  "version": "23.7.474",
   "channel": "test",
   "note": "registration targets are checked first, then equipment, driver authentication/docs, and worker authentication/docs proceed in order",
-  "build": "v23.7.472-test",
-  "stage": "v472-test 첫 화면 체크형 순차 인증·서류등록",
+  "build": "v23.7.474-test",
+  "stage": "v473-test A4 서류 흰 여백 최소화",
   "updatedAt": "2026-07-14",
   "releaseType": "test-registration-check-first-sequential",
   "purpose": "장비는 필수, 기사·인부는 첫 화면에서 선택하고 선택한 서류만 순서대로 인증·등록",

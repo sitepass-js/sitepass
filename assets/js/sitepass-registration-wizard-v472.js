@@ -1,4 +1,4 @@
-/* SitePass v23.7.472-test - 첫 화면 등록대상 체크 후 순차 인증·서류등록 */
+/* SitePass v23.7.473-test - 첫 화면 등록대상 체크 후 순차 인증·서류등록 */
 (function(){
   'use strict';
 

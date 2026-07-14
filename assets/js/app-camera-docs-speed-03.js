@@ -389,10 +389,11 @@ function fitDocumentImageToDataUrl(file, maxSize, quality, docKey) {
                 usedCrop = crop.w < source.width * 0.96 || crop.h < source.height * 0.96;
               }
 
-              // v23.7.470: 사업자등록증은 자동 여백 제거가 글자·도장·용지 끝을 자를 수 있어
-              // 전체 이미지를 우선 보존합니다. 문서영역이 충분히 크게 잡힌 경우에만
-              // 넉넉한 안전 여백을 더한 범위를 사용하고, 이후 강제 자르기는 하지 않습니다.
-              if (String(docKey || '') === 'businessLicense') {
+              // v23.7.474: 사업자등록증에서 사용하던 '전체 용지 보존' 방식을
+              // 장비등록증·검사증·보험증 등 모든 A4형 서류에도 동일하게 적용합니다.
+              // 글자 영역만 잘라 다시 A4에 넣으면서 위·아래 흰 여백이 커지던 문제를 막고,
+              // 카드형(신분증·면허증·이수증)만 아래의 별도 상단 1/2 배치를 사용합니다.
+              if (!isCardQuarterDoc(docKey || '')) {
                 let safeCrop = { x:0, y:0, w:source.width, h:source.height };
                 if (bbox) {
                   const sx = source.width / scan.canvas.width;
@@ -437,9 +438,9 @@ function fitDocumentImageToDataUrl(file, maxSize, quality, docKey) {
                 resolve({
                   dataUrl: businessA4.toDataURL('image/jpeg', quality),
                   editDataUrl: businessCanvas.toDataURL('image/jpeg', quality),
-                  method: 'business-license-safe-full-fit',
-                  fitText: '사업자등록증 전체 보존 · 자동 잘림 방지',
-                  ratioText: '용지 가장자리와 글자를 남기고 A4 안에 맞춤'
+                  method: 'full-page-safe-fit-v474',
+                  fitText: String(docKey || '') === 'businessLicense' ? '사업자등록증 전체 보존 · 자동 잘림 방지' : '서류 전체 용지 보존 · 흰 여백 최소화',
+                  ratioText: '용지 가장자리와 글자를 남기고 A4 화면에 크게 맞춤'
                 });
                 return;
               }

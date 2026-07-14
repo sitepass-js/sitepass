@@ -4458,3 +4458,31 @@ font-size: 25px !important;
   object-position: center center;
 }
 
+
+/* v23.7.473-test 등록화면 A4 서류 미리보기 확대
+   저장본(약 778x1100px)은 그대로 두고 화면 표시 크기만 키웁니다. */
+#registerScreen .doc-card .page-item:not(.simple-update-page) > .paper-frame {
+  width: min(94%, 300px);
+  height: auto;
+  aspect-ratio: 778 / 1100;
+  padding: 8px;
+}
+#registerScreen .doc-card .page-item:not(.simple-update-page) > .paper-frame .preview-img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain !important;
+}
+@media (max-width: 560px) {
+  #registerScreen .doc-card .page-item:not(.simple-update-page) > .paper-frame {
+    width: min(100%, 286px);
+    height: auto;
+    aspect-ratio: 778 / 1100;
+  }
+}
+
+
+/* v23.7.474-test
+   A4형 서류는 JS 저장단계에서 사업자등록증과 동일한 전체용지 맞춤을 사용합니다.
+   미리보기 틀은 v473 크기를 유지하고 내부에 중복 생성되던 흰 여백만 제거합니다. */
