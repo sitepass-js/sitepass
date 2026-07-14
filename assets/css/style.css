@@ -4486,3 +4486,106 @@ font-size: 25px !important;
 /* v23.7.474-test
    A4형 서류는 JS 저장단계에서 사업자등록증과 동일한 전체용지 맞춤을 사용합니다.
    미리보기 틀은 v473 크기를 유지하고 내부에 중복 생성되던 흰 여백만 제거합니다. */
+
+/* v23.7.475-test - 월 이동과 날짜 확정을 분리한 만료날짜 달력 */
+.sitepass-clean-calendar-overlay475{
+  position:fixed;
+  inset:0;
+  z-index:2147483600;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(15,23,42,.46);
+  backdrop-filter:blur(2px);
+}
+.sitepass-clean-calendar-overlay475.hidden{display:none!important;}
+.sitepass-clean-calendar475{
+  width:min(100%,390px);
+  border:1px solid #cbdaf2;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 24px 70px rgba(15,23,42,.28);
+  padding:16px;
+}
+.sitepass-clean-calendar-head475{
+  display:grid;
+  grid-template-columns:48px 1fr 48px;
+  align-items:center;
+  gap:8px;
+  margin-bottom:12px;
+}
+.sitepass-clean-calendar-head475 strong{
+  text-align:center;
+  font-size:18px;
+  color:#0f172a;
+}
+.sitepass-clean-calendar-nav475{
+  width:44px;
+  height:44px;
+  border:1px solid #cbdaf2;
+  border-radius:13px;
+  background:#f8fbff;
+  color:#1d4ed8;
+  font-size:30px;
+  line-height:1;
+  cursor:pointer;
+}
+.sitepass-clean-calendar-week475,
+.sitepass-clean-calendar-days475{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:5px;
+}
+.sitepass-clean-calendar-week475{
+  margin-bottom:5px;
+  color:#64748b;
+  font-size:12px;
+  font-weight:800;
+  text-align:center;
+}
+.sitepass-clean-calendar-week475 span{padding:7px 0;}
+.sitepass-clean-calendar-day475,
+.sitepass-clean-calendar-empty475{
+  min-width:0;
+  aspect-ratio:1/1;
+}
+.sitepass-clean-calendar-day475{
+  border:1px solid transparent;
+  border-radius:11px;
+  background:#fff;
+  color:#1e293b;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+}
+.sitepass-clean-calendar-day475:hover,
+.sitepass-clean-calendar-day475:focus-visible{
+  border-color:#8fb2ff;
+  background:#eef5ff;
+  outline:none;
+}
+.sitepass-clean-calendar-day475.today{
+  border-color:#93c5fd;
+  color:#1d4ed8;
+}
+.sitepass-clean-calendar-day475.selected{
+  border-color:#2563eb;
+  background:#2563eb;
+  color:#fff;
+}
+.sitepass-clean-calendar-actions475{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:14px;
+}
+.sitepass-clean-calendar-actions475 button{
+  min-height:44px;
+  border-radius:12px;
+}
+@media (max-width:420px){
+  .sitepass-clean-calendar-overlay475{padding:10px;align-items:flex-end;}
+  .sitepass-clean-calendar475{width:100%;border-radius:20px 20px 12px 12px;padding:14px;}
+  .sitepass-clean-calendar-day475{font-size:14px;}
+}

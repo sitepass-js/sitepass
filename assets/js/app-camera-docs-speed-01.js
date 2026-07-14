@@ -533,26 +533,142 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       }, 0);
     }
 
+    // v23.7.475-test: 브라우저 기본 달력은 월 이동 화살표에서도 input 이벤트를
+    // 발생시키는 기기가 있어, 선택 중인 날짜가 저장되고 달력이 닫히는 문제가 있었습니다.
+    // 월 이동은 보기만 바꾸고 날짜 숫자를 눌렀을 때만 값을 확정하는 전용 달력을 사용합니다.
+    const sitePassCleanCalendar475 = {
+      displayInput: null,
+      realInput: null,
+      viewYear: 0,
+      viewMonth: 0
+    };
+
+    function padCleanCalendarNumber475(value) {
+      return String(value).padStart(2, '0');
+    }
+
+    function parseCleanCalendarDate475(value) {
+      const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return null;
+      const year = Number(match[1]);
+      const month = Number(match[2]) - 1;
+      const day = Number(match[3]);
+      const date = new Date(year, month, day);
+      if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) return null;
+      return date;
+    }
+
+    function ensureCleanCalendar475() {
+      let overlay = document.getElementById('sitePassCleanCalendarOverlay475');
+      if (overlay) return overlay;
+      overlay = document.createElement('div');
+      overlay.id = 'sitePassCleanCalendarOverlay475';
+      overlay.className = 'sitepass-clean-calendar-overlay475 hidden';
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.innerHTML =
+        '<div class="sitepass-clean-calendar475" role="dialog" aria-modal="true" aria-label="만료날짜 선택">' +
+          '<div class="sitepass-clean-calendar-head475">' +
+            '<button type="button" class="sitepass-clean-calendar-nav475" data-calendar-move="-1" aria-label="이전 달">‹</button>' +
+            '<strong data-calendar-title></strong>' +
+            '<button type="button" class="sitepass-clean-calendar-nav475" data-calendar-move="1" aria-label="다음 달">›</button>' +
+          '</div>' +
+          '<div class="sitepass-clean-calendar-week475" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>' +
+          '<div class="sitepass-clean-calendar-days475" data-calendar-days></div>' +
+          '<div class="sitepass-clean-calendar-actions475">' +
+            '<button type="button" class="ghost" data-calendar-clear>날짜 지우기</button>' +
+            '<button type="button" class="ghost" data-calendar-close>닫기</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+
+      overlay.addEventListener('click', function(event) {
+        if (event.target === overlay || event.target.closest('[data-calendar-close]')) {
+          closeCleanCalendar475();
+          return;
+        }
+        const moveButton = event.target.closest('[data-calendar-move]');
+        if (moveButton) {
+          const delta = Number(moveButton.dataset.calendarMove || 0);
+          const moved = new Date(sitePassCleanCalendar475.viewYear, sitePassCleanCalendar475.viewMonth + delta, 1);
+          sitePassCleanCalendar475.viewYear = moved.getFullYear();
+          sitePassCleanCalendar475.viewMonth = moved.getMonth();
+          renderCleanCalendar475();
+          return;
+        }
+        if (event.target.closest('[data-calendar-clear]')) {
+          if (sitePassCleanCalendar475.displayInput) setCleanDateValue(sitePassCleanCalendar475.displayInput, '');
+          closeCleanCalendar475();
+          return;
+        }
+        const dayButton = event.target.closest('[data-calendar-day]');
+        if (!dayButton) return;
+        const value = dayButton.dataset.calendarDay || '';
+        if (sitePassCleanCalendar475.displayInput) setCleanDateValue(sitePassCleanCalendar475.displayInput, value);
+        closeCleanCalendar475();
+      });
+
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !overlay.classList.contains('hidden')) closeCleanCalendar475();
+      });
+      return overlay;
+    }
+
+    function renderCleanCalendar475() {
+      const overlay = ensureCleanCalendar475();
+      const title = overlay.querySelector('[data-calendar-title]');
+      const daysBox = overlay.querySelector('[data-calendar-days]');
+      if (!title || !daysBox) return;
+      const year = sitePassCleanCalendar475.viewYear;
+      const month = sitePassCleanCalendar475.viewMonth;
+      title.textContent = year + '년 ' + (month + 1) + '월';
+
+      const firstWeekday = new Date(year, month, 1).getDay();
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const selectedValue = sitePassCleanCalendar475.displayInput ? sitePassCleanCalendar475.displayInput.value : '';
+      const today = new Date();
+      const todayValue = today.getFullYear() + '-' + padCleanCalendarNumber475(today.getMonth() + 1) + '-' + padCleanCalendarNumber475(today.getDate());
+      let html = '';
+      for (let i = 0; i < firstWeekday; i += 1) html += '<span class="sitepass-clean-calendar-empty475"></span>';
+      for (let day = 1; day <= lastDay; day += 1) {
+        const value = year + '-' + padCleanCalendarNumber475(month + 1) + '-' + padCleanCalendarNumber475(day);
+        const classes = ['sitepass-clean-calendar-day475'];
+        if (value === selectedValue) classes.push('selected');
+        if (value === todayValue) classes.push('today');
+        html += '<button type="button" class="' + classes.join(' ') + '" data-calendar-day="' + value + '" aria-label="' + year + '년 ' + (month + 1) + '월 ' + day + '일">' + day + '</button>';
+      }
+      daysBox.innerHTML = html;
+    }
+
+    function closeCleanCalendar475() {
+      const overlay = document.getElementById('sitePassCleanCalendarOverlay475');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+      const displayInput = sitePassCleanCalendar475.displayInput;
+      sitePassCleanCalendar475.displayInput = null;
+      sitePassCleanCalendar475.realInput = null;
+      if (displayInput) setTimeout(function(){ try { displayInput.focus({ preventScroll:true }); } catch(e) {} }, 0);
+    }
+
     function openCleanDatePicker(displayInput) {
       if (!displayInput) return;
       const shell = findCleanDateShell(displayInput);
       const realInput = shell ? shell.querySelector('[data-clean-date-real]') : null;
-      if (!realInput) return;
-      realInput.value = displayInput.value || '';
+      const selectedDate = parseCleanCalendarDate475(displayInput.value) || new Date();
+      sitePassCleanCalendar475.displayInput = displayInput;
+      sitePassCleanCalendar475.realInput = realInput;
+      sitePassCleanCalendar475.viewYear = selectedDate.getFullYear();
+      sitePassCleanCalendar475.viewMonth = selectedDate.getMonth();
+      if (realInput) realInput.value = displayInput.value || '';
+      const overlay = ensureCleanCalendar475();
+      renderCleanCalendar475();
+      overlay.classList.remove('hidden');
+      overlay.setAttribute('aria-hidden', 'false');
       try { displayInput.blur(); } catch(e) {}
-      try { realInput.focus({ preventScroll:true }); } catch(e) { try { realInput.focus(); } catch(_) {} }
-      try {
-        if (typeof realInput.showPicker === 'function') {
-          realInput.showPicker();
-        } else {
-          realInput.click();
-        }
-      } catch(e) {
-        try { realInput.click(); } catch(_) {}
-      }
-      setTimeout(function(){
-        try { displayInput.blur(); } catch(e) {}
-      }, 0);
+      const selected = overlay.querySelector('.sitepass-clean-calendar-day475.selected');
+      const focusTarget = selected || overlay.querySelector('.sitepass-clean-calendar-day475') || overlay.querySelector('[data-calendar-close]');
+      if (focusTarget) setTimeout(function(){ try { focusTarget.focus({ preventScroll:true }); } catch(e) {} }, 0);
     }
 
     function attachDocInputHandlers(root) {
@@ -597,9 +713,8 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       });
       target.querySelectorAll('[data-clean-date-real]').forEach(input => {
         if (input.dataset.boundDateReal === 'yes') return;
-        input.addEventListener('change', function() { syncCleanDatePicker(input); });
-        input.addEventListener('input', function() { syncCleanDatePicker(input); });
-        input.addEventListener('blur', function() { syncCleanDatePicker(input); });
+        // v23.7.475: 전용 달력에서 날짜 숫자를 선택했을 때만 값이 확정됩니다.
+        // 기본 input/blur 이벤트로 달력을 닫지 않습니다.
         input.dataset.boundDateReal = 'yes';
       });
       target.querySelectorAll('input[type="date"]:not([data-clean-date-real])').forEach(input => {

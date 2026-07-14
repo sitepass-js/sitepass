@@ -1,11 +1,11 @@
 {
-  "version": "23.7.474",
+  "version": "23.7.475",
   "channel": "test",
-  "note": "registration targets are checked first, then equipment, driver authentication/docs, and worker authentication/docs proceed in order",
-  "build": "v23.7.474-test",
-  "stage": "v473-test A4 서류 흰 여백 최소화",
+  "note": "expiry date calendar month navigation no longer commits or closes the picker",
+  "build": "v23.7.475-test",
+  "stage": "만료날짜 달력 선택 동작 수정",
   "updatedAt": "2026-07-14",
-  "releaseType": "test-registration-check-first-sequential",
-  "purpose": "장비는 필수, 기사·인부는 첫 화면에서 선택하고 선택한 서류만 순서대로 인증·등록",
-  "notes": "장비만 선택하면 장비서류 끝에서 저장완료가 표시됩니다. 기사 또는 인부를 선택하면 장비서류 저장 후 선택한 인증화면으로 이동하고 인증 완료 뒤 서류등록칸과 다음 또는 저장완료 버튼이 나타납니다."
+  "releaseType": "test-date-picker-confirm-on-day-click",
+  "purpose": "달력의 이전달·다음달 이동과 실제 날짜 선택을 분리",
+  "notes": "월 이동 화살표는 달력 보기만 바꾸며 날짜 입력값을 변경하지 않습니다. 날짜 숫자를 클릭한 경우에만 만료일이 저장되고 달력이 닫힙니다. 날짜 지우기와 닫기 버튼도 제공합니다."
 }
