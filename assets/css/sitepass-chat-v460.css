@@ -546,3 +546,16 @@
   .sitepass-chat-unread-count { min-width: 19px; height: 19px; padding: 0 5px; }
   .sitepass-bottom-unread-badge { top: 2px; }
 }
+
+
+/* v23.7.479-test - 즉시 만료알림 검증 도구 (?expirytest=1) */
+.sitepass-expiry-test-tools479 {
+  margin: 10px 14px 0; padding: 12px; border: 1px dashed #96b5ff; border-radius: 14px;
+  background: #f5f8ff; display: grid; gap: 6px; color: #24436f;
+}
+.sitepass-expiry-test-tools479 b { font-size: 14px; color: #123b83; }
+.sitepass-expiry-test-tools479 span { font-size: 12px; line-height: 1.45; }
+.sitepass-expiry-test-tools479 > div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 3px; }
+.sitepass-expiry-test-tools479 button { min-height: 39px; border: 0; border-radius: 10px; background: #2d5bd7; color: white; font-weight: 800; cursor: pointer; }
+.sitepass-expiry-test-tools479 button.secondary { background: #e9eef8; color: #274168; }
+@media (max-width: 560px) { .sitepass-expiry-test-tools479 > div { grid-template-columns: 1fr; } }

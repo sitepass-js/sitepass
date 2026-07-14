@@ -1,4 +1,4 @@
-/* SitePass v23.7.467-test - D-30·D-15·D-7·D-DAY 만료 단계 알림 */
+/* SitePass v23.7.479-test - 만료 알림 숫자·방·읽음 통합 + 즉시 테스트 */
 (function(){
   'use strict';
 
@@ -14,11 +14,13 @@
   var EXPIRY_DELETED_PREFIX = 'sitepass_expiry_deleted_v460:';
   var EXPIRY_READ_PREFIX = 'sitepass_expiry_read_v467:';
   var EXPIRY_MILESTONE_LOG_PREFIX = 'sitepass_expiry_milestone_log_v467:';
+  var EXPIRY_TEST_PREFIX = 'sitepass_expiry_test_v479:';
   var ADMIN_DELETED_PREFIX = 'sitepass_admin_chat_deleted_v466:';
   var currentRoomId = '';
   var navWrapped = false;
   var deleteMode = false;
   var selectedDeleteGroups = Object.create(null);
+  var lastExpiryUnreadCount479 = -1;
 
   var ROOMS = {
     expiry: { title: '만료 알림방', icon: '⏰', desc: 'D-30·D-15·D-7·D-DAY 만료 알림을 확인합니다.', type: 'system' },
@@ -135,7 +137,17 @@
   function expiryDeletedKey(){ return EXPIRY_DELETED_PREFIX + (currentIdentity().key || 'guest'); }
   function expiryReadKey(){ return EXPIRY_READ_PREFIX + (currentIdentity().key || 'guest'); }
   function expiryMilestoneLogKey(){ return EXPIRY_MILESTONE_LOG_PREFIX + (currentIdentity().key || 'guest'); }
+  function expiryTestKey479(){ return EXPIRY_TEST_PREFIX + (currentIdentity().key || 'guest'); }
   function adminDeletedKey(){ return ADMIN_DELETED_PREFIX + (currentIdentity().key || 'guest'); }
+  function expiryTestMode479(){
+    try { return new URLSearchParams(window.location.search || '').get('expirytest') === '1'; }
+    catch(e) { return false; }
+  }
+  function loadExpiryTestLogs479(){
+    var rows = loadJson(expiryTestKey479(), []);
+    return Array.isArray(rows) ? rows.filter(function(row){ return row && row.id && row.readId; }) : [];
+  }
+  function saveExpiryTestLogs479(rows){ saveJson(expiryTestKey479(), Array.isArray(rows) ? rows : []); }
   function deletedIds(key){
     var rows = loadJson(key, []);
     return Array.isArray(rows) ? rows : [];
@@ -300,13 +312,11 @@
       if (state.diffDays > 30) return;
       var existingMilestones = rowsForDoc.filter(function(row){ return row.type === 'milestone'; }).map(function(row){ return Number(row.milestone); });
       var toCreate = [];
-      if (!existingMilestones.length) {
-        var initial = initialMilestone467(state.diffDays);
-        if (initial !== null) toCreate.push(initial);
-      } else {
-        [30,15,7,0].forEach(function(milestone){
-          if (state.diffDays <= milestone && existingMilestones.indexOf(milestone) < 0) toCreate.push(milestone);
-        });
+      var currentMilestone = initialMilestone467(state.diffDays);
+      /* v23.7.479: 현재 날짜에 해당하는 가장 가까운 단계만 한 번 생성합니다.
+         D-DAY에 처음 앱을 열었다고 D-30·D-15·D-7 알림까지 한꺼번에 만들지 않습니다. */
+      if (currentMilestone !== null && existingMilestones.indexOf(currentMilestone) < 0) {
+        toCreate.push(currentMilestone);
       }
       toCreate.forEach(function(milestone, offset){
         var eventKey = state.docBaseKey + '|' + state.expireDate + '|D' + milestone;
@@ -339,7 +349,7 @@
       text: '만료일이 있는 서류는 D-30·D-15·D-7·D-DAY에 자동 알림이 생성됩니다. 삭제 버튼을 누른 뒤 필요한 알림만 선택해 삭제할 수 있습니다.',
       deletable: false
     }];
-    var logs = syncExpiryMilestoneLogs467();
+    var logs = syncExpiryMilestoneLogs467().concat(loadExpiryTestLogs479());
     var actual = [];
     logs.forEach(function(row){
       if (!includeDeleted && deleted.indexOf(row.id) >= 0) return;
@@ -347,6 +357,7 @@
         id: row.id,
         readId: row.readId,
         deleteGroupId: row.id,
+        docBaseKey: row.docBaseKey || row.id,
         from: 'SitePass',
         kind: 'system',
         time: nowText(row.createdAt),
@@ -518,6 +529,31 @@
 
   function totalUnreadCount(){ return unreadCount('expiry') + unreadCount('admin'); }
 
+  function updateHomeExpiryUnread479(force){
+    var count = unreadCount('expiry');
+    var badge = document.getElementById('sitepassHomeExpiryCount465');
+    if (badge) {
+      badge.textContent = String(count);
+      badge.classList.toggle('hidden', count < 1);
+      badge.setAttribute('aria-label', '읽지 않은 만료 알림 ' + count + '건');
+      badge.title = '읽지 않은 만료 알림 ' + count + '건';
+    }
+    if (force || count !== lastExpiryUnreadCount479) {
+      lastExpiryUnreadCount479 = count;
+      try { window.dispatchEvent(new CustomEvent('sitepass-expiry-unread-changed', { detail: { count: count } })); } catch(e) {}
+    }
+    return count;
+  }
+
+  window.sitepassGetExpiryUnreadCount479 = function(){ return unreadCount('expiry'); };
+  window.sitepassRefreshExpiryAlerts479 = function(){
+    syncExpiryMilestoneLogs467();
+    updateHomeExpiryUnread479(true);
+    renderRoomList();
+    if (currentRoomId === 'expiry') renderMessages('expiry');
+    return unreadCount('expiry');
+  };
+
   function updateBottomUnreadBadge(){
     var button = document.querySelector('#sitepassBottomAppNav button[data-target="contactScreen"]');
     if (!button) return;
@@ -531,6 +567,7 @@
     var count = totalUnreadCount();
     badge.textContent = count > 99 ? '99+' : String(count);
     badge.classList.toggle('hidden', count < 1);
+    updateHomeExpiryUnread479(false);
   }
 
   function latestText(roomId){
@@ -604,9 +641,28 @@
     if (!deleteMode) setTimeout(function(){ try { box.scrollTop = box.scrollHeight; } catch(e) {} }, 30);
   }
 
+  function ensureExpiryTestTools479(){
+    var panel = $('sitepassChatRoomPanel');
+    var messages = $('sitepassChatMessages');
+    if (!panel || !messages) return null;
+    var tools = $('sitepassExpiryTestTools479');
+    if (!tools) {
+      tools = document.createElement('div');
+      tools.id = 'sitepassExpiryTestTools479';
+      tools.className = 'sitepass-expiry-test-tools479 sitepass-chat-hidden';
+      tools.innerHTML = '<b>테스트용 만료알림</b><span>날짜를 기다리지 않고 D-30·D-15·D-7·D-DAY와 읽음 처리를 확인합니다.</span>'
+        + '<div><button type="button" onclick="return sitepassCreateExpiryTestAlerts479()">테스트 알림 4개 만들기</button>'
+        + '<button type="button" class="secondary" onclick="return sitepassClearExpiryTestAlerts479()">테스트 알림 지우기</button></div>';
+      panel.insertBefore(tools, messages);
+    }
+    tools.classList.toggle('sitepass-chat-hidden', !(expiryTestMode479() && currentRoomId === 'expiry'));
+    return tools;
+  }
+
   function showRoomActions(roomId){
     var deleteSelect = $('sitepassChatDeleteSelect');
     if (deleteSelect) deleteSelect.classList.toggle('sitepass-chat-hidden', roomId !== 'expiry' && roomId !== 'admin');
+    ensureExpiryTestTools479();
     updateDeleteBar();
   }
 
@@ -661,6 +717,68 @@
 
   window.sitepassOpenChatInbox460 = function(){
     window.sitepassBackToChatList460();
+    return false;
+  };
+
+  window.sitepassOpenExpiryFromHome479 = function(){
+    try {
+      if (typeof window.sitepassBottomNavGo === 'function') window.sitepassBottomNavGo('contactScreen');
+      else if (typeof window.showScreen === 'function') window.showScreen('contactScreen');
+    } catch(e) {}
+    setTimeout(function(){ window.sitepassOpenChatRoom460('expiry'); }, 30);
+    return false;
+  };
+
+  window.sitepassOpenShareFromHome479 = function(){
+    try {
+      if (typeof window.sitepassBottomNavGo === 'function') window.sitepassBottomNavGo('contactScreen');
+      else if (typeof window.showScreen === 'function') window.showScreen('contactScreen');
+    } catch(e) {}
+    setTimeout(function(){ window.sitepassOpenChatRoom460('share'); }, 30);
+    return false;
+  };
+
+  window.sitepassCreateExpiryTestAlerts479 = function(){
+    if (!expiryTestMode479()) return false;
+    var batch = Date.now();
+    var now = new Date();
+    var stages = [30,15,7,0];
+    var rows = stages.map(function(stage, index){
+      var label = milestoneLabel467(stage);
+      var eventKey = 'v479-test|' + batch + '|' + stage;
+      var due = new Date(now.getFullYear(), now.getMonth(), now.getDate() + stage);
+      return {
+        id: 'expiry-test-' + hashText(eventKey),
+        readId: 'expiry-test-read-' + hashText(eventKey),
+        eventKey: eventKey,
+        docBaseKey: 'v479-test-doc-' + stage,
+        type: 'test',
+        milestone: stage,
+        expireDate: localDateKey467(due),
+        createdAt: new Date(Date.now() + index).toISOString(),
+        text: '[테스트] 굴착기 00테스트' + String(index + 1) + '\n안전교육 이수증 · ' + label + ' 알림\n만료일: ' + displayDate467(due)
+      };
+    });
+    saveExpiryTestLogs479(rows);
+    resetDeleteMode();
+    updateHomeExpiryUnread479(true);
+    renderRoomList();
+    try {
+      if (typeof window.sitepassBottomNavGo === 'function') window.sitepassBottomNavGo('homeScreen');
+      else if (typeof window.showScreen === 'function') window.showScreen('homeScreen');
+    } catch(e) {}
+    setTimeout(function(){ updateHomeExpiryUnread479(true); }, 60);
+    try { alert('테스트 알림 4개를 만들었습니다. 홈의 숫자 4를 누르면 만료 알림방으로 바로 이동하고, 방을 열면 읽음 처리되어 숫자가 사라집니다.'); } catch(e) {}
+    return false;
+  };
+
+  window.sitepassClearExpiryTestAlerts479 = function(){
+    saveExpiryTestLogs479([]);
+    resetDeleteMode();
+    if (currentRoomId === 'expiry') renderMessages('expiry');
+    renderRoomList();
+    updateHomeExpiryUnread479(true);
+    try { alert('테스트 알림을 지웠습니다.'); } catch(e) {}
     return false;
   };
 
@@ -791,6 +909,7 @@
     renderRoomList();
     wrapBottomNav();
     updateBottomUnreadBadge();
+    updateHomeExpiryUnread479(true);
   }
 
   window.sitepassOpenChatRoom445 = window.sitepassOpenChatRoom460;

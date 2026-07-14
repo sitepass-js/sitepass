@@ -1,11 +1,12 @@
 {
-  "version": "23.7.478",
+  "version": "23.7.479",
   "channel": "test",
-  "note": "기사 건설기계조종사 안전교육 이수일 기준 3년 자동 D-DAY",
-  "build": "v23.7.478-test",
-  "stage": "기사 안전교육 알림 계산 단순화",
+  "note": "홈 만료 숫자와 만료 알림방의 읽음 상태를 하나로 통합",
+  "build": "v23.7.479-test",
+  "stage": "만료 알림 연결 및 즉시 테스트",
   "updatedAt": "2026-07-14",
-  "releaseType": "test-driver-safety-training-plus-3-years",
-  "purpose": "안전교육 이수일을 입력하면 정확히 3년 뒤를 만료 알림 D-DAY로 자동 계산",
-  "notes": "D-30, D-15, D-7, D-DAY 알림은 자동 계산된 3년 뒤 날짜를 기준으로 생성합니다. Supabase 수정은 없습니다."
+  "releaseType": "test-expiry-unread-direct-room",
+  "purpose": "홈 숫자를 누르면 만료 알림방으로 바로 이동하고, 방을 확인하면 읽음 처리되어 숫자가 사라지도록 수정",
+  "notes": "실제 알림은 현재 단계(D-30, D-15, D-7, D-DAY) 하나만 생성하며 중복 생성하지 않습니다. ?expirytest=1에서 테스트 알림 4개를 즉시 만들 수 있습니다. Supabase 수정은 없습니다.",
+  "description": "만료 알림 숫자·알림방·읽음 상태 통합, 홈에서 바로 이동, 즉시 테스트 모드"
 }

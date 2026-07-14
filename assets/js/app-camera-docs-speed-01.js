@@ -511,7 +511,7 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       return el ? el.closest('.clean-date-picker') : null;
     }
 
-    // v23.7.478-test: 건설기계조종사 안전교육 이수일은 입력일 그대로 저장하지 않고
+    // v23.7.479-test: 건설기계조종사 안전교육 이수일은 입력일 그대로 저장하지 않고
     // 정확히 3년 뒤를 알림 D-DAY로 계산합니다. 2월 29일은 3년 뒤 2월 28일로 처리합니다.
     function addExactYearsToIsoDateV478(value, years) {
       const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
