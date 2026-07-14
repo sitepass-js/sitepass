@@ -663,10 +663,14 @@ function resetForm(clearEdit = true) {
     function getCurrentSitePassMemberStrongStorageScopeKeys() {
       const member = getCurrentSitePassMemberForEquipmentSync();
       if (!member || typeof member !== 'object') return [];
+      const loginId = String(member.signupId || member.loginId || member.signup_id || member.login_id || member.supabaseLoginId || '').trim();
       return Array.from(new Set([
         member.id, member.memberId, member.userId,
         member.authUserId, member.auth_user_id, member.supabaseAuthUserId,
-        member.providerId, member.provider_id
+        member.providerId, member.provider_id,
+        loginId ? ('SB-' + loginId) : '',
+        loginId ? ('SITEPASS-' + loginId) : '',
+        loginId ? ('SITEPASS-LOGIN-' + loginId) : ''
       ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean)));
     }
 
@@ -689,18 +693,43 @@ function resetForm(clearEdit = true) {
       if (sitePassEquipmentStatusLooksDeleted(item)) return false;
 
       const member = getCurrentSitePassMemberForEquipmentSync() || {};
-      const currentPrimary = [member.id, member.memberId, member.userId, member.authUserId, member.auth_user_id, member.supabaseAuthUserId]
-        .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+      const currentLoginId = String(member.signupId || member.loginId || member.signup_id || member.login_id || member.supabaseLoginId || '').trim();
+      const currentPrimary = [
+        member.id, member.memberId, member.userId,
+        member.authUserId, member.auth_user_id, member.supabaseAuthUserId,
+        currentLoginId ? ('SB-' + currentLoginId) : ''
+      ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       const ownerPrimary = [item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
         .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
-      // v23.7.477: 탈퇴 후 같은 아이디/전화번호로 재가입해도 예전 회원 장비가 섞이지 않도록
-      // 이전 회원의 고유 회원ID가 들어 있는 자료는 현재 고유 회원ID와 정확히 일치해야 합니다.
+      // v23.7.484: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
+      // SB-로그인아이디 형식을 현재 회원 고유키로 함께 계산하여 정상 서버자료를 누락시키지 않습니다.
       if (ownerPrimary.length) {
-        if (!currentPrimary.length) return false;
-        return ownerPrimary.some(function(key) { return currentPrimary.indexOf(key) >= 0; });
+        if (currentPrimary.length && ownerPrimary.some(function(key) { return currentPrimary.indexOf(key) >= 0; })) return true;
+
+        // 현재 장비행의 가입아이디와 제공자 아이디가 모두 현재 로그인 회원과 일치할 때만
+        // 구버전 회원객체의 id 누락을 보조 판정합니다. 다른 회원 자료는 통과시키지 않습니다.
+        const ownerSignupKeys = [item.ownerSignupId, item.owner_signup_id, item.signupId, item.signup_id]
+          .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+        const currentSignupKeys = [member.signupId, member.loginId, member.signup_id, member.login_id, member.supabaseLoginId]
+          .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+        const ownerProviderKeys = [item.ownerProviderId, item.owner_provider_id, item.providerId, item.provider_id]
+          .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+        const currentProviderKeys = [
+          member.providerId, member.provider_id,
+          currentLoginId ? ('SITEPASS-' + currentLoginId) : '',
+          currentLoginId ? ('SITEPASS-LOGIN-' + currentLoginId) : ''
+        ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+        const signupMatches = ownerSignupKeys.length && currentSignupKeys.length && ownerSignupKeys.some(function(key) { return currentSignupKeys.indexOf(key) >= 0; });
+        const providerMatches = !ownerProviderKeys.length || (currentProviderKeys.length && ownerProviderKeys.some(function(key) { return currentProviderKeys.indexOf(key) >= 0; }));
+        if (signupMatches && providerMatches) return true;
+        return false;
       }
 
-      const currentProvider = [member.providerId, member.provider_id].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
+      const currentProvider = [
+        member.providerId, member.provider_id,
+        currentLoginId ? ('SITEPASS-' + currentLoginId) : '',
+        currentLoginId ? ('SITEPASS-LOGIN-' + currentLoginId) : ''
+      ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       const ownerProvider = [item.ownerProviderId, item.owner_provider_id, item.providerId, item.provider_id].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       if (ownerProvider.length) {
         if (!currentProvider.length) return false;
@@ -1086,8 +1115,16 @@ function resetForm(clearEdit = true) {
           if (!silent) alert(sitePassEquipmentSyncMessage);
           return { ok:false, error };
         }
-        const serverItems = filterCurrentMemberEquipmentStorageScope(rows.map(normalizeSupabaseEquipmentRow).filter(Boolean));
+        const normalizedServerRows = rows.map(normalizeSupabaseEquipmentRow).filter(Boolean);
+        const serverItems = filterCurrentMemberEquipmentStorageScope(normalizedServerRows);
         const serverCodes = new Set(serverItems.map(function(item){ return String(item && item.code || ''); }).filter(Boolean));
+        try {
+          console.info('[SitePass 보관함 동기화]', {
+            rpcRows: normalizedServerRows.length,
+            currentMemberRows: serverItems.length,
+            currentMember: getCurrentSitePassMemberStrongStorageScopeKeys()
+          });
+        } catch (e) {}
         readSitePassUnsyncedCodesV476().forEach(function(row){ if (serverCodes.has(String(row.code || ''))) clearSitePassEquipmentUnsyncedV476(row.code); });
         const unsyncedItems = getSitePassUnsyncedEquipmentItemsV476().filter(function(item){ return !serverCodes.has(String(item && item.code || '')); });
         const visibleItems = mergeEquipmentItemLists(serverItems, unsyncedItems);
