@@ -1,0 +1,31 @@
+/* SitePass v23.7.471-test - 선택한 등록대상에 맞춘 단계별 등록 */
+.sitepass-registration-wizard470{margin:14px 0 4px;padding:14px;border:1px solid #cfe0ff;border-radius:18px;background:#f7faff}
+.sitepass-registration-wizard-head470{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.sitepass-registration-wizard-head470 b{display:block;font-size:17px;color:#10213b}.sitepass-registration-wizard-head470 span{display:block;margin-top:4px;font-size:13px;line-height:1.45;color:#60718f}
+.sitepass-registration-progress470{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sitepass-registration-progress470 [data-wizard-stage]{display:flex;align-items:center;justify-content:center;gap:6px;min-height:42px;border:1px solid #d9e4f5;border-radius:13px;background:#fff;color:#7a879d;font-size:13px;font-weight:900;text-align:center;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,border-color .12s ease,background .12s ease}
+
+.sitepass-registration-progress470 [data-wizard-stage]:hover{border-color:#9eb9ee;background:#f7faff}
+.sitepass-registration-progress470 [data-wizard-stage]:active{transform:scale(.98)}
+.sitepass-registration-progress470 [data-wizard-stage]:focus-visible{outline:3px solid rgba(44,91,215,.22);outline-offset:2px}
+.sitepass-registration-progress470 [data-wizard-stage] i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#edf2f9;font-style:normal;font-size:12px}
+.sitepass-registration-progress470 [data-wizard-stage].active{border-color:#2c5bd7;background:#eef4ff;color:#1748bd}.sitepass-registration-progress470 [data-wizard-stage].active i{background:#2c5bd7;color:#fff}
+.sitepass-registration-progress470 [data-wizard-stage].included{border-color:#9fcfb6;background:#f0faf5;color:#087a42}.sitepass-registration-progress470 [data-wizard-stage].included i{background:#12a05c;color:#fff}
+.sitepass-registration-progress470 [data-wizard-stage].done{border-color:#bfe3cf;background:#effaf4;color:#087a42}.sitepass-registration-progress470 [data-wizard-stage].done i{background:#12a05c;color:#fff}
+.sitepass-wizard-hidden-controls470{display:none!important}
+.sitepass-wizard-choice470{display:grid;gap:14px;padding:20px;border:1px solid #cddcf6;border-radius:18px;background:#f8fbff;margin:8px 0 16px}.sitepass-wizard-choice470.hidden{display:none!important}
+.sitepass-wizard-choice470 b{display:block;font-size:20px;color:#10213b}.sitepass-wizard-choice470 span{display:block;margin-top:7px;font-size:14px;line-height:1.55;color:#60718f}
+.sitepass-wizard-choice-actions470{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sitepass-wizard-choice-actions470 button{min-height:50px}
+.sitepass-wizard-group-hidden470{display:none!important}
+.sitepass-wizard-basic-collapsed470 .form-grid,.sitepass-wizard-basic-collapsed470 .bundle-summary,.sitepass-wizard-basic-collapsed470 #registrationDraftNotice,.sitepass-wizard-basic-collapsed470 #editModeBanner{display:none!important}
+.sitepass-wizard-basic-collapsed470{padding-bottom:8px!important}
+.sitepass-wizard-choice-only470 #docCards,.sitepass-wizard-choice-only470 .doc-check-title,.sitepass-wizard-choice-only470 .notice:not(#registrationWizardPrivateHint470){display:none!important}
+#registrationWizardPrivateHint470{margin:10px 0 14px}
+#registerScreen[data-registration-step="equipment"] #documentSection h2{font-size:22px}
+#registerScreen[data-registration-step="driver"] #documentSection h2,#registerScreen[data-registration-step="worker"] #documentSection h2{display:none}
+#registerScreen .bundle-group{margin-top:0}
+.sitepass-wizard-actions470{display:grid;grid-template-columns:1fr 1.45fr;gap:10px}.sitepass-wizard-actions470 .hidden{display:none!important}.sitepass-wizard-actions470 button:only-child{grid-column:1/-1}
+@media(max-width:520px){.sitepass-registration-progress470 [data-wizard-stage]{font-size:12px;gap:4px;padding:5px}.sitepass-registration-wizard-head470{display:block}.sitepass-wizard-choice-actions470,.sitepass-wizard-actions470{grid-template-columns:1fr}.sitepass-wizard-choice470{padding:16px}}
+
+#registerScreen.sitepass-wizard-driver-auth-pending470 .bundle-group[data-bundle-group="driver"] .doc-card[data-group-key="driver"]{display:none!important}
+#registerScreen.sitepass-wizard-driver-auth-pending470 .bundle-group[data-bundle-group="driver"] .bundle-group-head{margin-bottom:8px}
