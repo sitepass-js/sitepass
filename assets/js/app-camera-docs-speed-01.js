@@ -511,6 +511,41 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       return el ? el.closest('.clean-date-picker') : null;
     }
 
+    // v23.7.478-test: 건설기계조종사 안전교육 이수일은 입력일 그대로 저장하지 않고
+    // 정확히 3년 뒤를 알림 D-DAY로 계산합니다. 2월 29일은 3년 뒤 2월 28일로 처리합니다.
+    function addExactYearsToIsoDateV478(value, years) {
+      const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return '';
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const targetYear = year + Number(years || 0);
+      const lastDay = new Date(targetYear, month, 0).getDate();
+      const safeDay = Math.min(day, lastDay);
+      return String(targetYear).padStart(4, '0') + '-' + String(month).padStart(2, '0') + '-' + String(safeDay).padStart(2, '0');
+    }
+
+    function isEducationPlus3YearsCardV478(card) {
+      return !!card && (card.dataset.dateMode === 'educationPlus3Years' || card.dataset.docKey === 'driverMachinerySafetyTraining');
+    }
+
+    function getEffectiveExpireDateForDocCardV478(card, enteredValue) {
+      const value = String(enteredValue || '').trim();
+      if (!value) return '';
+      return isEducationPlus3YearsCardV478(card) ? addExactYearsToIsoDateV478(value, 3) : value;
+    }
+
+    function updateEducationExpiryNoteV478(displayInput) {
+      const card = displayInput ? displayInput.closest('.doc-card') : null;
+      if (!isEducationPlus3YearsCardV478(card)) return;
+      const note = card.querySelector('[data-education-expiry-note]');
+      if (!note) return;
+      const educationDate = String(displayInput.value || '').trim();
+      const expireDate = getEffectiveExpireDateForDocCardV478(card, educationDate);
+      note.textContent = expireDate ? ('다음 교육 예정일(3년 뒤): ' + expireDate + ' · ' + getDdayText(expireDate)) : '교육일을 선택하면 3년 뒤 D-DAY가 자동 계산됩니다.';
+      note.classList.toggle('ready', !!expireDate);
+    }
+
     function setCleanDateValue(displayInput, value) {
       if (!displayInput) return;
       const cleanValue = value || '';
@@ -518,6 +553,9 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       const shell = findCleanDateShell(displayInput);
       const realInput = shell ? shell.querySelector('[data-clean-date-real]') : null;
       if (realInput) realInput.value = cleanValue;
+      updateEducationExpiryNoteV478(displayInput);
+      const card = displayInput.closest('.doc-card');
+      if (card && typeof renderCardPagesPreview === 'function') renderCardPagesPreview(card);
       renderAlertPreview();
     }
 
@@ -526,6 +564,9 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       const displayInput = shell ? shell.querySelector('[data-clean-date-display]') : null;
       if (!displayInput || !realInput) return;
       displayInput.value = realInput.value || '';
+      updateEducationExpiryNoteV478(displayInput);
+      const card = displayInput.closest('.doc-card');
+      if (card && typeof renderCardPagesPreview === 'function') renderCardPagesPreview(card);
       renderAlertPreview();
       setTimeout(function(){
         try { realInput.blur(); } catch(e) {}
@@ -533,7 +574,7 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       }, 0);
     }
 
-    // v23.7.476-test: 브라우저 기본 달력은 월 이동 화살표에서도 input 이벤트를
+    // v23.7.477-test: 브라우저 기본 달력은 월 이동 화살표에서도 input 이벤트를
     // 발생시키는 기기가 있어, 선택 중인 날짜가 저장되고 달력이 닫히는 문제가 있었습니다.
     // 월 이동은 보기만 바꾸고 날짜 숫자를 눌렀을 때만 값을 확정하는 전용 달력을 사용합니다.
     const sitePassCleanCalendar475 = {
@@ -713,7 +754,7 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
       });
       target.querySelectorAll('[data-clean-date-real]').forEach(input => {
         if (input.dataset.boundDateReal === 'yes') return;
-        // v23.7.476: 전용 달력에서 날짜 숫자를 선택했을 때만 값이 확정됩니다.
+        // v23.7.477: 전용 달력에서 날짜 숫자를 선택했을 때만 값이 확정됩니다.
         // 기본 input/blur 이벤트로 달력을 닫지 않습니다.
         input.dataset.boundDateReal = 'yes';
       });
@@ -748,7 +789,7 @@ function renderDocCardHtml(group, doc, index, options = {}) {
       const extraPhoneHtml = options.extraPhone ? '<div class="id-phone-input"><label>' + escapeHtml(options.phoneLabel || '전화번호 선택입력') + '</label><input type="tel" data-extra-phone-key="' + escapeHtml(options.phoneKey || 'phone') + '" placeholder="예: 010-0000-0000" inputmode="tel" autocomplete="tel" /></div>' : '';
       const extraTaskHtml = options.extraTask ? '<div class="id-phone-input" data-special-task-box><label>특수인부 작업내용 선택입력</label><input type="text" data-extra-task-key="workerTask" placeholder="예: 신호수 / 용접 / 타워크레인 신호 / 유도원" autocomplete="off" /></div>' : '';
       const driverPhoneHtml = doc.extraPhone ? '<div class="id-phone-input"><label>기사 전화번호 선택입력</label><input type="tel" data-extra-key="driverPhone" data-extra-phone-key="driverPhone" placeholder="예: 010-0000-0000" inputmode="tel" autocomplete="tel" /></div>' : '';
-      return '<div class="doc-card ' + (doc.required ? 'required' : '') + '" data-doc-key="' + key + '" data-doc-title="' + escapeHtml(title) + '" data-required="' + doc.required + '" data-expiry="' + doc.expiry + '" data-group-key="' + groupKey + '" data-auth-verified="' + (authVerified ? 'true' : 'false') + '" ' + authMetaAttrs.join(' ') + ' ' + workerAttrs + '>' +
+      return '<div class="doc-card ' + (doc.required ? 'required' : '') + '" data-doc-key="' + key + '" data-doc-title="' + escapeHtml(title) + '" data-required="' + doc.required + '" data-expiry="' + doc.expiry + '" data-date-mode="' + escapeHtml(doc.dateMode || '') + '" data-group-key="' + groupKey + '" data-auth-verified="' + (authVerified ? 'true' : 'false') + '" ' + authMetaAttrs.join(' ') + ' ' + workerAttrs + '>' +
         '<div class="doc-head"><div class="doc-title">' + (index + 1) + '. ' + escapeHtml(title) + '</div><span class="badge ' + (doc.required ? 'need' : '') + '">' + (doc.required ? '필수' : '선택') + '</span></div>' +
         lockedNoteHtml +
         '<div class="file-row">' +
@@ -759,7 +800,7 @@ function renderDocCardHtml(group, doc, index, options = {}) {
         '<div class="multi-page-hint">사진/파일을 올린 뒤 모든 서류에서 “추가 장이 있나요?”를 확인합니다. 확인을 누르면 같은 서류에 2페이지, 3페이지처럼 계속 추가됩니다.</div>' +
         '<div class="selected-file" data-role="filename" data-pages-json="[]">첨부 없음</div>' +
         driverPhoneHtml + extraPhoneHtml + extraTaskHtml +
-        (doc.expiry ? '<div class="date-grid"><div class="date-field"><label>' + escapeHtml(doc.dateLabel) + '</label><div class="clean-date-picker"><input type="text" class="clean-date-display" data-date-key="' + doc.dateKey + '" data-date-label="' + escapeHtml(doc.dateLabel) + '" data-clean-date-display="yes" placeholder="날짜 선택" readonly /><input type="date" class="clean-date-real" data-clean-date-real="yes" aria-label="' + escapeHtml(doc.dateLabel) + '" tabindex="-1" /></div></div></div>' : '') +
+        (doc.expiry ? '<div class="date-grid"><div class="date-field"><label>' + escapeHtml(doc.dateLabel) + '</label><div class="clean-date-picker"><input type="text" class="clean-date-display" data-date-key="' + doc.dateKey + '" data-date-label="' + escapeHtml(doc.dateLabel) + '" data-clean-date-display="yes" placeholder="날짜 선택" readonly /><input type="date" class="clean-date-real" data-clean-date-real="yes" aria-label="' + escapeHtml(doc.dateLabel) + '" tabindex="-1" /></div></div></div>' + (doc.dateMode === 'educationPlus3Years' ? '<div class="education-expiry-note-v478" data-education-expiry-note>교육일을 선택하면 3년 뒤 D-DAY가 자동 계산됩니다.</div>' : '') : '') +
         '<div class="date-note">' + escapeHtml(doc.note) + '</div>' +
       '</div>';
     }

@@ -441,53 +441,87 @@ function resetForm(clearEdit = true) {
       };
     }
 
+    // v23.7.477: 같은 장비코드 서버저장을 직렬화하고, statement timeout은 한 번만 재시도합니다.
+    // 일반회원 anon 키에 테이블 INSERT/UPDATE 권한을 직접 열지 않고 SECURITY DEFINER RPC만 사용합니다.
+    const sitePassEquipmentSaveQueueV477 = new Map();
+
+    function waitSitePassEquipmentSaveV477(ms) {
+      return new Promise(function(resolve){ setTimeout(resolve, Math.max(0, Number(ms || 0))); });
+    }
+
+    function isSitePassEquipmentRpcTimeoutV477(error) {
+      const code = String(error && error.code || '');
+      const message = String(error && (error.message || error.details) || '').toLowerCase();
+      return code === '57014' || message.indexOf('statement timeout') >= 0 || message.indexOf('canceling statement') >= 0;
+    }
+
+    function isSitePassEquipmentRpcMissingV477(error) {
+      const code = String(error && error.code || '');
+      const message = String(error && (error.message || error.details) || '').toLowerCase();
+      return code === 'PGRST202' || message.indexOf('could not find the function') >= 0 || message.indexOf('schema cache') >= 0;
+    }
+
     async function saveEquipmentItemToSupabase(item, reason) {
       const supabaseApi = window.SitePassSupabaseApi;
-      if (!supabaseApi || (!supabaseApi.upsert && !supabaseApi.rpc)) {
-        sitePassEquipmentSyncMessage = '장비 서버저장 실패: Supabase API 연결 없음';
-        return { skipped:true, error:'Supabase API 연결 없음' };
+      if (!supabaseApi || !supabaseApi.rpc) {
+        sitePassEquipmentSyncMessage = '장비 서버저장 실패: Supabase RPC 연결 없음';
+        return { skipped:true, error:'Supabase RPC 연결 없음' };
       }
       const row = buildSupabaseEquipmentRow(item, reason);
       if (!row) {
         sitePassEquipmentSyncMessage = '장비 서버저장 실패: 장비 row 없음';
         return { skipped:true, error:'장비 row 없음' };
       }
-      try {
-        // v23.7.281: RLS/권한/브라우저 키 차이를 줄이기 위해 서버 RPC를 우선 사용합니다.
-        // RPC가 없거나 실패하면 기존 UPSERT로 한 번 더 시도합니다.
-        let error = null;
-        let rpcTried = false;
-        if (supabaseApi.rpc) {
-          rpcTried = true;
-          const rpcResult = await supabaseApi.rpc('sitepass_upsert_equipment_item', { p_row: row });
-          error = rpcResult && rpcResult.error ? rpcResult.error : null;
-          if (error) console.warn('Supabase 장비 RPC 저장 실패, 직접 UPSERT 재시도:', error);
+
+      const queueKey = String(row.code || 'unknown');
+      const previous = sitePassEquipmentSaveQueueV477.get(queueKey) || Promise.resolve();
+      let task;
+      task = previous.catch(function(){}).then(async function(){
+        try {
+          let rpcResult = await supabaseApi.rpc('sitepass_upsert_equipment_item', { p_row: row });
+          let error = rpcResult && rpcResult.error ? rpcResult.error : null;
+
+          // DB가 잠시 바쁘거나 같은 코드 저장이 겹친 경우 한 번만 기다렸다 재시도합니다.
+          if (error && isSitePassEquipmentRpcTimeoutV477(error)) {
+            console.warn('Supabase 장비 RPC 저장 시간초과, 1회 재시도:', error);
+            await waitSitePassEquipmentSaveV477(1400);
+            rpcResult = await supabaseApi.rpc('sitepass_upsert_equipment_item', { p_row: row });
+            error = rpcResult && rpcResult.error ? rpcResult.error : null;
+          }
+
+          if (error) {
+            // v477: RPC 실패 뒤 anon 테이블 UPSERT를 시도하면 401/42501만 추가 발생합니다.
+            // 자료는 로컬 미동기화 대기열에 유지하고, SQL 복구 후 자동 재시도합니다.
+            if (isSitePassEquipmentRpcMissingV477(error)) {
+              error.sitePassHint = 'Supabase v23.7.477 장비저장 RPC SQL을 실행해주세요.';
+            } else if (isSitePassEquipmentRpcTimeoutV477(error)) {
+              error.sitePassHint = '장비저장 RPC가 시간초과되었습니다. v23.7.477 SQL 실행 후 다시 동기화됩니다.';
+            }
+            console.warn('Supabase 장비 RPC 저장 실패:', error);
+            sitePassEquipmentSyncMessage = '장비 서버저장 대기: ' + (error.message || JSON.stringify(error));
+            return { ok:false, pending:true, error };
+          }
+
+          const normalizedRow = normalizeSupabaseEquipmentRow(row) || item;
+          const cache = getServerEquipmentCache();
+          const merged = mergeEquipmentItemLists(cache, getSitePassServerAuthoritativeEquipmentItems(), [normalizedRow, item]);
+          setServerEquipmentCache(merged);
+          if (isSitePassMemberServerAuthoritativeMode()) {
+            setSitePassServerAuthoritativeEquipmentItems(merged);
+            try { runtimeEquipmentItems = mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems()); } catch (e) {}
+          }
+          sitePassEquipmentSyncMessage = '장비 서버저장 완료: ' + (row.equipment_no || row.code || '장비');
+          return { ok:true, data: rpcResult && rpcResult.data };
+        } catch (e) {
+          console.warn('Supabase 장비 저장 예외:', e);
+          sitePassEquipmentSyncMessage = '장비 서버저장 대기: ' + (e?.message || e);
+          return { ok:false, pending:true, error:e };
         }
-        if (error || !rpcTried) {
-          if (!supabaseApi.upsert) return { ok:false, error: error || { message:'Supabase UPSERT 연결 없음' } };
-          const upsertResult = await supabaseApi.upsert('sitepass_equipment_items', row, { onConflict:'code' });
-          error = upsertResult && upsertResult.error ? upsertResult.error : null;
-        }
-        if (error) {
-          console.warn('Supabase 장비 저장 실패:', error);
-          sitePassEquipmentSyncMessage = '장비 서버저장 실패: ' + (error.message || JSON.stringify(error));
-          return { ok:false, error };
-        }
-        const normalizedRow = normalizeSupabaseEquipmentRow(row) || item;
-        const cache = getServerEquipmentCache();
-        const merged = mergeEquipmentItemLists(cache, getSitePassServerAuthoritativeEquipmentItems(), [normalizedRow, item]);
-        setServerEquipmentCache(merged);
-        if (isSitePassMemberServerAuthoritativeMode()) {
-          setSitePassServerAuthoritativeEquipmentItems(merged);
-          try { runtimeEquipmentItems = mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems()); } catch (e) {}
-        }
-        sitePassEquipmentSyncMessage = '장비 서버저장 완료: ' + (row.equipment_no || row.code || '장비');
-        return { ok:true };
-      } catch (e) {
-        console.warn('Supabase 장비 저장 예외:', e);
-        sitePassEquipmentSyncMessage = '장비 서버저장 예외: ' + (e?.message || e);
-        return { ok:false, error:e };
-      }
+      }).finally(function(){
+        if (sitePassEquipmentSaveQueueV477.get(queueKey) === task) sitePassEquipmentSaveQueueV477.delete(queueKey);
+      });
+      sitePassEquipmentSaveQueueV477.set(queueKey, task);
+      return task;
     }
 
     function shouldSyncSupabaseEquipmentItemsForCurrentContext() {
@@ -659,7 +693,7 @@ function resetForm(clearEdit = true) {
         .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       const ownerPrimary = [item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
         .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
-      // v23.7.476: 탈퇴 후 같은 아이디/전화번호로 재가입해도 예전 회원 장비가 섞이지 않도록
+      // v23.7.477: 탈퇴 후 같은 아이디/전화번호로 재가입해도 예전 회원 장비가 섞이지 않도록
       // 이전 회원의 고유 회원ID가 들어 있는 자료는 현재 고유 회원ID와 정확히 일치해야 합니다.
       if (ownerPrimary.length) {
         if (!currentPrimary.length) return false;
@@ -697,7 +731,7 @@ function resetForm(clearEdit = true) {
     } catch (e) {}
 
 
-    // v23.7.476: 등록 직후 서버 저장이 끝나기 전에 서버목록이 빈 값으로 돌아와도
+    // v23.7.477: 등록 직후 서버 저장이 끝나기 전에 서버목록이 빈 값으로 돌아와도
     // 새 장비를 지우지 않고 보관함/상세보기에서 유지하는 회원별 미동기화 대기열입니다.
     const SITEPASS_UNSYNCED_EQUIPMENT_PREFIX_V476 = 'sitepass_unsynced_equipment_v476_';
     const sitePassUnsyncedRetryingCodesV476 = new Set();
@@ -2081,8 +2115,16 @@ function makeQrUrl(link, size = 180) {
     function renderAlertPreview() {
       const activeDefs = getActiveDocDefs().filter(doc => doc.expiry);
       const rows = activeDefs.map(def => {
-        const value = document.querySelector('[data-date-key="' + def.dateKey + '"]')?.value || '';
-        return '<div class="line"><b>' + escapeHtml(def.groupTitle + ' - ' + def.dateLabel) + '</b><span>' + (value ? escapeHtml(value + ' / ' + getDdayText(value)) : '날짜 없음') + '</span></div>';
+        const input = document.querySelector('[data-date-key="' + def.dateKey + '"]');
+        const value = input?.value || '';
+        const card = input ? input.closest('.doc-card') : null;
+        const expireDate = getEffectiveExpireDateForDocCardV478(card, value);
+        const text = value
+          ? (isEducationPlus3YearsCardV478(card)
+              ? ('이수일 ' + value + ' / 3년 뒤 ' + expireDate + ' / ' + getDdayText(expireDate))
+              : (value + ' / ' + getDdayText(expireDate)))
+          : '날짜 없음';
+        return '<div class="line"><b>' + escapeHtml(def.groupTitle + ' - ' + def.dateLabel) + '</b><span>' + escapeHtml(text) + '</span></div>';
       }).join('');
       const box = document.getElementById('alertPreview');
       if (box) box.innerHTML = rows || '<div class="empty">만료일을 입력하는 서류가 없습니다.</div>';

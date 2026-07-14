@@ -525,7 +525,12 @@ function fillDocsForEdit(item) {
         const pages = getDocPagesFromDoc(doc);
         setDocPagesToCard(card, pages);
         const dateInput = card.querySelector('[data-date-key]');
-        if (dateInput) setCleanDateValue(dateInput, doc.expireDate || '');
+        if (dateInput) {
+          const editDate = isEducationPlus3YearsCardV478(card)
+            ? (doc.educationDate || doc.trainingDate || doc.issueDate || doc.expireDate || '')
+            : (doc.expireDate || '');
+          setCleanDateValue(dateInput, editDate);
+        }
         const driverPhone = card.querySelector('[data-extra-key="driverPhone"]');
         if (driverPhone) driverPhone.value = doc.driverPhone || doc.personPhone || '';
         const phoneInput = card.querySelector('[data-extra-phone-key]');

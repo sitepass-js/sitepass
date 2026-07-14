@@ -1,11 +1,11 @@
 {
-  "version": "23.7.476",
+  "version": "23.7.478",
   "channel": "test",
-  "note": "회원탈퇴 후 재가입 보관함 분리 및 등록 직후 서버 저장 전 자료 보호",
-  "build": "v23.7.476-test",
-  "stage": "보관함 회원분리·신규등록 저장보호 수정",
+  "note": "기사 건설기계조종사 안전교육 이수일 기준 3년 자동 D-DAY",
+  "build": "v23.7.478-test",
+  "stage": "기사 안전교육 알림 계산 단순화",
   "updatedAt": "2026-07-14",
-  "releaseType": "test-member-archive-race-recovery",
-  "purpose": "탈퇴 전 장비가 새 회원 보관함에 섞이는 문제와 신규 등록건이 서버 동기화 전에 사라지는 문제 수정",
-  "notes": "강한 회원 식별자로 보관함 소유자를 판정하고, 새 등록건은 서버 저장이 확인될 때까지 회원별 미동기화 대기열과 로컬 미리보기에서 유지합니다. 상세보기에서도 대기 중 자료를 조회하며 서버 저장 실패 시 자동 재시도합니다."
+  "releaseType": "test-driver-safety-training-plus-3-years",
+  "purpose": "안전교육 이수일을 입력하면 정확히 3년 뒤를 만료 알림 D-DAY로 자동 계산",
+  "notes": "D-30, D-15, D-7, D-DAY 알림은 자동 계산된 3년 뒤 날짜를 기준으로 생성합니다. Supabase 수정은 없습니다."
 }

@@ -447,7 +447,8 @@ async function buildDocPage(card, file, sourceText) {
       }
       preview.classList.add('show');
       const label = makeDocFileTopLabel({ title: card.dataset.docTitle || '첨부서류' }, '');
-      const expiryDoc = { title: card.dataset.docTitle || '', expireDate: card.querySelector('[data-date-key]')?.value || '' };
+      const enteredDate = card.querySelector('[data-date-key]')?.value || '';
+      const expiryDoc = { title: card.dataset.docTitle || '', expireDate: getEffectiveExpireDateForDocCardV478(card, enteredDate) };
       preview.innerHTML = '<div class="preview-title"><span>첨부 ' + pages.length + '장 · 최종 스캔본</span></div>' + renderPagesListHtml(pages, { editable:true, docKey:card.dataset.docKey, docLabel:label }) + renderDocExpiryStrip(expiryDoc);
     }
 

@@ -715,8 +715,13 @@ function resizeCanvasIfNeeded(canvas, maxSize) {
         const pages = makePagesForStorage(rawPages);
         const isExpiry = card.dataset.expiry === 'true';
         let expireDate = '';
+        let educationDate = '';
         const dateInput = isExpiry ? card.querySelector('[data-date-key]') : null;
-        if (dateInput) expireDate = dateInput.value || '';
+        if (dateInput) {
+          const enteredDate = dateInput.value || '';
+          if (isEducationPlus3YearsCardV478(card)) educationDate = enteredDate;
+          expireDate = getEffectiveExpireDateForDocCardV478(card, enteredDate);
+        }
         const phoneValue = (card.querySelector('[data-extra-phone-key]')?.value || '').trim();
         const driverPhoneValue = (card.querySelector('[data-extra-key="driverPhone"]')?.value || '').trim();
         const workerTaskValue = (card.querySelector('[data-extra-task-key]')?.value || '').trim();
@@ -734,6 +739,8 @@ function resizeCanvasIfNeeded(canvas, maxSize) {
           required: card.dataset.required === 'true',
           expiry: isExpiry,
           expireDate,
+          educationDate,
+          dateMode: card.dataset.dateMode || '',
           pages,
           pageCount:pages.length,
           fileName: pages.length ? ('첨부 ' + pages.length + '장 · ' + summarizePages(pages)) : '',
