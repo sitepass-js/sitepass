@@ -431,6 +431,52 @@ function resetForm(clearEdit = true) {
       }
     }
 
+
+    // v23.7.519-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
+    // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
+    function sitePassEquipmentCodeMatchesV519(item, targetCode) {
+      if (!item || typeof item !== 'object') return false;
+      const target = String(targetCode || '').trim();
+      if (!target) return false;
+      const nested = [item.item_json, item.item_data, item.payload, item.data].filter(function(v){ return v && typeof v === 'object'; });
+      const values = [
+        item.code, item.share_code, item.shareCode, item.publicShareCode, item.managerShareCode,
+        item.qrCode, item.qr_code, item.equipmentCode, item.equipment_code, item.id,
+        item.originalEquipmentCode, item.original_equipment_code
+      ];
+      nested.forEach(function(row){
+        values.push(row.code, row.share_code, row.shareCode, row.equipmentCode, row.equipment_code, row.id);
+      });
+      return values.some(function(value){ return String(value || '').trim() === target; });
+    }
+
+    function getSitePassCanonicalEquipmentItemV519(code) {
+      const target = String(code || '').trim();
+      if (!target) return null;
+      const lists = [];
+      if (isSitePassMemberServerAuthoritativeMode()) {
+        try { lists.push(getSitePassServerAuthoritativeEquipmentItems()); } catch (e) {}
+        try { lists.push(getServerEquipmentCache()); } catch (e) {}
+        try { lists.push(getSitePassUnsyncedEquipmentItemsV476()); } catch (e) {}
+      } else {
+        try { lists.push(getItems()); } catch (e) {}
+      }
+      for (const list of lists) {
+        const found = (Array.isArray(list) ? list : []).find(function(item){ return sitePassEquipmentCodeMatchesV519(item, target); });
+        if (found) {
+          if (!found.code) found.code = target;
+          return found;
+        }
+      }
+      return null;
+    }
+
+    try {
+      window.sitePassGetCanonicalEquipmentItemV519 = getSitePassCanonicalEquipmentItemV519;
+      window.sitePassEquipmentCodeMatchesV519 = sitePassEquipmentCodeMatchesV519;
+    } catch (e) {}
+
     function buildSupabaseEquipmentRow(item, reason) {
       if (!item) return null;
       item = applyCurrentMemberOwnerForEquipmentSync(item, shouldSyncSupabaseMyEquipmentItemsForCurrentContext());
@@ -1144,13 +1190,13 @@ function resetForm(clearEdit = true) {
       return code === 'PGRST202' || message.indexOf('could not find the function') >= 0 || message.indexOf('schema cache') >= 0;
     }
 
-    async function syncSupabaseMyEquipmentItems(silent) {
+    async function syncSupabaseMyEquipmentItems(silent, forceRefresh) {
       const supabaseApi = window.SitePassSupabaseApi;
       if (!supabaseApi || sitePassMemberEquipmentSyncing) return { skipped:true, error:'Supabase API 연결 없음 또는 동기화 중' };
       if (!shouldSyncSupabaseMyEquipmentItemsForCurrentContext()) return { skipped:true, reason:'not_member_context' };
       // v23.7.495: 방금 성공한 서버 조회를 화면 이동 때마다 다시 실행하지 않습니다.
       // 캐시 화면은 즉시 표시하고, 최신 조회는 최대 1분에 한 번만 수행합니다.
-      if (silent && Number(sitePassMemberEquipmentSyncedAt || 0) > 0 && (Date.now() - Number(sitePassMemberEquipmentSyncedAt || 0)) < 60000) {
+      if (!forceRefresh && silent && Number(sitePassMemberEquipmentSyncedAt || 0) > 0 && (Date.now() - Number(sitePassMemberEquipmentSyncedAt || 0)) < 60000) {
         return { skipped:true, reason:'recent_member_sync', cached:true };
       }
       sitePassMemberEquipmentSyncing = true;
@@ -2335,6 +2381,10 @@ ${isPolicyError ? '작성내용과 첨부서류는 유지됩니다. SQL 적용 �
     function getItemByCode(code) {
       const targetCode = String(code || '').trim();
       if (!targetCode) return null;
+      try {
+        const canonical = getSitePassCanonicalEquipmentItemV519(targetCode);
+        if (canonical) return canonical;
+      } catch (e) {}
       function matches(item) {
         if (!item || typeof item !== 'object') return false;
         const values = [
