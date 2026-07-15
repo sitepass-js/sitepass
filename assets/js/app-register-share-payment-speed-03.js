@@ -1,4 +1,4 @@
-// SitePass v23.7.511-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.512-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -152,6 +152,32 @@ function shareOneListItemEmail(code) {
       return value;
     }
 
+    function collectManagerShareStorageManifestV512(item) {
+      const files = [];
+      const seen = new Set();
+      Object.entries((item && item.docs) || {}).forEach(function(entry){
+        const docKey = String(entry[0] || '').trim();
+        const doc = entry[1] && typeof entry[1] === 'object' ? entry[1] : {};
+        const pages = Array.isArray(doc.pages) && doc.pages.length ? doc.pages : [doc];
+        pages.forEach(function(page){
+          page = page && typeof page === 'object' ? page : {};
+          const path = String(getManagerShareStoragePathV497(page) || getManagerShareStoragePathV497(doc) || '').replace(/^\/+/, '').trim();
+          if (!path) return;
+          const bucket = getManagerShareStorageBucketV497(page, doc);
+          const id = bucket + '|' + path;
+          if (seen.has(id)) return;
+          seen.add(id);
+          files.push({
+            storageBucket:bucket,
+            storagePath:path,
+            docKey:docKey,
+            fileName:String(page.fileName || doc.fileName || path.split('/').pop() || '첨부파일')
+          });
+        });
+      });
+      return files.slice(0, 300);
+    }
+
     function cloneShareItemForServer(item, expireAt, sig) {
       const code = ensureManagerShareCodeForItem(item);
       // v23.7.496: 담당자 공유 테이블에는 base64/blob 원본사진을 넣지 않고
@@ -178,6 +204,7 @@ function shareOneListItemEmail(code) {
       copy.managerShareSig = sig || getManagerLinkSignature(code, Number(expireAt || getManagerExpireAt(item)));
       copy.publicShareSavedAt = new Date().toISOString();
       copy.sharePayloadMode = item && item.sharePayloadMode ? item.sharePayloadMode : 'storage-orphan-recovery-v500';
+      copy.shareStorageFiles = collectManagerShareStorageManifestV512(copy);
       return copy;
     }
 
@@ -1339,6 +1366,7 @@ function renderDocExpiryStrip(doc) {
           console.warn('링크화면 Storage 파일 준비 실패:', e);
           previewItem = item;
         }
+        previewItem.shareStorageFiles = collectManagerShareStorageManifestV512(previewItem);
         const finalCode = ensureManagerShareCodeForItem(previewItem) || originalCode;
         const exp = expireAt ? Number(expireAt) : getManagerExpireAt(previewItem);
         const linkSig = sig || getManagerLinkSignature(finalCode, exp);
@@ -1360,7 +1388,7 @@ function renderDocExpiryStrip(doc) {
         url.searchParams.set('manager', String(finalCode || ''));
         if (linkSig) url.searchParams.set('sig', String(linkSig));
         url.searchParams.set('from', 'member');
-        url.searchParams.set('v', '23.7.511-test');
+        url.searchParams.set('v', '23.7.512-test');
         window.location.assign(url.toString());
       } finally {
         setTimeout(hideManagerPreviewPreparingV511, 1200);
