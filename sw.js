@@ -1,17 +1,17 @@
-const SITEPASS_SW_VERSION = 'v23.7.510-test';
-const SITEPASS_CACHE = 'sitepass-fast-v23.7.510-test';
+const SITEPASS_SW_VERSION = 'v23.7.511-test';
+const SITEPASS_CACHE = 'sitepass-fast-v23.7.511-test';
 const SITEPASS_SHELL = [
   './index.html',
-  './recipient.html',
-  './assets/css/style.css?v=23.7.510-test',
-  './assets/js/config.js?v=23.7.510-test',
-  './assets/js/pwa-update.js?v=23.7.510-test',
-  './assets/js/app-core-auth-speed-04.js?v=23.7.510-test',
-  './assets/js/app-admin-boot-speed-03.js?v=23.7.510-test',
-  './assets/js/app-register-share-payment-speed-02.js?v=23.7.510-test',
-  './assets/js/app-register-share-payment-speed-03.js?v=23.7.510-test',
-  './assets/js/app-register-share-payment-speed-04.js?v=23.7.510-test',
-  './assets/js/qr-share.js?v=23.7.510-test'
+  './share.html',
+  './assets/css/style.css?v=23.7.511-test',
+  './assets/js/config.js?v=23.7.511-test',
+  './assets/js/pwa-update.js?v=23.7.511-test',
+  './assets/js/app-core-auth-speed-04.js?v=23.7.511-test',
+  './assets/js/app-admin-boot-speed-03.js?v=23.7.511-test',
+  './assets/js/app-register-share-payment-speed-02.js?v=23.7.511-test',
+  './assets/js/app-register-share-payment-speed-03.js?v=23.7.511-test',
+  './assets/js/app-register-share-payment-speed-04.js?v=23.7.511-test',
+  './assets/js/qr-share.js?v=23.7.511-test'
 ];
 
 self.addEventListener('install', event => {
@@ -90,11 +90,11 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       const scopeUrl = new URL(self.registration.scope);
       let cacheKey = req;
-      const isRecipient = url.pathname.endsWith('/recipient.html');
+      const isRecipient = url.pathname.endsWith('/share.html');
       if (url.pathname === scopeUrl.pathname || url.pathname.endsWith('/index.html')) {
         cacheKey = new Request(new URL('./index.html', self.registration.scope));
       } else if (isRecipient) {
-        cacheKey = new Request(new URL('./recipient.html', self.registration.scope));
+        cacheKey = new Request(new URL('./share.html', self.registration.scope));
       }
 
       // v510: 담당자 링크화면은 캐시를 즉시 보여주고 최신 파일은 뒤에서 갱신합니다.

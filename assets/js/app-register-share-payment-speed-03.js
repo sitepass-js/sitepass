@@ -1,4 +1,4 @@
-// SitePass v23.7.510-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.511-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -165,6 +165,11 @@ function shareOneListItemEmail(code) {
         copy = (typeof makeStorageTinyItem === 'function') ? makeStorageTinyItem(item || {}) : { ...(item || {}) };
       }
       copy = removeEmbeddedSharePayloadValuesV496(copy || {});
+      const equipmentCodeBeforeShareV511 = String(
+        copy.originalEquipmentCode || copy.equipmentCode || copy.equipment_code ||
+        item?.originalEquipmentCode || item?.equipmentCode || item?.equipment_code || item?.code || ''
+      ).trim();
+      if (equipmentCodeBeforeShareV511 && equipmentCodeBeforeShareV511 !== code) copy.originalEquipmentCode = equipmentCodeBeforeShareV511;
       copy.code = code;
       copy.publicShareCode = code;
       copy.managerShareCode = code;
@@ -273,6 +278,62 @@ function shareOneListItemEmail(code) {
         });
       });
       return count;
+    }
+
+    function clearManagerShareUrlFieldsV511(obj) {
+      if (!obj || typeof obj !== 'object') return;
+      [
+        'fileUrl','file_url','downloadUrl','download_url','storagePublicUrl','storage_public_url',
+        'publicUrl','public_url','previewUrl','preview_url','signedUrl','signed_url','url','src','imageUrl','image_url'
+      ].forEach(function(key){ if (isManagerShareStoredUrlV496(obj[key])) obj[key] = ''; });
+      ['previewDataUrl','editDataUrl'].forEach(function(key){ if (isManagerShareStoredUrlV496(obj[key])) obj[key] = ''; });
+    }
+
+    async function validateManagerShareObjectUrlV511(obj, parent) {
+      if (!obj || typeof obj !== 'object') return false;
+      const candidates = [];
+      const storagePath = getManagerShareStoragePathV497(obj);
+      if (storagePath) {
+        try {
+          const api = window.SitePassSupabaseApi;
+          if (api && typeof api.storagePublicUrl === 'function') {
+            const exactPathUrl = String(api.storagePublicUrl(getManagerShareStorageBucketV497(obj, parent), storagePath) || '');
+            if (exactPathUrl) candidates.push(exactPathUrl);
+          }
+        } catch (e) {}
+      }
+      const pathUrl = recoverManagerShareStoredUrlFromPathV497(obj, parent);
+      if (pathUrl) candidates.push(pathUrl);
+      const stored = getManagerShareObjectStoredUrlV496(obj);
+      if (stored) candidates.push(stored);
+      const unique = Array.from(new Set(candidates.filter(Boolean))).slice(0, 4);
+      if (!unique.length) return false;
+      const checks = await Promise.all(unique.map(function(url){ return probeManagerSharePublicUrlV498(url); }));
+      const index = checks.findIndex(Boolean);
+      if (index < 0) {
+        clearManagerShareUrlFieldsV511(obj);
+        obj.storageUrlInvalidV511 = true;
+        return false;
+      }
+      applyManagerShareRecoveredUrlV497(obj, unique[index]);
+      obj.storageUrlInvalidV511 = false;
+      obj.storageUrlValidatedAt = new Date().toISOString();
+      return true;
+    }
+
+    async function validateManagerShareStoredFilesV511(item) {
+      if (!item || typeof item !== 'object') return 0;
+      const docs = item.docs && typeof item.docs === 'object' ? item.docs : {};
+      const tasks = [];
+      Object.keys(docs).forEach(function(key){
+        const doc = docs[key] && typeof docs[key] === 'object' ? docs[key] : {};
+        tasks.push(validateManagerShareObjectUrlV511(doc, item));
+        (Array.isArray(doc.pages) ? doc.pages : []).forEach(function(page){ tasks.push(validateManagerShareObjectUrlV511(page, doc)); });
+      });
+      const results = await Promise.all(tasks);
+      hydrateManagerShareStorageUrlsV497(item);
+      item.storageUrlsValidatedAtV511 = new Date().toISOString();
+      return results.filter(Boolean).length;
     }
 
     function countManagerShareEmbeddedAttachmentsV497(item) {
@@ -563,7 +624,7 @@ function shareOneListItemEmail(code) {
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
       const timer = controller ? setTimeout(function(){ try { controller.abort(); } catch (e) {} }, 1800) : null;
       try {
-        const response = await fetch(url, { method:'HEAD', cache:'no-store', signal:controller ? controller.signal : undefined });
+        const response = await fetch(url, { method:'GET', headers:{ Range:'bytes=0-0' }, cache:'no-store', signal:controller ? controller.signal : undefined });
         return !!(response && response.ok);
       } catch (e) {
         return false;
@@ -783,19 +844,24 @@ function shareOneListItemEmail(code) {
         item.managerShareCode = rawItem.managerShareCode || item.managerShareCode;
         ensureManagerShareCodeForItem(item);
         hydrateManagerShareStorageUrlsV497(item);
+        await validateManagerShareStoredFilesV511(item);
 
         // v23.7.499: 현재 장비 item_json에 URL이 빠졌더라도 예전에 정상 저장된
         // 담당자 공유 payload에 파일 주소/사진이 남아 있으면 먼저 합쳐 복구합니다.
         if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
           const previousShare = await recoverManagerShareItemFromPreviousPublicShareV499(item);
-          if (previousShare && previousShare.item) item = previousShare.item;
+          if (previousShare && previousShare.item) {
+            item = previousShare.item;
+            await validateManagerShareStoredFilesV511(item);
+          }
         }
 
         if (managerShareItemNeedsStorageUploadV496(item)) {
           try {
             const uploaded = await uploadEquipmentItemDocsToSupabaseStorage(item);
             item = hydrateManagerShareStorageUrlsV497(stripItemDataUrlsForServerStorage(uploaded));
-            Promise.resolve(saveEquipmentItemToSupabase(item, 'manager_share_prepare_v497')).catch(function(e){
+            await validateManagerShareStoredFilesV511(item);
+            Promise.resolve(saveEquipmentItemToSupabase(item, 'manager_share_prepare_v511')).catch(function(e){
               console.warn('담당자 공유 준비 후 장비 서버 갱신 실패:', e);
             });
           } catch (e) {
@@ -806,6 +872,7 @@ function shareOneListItemEmail(code) {
         if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
           const recovered = await recoverManagerShareItemFromStorageV498(item);
           item = recovered && recovered.item ? recovered.item : item;
+          await validateManagerShareStoredFilesV511(item);
           if (recovered && recovered.ok && countManagerShareStoredUrlsV496(item)) {
             const serverItem = stripItemDataUrlsForServerStorage(item);
             Promise.resolve(saveEquipmentItemToSupabase(serverItem, 'manager_share_storage_recovery_v498')).catch(function(e){
@@ -1236,46 +1303,68 @@ function renderDocExpiryStrip(doc) {
     }
 
 
-    function openManagerPublicView(code, expireAt, sig) {
+    function showManagerPreviewPreparingV511() {
+      let overlay = document.getElementById('sitepassManagerPreviewPreparingV511');
+      if (overlay) return overlay;
+      overlay = document.createElement('div');
+      overlay.id = 'sitepassManagerPreviewPreparingV511';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(13,28,51,.55);';
+      overlay.innerHTML = '<div style="width:min(380px,100%);padding:22px;border-radius:18px;background:#fff;box-shadow:0 22px 70px rgba(0,0,0,.28);text-align:center"><div style="width:38px;height:38px;margin:0 auto 12px;border:4px solid #dfe9f7;border-top-color:#1767ca;border-radius:50%;animation:sitepassV511Spin .8s linear infinite"></div><b style="display:block;font-size:17px;color:#17243b">링크화면 파일을 확인하고 있습니다.</b><span style="display:block;margin-top:8px;color:#66758c;font-size:13px;line-height:1.55">실제 Storage 파일주소를 확인한 뒤 화면을 엽니다.</span></div><style>@keyframes sitepassV511Spin{to{transform:rotate(360deg)}}</style>';
+      document.body.appendChild(overlay);
+      return overlay;
+    }
+    function hideManagerPreviewPreparingV511(){ const overlay=document.getElementById('sitepassManagerPreviewPreparingV511'); if(overlay) overlay.remove(); }
+
+    async function openManagerPublicView(code, expireAt, sig) {
       let item = getRuntimeItemByCode(code) || getItemByCode(code);
       if (!item) {
         alert('조회할 수 없는 코드입니다. 서버 동기화 후 다시 시도해주세요.');
         return;
       }
-      const originalCode = ensureManagerShareCodeForItem(item) || String(code || '').trim();
-      let previewItem = item;
+      showManagerPreviewPreparingV511();
       try {
-        previewItem = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(item));
-        previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem);
-        hydrateManagerShareStorageUrlsV497(previewItem);
-      } catch (e) {
-        console.warn('링크화면 즉시 미리보기 준비 실패:', e);
-        previewItem = item;
+        const originalCode = ensureManagerShareCodeForItem(item) || String(code || '').trim();
+        let previewItem = item;
+        try {
+          previewItem = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(item));
+          previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem);
+          hydrateManagerShareStorageUrlsV497(previewItem);
+          await validateManagerShareStoredFilesV511(previewItem);
+          if (managerShareHasAttachmentMetadataV496(previewItem) && !countManagerShareStoredUrlsV496(previewItem)) {
+            const recovered = await recoverManagerShareItemFromStorageV498(previewItem);
+            previewItem = recovered && recovered.item ? recovered.item : previewItem;
+            await validateManagerShareStoredFilesV511(previewItem);
+          }
+        } catch (e) {
+          console.warn('링크화면 Storage 파일 준비 실패:', e);
+          previewItem = item;
+        }
+        const finalCode = ensureManagerShareCodeForItem(previewItem) || originalCode;
+        const exp = expireAt ? Number(expireAt) : getManagerExpireAt(previewItem);
+        const linkSig = sig || getManagerLinkSignature(finalCode, exp);
+        const snapshot = {
+          item_data:previewItem,
+          payload:previewItem,
+          expires_at:new Date(exp).toISOString(),
+          share_code:String(finalCode || ''),
+          share_sig:String(linkSig || ''),
+          preview_saved_at:new Date().toISOString()
+        };
+        try { sessionStorage.setItem('sitepass_recipient_preview_current_' + String(finalCode || ''), JSON.stringify(snapshot)); } catch (e) {}
+        try {
+          const saved = await saveManagerShareItemsToSupabase([previewItem]);
+          if (!saved || !saved.ok) console.warn('회원 링크화면 공유자료 저장 지연:', saved && saved.message);
+        } catch (e) { console.warn('회원 링크화면 공유자료 저장 실패:', e); }
+        const url = new URL('./share.html', window.location.href);
+        url.search = '';url.hash = '';
+        url.searchParams.set('manager', String(finalCode || ''));
+        if (linkSig) url.searchParams.set('sig', String(linkSig));
+        url.searchParams.set('from', 'member');
+        url.searchParams.set('v', '23.7.511-test');
+        window.location.assign(url.toString());
+      } finally {
+        setTimeout(hideManagerPreviewPreparingV511, 1200);
       }
-      const finalCode = ensureManagerShareCodeForItem(previewItem) || originalCode;
-      const exp = expireAt ? Number(expireAt) : getManagerExpireAt(previewItem);
-      const linkSig = sig || getManagerLinkSignature(finalCode, exp);
-      const snapshot = {
-        item_data:previewItem,
-        payload:previewItem,
-        expires_at:new Date(exp).toISOString(),
-        share_code:String(finalCode || ''),
-        share_sig:String(linkSig || ''),
-        preview_saved_at:new Date().toISOString()
-      };
-      try {
-        sessionStorage.setItem('sitepass_recipient_preview_current_' + String(finalCode || ''), JSON.stringify(snapshot));
-      } catch (e) {}
-      const url = new URL('./recipient.html', window.location.href);
-      url.search = '';
-      url.hash = '';
-      url.searchParams.set('manager', String(finalCode || ''));
-      if (linkSig) url.searchParams.set('sig', String(linkSig));
-      url.searchParams.set('from', 'member');
-      url.searchParams.set('v', '23.7.510-test');
-      // v510: 회원용 링크화면은 Storage 복구/서버 저장을 기다리지 않고 즉시 엽니다.
-      // 실제 외부 전송 시에는 shareManagerItemsByChannel()이 기존과 같이 서버 저장 완료 후 전송합니다.
-      window.location.assign(url.toString());
     }
 
 

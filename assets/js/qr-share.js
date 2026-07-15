@@ -1,4 +1,4 @@
-// SitePass v23.7.510-test - 담당자 링크 query 고정 및 업데이트 경로 보존
+// SitePass v23.7.511-test - 담당자 링크 query 고정 및 업데이트 경로 보존
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
@@ -75,8 +75,10 @@
 
   function ensureManagerShareCodeForItem(item){
     if (!item) return '';
+    const equipmentCodeBeforeShare = String(item.originalEquipmentCode || item.equipmentCode || item.equipment_code || item.code || '').trim();
     let code = getManagerShareCodeCandidate(item);
     if (!code) code = makeFallbackManagerShareCode();
+    if (equipmentCodeBeforeShare && equipmentCodeBeforeShare !== code) item.originalEquipmentCode = equipmentCodeBeforeShare;
     item.code = code;
     item.publicShareCode = code;
     item.managerShareCode = code;
@@ -98,13 +100,13 @@
   }
 
   function makeManagerLink(code, expireAt, getSignature){
-    const url = new URL('./recipient.html', window.location.href);
+    const url = new URL('./share.html', window.location.href);
     url.search = '';
     url.hash = '';
     url.searchParams.set('manager', String(code || ''));
     const sig = typeof getSignature === 'function' ? String(getSignature(code, expireAt) || '') : '';
     if (sig) url.searchParams.set('sig', sig);
-    url.searchParams.set('v', '510');
+    url.searchParams.set('v', '511');
     return url.toString();
   }
 
@@ -157,6 +159,8 @@
       return cloned;
     }
     const copy = JSON.parse(JSON.stringify(item || {}));
+    const equipmentCodeBeforeShare = String(copy.originalEquipmentCode || copy.equipmentCode || copy.equipment_code || item?.code || '').trim();
+    if (equipmentCodeBeforeShare && equipmentCodeBeforeShare !== code) copy.originalEquipmentCode = equipmentCodeBeforeShare;
     copy.code = code;
     copy.publicShareCode = code;
     copy.managerShareCode = code;
