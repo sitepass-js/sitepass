@@ -1,12 +1,12 @@
 {
-  "version": "23.7.497",
+  "version": "23.7.498",
   "channel": "test",
-  "note": "담당자 링크 준비 시 서버 장비뿐 아니라 현재·구버전 휴대폰 저장자료와 Storage 경로까지 찾아 기존 등록 서류 URL을 복구하도록 수정했습니다.",
-  "build": "v23.7.497-test",
-  "stage": "기존 등록 서류 복구 및 담당자 링크 준비 수정",
+  "note": "PC 보관함/새로고침 시 화면 폭이 넓어졌다 줄어드는 현상을 막고, 장비 서버 데이터에 URL이 누락된 기존 Storage 파일을 회원·장비·서류 경로로 직접 찾아 담당자 링크를 준비하도록 수정했습니다.",
+  "build": "v23.7.498-test",
+  "stage": "PC 화면 폭 안정화 및 기존 Storage 파일 직접 복구",
   "updatedAt": "2026-07-15",
-  "releaseType": "manager-share-existing-doc-recovery",
-  "purpose": "굴착기/00보0000처럼 서버 목록은 있으나 공유용 파일 URL을 찾지 못하던 문제 해결",
-  "notes": "선택 보내기에서 서버 원본, 서버 캐시, 현재 및 구버전 localStorage 등록자료를 장비번호와 코드로 함께 검색합니다. Storage 경로만 있는 문서는 공개 URL로 복구하고, 로컬 원본만 있으면 Storage 업로드 후 담당자 링크를 저장합니다. 사진 포함 전체 장비목록을 localStorage에 다시 저장하지 않는 v496 개선은 유지합니다.",
-  "description": "기존 등록 문서 경로 복구 후 담당자 링크 저장"
+  "releaseType": "pc-layout-stability-and-storage-orphan-recovery",
+  "purpose": "PC 레이아웃 이동 제거와 굴착기/00보0000 기존 등록 서류 공유 복구",
+  "notes": "로그인 회원 화면의 앱 폭을 초기 렌더링부터 780px로 고정합니다. 담당자 보내기에서는 서버 item_json에 파일 URL이 없어도 Supabase Storage의 owner/code/doc 경로를 직접 조회하고, 목록 조회가 막히면 기존 업로드 경로 규칙으로 파일 주소를 추정·확인해 복구합니다.",
+  "description": "PC 화면 폭 고정 및 Storage 고아 문서 URL 복구"
 }

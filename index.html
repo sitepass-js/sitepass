@@ -53,7 +53,44 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.497 existing registered document recovery for manager share -->
+
+<script>
+/* v23.7.498 - PC 새로고침/보관함 이동 시 앱 폭이 980px에서 780px로 뒤늦게 줄어드는 현상 방지 */
+(function(){
+  function hasMemberBootMarker(){
+    try {
+      var keys = [
+        'sitePass_v23_7_7_update_original_corrected_currentMember',
+        'sitePass_v23_7_7_update_original_corrected_pwa_auto_member_v23_7_145',
+        'sitePass_v23_7_7_update_original_corrected_browser_auto_member_v23_7_395'
+      ];
+      for (var i = 0; i < keys.length; i++) {
+        if (localStorage.getItem(keys[i])) return true;
+      }
+      if (sessionStorage.getItem('sitePass_v23_7_7_update_original_corrected_admin_session') === 'yes') return true;
+    } catch(e) {}
+    try {
+      var query = String(location.search || '');
+      if (/[?&](screen|route)=(homeScreen|listScreen|registerScreen|chatScreen|myAccountScreen)/i.test(query)) return true;
+    } catch(e) {}
+    return false;
+  }
+  if (hasMemberBootMarker()) document.documentElement.classList.add('sitepass-stable-member-shell-v498');
+  document.addEventListener('DOMContentLoaded', function(){
+    function syncStableWidth(){
+      try {
+        if (document.body && document.body.classList.contains('sitepass-app-nav-active')) {
+          document.documentElement.classList.add('sitepass-stable-member-shell-v498');
+        }
+      } catch(e) {}
+    }
+    syncStableWidth();
+    try { new MutationObserver(syncStableWidth).observe(document.body, { attributes:true, attributeFilter:['class'] }); } catch(e) {}
+  });
+})();
+</script>
+
+  <!-- SitePass deploy-check: v23.7.498 PC width stability + orphan Storage document recovery -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
   <link rel="stylesheet" href="./assets/css/style.css?v=23.7.494" />
   <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.493" />
@@ -2648,6 +2685,19 @@
   </style>
   <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.493">
   <link rel="stylesheet" href="./assets/css/sitepass-my-account-v463.css?v=23.7.493">
+
+  <style id="sitepassStableMemberShellV498">
+    /* 로그인 여부 판단 전에도 PC 앱 폭을 고정해 넓어졌다가 줄어드는 레이아웃 이동을 없앱니다. */
+    html.sitepass-stable-member-shell-v498,
+    html.sitepass-stable-member-shell-v498 body { overflow-x:hidden !important; }
+    html.sitepass-stable-member-shell-v498 body .app,
+    body.sitepass-app-nav-active .app {
+      width:100% !important;
+      max-width:780px !important;
+      margin-left:auto !important;
+      margin-right:auto !important;
+    }
+  </style>
 </head>
 <body class="sitepass-booting">
   <main class="app">
@@ -3984,7 +4034,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.497" defer></script>
+<script src="./assets/js/config.js?v=23.7.498" defer></script>
 <script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.493" defer></script>
 <script src="./assets/js/supabase-api.js?v=23.7.493" defer></script>
 <script src="./assets/js/storage.js?v=23.7.493" defer></script>
@@ -4011,7 +4061,7 @@
 <script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.496" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.497" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.498" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.496" defer></script>
 <script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.493" defer></script>

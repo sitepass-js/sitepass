@@ -1,4 +1,4 @@
-// SitePass v23.7.350 - speed optimized medium chunk (app-register-share-payment-speed 03/04)
+// SitePass v23.7.498 - manager share Storage orphan-file recovery + speed optimized medium chunk (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -172,7 +172,7 @@ function shareOneListItemEmail(code) {
       copy.managerShareToken = item?.managerShareToken || getOrCreateManagerShareToken(code);
       copy.managerShareSig = sig || getManagerLinkSignature(code, Number(expireAt || getManagerExpireAt(item)));
       copy.publicShareSavedAt = new Date().toISOString();
-      copy.sharePayloadMode = 'storage-url-recovery-v497';
+      copy.sharePayloadMode = 'storage-orphan-recovery-v498';
       return copy;
     }
 
@@ -402,10 +402,294 @@ function shareOneListItemEmail(code) {
       return mergeManagerShareCandidatesV497(candidates, item) || item;
     }
 
+
+    // v23.7.498: 예전 등록 과정에서 Storage 업로드는 끝났지만 장비 item_json에
+    // 공개 URL/storagePath가 남지 않은 경우, 회원/장비/서류 경로를 직접 찾아 복구합니다.
+    function normalizeManagerShareStoragePartV498(value, fallback) {
+      try {
+        if (typeof sanitizeStoragePathPart === 'function') return sanitizeStoragePathPart(value, fallback);
+      } catch (e) {}
+      const text = String(value || fallback || 'file').trim();
+      return text.replace(/[^0-9a-zA-Z가-힣._-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80) || String(fallback || 'file');
+    }
+
+    function getManagerShareCurrentMemberV498() {
+      try {
+        if (typeof getCurrentSitePassMemberForEquipmentSync === 'function') {
+          const member = getCurrentSitePassMemberForEquipmentSync();
+          if (member && typeof member === 'object') return member;
+        }
+      } catch (e) {}
+      try { if (window.currentMember && typeof window.currentMember === 'object') return window.currentMember; } catch (e) {}
+      return {};
+    }
+
+    function uniqueManagerShareValuesV498(values, normalizer) {
+      const out = [];
+      const seen = new Set();
+      (values || []).forEach(function(value){
+        const normalized = normalizer ? normalizer(value) : String(value || '').trim();
+        if (!normalized || seen.has(normalized)) return;
+        seen.add(normalized);
+        out.push(normalized);
+      });
+      return out;
+    }
+
+    function getManagerShareStorageOwnerCandidatesV498(item) {
+      const member = getManagerShareCurrentMemberV498();
+      // 실제 업로드 함수의 우선순위(ownerSignupId → ownerProviderId → ownerMemberId)를 먼저 사용합니다.
+      return uniqueManagerShareValuesV498([
+        item && (item.ownerSignupId || item.owner_signup_id),
+        item && (item.ownerProviderId || item.owner_provider_id),
+        item && (item.ownerMemberId || item.owner_member_id),
+        member.signupId || member.loginId || member.signup_id || member.login_id,
+        member.providerId || member.provider_id,
+        member.id || member.memberId || member.userId || member.authUserId || member.auth_user_id,
+        'anonymous'
+      ], function(value){ return String(value || '').trim() ? normalizeManagerShareStoragePartV498(value, 'owner') : ''; }).slice(0, 7);
+    }
+
+    function getManagerShareStorageCodeCandidatesV498(item) {
+      return uniqueManagerShareValuesV498([
+        item && item.code,
+        item && item.originalEquipmentCode,
+        item && (item.equipmentCode || item.equipment_code),
+        item && (item.equipmentNo || item.equipment_no || item.vehicle_number || item.registration_no)
+      ], function(value){ return String(value || '').trim() ? normalizeManagerShareStoragePartV498(value, 'code') : ''; }).slice(0, 4);
+    }
+
+    function getManagerShareDocKeyMapV498(item) {
+      const docs = item && item.docs && typeof item.docs === 'object' ? item.docs : {};
+      const map = {};
+      Object.keys(docs).forEach(function(key){
+        map[normalizeManagerShareStoragePartV498(key, 'document')] = key;
+      });
+      return map;
+    }
+
+    function mergeLegacyManagerShareDocumentsV498(item) {
+      item = item && typeof item === 'object' ? item : {};
+      const nestedCandidates = [item.item_json, item.item_data, item.payload, item.data].filter(function(v){ return v && typeof v === 'object'; });
+      nestedCandidates.forEach(function(nested){
+        if ((!item.docs || !Object.keys(item.docs).length) && nested.docs && typeof nested.docs === 'object') item.docs = nested.docs;
+        if ((!item.documents || !item.documents.length) && Array.isArray(nested.documents)) item.documents = nested.documents;
+      });
+      item.docs = item.docs && typeof item.docs === 'object' ? item.docs : {};
+      (Array.isArray(item.documents) ? item.documents : []).forEach(function(doc, index){
+        if (!doc || typeof doc !== 'object') return;
+        const key = String(doc.key || doc.docKey || doc.doc_key || doc.type || doc.kind || ('legacyDocument' + (index + 1))).trim();
+        if (!key) return;
+        item.docs[key] = Object.assign({}, item.docs[key] || {}, doc, { key:key });
+      });
+      return item;
+    }
+
+    function makeManagerShareStoragePageV498(path, url, name, index) {
+      return {
+        id:'storage_recovered_' + (index + 1),
+        fileName:String(name || ('첨부파일_' + (index + 1))),
+        storageBucket:getSitePassStorageBucketName(),
+        storagePath:path,
+        storagePublicUrl:url,
+        publicUrl:url,
+        fileUrl:url,
+        downloadUrl:url,
+        previewDataUrl:url,
+        editDataUrl:url,
+        previewChoice:'storage',
+        storageMode:'supabase-storage',
+        storageRecoveredAt:new Date().toISOString()
+      };
+    }
+
+    function applyManagerShareStorageFilesV498(item, owner, codePart, docFolder, files) {
+      item = mergeLegacyManagerShareDocumentsV498(item);
+      const keyMap = getManagerShareDocKeyMapV498(item);
+      const docKey = keyMap[docFolder] || docFolder;
+      const doc = item.docs[docKey] && typeof item.docs[docKey] === 'object' ? item.docs[docKey] : { key:docKey, title:docKey };
+      const bucket = getSitePassStorageBucketName();
+      const pages = [];
+      (files || []).forEach(function(file, index){
+        const name = String(file && file.name || '').trim();
+        if (!name || name === '.emptyFolderPlaceholder') return;
+        const path = [owner, codePart, docFolder, name].join('/');
+        let url = '';
+        try {
+          const api = window.SitePassSupabaseApi;
+          if (api && typeof api.storagePublicUrl === 'function') url = String(api.storagePublicUrl(bucket, path) || '');
+        } catch (e) {}
+        if (!url) return;
+        pages.push(makeManagerShareStoragePageV498(path, url, name, pages.length));
+      });
+      if (!pages.length) return 0;
+      const existingPages = Array.isArray(doc.pages) ? doc.pages.filter(function(page){ return !!getManagerShareObjectStoredUrlV496(page); }) : [];
+      doc.pages = existingPages.length ? existingPages : pages;
+      const firstUrl = getManagerShareObjectStoredUrlV496(doc.pages[0]);
+      applyManagerShareRecoveredUrlV497(doc, firstUrl);
+      doc.storageBucket = bucket;
+      doc.storageMode = 'supabase-storage';
+      doc.pageCount = doc.pages.length;
+      doc.fileName = doc.fileName || doc.pages[0].fileName || ('첨부 ' + doc.pages.length + '장');
+      doc.storageRecoveredAt = new Date().toISOString();
+      item.docs[docKey] = doc;
+      return doc.pages.length;
+    }
+
+    function withManagerShareTimeoutV498(promise, ms) {
+      return Promise.race([
+        Promise.resolve(promise),
+        new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('storage lookup timeout')); }, Math.max(500, Number(ms || 2500))); })
+      ]);
+    }
+
+    async function listManagerShareStorageFolderV498(bucket, path) {
+      try {
+        const client = getSitePassSupabaseClient();
+        if (!client || !client.storage || typeof client.storage.from !== 'function') return { ok:false, data:[] };
+        const result = await withManagerShareTimeoutV498(
+          client.storage.from(bucket).list(path, { limit:100, sortBy:{ column:'name', order:'asc' } }),
+          1800
+        );
+        if (!result || result.error) return { ok:false, data:[], error:result && result.error };
+        return { ok:true, data:Array.isArray(result.data) ? result.data : [] };
+      } catch (e) {
+        return { ok:false, data:[], error:e };
+      }
+    }
+
+    async function probeManagerSharePublicUrlV498(url) {
+      if (!url) return false;
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timer = controller ? setTimeout(function(){ try { controller.abort(); } catch (e) {} }, 1800) : null;
+      try {
+        const response = await fetch(url, { method:'HEAD', cache:'no-store', signal:controller ? controller.signal : undefined });
+        return !!(response && response.ok);
+      } catch (e) {
+        return false;
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    }
+
+    function getManagerShareExtensionCandidatesV498(doc, page) {
+      const name = String((page && page.fileName) || (doc && doc.fileName) || '').toLowerCase();
+      const match = name.match(/\.([a-z0-9]{2,5})$/i);
+      const preferred = match ? match[1] : '';
+      return uniqueManagerShareValuesV498([preferred, 'jpg', 'jpeg', 'png', 'webp', 'pdf']);
+    }
+
+    function getManagerSharePageIdCandidatesV498(docKey, doc, page, index) {
+      return uniqueManagerShareValuesV498([
+        page && (page.id || page.pageId || page.page_id || page.uid || page.fileId || page.file_id),
+        'page_' + (index + 1),
+        index === 0 ? ('legacy_' + docKey + '_1') : ''
+      ], function(value){ return normalizeManagerShareStoragePartV498(value, 'page_' + (index + 1)); }).slice(0, 3);
+    }
+
+    async function probeManagerShareStorageDocV498(item, owner, codePart, docKey, doc) {
+      const bucket = getSitePassStorageBucketName();
+      const docPart = normalizeManagerShareStoragePartV498(docKey, 'document');
+      const sourcePages = Array.isArray(doc && doc.pages) && doc.pages.length ? doc.pages : [{}];
+      const recovered = [];
+      for (let index = 0; index < Math.min(sourcePages.length, 12); index++) {
+        const page = sourcePages[index] || {};
+        const ids = getManagerSharePageIdCandidatesV498(docKey, doc, page, index);
+        const exts = getManagerShareExtensionCandidatesV498(doc, page);
+        let found = null;
+        const candidates = [];
+        ids.forEach(function(id){
+          exts.forEach(function(ext){
+            const path = [owner, codePart, docPart, id + '.' + ext].join('/');
+            let url = '';
+            try {
+              const api = window.SitePassSupabaseApi;
+              if (api && typeof api.storagePublicUrl === 'function') url = String(api.storagePublicUrl(bucket, path) || '');
+            } catch (e) {}
+            if (url) candidates.push({ path:path, url:url, name:id + '.' + ext });
+          });
+        });
+        // 가장 가능성 높은 후보 4개를 병렬 확인해 공유 대기시간을 2초 안쪽으로 제한합니다.
+        const limitedCandidates = candidates.slice(0, 4);
+        const probeResults = await Promise.all(limitedCandidates.map(function(candidate){ return probeManagerSharePublicUrlV498(candidate.url); }));
+        const foundIndex = probeResults.findIndex(Boolean);
+        if (foundIndex >= 0) found = limitedCandidates[foundIndex];
+        if (found) recovered.push(makeManagerShareStoragePageV498(found.path, found.url, found.name, recovered.length));
+      }
+      if (!recovered.length) return 0;
+      doc.pages = recovered;
+      const firstUrl = getManagerShareObjectStoredUrlV496(recovered[0]);
+      applyManagerShareRecoveredUrlV497(doc, firstUrl);
+      doc.storageBucket = bucket;
+      doc.storageMode = 'supabase-storage';
+      doc.pageCount = recovered.length;
+      doc.fileName = doc.fileName || recovered[0].fileName;
+      doc.storageRecoveredAt = new Date().toISOString();
+      item.docs[docKey] = doc;
+      return recovered.length;
+    }
+
+    async function recoverManagerShareItemFromStorageV498(item) {
+      item = mergeLegacyManagerShareDocumentsV498(item);
+      hydrateManagerShareStorageUrlsV497(item);
+      if (countManagerShareStoredUrlsV496(item)) return { ok:true, item:item, recovered:0 };
+      const bucket = getSitePassStorageBucketName();
+      const owners = getManagerShareStorageOwnerCandidatesV498(item);
+      const codes = getManagerShareStorageCodeCandidatesV498(item);
+      const docs = item.docs && typeof item.docs === 'object' ? item.docs : {};
+      const docKeys = Object.keys(docs).filter(function(key){
+        const doc = docs[key];
+        return doc && typeof doc === 'object' && !getManagerShareObjectStoredUrlV496(doc);
+      });
+      if (!owners.length || !codes.length || !docKeys.length) return { ok:false, item:item, recovered:0 };
+
+      // 먼저 Storage 목록 조회로 실제 파일명을 찾습니다. 목록 권한이 없으면 아래의 경로 추정 방식으로 보완합니다.
+      const listPairs = [];
+      owners.slice(0, 3).forEach(function(owner){
+        codes.slice(0, 2).forEach(function(codePart){ listPairs.push({ owner:owner, codePart:codePart }); });
+      });
+      const listPairResults = await Promise.all(listPairs.map(async function(pair){
+        const folderResults = await Promise.all(docKeys.map(async function(docKey){
+          const docFolder = normalizeManagerShareStoragePartV498(docKey, 'document');
+          const result = await listManagerShareStorageFolderV498(bucket, [pair.owner, pair.codePart, docFolder].join('/'));
+          if (!result.ok || !result.data.length) return 0;
+          return applyManagerShareStorageFilesV498(item, pair.owner, pair.codePart, docFolder, result.data);
+        }));
+        return folderResults.reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
+      }));
+      const listedRecoveredCount = listPairResults.reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
+      if (listedRecoveredCount > 0) {
+        hydrateManagerShareStorageUrlsV497(item);
+        item.storageRecoveredAt = new Date().toISOString();
+        item.storageRecoveryMode = 'folder-list-v498';
+        return { ok:true, item:item, recovered:listedRecoveredCount };
+      }
+
+      // Storage 목록 조회가 막힌 환경에서는 기존 업로드 규칙으로 경로를 직접 계산해 확인합니다.
+      const directOwners = uniqueManagerShareValuesV498([owners[0], owners[owners.length - 1]]);
+      for (const owner of directOwners) {
+        for (const codePart of codes.slice(0, 2)) {
+          const probeCounts = await Promise.all(docKeys.map(async function(docKey){
+            const doc = docs[docKey];
+            if (getManagerShareObjectStoredUrlV496(doc)) return 0;
+            return await probeManagerShareStorageDocV498(item, owner, codePart, docKey, doc);
+          }));
+          const recoveredCount = probeCounts.reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
+          if (recoveredCount > 0) {
+            hydrateManagerShareStorageUrlsV497(item);
+            item.storageRecoveredAt = new Date().toISOString();
+            item.storageRecoveryMode = 'predictable-path-v498';
+            return { ok:true, item:item, recovered:recoveredCount };
+          }
+        }
+      }
+      return { ok:false, item:item, recovered:0 };
+    }
+
     async function prepareManagerShareItemsForServerV497(items) {
       const prepared = [];
       for (const rawItem of (items || []).filter(Boolean)) {
-        let item = getBestManagerShareServerItemV497(rawItem);
+        let item = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(rawItem));
         // 서버/구버전 자료를 사용하더라도 방금 만든 공유 만료일·토큰은 유지합니다.
         item.managerExpireAt = rawItem.managerExpireAt || item.managerExpireAt;
         item.managerShareToken = rawItem.managerShareToken || item.managerShareToken;
@@ -427,9 +711,20 @@ function shareOneListItemEmail(code) {
         }
 
         if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
+          const recovered = await recoverManagerShareItemFromStorageV498(item);
+          item = recovered && recovered.item ? recovered.item : item;
+          if (recovered && recovered.ok && countManagerShareStoredUrlsV496(item)) {
+            const serverItem = stripItemDataUrlsForServerStorage(item);
+            Promise.resolve(saveEquipmentItemToSupabase(serverItem, 'manager_share_storage_recovery_v498')).catch(function(e){
+              console.warn('담당자 공유 Storage 복구 후 장비 서버 갱신 실패:', e);
+            });
+          }
+        }
+
+        if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
           return {
             ok:false,
-            message:(getShareItemLabel(item) || '선택 장비') + '의 기존 등록 사진을 휴대폰과 서버에서 찾지 못했습니다. 문서가 보이는 기기에서 다시 보내거나 해당 서류만 다시 촬영·저장해주세요.'
+            message:(getShareItemLabel(item) || '선택 장비') + '의 기존 등록 사진 파일 주소를 복구하지 못했습니다. 등록 화면에서 해당 서류가 보이는지 확인한 뒤 다시 보내주세요.'
           };
         }
         prepared.push(item);
