@@ -36,32 +36,42 @@ function cssEscapeValue(value) {
       return 'MST-' + Date.now().toString(36).toUpperCase() + '-' + randomCodeBlock(4) + '-' + randomCodeBlock(4) + '-' + randomCodeBlock(4);
     }
 
+    const sitePassManagerShareTokenMemoryV496 = new Map();
+
     function getOrCreateManagerShareToken(code) {
       const safeCode = String(code || '').trim();
       if (!safeCode) return '';
-      const items = getItems();
-      const idx = items.findIndex(x => String(x.code || '') === safeCode);
-      if (idx >= 0) {
-        if (!items[idx].managerShareToken) {
-          items[idx].managerShareToken = makeManagerShareToken();
-          items[idx].updatedAt = new Date().toISOString();
-          setItems(items);
-        }
-        return items[idx].managerShareToken || '';
+
+      // v23.7.496: 선택 보내기에서 토큰 하나를 만들기 위해 사진 포함 장비목록 전체를
+      // localStorage에 다시 쓰지 않습니다. 항목 객체 + 작은 토큰 맵 + 메모리만 사용합니다.
+      let item = null;
+      try { item = getItemByCode(safeCode); } catch (e) {}
+      if (item && item.managerShareToken) {
+        sitePassManagerShareTokenMemoryV496.set(safeCode, item.managerShareToken);
+        return item.managerShareToken;
       }
-      // v23.7.350: 서버기준 보관함/공유 중 일부 항목은 로컬 getItems()에 없을 수 있습니다.
-      // 이 경우에도 문자/카톡 공유링크 서명이 비지 않도록 코드별 토큰을 별도 보관합니다.
+      if (sitePassManagerShareTokenMemoryV496.has(safeCode)) {
+        const remembered = sitePassManagerShareTokenMemoryV496.get(safeCode) || '';
+        if (item && remembered) item.managerShareToken = remembered;
+        return remembered;
+      }
+
       const tokenKey = 'SITEPASS_MANAGER_SHARE_TOKEN_MAP_V1';
-      try {
-        const map = JSON.parse(localStorage.getItem(tokenKey) || '{}');
-        if (!map[safeCode]) {
-          map[safeCode] = makeManagerShareToken();
-          localStorage.setItem(tokenKey, JSON.stringify(map));
-        }
-        return map[safeCode] || '';
-      } catch (e) {
-        return makeManagerShareToken();
+      let map = {};
+      try { map = JSON.parse(localStorage.getItem(tokenKey) || '{}') || {}; } catch (e) { map = {}; }
+      const token = String(map[safeCode] || makeManagerShareToken());
+      sitePassManagerShareTokenMemoryV496.set(safeCode, token);
+      if (item) {
+        item.managerShareToken = token;
+        item.updatedAt = item.updatedAt || new Date().toISOString();
       }
+      if (!map[safeCode]) {
+        map[safeCode] = token;
+        try { localStorage.setItem(tokenKey, JSON.stringify(map)); } catch (e) {
+          // 저장공간이 가득 차도 현재 공유 세션의 메모리 토큰으로 링크 저장은 계속합니다.
+        }
+      }
+      return token;
     }
 
     function makeManagerLinkSignature(code, expireAt, token) {
@@ -126,15 +136,14 @@ function cssEscapeValue(value) {
     }
 
     function refreshManagerShare(code) {
-      const items = getItems();
-      const idx = items.findIndex(x => x.code === code);
-      if (idx < 0) { alert('갱신할 코드를 찾을 수 없습니다.'); return; }
+      const item = getItemByCode(code);
+      if (!item) { alert('갱신할 코드를 찾을 수 없습니다.'); return; }
       const qrShare = getQrShareModule();
       const expireAt = qrShare.getManagerShareExpireFromNowMs ? qrShare.getManagerShareExpireFromNowMs() : Date.now() + (1 * 24 * 60 * 60 * 1000);
-      items[idx].managerExpireAt = new Date(expireAt).toISOString();
-      items[idx].updatedAt = new Date().toISOString();
-      setItems(items);
-      alert('담당자용 QR·링크 유효기간을 오늘부터 1일로 다시 갱신했습니다.\n만료일: ' + getManagerExpireText(items[idx]));
+      item.managerExpireAt = new Date(expireAt).toISOString();
+      item.updatedAt = new Date().toISOString();
+      try { rememberRuntimeEquipmentItems([item]); } catch (e) {}
+      alert('담당자용 QR·링크 유효기간을 오늘부터 1일로 다시 갱신했습니다.\n만료일: ' + getManagerExpireText(item));
       renderDetail(code);
     }
 

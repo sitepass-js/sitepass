@@ -135,9 +135,36 @@ function shareOneListItemEmail(code) {
       return code;
     }
 
+    function removeEmbeddedSharePayloadValuesV496(value, seen) {
+      if (typeof value === 'string') {
+        return /^(data:|blob:)/i.test(value.trim()) ? '' : value;
+      }
+      if (!value || typeof value !== 'object') return value;
+      seen = seen || new WeakSet();
+      if (seen.has(value)) return null;
+      seen.add(value);
+      if (Array.isArray(value)) {
+        return value.map(function(entry){ return removeEmbeddedSharePayloadValuesV496(entry, seen); });
+      }
+      Object.keys(value).forEach(function(key){
+        value[key] = removeEmbeddedSharePayloadValuesV496(value[key], seen);
+      });
+      return value;
+    }
+
     function cloneShareItemForServer(item, expireAt, sig) {
       const code = ensureManagerShareCodeForItem(item);
-      const copy = JSON.parse(JSON.stringify(item || {}));
+      // v23.7.496: 담당자 공유 테이블에는 base64/blob 원본사진을 넣지 않고
+      // Supabase Storage URL과 문서 메타정보만 저장합니다.
+      let copy = null;
+      try {
+        copy = (typeof stripItemDataUrlsForServerStorage === 'function')
+          ? stripItemDataUrlsForServerStorage(item || {})
+          : JSON.parse(JSON.stringify(item || {}));
+      } catch (e) {
+        copy = (typeof makeStorageTinyItem === 'function') ? makeStorageTinyItem(item || {}) : { ...(item || {}) };
+      }
+      copy = removeEmbeddedSharePayloadValuesV496(copy || {});
       copy.code = code;
       copy.publicShareCode = code;
       copy.managerShareCode = code;
@@ -145,7 +172,108 @@ function shareOneListItemEmail(code) {
       copy.managerShareToken = item?.managerShareToken || getOrCreateManagerShareToken(code);
       copy.managerShareSig = sig || getManagerLinkSignature(code, Number(expireAt || getManagerExpireAt(item)));
       copy.publicShareSavedAt = new Date().toISOString();
+      copy.sharePayloadMode = 'storage-url-only-v496';
       return copy;
+    }
+
+    function isManagerShareEmbeddedUrlV496(value) {
+      return typeof value === 'string' && /^(data:|blob:)/i.test(value.trim());
+    }
+
+    function isManagerShareStoredUrlV496(value) {
+      const text = String(value || '').trim();
+      return !!text && !isManagerShareEmbeddedUrlV496(text) && (/^https?:\/\//i.test(text) || /^\//.test(text));
+    }
+
+    function getManagerShareObjectStoredUrlV496(obj) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      const values = [obj.fileUrl, obj.downloadUrl, obj.storagePublicUrl, obj.publicUrl, obj.previewDataUrl, obj.editDataUrl];
+      return String(values.find(isManagerShareStoredUrlV496) || '');
+    }
+
+    function countManagerShareStoredUrlsV496(item) {
+      let count = 0;
+      Object.values((item && item.docs) || {}).forEach(function(doc) {
+        if (getManagerShareObjectStoredUrlV496(doc)) count++;
+        (Array.isArray(doc && doc.pages) ? doc.pages : []).forEach(function(page) {
+          if (getManagerShareObjectStoredUrlV496(page)) count++;
+        });
+      });
+      return count;
+    }
+
+    function managerShareHasAttachmentMetadataV496(item) {
+      return Object.values((item && item.docs) || {}).some(function(doc){
+        if (!doc || typeof doc !== 'object') return false;
+        return !!String(doc.fileName || '').trim() || Number(doc.pageCount || 0) > 0 ||
+          (Array.isArray(doc.pages) && doc.pages.length > 0);
+      });
+    }
+
+    function managerShareItemNeedsStorageUploadV496(item) {
+      let needsUpload = false;
+      Object.values((item && item.docs) || {}).forEach(function(doc) {
+        if (needsUpload || !doc || typeof doc !== 'object') return;
+        const pages = Array.isArray(doc.pages) ? doc.pages : [];
+        const values = [doc.previewDataUrl, doc.editDataUrl, doc.originalDataUrl, doc.correctedDataUrl, doc.dataUrl, doc.fileDataUrl];
+        pages.forEach(function(page) {
+          values.push(page && page.previewDataUrl, page && page.editDataUrl, page && page.originalDataUrl, page && page.correctedDataUrl, page && page.dataUrl, page && page.fileDataUrl);
+        });
+        const hasEmbedded = values.some(isManagerShareEmbeddedUrlV496);
+        const hasStored = !!getManagerShareObjectStoredUrlV496(doc) || pages.some(function(page){ return !!getManagerShareObjectStoredUrlV496(page); });
+        if (hasEmbedded && !hasStored) needsUpload = true;
+      });
+      return needsUpload;
+    }
+
+    function getBestManagerShareServerItemV496(item) {
+      const code = String(item && item.code || '').trim();
+      const candidates = [item].filter(Boolean);
+      try {
+        const server = getSitePassServerAuthoritativeEquipmentItems();
+        const found = (server || []).find(function(row){ return String(row && row.code || '').trim() === code; });
+        if (found) candidates.push(found);
+      } catch (e) {}
+      try {
+        const cached = getServerEquipmentCache();
+        const found = (cached || []).find(function(row){ return String(row && row.code || '').trim() === code; });
+        if (found) candidates.push(found);
+      } catch (e) {}
+      candidates.sort(function(a, b){ return countManagerShareStoredUrlsV496(b) - countManagerShareStoredUrlsV496(a); });
+      return candidates[0] || item;
+    }
+
+    async function prepareManagerShareItemsForServerV496(items) {
+      const prepared = [];
+      for (const rawItem of (items || []).filter(Boolean)) {
+        let item = getBestManagerShareServerItemV496(rawItem);
+        // 서버 캐시의 Storage URL을 사용하더라도 방금 만든 공유 만료일·토큰은 유지합니다.
+        item.managerExpireAt = rawItem.managerExpireAt || item.managerExpireAt;
+        item.managerShareToken = rawItem.managerShareToken || item.managerShareToken;
+        item.publicShareCode = rawItem.publicShareCode || item.publicShareCode;
+        item.managerShareCode = rawItem.managerShareCode || item.managerShareCode;
+        ensureManagerShareCodeForItem(item);
+
+        if (managerShareItemNeedsStorageUploadV496(item)) {
+          try {
+            // 등록 직후 Storage 백그라운드 업로드가 끝나지 않았으면 공유 버튼에서 마무리합니다.
+            const uploaded = await uploadEquipmentItemDocsToSupabaseStorage(item);
+            item = stripItemDataUrlsForServerStorage(uploaded);
+            // 담당자 링크 저장을 막지 않도록 장비 원본행 갱신은 뒤에서 처리합니다.
+            Promise.resolve(saveEquipmentItemToSupabase(item, 'manager_share_prepare_v496')).catch(function(e){
+              console.warn('담당자 공유 준비 후 장비 서버 갱신 실패:', e);
+            });
+          } catch (e) {
+            return { ok:false, message:'서류 사진 서버 업로드 중 오류가 발생했습니다. ' + (e && e.message ? e.message : String(e)) };
+          }
+        }
+
+        if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
+          return { ok:false, message:(getShareItemLabel(item) || '선택 장비') + '의 서버 서류파일을 아직 찾을 수 없습니다. 등록을 다시 확인한 뒤 보내주세요.' };
+        }
+        prepared.push(item);
+      }
+      return { ok:true, items:prepared };
     }
 
     function upsertSharedItemIntoLocalCache(item) {
@@ -260,12 +388,23 @@ function shareOneListItemEmail(code) {
       const requestedItems = (items || []).filter(Boolean).map(item => { ensureManagerShareCodeForItem(item); return item; });
       if (!canUseQrShareItems(requestedItems, '담당자 QR·링크 보내기')) return;
       const refreshedItems = refreshManagerExpiryForCodes(requestedItems.map(item => ensureManagerShareCodeForItem(item)));
-      const safeItems = (refreshedItems && refreshedItems.length ? refreshedItems : requestedItems).filter(Boolean).map(item => { ensureManagerShareCodeForItem(item); return item; });
-      if (!safeItems.length) return;
+      const initialItems = (refreshedItems && refreshedItems.length ? refreshedItems : requestedItems).filter(Boolean).map(item => { ensureManagerShareCodeForItem(item); return item; });
+      if (!initialItems.length) return;
+
+      const prepared = await prepareManagerShareItemsForServerV496(initialItems);
+      if (!prepared.ok) {
+        alert('담당자 링크를 준비하지 못했습니다.\n\n' + (prepared.message || '서류 서버 저장 상태를 확인해주세요.'));
+        return;
+      }
+      const safeItems = prepared.items;
 
       const saved = await saveManagerShareItemsToSupabase(safeItems);
       if (!saved.ok) {
-        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있습니다.\n\nSupabase SQL Editor에서 v23.7.350 public shares SQL을 먼저 실행한 뒤 다시 1일 링크 공유를 눌러주세요.\n\n오류: ' + (saved.message || '알 수 없는 오류'));
+        const message = String(saved.message || '알 수 없는 오류');
+        const sqlHint = /not found|Could not find|schema cache|function|permission|42501/i.test(message)
+          ? '\n\nSupabase의 public shares RPC/권한 SQL 적용 상태를 확인해주세요.'
+          : '';
+        alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있어 전송을 중단했습니다.' + sqlHint + '\n\n오류: ' + message);
         return;
       }
 

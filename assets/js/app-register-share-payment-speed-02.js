@@ -1424,12 +1424,18 @@ function resetForm(clearEdit = true) {
 
 // ---- merged from app-register-share-payment-07.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (07/15)
-function setItems(items) {
+let sitePassStorageQuotaNoticeShownV496 = false;
+    function setItems(items) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
         return true;
       } catch (error) {
-        console.info('저장 공간 부족: 축약 저장으로 재시도합니다.');
+        // v23.7.496: 같은 동작에서 전체 장비목록 저장을 여러 번 시도하면
+        // 휴대폰 콘솔 경고와 처리 지연만 반복됩니다. 안내는 한 번만 남깁니다.
+        if (!sitePassStorageQuotaNoticeShownV496) {
+          sitePassStorageQuotaNoticeShownV496 = true;
+          console.info('브라우저 저장공간이 부족해 사진 포함 로컬 저장은 생략하고 서버 자료를 사용합니다.');
+        }
         return false;
       }
     }
@@ -2468,16 +2474,20 @@ function makeQrUrl(link, size = 180) {
       if (!uniqueCodes.length) return [];
       const expireAt = getSevenDaysFromNowMs();
       const expireIso = new Date(expireAt).toISOString();
-      const codeSet = new Set(uniqueCodes);
-      const all = getItems();
-      all.forEach(item => {
-        if (codeSet.has(item.code) && !isServiceShareBlocked(item)) {
-          item.managerExpireAt = expireIso;
-          item.updatedAt = new Date().toISOString();
-        }
+      const updated = [];
+
+      // v23.7.496: 선택 보내기 때 장비 전체(사진 포함)를 localStorage에 다시 저장하지 않습니다.
+      // 담당자 링크의 실제 만료 기준은 sitepass_public_shares.expires_at이므로,
+      // 현재 메모리 항목만 갱신하고 아래 서버 공유 저장에서 확정합니다.
+      uniqueCodes.forEach(function(code) {
+        const item = getItemByCode(code);
+        if (!item || isServiceShareBlocked(item)) return;
+        item.managerExpireAt = expireIso;
+        item.updatedAt = new Date().toISOString();
+        updated.push(item);
       });
-      setItems(all);
-      return uniqueCodes.map(code => getItemByCode(code)).filter(Boolean);
+      try { rememberRuntimeEquipmentItems(updated); } catch (e) {}
+      return updated;
     }
 
     function getCodeFromManagerLink(link) {

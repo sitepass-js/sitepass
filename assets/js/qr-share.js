@@ -1,4 +1,4 @@
-// SitePass v23.7.350 - QR/1일 담당자 공유링크 공통 파일
+// SitePass v23.7.496 - QR/1일 담당자 공유링크 공통 파일
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
@@ -169,10 +169,18 @@
     return data;
   }
 
+  function formatManagerShareSupabaseErrorV496(error, fallback){
+    if (!error) return String(fallback || 'Supabase 저장 오류');
+    const parts = [error.code, error.message, error.details, error.hint]
+      .map(function(value){ return String(value || '').trim(); })
+      .filter(Boolean);
+    return parts.length ? Array.from(new Set(parts)).join(' / ') : String(fallback || 'Supabase 저장 오류');
+  }
+
   async function saveManagerShareItemsByRpc(client, rows){
     if (!client || typeof client.rpc !== 'function') return { ok:false, skipped:true, message:'Supabase RPC 연결 객체가 없습니다.' };
     const { data, error } = await client.rpc('sitepass_upsert_public_shares', { p_rows: rows });
-    if (error) return { ok:false, message:error.message || 'Supabase 공유링크 RPC 저장 오류' };
+    if (error) return { ok:false, message:formatManagerShareSupabaseErrorV496(error, 'Supabase 공유링크 RPC 저장 오류') };
     const result = normalizeRpcPublicShareResult(data) || {};
     if (result.ok === false) return { ok:false, message:result.message || result.error || '공유링크 RPC 저장 실패' };
     return { ok:true, saved:Number(result.saved || rows.length || 0), rpc:true };
@@ -209,15 +217,21 @@
       }).filter(row => row.share_code && row.share_sig);
       if (!rows.length) return { ok:false, message:'저장할 담당자 링크 정보가 없습니다.' };
       if (typeof client.rpc === 'function') {
-        const rpcSaved = await saveManagerShareItemsByRpc(client, rows);
+        let rpcSaved = await saveManagerShareItemsByRpc(client, rows);
         if (rpcSaved.ok) return rpcSaved;
+        // v23.7.496: 휴대폰 네트워크/DB 순간 지연은 가벼운 URL 전용 payload로 한 번만 재시도합니다.
+        if (/timeout|timed out|statement|canceling|network|fetch/i.test(String(rpcSaved.message || ''))) {
+          await new Promise(function(resolve){ setTimeout(resolve, 350); });
+          rpcSaved = await saveManagerShareItemsByRpc(client, rows);
+          if (rpcSaved.ok) return rpcSaved;
+        }
         // RPC가 아직 적용되지 않은 경우에만 기존 직접 upsert를 fallback으로 시도합니다.
         if (!/not found|Could not find|schema cache|function/i.test(String(rpcSaved.message || ''))) {
           return rpcSaved;
         }
       }
       const { error } = await client.from(PUBLIC_SHARE_TABLE).upsert(rows, { onConflict:'share_code' });
-      if (error) return { ok:false, message:error.message || 'Supabase 저장 오류' };
+      if (error) return { ok:false, message:formatManagerShareSupabaseErrorV496(error, 'Supabase 저장 오류') };
       return { ok:true, saved:rows.length, direct:true };
     } catch (e) {
       return { ok:false, message:e && e.message ? e.message : String(e) };

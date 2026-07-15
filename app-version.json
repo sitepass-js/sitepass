@@ -1,12 +1,12 @@
 {
-  "version": "23.7.495",
+  "version": "23.7.496",
   "channel": "test",
-  "note": "보관함 진입 즉시 직전 서버 캐시를 표시하고 최신 서버 목록은 뒤에서 갱신하도록 수정했습니다.",
-  "build": "v23.7.495-test",
-  "stage": "보관함 즉시 표시 및 백그라운드 동기화",
+  "note": "선택 카카오톡·문자·이메일 보내기에서 사진 포함 장비목록을 localStorage에 반복 저장하지 않고, 담당자 공유 payload는 Supabase Storage URL 중심으로 가볍게 저장하도록 수정했습니다.",
+  "build": "v23.7.496-test",
+  "stage": "선택 보내기 저장공간 및 담당자 링크 서버 저장 수정",
   "updatedAt": "2026-07-15",
-  "releaseType": "instant-archive-cache-background-sync",
-  "purpose": "휴대폰 보관함이 Supabase 응답을 기다리며 약 25초 동안 로딩되는 문제 해결",
-  "notes": "기존 서버 기준 보관함 정책은 유지합니다. 직전 서버 결과를 먼저 보여주고 서버 응답 후 최신 목록으로 교체하며, 성공 직후 1분 동안은 중복 조회를 막습니다.",
-  "description": "보관함 카카오톡형 즉시 표시"
+  "releaseType": "manager-share-storage-url-only",
+  "purpose": "각 보내기 버튼에서 발생하던 localStorage 용량 초과와 담당자 링크 서버 저장 실패 해결",
+  "notes": "보내기 시 장비 전체 사진 데이터를 브라우저에 다시 저장하지 않습니다. 공유 서버에는 base64/blob을 제거하고 Storage URL과 문서 메타정보만 저장합니다. 기존 보관함 즉시 표시와 백그라운드 동기화는 유지합니다.",
+  "description": "담당자 링크 가벼운 서버 저장"
 }
