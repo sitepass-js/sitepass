@@ -1,12 +1,11 @@
 {
-  "version": "23.7.499",
+  "version": "23.7.500",
   "channel": "test",
-  "note": "휴대폰 새로고침 때 예전 화면이 순간 보였다 다시 바뀌는 현상을 막고, 담당자 링크 화면이 1초 뒤 로그인 화면에 덮이는 문제를 차단했습니다. 기존 공개공유 payload와 Storage 실제 폴더를 추가 검색해 파일 주소 복구도 보강했습니다.",
-  "build": "v23.7.499-test",
-  "stage": "새로고침 화면 고정 및 담당자 링크 전용 초기화",
+  "note": "등록 달력을 항상 6주 42칸으로 고정했습니다. 담당자 링크 화면은 외부 링크 전용 가드가 계속 유지해 다른 화면 보정 코드가 1초 뒤 숨기지 못하게 했습니다. 기존 사진 주소가 유실된 장비도 등록 화면 DOM·서버·Storage 순서로 복구를 시도하고, 복구 실패 시 링크 화면 자체는 열리도록 메타정보 공유로 전환합니다.",
+  "build": "v23.7.500-test",
+  "stage": "달력 고정 및 담당자 링크 지속 표시",
   "updatedAt": "2026-07-15",
-  "releaseType": "no-stale-screen-and-recipient-route-lock",
-  "purpose": "구버전 화면 깜빡임 제거, 담당자 링크 화면 유지, 기존 등록 서류 공유 복구",
-  "notes": "최신 버전 확인 전에는 이전 로그인·보관함 화면 대신 중립 로딩 화면만 표시합니다. 외부 담당자/QR 링크에서는 일반회원 로그인 복원과 보관함 동기화를 건너뛰고 수신자 화면만 허용합니다. 공유 시 현재 장비 자료에 URL이 없으면 이전 sitepass_public_shares payload와 Storage owner/code 실제 폴더를 추가 검색합니다.",
-  "description": "새로고침 구버전 화면 차단 및 담당자 링크 화면 고정"
+  "releaseType": "fixed-calendar-recipient-persist-metadata-fallback",
+  "purpose": "달력 크기 고정, 담당자 화면 사라짐 차단, 기존 사진 복구 실패 시 링크 생성 유지",
+  "description": "달력 42칸 고정 및 담당자 링크 강제 유지"
 }

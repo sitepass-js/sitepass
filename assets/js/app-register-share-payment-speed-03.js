@@ -1,4 +1,4 @@
-// SitePass v23.7.499 - previous public-share + Storage folder recovery + recipient stability (03/04)
+// SitePass v23.7.500 - DOM/photo recovery fallback + recipient stability (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -172,7 +172,7 @@ function shareOneListItemEmail(code) {
       copy.managerShareToken = item?.managerShareToken || getOrCreateManagerShareToken(code);
       copy.managerShareSig = sig || getManagerLinkSignature(code, Number(expireAt || getManagerExpireAt(item)));
       copy.publicShareSavedAt = new Date().toISOString();
-      copy.sharePayloadMode = 'storage-orphan-recovery-v498';
+      copy.sharePayloadMode = item && item.sharePayloadMode ? item.sharePayloadMode : 'storage-orphan-recovery-v500';
       return copy;
     }
 
@@ -730,10 +730,52 @@ function shareOneListItemEmail(code) {
       return counts.reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
     }
 
+    // v23.7.500: 저장소에 주소가 빠졌더라도 숨겨진 등록 화면에 남아 있는
+    // data-pages-json/미리보기 이미지를 마지막 업로드 원본으로 사용합니다.
+    function recoverManagerShareItemFromRegistrationDomV500(item) {
+      if (!item || typeof item !== 'object' || typeof document === 'undefined') return item;
+      item.docs = item.docs && typeof item.docs === 'object' ? item.docs : {};
+      document.querySelectorAll('#docCards .doc-card[data-doc-key]').forEach(function(card){
+        const key = String(card.dataset.docKey || '').trim();
+        if (!key) return;
+        const doc = item.docs[key] && typeof item.docs[key] === 'object' ? item.docs[key] : { key:key, title:card.dataset.docTitle || key };
+        let pages = [];
+        const filenameBox = card.querySelector('[data-role="filename"]');
+        if (filenameBox) {
+          try {
+            const parsed = JSON.parse(filenameBox.dataset.pagesJson || '[]');
+            if (Array.isArray(parsed)) pages = parsed.filter(Boolean);
+          } catch (e) {}
+        }
+        if (!pages.length) {
+          card.querySelectorAll('img[src], iframe[src], embed[src], object[data]').forEach(function(node, index){
+            const src = String(node.getAttribute('src') || node.getAttribute('data') || '').trim();
+            if (!src || !/^(data:|blob:|https?:\/\/)/i.test(src)) return;
+            pages.push({ id:'dom_page_' + (index + 1), fileName:(doc.fileName || card.dataset.docTitle || key) + '_' + (index + 1), previewDataUrl:src, editDataUrl:src });
+          });
+        }
+        if (!pages.length) return;
+        const existing = Array.isArray(doc.pages) ? doc.pages : [];
+        doc.pages = existing.length ? existing.map(function(page, index){ return Object.assign({}, pages[index] || {}, page || {}); }) : pages;
+        const first = doc.pages[0] || {};
+        const source = first.previewDataUrl || first.editDataUrl || first.originalDataUrl || first.correctedDataUrl || first.fileUrl || first.downloadUrl || '';
+        if (source) {
+          doc.previewDataUrl = doc.previewDataUrl || source;
+          doc.editDataUrl = doc.editDataUrl || source;
+          doc.fileName = doc.fileName || first.fileName || card.dataset.docTitle || '첨부파일';
+          doc.pageCount = doc.pages.length;
+          doc.recoveredFromRegistrationDomV500 = true;
+          item.docs[key] = doc;
+        }
+      });
+      return item;
+    }
+
     async function prepareManagerShareItemsForServerV497(items) {
       const prepared = [];
       for (const rawItem of (items || []).filter(Boolean)) {
         let item = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(rawItem));
+        item = recoverManagerShareItemFromRegistrationDomV500(item);
         // 서버/구버전 자료를 사용하더라도 방금 만든 공유 만료일·토큰은 유지합니다.
         item.managerExpireAt = rawItem.managerExpireAt || item.managerExpireAt;
         item.managerShareToken = rawItem.managerShareToken || item.managerShareToken;
@@ -773,10 +815,13 @@ function shareOneListItemEmail(code) {
         }
 
         if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
-          return {
-            ok:false,
-            message:(getShareItemLabel(item) || '선택 장비') + '의 기존 등록 사진 파일 주소를 복구하지 못했습니다. 등록 화면에서 해당 서류가 보이는지 확인한 뒤 다시 보내주세요.'
-          };
+          // v23.7.500: 예전 등록건의 실제 파일 주소가 유실됐더라도 담당자 링크 화면 자체를
+          // 막지 않습니다. 문서명/만료일 메타정보를 먼저 공유하고 파일 미복구 상태를 명확히 표시합니다.
+          item.shareFilesPendingRecovery = true;
+          item.sharePayloadMode = 'metadata-fallback-v500';
+          item.shareFileRecoveryMessage = (getShareItemLabel(item) || '선택 장비') + '의 기존 사진 파일 주소를 찾지 못했습니다.';
+        } else {
+          item.shareFilesPendingRecovery = false;
         }
         prepared.push(item);
       }
@@ -1096,6 +1141,7 @@ function normalizePhoneForShare(phone) {
         '<div class="line"><b>장비 등록번호</b><span>' + escapeHtml(item.equipmentNo) + '</span></div>' +
         '<div class="line"><b>장비명</b><span>' + escapeHtml(item.equipmentName) + '</span></div>' +
         '<div class="line"><b>포함서류</b><span>' + escapeHtml(getIncludedGroupText(item)) + '</span></div>' +
+        fileRecoveryNoticeV500 +
         renderD7DeadlineNotice(item) +
         '<div class="line"><b>결제단위</b><span>' + escapeHtml(item?.bundleMeta?.paymentText || '장비 및 인력 통합 1세트 결제') + '</span></div>' +
         '<div class="line"><b>서비스상태</b><span>' + escapeHtml(getServiceStatusText(item)) + '</span></div>' +
@@ -1272,6 +1318,9 @@ function renderDocExpiryStrip(doc) {
       const docHtml = docs.map((doc, index) => renderManagerDocLine(doc, item.code, index)).join('');
       const recipientView = getRecipientViewModule();
       const remainingDays = recipientView.getManagerRemainingDays ? recipientView.getManagerRemainingDays(expireAt || getManagerExpireAt(item)) : Math.ceil(((expireAt || getManagerExpireAt(item)) - Date.now()) / (1000 * 60 * 60 * 24));
+      const fileRecoveryNoticeV500 = item.shareFilesPendingRecovery
+        ? '<div class="manager-expire-box"><b>일부 기존 서류 사진 확인이 필요합니다.</b><br>장비 정보와 서류명·만료일은 정상 공유됐지만, 예전 등록 사진 파일 주소가 남아 있지 않은 서류는 다운로드할 수 없습니다.</div>'
+        : '';
       box.innerHTML =
         '<div class="manager-received-hero"><div class="eyebrow">QR·링크로 받은 담당자 화면</div><h3>' + escapeHtml(getShareItemLabel(item)) + ' 서류</h3><p>이 화면은 하도급/원청 담당자가 카톡·문자 링크나 QR을 눌렀을 때 바로 보는 다운로드/프린트 전용 화면입니다.</p><div class="manager-status-grid"><div>코드입력 없음</div><div>1일 유효</div><div>수정/갱신 불가</div></div></div>' +
         '<div class="line"><b>장비 등록번호</b><span>' + escapeHtml(item.equipmentNo) + '</span></div>' +
@@ -1318,10 +1367,11 @@ function renderManagerDownloadToolbar(item) {
       const expiryText = effectiveExpireDate ? ' / ' + escapeHtml(getExpiryPeriodLabel(doc) + ' ' + getDdayTextWithDays(effectiveExpireDate)) : '';
       const statusText = escapeHtml(doc.status || getDocStatus(doc)) + pageText + expiryText;
       const hasPrintablePreview = docHasPrintablePreview(doc);
-      const previewHtml = renderPreviewHtmlForPublic(doc, code) || (doc.fileName ? '<div class="preview-wrap show"><div class="preview-title"><span>첨부 파일</span></div><div class="preview-pdf">첨부됨<br><span class="small">이미지 저장본이 없으면 서버 저장 단계에서 원본 파일 보기로 연결합니다.</span></div>' + renderIdExtraStrip(doc) + '</div>' : '');
-      const disabledNote = (doc.fileName && !hasPrintablePreview) ? '<div class="print-disabled-note">현재 이 첨부는 이미지 저장본이 없어 바로 인쇄는 제한될 수 있습니다. 서버 저장 단계에서 원본 보기/인쇄로 연결합니다.</div>' : '';
+      const hasRealFileV500 = typeof hasRealDocAttachment === 'function' ? hasRealDocAttachment(doc) : hasPrintablePreview;
+      const previewHtml = renderPreviewHtmlForPublic(doc, code) || (doc.fileName ? '<div class="preview-wrap show"><div class="preview-title"><span>등록된 서류 정보</span></div><div class="preview-pdf">파일 주소 확인 필요<br><span class="small">서류명과 만료일은 등록되어 있지만 기존 사진 파일 주소를 찾지 못했습니다. 장비업자에게 해당 서류만 다시 공유해달라고 요청해주세요.</span></div>' + renderIdExtraStrip(doc) + '</div>' : '');
+      const disabledNote = (doc.fileName && !hasRealFileV500) ? '<div class="print-disabled-note">이 서류는 기존 사진 파일 주소가 없어 현재 다운로드·인쇄할 수 없습니다.</div>' : '';
       return '<div class="manager-doc-card" data-public-doc-key="' + escapeHtml(doc.key) + '">' +
-        '<div class="manager-doc-row"><label><input type="checkbox" data-print-doc-check value="' + escapeHtml(doc.key) + '" ' + (!doc.fileName ? 'disabled' : '') + ' /> <span>' + (index + 1) + '. ' + escapeHtml(title) + '</span></label><span class="badge ' + (doc.fileName ? 'done' : (doc.required ? 'need' : '')) + '">' + (doc.fileName ? statusText : (doc.required ? '미첨부' : '선택안함')) + '</span></div>' +
+        '<div class="manager-doc-row"><label><input type="checkbox" data-print-doc-check value="' + escapeHtml(doc.key) + '" ' + (!doc.fileName || !hasRealFileV500 ? 'disabled' : '') + ' /> <span>' + (index + 1) + '. ' + escapeHtml(title) + '</span></label><span class="badge ' + (doc.fileName ? 'done' : (doc.required ? 'need' : '')) + '">' + (doc.fileName ? statusText : (doc.required ? '미첨부' : '선택안함')) + '</span></div>' +
         previewHtml + disabledNote +
       '</div>';
     }

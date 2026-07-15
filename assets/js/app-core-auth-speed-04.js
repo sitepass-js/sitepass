@@ -303,24 +303,20 @@ function renderAdminContactManager() {
     }
 
     function showScreen(id, options) {
-      // v23.7.499: 담당자/외부 QR 링크로 들어온 동안에는 로그인·홈 초기화가
+      // v23.7.500: 담당자/외부 QR 링크로 들어온 동안에는 로그인·홈 초기화가
       // 수신자 화면을 1초 뒤 덮어쓰지 못하게 외부 화면만 허용합니다.
       const managerOnlyScreens = ['managerAccessScreen', 'managerPrintScreen', 'publicScreen'];
-      let externalShareRouteV499 = !!window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499;
+      let externalShareRouteV500 = !!(window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 || window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499);
       try {
         const routeSearch = String(window.location.search || '');
         const routeHash = String(window.location.hash || '');
-        externalShareRouteV499 = externalShareRouteV499 || /[?&](manager|public|share|code|access_token)=/i.test(routeSearch) || /#(manager|public|share|qr|access_token|error)=?/i.test(routeHash);
+        externalShareRouteV500 = externalShareRouteV500 || /[?&](manager|public|share)=/i.test(routeSearch) || /#(manager|public|share|qr)=?/i.test(routeHash);
       } catch (e) {}
-      if (externalShareRouteV499 && !managerOnlyScreens.includes(id)) {
-        const alreadyVisible = managerOnlyScreens.find(function(screenId){
-          const el = document.getElementById(screenId);
-          return el && !el.classList.contains('hidden');
-        });
-        if (alreadyVisible) return;
-        id = /(?:^|[?&])manager=|#manager=/i.test(String(window.location.search || '') + String(window.location.hash || ''))
+      if (externalShareRouteV500) {
+        const externalTargetV500 = /(?:^|[?&])manager=|#manager=/i.test(String(window.location.search || '') + String(window.location.hash || ''))
           ? 'managerPrintScreen'
           : 'publicScreen';
+        if (!managerOnlyScreens.includes(id) || id === 'managerAccessScreen') id = externalTargetV500;
       }
       // v23.7.463: 내정보는 화면을 열기 전에 현재 비밀번호를 다시 확인합니다.
       if (sitePassCurrentScreenId === 'myAccountScreen' && id !== 'myAccountScreen') {
@@ -351,6 +347,9 @@ function renderAdminContactManager() {
       document.querySelectorAll('.screen').forEach(screen => screen.classList.add('hidden'));
       const target = document.getElementById(id);
       if (target) target.classList.remove('hidden');
+      if (externalShareRouteV500 && typeof window.sitePassEnforceRecipientRouteV500 === 'function') {
+        setTimeout(function(){ try { window.sitePassEnforceRecipientRouteV500(); } catch (e) {} }, 0);
+      }
       // v23.7.216: 새로고침 때 로그인창이 먼저 보였다가 사라지는 깜빡임 방지.
       // 세션/소셜 콜백 확인이 끝난 뒤 최종 화면을 정한 다음에만 화면을 공개합니다.
       document.body.classList.remove('sitepass-booting');

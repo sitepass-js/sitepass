@@ -677,6 +677,9 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
         if (value === todayValue) classes.push('today');
         html += '<button type="button" class="' + classes.join(' ') + '" data-calendar-day="' + value + '" aria-label="' + year + '년 ' + (month + 1) + '월 ' + day + '일">' + day + '</button>';
       }
+      // v23.7.500: 모든 달력을 6주(42칸)로 고정해 월 이동 때 높이가 바뀌지 않게 합니다.
+      const usedCells = firstWeekday + lastDay;
+      for (let i = usedCells; i < 42; i += 1) html += '<span class="sitepass-clean-calendar-empty475"></span>';
       daysBox.innerHTML = html;
     }
 

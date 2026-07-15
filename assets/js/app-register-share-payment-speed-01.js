@@ -50,7 +50,13 @@
     }
 
     function getAttachedDisplayDocs(item) {
-      return getDisplayDocs(item).filter(hasRealDocAttachment);
+      const docs = getDisplayDocs(item);
+      if (item && item.shareFilesPendingRecovery) {
+        return docs.filter(function(doc){
+          return hasRealDocAttachment(doc) || !!String(doc && doc.fileName || '').trim() || Number(doc && doc.pageCount || 0) > 0 || (Array.isArray(doc && doc.pages) && doc.pages.length > 0);
+        });
+      }
+      return docs.filter(hasRealDocAttachment);
     }
 
     function getBundleMeta() {
