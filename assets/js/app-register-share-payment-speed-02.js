@@ -1522,7 +1522,14 @@ let sitePassStorageQuotaNoticeShownV496 = false;
     async function uploadSingleDocPageToSupabaseStorage(item, docKey, doc, page, pageIndex) {
       const supabaseApi = window.SitePassSupabaseApi;
       if (!supabaseApi || typeof supabaseApi.storageUpload !== 'function') return { ok:false, skipped:true, error:'Supabase Storage API 없음' };
-      const source = getAttachmentUrlFromPageOrDoc(page) || getAttachmentUrlFromPageOrDoc(doc);
+      // v23.7.514-test: 오래된 URL이 previewDataUrl에 남아 있어도
+      // original/corrected/data/blob 원본이 있으면 반드시 원본을 먼저 업로드합니다.
+      const embeddedValues = [
+        page && page.previewDataUrl, page && page.editDataUrl, page && page.correctedDataUrl, page && page.originalDataUrl, page && page.fileDataUrl, page && page.dataUrl, page && page.fileObjectUrl, page && page.blobUrl,
+        doc && doc.previewDataUrl, doc && doc.editDataUrl, doc && doc.correctedDataUrl, doc && doc.originalDataUrl, doc && doc.fileDataUrl, doc && doc.dataUrl, doc && doc.fileObjectUrl, doc && doc.blobUrl
+      ];
+      const source = embeddedValues.find(function(value){ return isDataUrlAttachment(value) || isBlobUrlAttachment(value); }) ||
+        getAttachmentUrlFromPageOrDoc(page) || getAttachmentUrlFromPageOrDoc(doc);
       if (!source || (!isDataUrlAttachment(source) && !isBlobUrlAttachment(source))) {
         const existingUrl = getStoredAttachmentUrl(page) || getStoredAttachmentUrl(doc);
         return existingUrl ? { ok:true, skipped:true, publicUrl:existingUrl } : { ok:false, skipped:true, error:'업로드할 이미지 데이터 없음' };

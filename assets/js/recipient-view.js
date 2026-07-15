@@ -137,7 +137,7 @@
   }
 
   function renderSponsorBox() {
-    return '<div class="sponsor-box"><div class="small">운영·개발: 제이에스건설</div><a href="https://www.songwongeo.co.kr" target="_blank" rel="noopener">송원건설 홈페이지 바로가기</a></div>';
+    return '';
   }
 
   function getManagerRemainingDays(expireAt) {
