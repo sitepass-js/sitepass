@@ -101,18 +101,33 @@
     }
     const cleanPath = String(path || '').replace(/^\/+|\/+$/g, '');
     if (!cleanPath) return { exists:false, error:{ message:'Storage 경로 없음' } };
-    const slash = cleanPath.lastIndexOf('/');
-    const folder = slash >= 0 ? cleanPath.slice(0, slash) : '';
-    const fileName = slash >= 0 ? cleanPath.slice(slash + 1) : cleanPath;
     try {
-      const result = await client.storage.from(String(bucket || '')).list(folder, {
-        limit: 100,
-        search: fileName,
-        sortBy: { column:'name', order:'asc' }
-      });
-      if (result && result.error) return { exists:false, error:result.error };
-      const rows = Array.isArray(result && result.data) ? result.data : [];
-      return { exists:rows.some(function(row){ return String(row && row.name || '') === fileName; }), data:rows, error:null };
+      const result = client.storage.from(String(bucket || '')).getPublicUrl(cleanPath);
+      const publicUrl = (result && result.data && result.data.publicUrl) || '';
+      if (!publicUrl) return { exists:false, error:{ message:'Storage 공개주소 생성 실패' } };
+      const controller = typeof AbortController === 'function' ? new AbortController() : null;
+      const timer = controller ? setTimeout(function(){ try { controller.abort(); } catch (e) {} }, 10000) : null;
+      try {
+        // Public bucket의 실제 객체 응답을 확인하므로 storage.objects SELECT 정책이 필요하지 않습니다.
+        let response = await fetch(publicUrl, {
+          method:'HEAD',
+          cache:'no-store',
+          signal:controller ? controller.signal : undefined
+        });
+        if (response && (response.status === 405 || response.status === 501)) {
+          response = await fetch(publicUrl, {
+            method:'GET',
+            cache:'no-store',
+            headers:{ Range:'bytes=0-0' },
+            signal:controller ? controller.signal : undefined
+          });
+        }
+        return response && response.ok
+          ? { exists:true, publicUrl:publicUrl, error:null }
+          : { exists:false, publicUrl:publicUrl, error:{ message:'Storage 파일 확인 실패 (' + (response ? response.status : '응답없음') + ')' } };
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
     } catch (e) {
       return { exists:false, error:e };
     }
