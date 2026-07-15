@@ -39,7 +39,7 @@
     if (!needsCleanUrl) return;
     try {
       const params = new URLSearchParams(location.search || '');
-      // v23.7.494: expirytest는 세션 플래그로 옮기고 URL에서는 제거해 일반 앱 라우팅과 완전히 분리합니다.
+      // v23.7.495: expirytest는 세션 플래그로 옮기고 URL에서는 제거해 일반 앱 라우팅과 완전히 분리합니다.
       try {
         if (params.get('expirytest') === '1') sessionStorage.setItem('sitepass_expiry_test_mode_v481', '1');
         else if (params.get('expirytest') === '0') sessionStorage.removeItem('sitepass_expiry_test_mode_v481');
@@ -67,7 +67,7 @@
   }
 
   async function prepareSoftUpdate(){
-    // v23.7.494: 버전이 바뀔 때 모든 캐시를 삭제하면 휴대폰이 CSS·JS·이미지를
+    // v23.7.495: 버전이 바뀔 때 모든 캐시를 삭제하면 휴대폰이 CSS·JS·이미지를
     // 다시 전부 내려받아 느려집니다. 기존 파일 캐시는 남기고 서비스워커만 갱신합니다.
     try {
       if ('serviceWorker' in navigator) {

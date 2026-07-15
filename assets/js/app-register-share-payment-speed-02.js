@@ -175,10 +175,24 @@ function resetForm(clearEdit = true) {
 
     function getSitePassServerAuthoritativeEquipmentItems() {
       const runtime = Array.isArray(sitePassServerAuthoritativeEquipmentItems) ? sitePassServerAuthoritativeEquipmentItems : [];
-      // 서버동기화를 한 번도 못 한 상태에서는 localStorage의 오래된 PC 보관함을 보여주지 않습니다.
-      // 단, 직전 서버목록 캐시는 "서버에서 온 가벼운 캐시"일 때만 보조로 사용합니다.
       if (runtime.length) return runtime.slice();
       if (Number(sitePassMemberEquipmentSyncedAt || 0) > 0) return [];
+
+      // v23.7.495: 직전 서버 조회 결과를 먼저 보여주고 최신 서버 동기화는 뒤에서 진행합니다.
+      // 기존에는 캐시를 저장해 놓고도 일반회원 보관함에서 항상 빈 배열을 반환해,
+      // 휴대폰이 Supabase 응답(약 25초)을 받을 때까지 목록이 나타나지 않았습니다.
+      try {
+        const cached = filterCurrentMemberEquipmentStorageScope(getServerEquipmentCache())
+          .filter(function(item){ return item && !sitePassEquipmentStatusLooksDeleted(item); });
+        if (cached.length) {
+          sitePassServerAuthoritativeEquipmentItems = mergeEquipmentItemLists(cached);
+          try { window.sitePassServerAuthoritativeEquipmentItems = sitePassServerAuthoritativeEquipmentItems.slice(); } catch (e) {}
+          try { window.sitePassMemberEquipmentCacheVisibleV495 = true; } catch (e) {}
+          return sitePassServerAuthoritativeEquipmentItems.slice();
+        }
+      } catch (e) {
+        try { console.info('보관함 빠른 캐시 표시 생략:', e && e.message ? e.message : e); } catch (ignore) {}
+      }
       return [];
     }
 
@@ -1134,6 +1148,11 @@ function resetForm(clearEdit = true) {
       const supabaseApi = window.SitePassSupabaseApi;
       if (!supabaseApi || sitePassMemberEquipmentSyncing) return { skipped:true, error:'Supabase API 연결 없음 또는 동기화 중' };
       if (!shouldSyncSupabaseMyEquipmentItemsForCurrentContext()) return { skipped:true, reason:'not_member_context' };
+      // v23.7.495: 방금 성공한 서버 조회를 화면 이동 때마다 다시 실행하지 않습니다.
+      // 캐시 화면은 즉시 표시하고, 최신 조회는 최대 1분에 한 번만 수행합니다.
+      if (silent && Number(sitePassMemberEquipmentSyncedAt || 0) > 0 && (Date.now() - Number(sitePassMemberEquipmentSyncedAt || 0)) < 60000) {
+        return { skipped:true, reason:'recent_member_sync', cached:true };
+      }
       sitePassMemberEquipmentSyncing = true;
       window.sitePassMemberEquipmentInitialSyncPendingV491 = true;
       window.sitePassMemberEquipmentInitialSyncErrorV491 = false;

@@ -1,9 +1,12 @@
-const SITEPASS_SW_VERSION = 'v23.7.494';
-const SITEPASS_CACHE = 'sitepass-fast-v23.7.494';
-const SITEPASS_PREVIOUS_CACHE = 'sitepass-v23.7.493';
+const SITEPASS_SW_VERSION = 'v23.7.495';
+const SITEPASS_CACHE = 'sitepass-fast-v23.7.495';
+const SITEPASS_PREVIOUS_CACHE = 'sitepass-fast-v23.7.494';
+const SITEPASS_OLDER_CACHE = 'sitepass-v23.7.493';
 const SITEPASS_SHELL = [
   './index.html',
-  './assets/css/style.css?v=23.7.494'
+  './assets/css/style.css?v=23.7.494',
+  './assets/js/config.js?v=23.7.495',
+  './assets/js/app-register-share-payment-speed-02.js?v=23.7.495'
 ];
 
 self.addEventListener('install', event => {
@@ -23,10 +26,10 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    // 바로 전 v493 캐시는 유지하여 휴대폰이 동일한 JS·이미지를 다시 받지 않게 합니다.
+    // 바로 전 v494와 v493 캐시는 유지하여 변경되지 않은 JS·이미지를 다시 받지 않게 합니다.
     await Promise.all(keys.filter(key => {
       if (!/sitepass/i.test(key)) return false;
-      return key !== SITEPASS_CACHE && key !== SITEPASS_PREVIOUS_CACHE;
+      return key !== SITEPASS_CACHE && key !== SITEPASS_PREVIOUS_CACHE && key !== SITEPASS_OLDER_CACHE;
     }).map(key => caches.delete(key)));
     await self.clients.claim();
   })());
@@ -54,12 +57,15 @@ async function putCurrent(request, response){
 
 async function cachedAcrossVersions(request){
   try {
-    // 현재 v494 캐시를 먼저 보고, 없을 때만 v493 캐시를 재사용합니다.
+    // 현재 v495 캐시를 먼저 보고, 없을 때 v494·v493 캐시를 차례로 재사용합니다.
     const current = await caches.open(SITEPASS_CACHE);
     const currentHit = await current.match(request);
     if (currentHit) return currentHit;
     const previous = await caches.open(SITEPASS_PREVIOUS_CACHE);
-    return (await previous.match(request)) || null;
+    const previousHit = await previous.match(request);
+    if (previousHit) return previousHit;
+    const older = await caches.open(SITEPASS_OLDER_CACHE);
+    return (await older.match(request)) || null;
   } catch (e) { return null; }
 }
 
