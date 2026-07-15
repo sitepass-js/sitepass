@@ -1,4 +1,4 @@
-// SitePass v23.7.504 - 담당자 공유 payload 저장·조회 복원 강화
+// SitePass v23.7.505 - 담당자 링크 전용화면 및 공유 payload 저장·조회 복원 강화
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
@@ -98,12 +98,13 @@
   }
 
   function makeManagerLink(code, expireAt, getSignature){
-    const baseUrl = getCleanShareBaseUrl();
-    // v23.7.502: 카카오톡·문자·메일·PWA에서 #fragment가 잘리거나
-    // 자동업데이트 중 사라지지 않도록 담당자 코드를 query 파라미터로 고정합니다.
-    // 만료일과 검증은 Supabase sitepass_public_shares의 expires_at 기준입니다.
-    const url = new URL(baseUrl, window.location.origin);
+    // v23.7.505: 담당자 화면을 회원 앱 라우팅과 분리합니다.
+    // 상세보기·뒤로가기·홈 이동이 회원 화면 초기화 코드와 충돌하지 않습니다.
+    const url = new URL('./recipient.html', window.location.href);
+    url.search = '';
+    url.hash = '';
     url.searchParams.set('manager', String(code || ''));
+    url.searchParams.set('v', '505');
     return url.toString();
   }
 

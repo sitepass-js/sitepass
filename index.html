@@ -34,6 +34,37 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.493" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.493" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
+<script>
+/* v23.7.505 - 담당자 링크는 회원 앱과 완전히 분리된 전용 화면으로 이동합니다. */
+(function(){
+  try {
+    var params = new URLSearchParams(location.search || '');
+    var code = String(params.get('manager') || params.get('m') || '').trim();
+    var sig = String(params.get('sig') || '').trim();
+    var exp = String(params.get('exp') || '').trim();
+    var hash = String(location.hash || '');
+    if (!code && /^#manager=/i.test(hash)) {
+      var parts = hash.replace(/^#manager=/i, '').split('&');
+      code = decodeURIComponent(parts.shift() || '').trim();
+      parts.forEach(function(part){
+        var pair = part.split('=');
+        var key = decodeURIComponent(pair.shift() || '');
+        var value = decodeURIComponent(pair.join('=') || '');
+        if (key === 'sig') sig = value;
+        if (key === 'exp') exp = value;
+      });
+    }
+    if (code) {
+      var target = new URL('./recipient.html', location.href);
+      target.searchParams.set('manager', code);
+      if (sig) target.searchParams.set('sig', sig);
+      if (exp) target.searchParams.set('exp', exp);
+      target.searchParams.set('v', '505');
+      location.replace(target.toString());
+    }
+  } catch (e) {}
+})();
+</script>
 
 
 <style id="sitepassBootGateV500">
@@ -63,9 +94,9 @@
   }
 </style>
 <script>
-/* v23.7.504 - 담당자 서류 복원·상세보기·공유기록 및 query 고정 */
+/* v23.7.505 - 담당자 링크 전용 화면 분리 및 query 호환 */
 (function(){
-  var declaredVersion = '23.7.504';
+  var declaredVersion = '23.7.505';
   var search = String(location.search || '');
   var hash = String(location.hash || '');
   var external = /[?&](manager|public|share)=/i.test(search) || /#(manager|public|share|qr)=?/i.test(hash);
@@ -173,9 +204,9 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.504 manager docs detail history fix -->
+  <!-- SitePass deploy-check: v23.7.505 standalone recipient viewer -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.504" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.505" />
   <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.493" />
 
   <style>
@@ -4117,7 +4148,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.504" defer></script>
+<script src="./assets/js/config.js?v=23.7.505" defer></script>
 <script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.493" defer></script>
 <script src="./assets/js/supabase-api.js?v=23.7.493" defer></script>
 <script src="./assets/js/storage.js?v=23.7.493" defer></script>
@@ -4125,8 +4156,8 @@
 <script src="./assets/js/admin-members.js?v=23.7.493" defer></script>
 <script src="./assets/js/admin-detail.js?v=23.7.493" defer></script>
 <script src="./assets/js/auth-social.js?v=23.7.493" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.504" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.504" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.505" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.505" defer></script>
 <script src="./assets/js/archive.js?v=23.7.493" defer></script>
 <script src="./assets/js/equipment-register.js?v=23.7.493" defer></script>
 <script src="./assets/js/person-auth.js?v=23.7.493" defer></script>
@@ -4137,15 +4168,14 @@
 <script src="./assets/js/app-core-auth-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-core-auth-speed-02.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-core-auth-speed-03.js?v=23.7.493" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.504" defer></script>
-<script src="./assets/js/sitepass-recipient-route-v504.js?v=23.7.504" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.505" defer></script>
 <script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.500" defer></script>
 <script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.500" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.496" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.504" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.505" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.496" defer></script>
 <script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.493" defer></script>

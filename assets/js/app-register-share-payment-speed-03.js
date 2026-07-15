@@ -1,4 +1,4 @@
-// SitePass v23.7.504 - 담당자 링크 상세보기·복귀·서버조회 안정화 (03/04)
+// SitePass v23.7.505 - 담당자 링크 전용화면 이동·서버조회 안정화 (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -2084,4 +2084,48 @@ function renderManagerDownloadToolbar(item) {
   document.addEventListener('keydown', function(event){
     if (event.key === 'Escape' && document.getElementById('managerDocDetailModalV504')) closeManagerDocDetailV504();
   });
+})();
+
+
+// SitePass v23.7.505 - 회원 보관함의 링크화면도 전용 recipient.html로 이동
+(function(){
+  'use strict';
+  function currentScreenV505(){
+    var active=document.querySelector('.screen:not(.hidden)');
+    return active&&active.id?active.id:'listScreen';
+  }
+  function safeItemV505(code){
+    try {
+      var item=typeof getRuntimeItemByCode==='function'?getRuntimeItemByCode(code):null;
+      if (item && typeof normalizeManagerShareItemV503==='function') item=normalizeManagerShareItemV503(item,code);
+      return item;
+    } catch(e){ return null; }
+  }
+  async function openDedicatedManagerPreviewV505(code){
+    code=String(code||'').trim();
+    var item=safeItemV505(code);
+    if(!code||!item){ alert('조회할 장비자료를 찾지 못했습니다. 보관함을 새로고침한 뒤 다시 눌러주세요.'); return; }
+    try {
+      var snapshot=JSON.stringify(item);
+      if(snapshot.length<3500000) sessionStorage.setItem('sitepass_recipient_preview_v505_'+code,snapshot);
+      sessionStorage.setItem('sitepass_last_screen_v491',currentScreenV505()==='managerPrintScreen'?'listScreen':currentScreenV505());
+    } catch(e) {}
+    try {
+      if(typeof saveManagerShareItemsToSupabase==='function'){
+        await Promise.race([
+          saveManagerShareItemsToSupabase([item]),
+          new Promise(function(resolve){setTimeout(resolve,2500);})
+        ]);
+      }
+    } catch(e) {}
+    var url=new URL('./recipient.html',window.location.href);
+    url.search='';url.hash='';
+    url.searchParams.set('manager',code);
+    url.searchParams.set('from','member');
+    url.searchParams.set('v','505');
+    window.location.href=url.toString();
+  }
+  openManagerPublicView=function(code){ return openDedicatedManagerPreviewV505(code); };
+  window.openManagerPublicView=openManagerPublicView;
+  window.openDedicatedManagerPreviewV505=openDedicatedManagerPreviewV505;
 })();
