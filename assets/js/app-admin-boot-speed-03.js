@@ -2,6 +2,8 @@
 // ---- merged from app-admin-boot-11.js ----
 // SitePass v23.7.350 - app-admin-boot finer split (11/14)
 let sitePassAdminRenderTimer487 = 0;
+let sitePassAdminLastBaseHtml488 = '';
+let sitePassAdminRenderBusy488 = false;
 function requestAdminRender487(delay) {
       clearTimeout(sitePassAdminRenderTimer487);
       sitePassAdminRenderTimer487 = setTimeout(function(){
@@ -10,7 +12,10 @@ function requestAdminRender487(delay) {
     }
 window.sitePassRequestAdminRender487 = requestAdminRender487;
 function renderAdmin() {
+      if (sitePassAdminRenderBusy488) return;
       if (!isAdminLoggedIn()) { showScreen('signupScreen'); return; }
+      sitePassAdminRenderBusy488 = true;
+      try {
       if (!sitePassEquipmentSyncing && (!sitePassEquipmentSyncedAt || Date.now() - sitePassEquipmentSyncedAt > 30000)) {
         try { syncSupabaseEquipmentItems(true); } catch (e) {}
       }
@@ -54,11 +59,16 @@ function renderAdmin() {
           '</div>' +
         '</div>' +
       '</div>';
-      document.getElementById('adminBox').innerHTML =
+      const adminBaseHtml488 =
         '<div class="notice blue-note"><b>현재 권한: ' + escapeHtml(getCurrentAdminRoleName()) + '</b><br>' + (isSuperAdminLoggedIn() ? '대표이사 최고관리자는 모든 관리 기능을 사용할 수 있으며, 직원 관리자 아이디 생성/비밀번호 재설정/해제가 가능합니다.' : '직원 관리자는 관리자모드 접속 권한만 부여된 상태입니다. 관리자 아이디 생성/해제는 최고관리자만 가능합니다.') + '</div>' +
         topSummary +
         renderAdminTodoSummary({ waitingContacts, paymentDue, paused, expiringDocs, expiredDocs, grace14Items }) +
         renderAdminStaffManager(members) + renderAdminContactManager();
+      const adminBox488 = document.getElementById('adminBox');
+      if (adminBox488 && (sitePassAdminLastBaseHtml488 !== adminBaseHtml488 || !adminBox488.innerHTML.trim())) {
+        sitePassAdminLastBaseHtml488 = adminBaseHtml488;
+        adminBox488.innerHTML = adminBaseHtml488;
+      }
       setTimeout(function(){
         try {
           if (window.SitePassPushNotify && typeof window.SitePassPushNotify.refreshPanel === 'function') {
@@ -66,6 +76,9 @@ function renderAdmin() {
           }
         } catch (e) {}
       }, 30);
+      } finally {
+        sitePassAdminRenderBusy488 = false;
+      }
     }
 
     function deleteItem(code) {

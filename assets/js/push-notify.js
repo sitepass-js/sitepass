@@ -813,12 +813,11 @@
   function boot(){
     setupPushButtonDelegates();
     refreshPanel();
-    // v23.7.487: 전체 body MutationObserver가 자기 패널 교체까지 다시 감지해
-    // 관리자 화면을 계속 깜박이게 하던 순환을 제거합니다.
-    setInterval(function(){
-      const adminScreen = document.getElementById('adminScreen');
-      if (adminScreen && !adminScreen.classList.contains('hidden')) refreshPanel();
-    }, 15000);
+    // v23.7.488: 관리자 화면 전체를 주기적으로 교체하지 않습니다.
+    // 관리자 화면 렌더 완료·푸시 버튼 동작 뒤에만 필요한 경우 패널을 갱신합니다.
+    document.addEventListener('visibilitychange', function(){
+      if (!document.hidden) refreshPanel();
+    });
   }
 
   window.sitepassRequestPushPermission = requestPermission;
