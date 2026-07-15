@@ -4739,7 +4739,7 @@ font-size: 25px !important;
 }
 
 
-/* v23.7.492 - 상세보기 장비/기사/인부 폴더 */
+/* v23.7.493 - 상세보기 장비/기사/인부 폴더 */
 .doc-folders-v486{margin-top:10px}
 .doc-folder-tabs-v486{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:10px;border-bottom:2px solid #d9e4f5;padding:0 4px}
 .doc-folder-tab-v486{min-height:46px;padding:10px 7px 9px;border:1px solid #d7e2f5;border-bottom:0;border-radius:14px 14px 0 0;background:#f4f7fc;color:#63728c;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}
@@ -4755,7 +4755,7 @@ font-size: 25px !important;
 }
 
 
-/* v23.7.492 - 보관함 상단 단순화 / 서버 불러오기 상태 */
+/* v23.7.493 - 보관함 상단 단순화 / 서버 불러오기 상태 */
 .archive-list-summary {
   display:flex;
   align-items:center;
@@ -4791,3 +4791,37 @@ font-size: 25px !important;
   animation:sitepass-loading-spin-v491 .8s linear infinite;
 }
 @keyframes sitepass-loading-spin-v491 { to { transform:rotate(360deg); } }
+
+
+/* v23.7.493-test - 보관함 돋보기 확실한 표시 / 장비등록 대수 흰색 긴 박스 제거 */
+.archive-search-button {
+  display:grid !important;
+  place-items:center !important;
+  cursor:pointer;
+  color:#405677 !important;
+}
+.archive-search-icon {
+  display:block;
+  width:20px;
+  height:20px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2.2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  pointer-events:none;
+}
+.archive-list-summary {
+  display:block !important;
+  min-height:0 !important;
+  margin:0 0 10px !important;
+  padding:0 2px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.archive-list-summary b {
+  display:inline !important;
+  color:#173f9f !important;
+}
