@@ -813,7 +813,7 @@
   function boot(){
     setupPushButtonDelegates();
     refreshPanel();
-    // v23.7.491: 관리자 화면 전체를 주기적으로 교체하지 않습니다.
+    // v23.7.492: 관리자 화면 전체를 주기적으로 교체하지 않습니다.
     // 관리자 화면 렌더 완료·푸시 버튼 동작 뒤에만 필요한 경우 패널을 갱신합니다.
     document.addEventListener('visibilitychange', function(){
       if (!document.hidden) refreshPanel();

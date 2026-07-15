@@ -594,9 +594,8 @@
     }
     .archive-title-search-row h2 { margin:0; white-space:nowrap; }
     .archive-search-box {
-      display:grid;
-      grid-template-columns:44px minmax(0, 1fr);
-      align-items:stretch;
+      position:relative;
+      display:block;
       width:100%;
       min-width:0;
       height:44px;
@@ -610,43 +609,46 @@
       box-shadow:0 0 0 3px rgba(75,116,216,.12);
     }
     .archive-search-button {
-      width:44px;
-      min-width:44px;
-      min-height:42px;
+      position:absolute;
+      left:8px;
+      top:50%;
+      transform:translateY(-50%);
+      z-index:2;
+      width:30px;
+      min-width:30px;
+      min-height:30px;
       padding:0;
-      border-radius:0;
-      border-right:1px solid #e2e8f4;
-      background:#f7f9fd;
-      color:#173f9f;
-      font-size:19px;
+      border:0;
+      border-radius:50%;
+      background:transparent;
+      color:#52647f;
+      font-size:18px;
       line-height:1;
     }
-    .archive-search-button:active { background:#eaf0ff; }
+    .archive-search-button:hover,
+    .archive-search-button:active { background:#eef3fb; }
     .archive-search-input {
       width:100%;
       min-width:0;
       height:42px;
       border:0;
-      border-radius:0;
-      background:#fff;
-      padding:0 13px;
+      border-radius:13px;
+      background:transparent;
+      padding:0 13px 0 44px;
       font-size:14px;
       font-weight:800;
       color:#15233d;
       outline:none;
     }
     .archive-list-summary {
-      display:flex;
-      align-items:center;
-      flex-wrap:wrap;
-      gap:6px 10px;
+      display:block;
       margin:0 0 10px;
-      padding:9px 10px;
-      border-radius:12px;
-      background:#fff;
-      border:1px solid #dbe5f8;
-      color:#43516a;
-      font-size:12px;
+      padding:0 2px;
+      background:transparent;
+      border:0;
+      color:#173f9f;
+      font-size:13px;
+      font-weight:900;
     }
     .archive-list-summary b { color:#173f9f; }
     .archive-search-clear {
@@ -888,9 +890,9 @@
       .menu-grid, .actions, .file-row, .compare-grid, .preview-actions { grid-template-columns:1fr; }
       .archive-title-search-row { grid-template-columns:auto minmax(0, 1fr); gap:8px; }
       .archive-title-search-row h2 { font-size:20px; }
-      .archive-search-box { grid-template-columns:40px minmax(0, 1fr); height:42px; }
-      .archive-search-button { width:40px; min-width:40px; min-height:40px; font-size:18px; }
-      .archive-search-input { height:40px; padding:0 10px; font-size:13px; }
+      .archive-search-box { height:42px; }
+      .archive-search-button { left:7px; width:28px; min-width:28px; min-height:28px; font-size:17px; }
+      .archive-search-input { height:40px; padding:0 10px 0 40px; font-size:13px; }
       .archive-list-summary { gap:5px 7px; }
       .archive-search-clear { margin-left:0; }
       .archive-pagination { grid-template-columns:1fr auto 1fr; gap:7px; }
@@ -4737,7 +4739,7 @@ font-size: 25px !important;
 }
 
 
-/* v23.7.491 - 상세보기 장비/기사/인부 폴더 */
+/* v23.7.492 - 상세보기 장비/기사/인부 폴더 */
 .doc-folders-v486{margin-top:10px}
 .doc-folder-tabs-v486{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:10px;border-bottom:2px solid #d9e4f5;padding:0 4px}
 .doc-folder-tab-v486{min-height:46px;padding:10px 7px 9px;border:1px solid #d7e2f5;border-bottom:0;border-radius:14px 14px 0 0;background:#f4f7fc;color:#63728c;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}
@@ -4753,7 +4755,7 @@ font-size: 25px !important;
 }
 
 
-/* v23.7.491 - 보관함 상단 단순화 / 서버 불러오기 상태 */
+/* v23.7.492 - 보관함 상단 단순화 / 서버 불러오기 상태 */
 .archive-list-summary {
   display:flex;
   align-items:center;

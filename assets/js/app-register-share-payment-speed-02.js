@@ -706,7 +706,7 @@ function resetForm(clearEdit = true) {
       ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       const ownerPrimary = [item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
         .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
-      // v23.7.491: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
+      // v23.7.492: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
       // SB-로그인아이디 형식을 현재 회원 고유키로 함께 계산하여 정상 서버자료를 누락시키지 않습니다.
       if (ownerPrimary.length) {
         if (currentPrimary.length && ownerPrimary.some(function(key) { return currentPrimary.indexOf(key) >= 0; })) return true;

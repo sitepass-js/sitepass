@@ -1,4 +1,4 @@
-/* SitePass v23.7.491-test - 테스트 알림 4개 배지 유지·실제 방 열람 시에만 읽음 처리 */
+/* SitePass v23.7.492-test - 테스트 알림 4개 배지 유지·실제 방 열람 시에만 읽음 처리 */
 (function(){
   'use strict';
 
