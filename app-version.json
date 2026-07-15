@@ -1,11 +1,11 @@
 {
-  "version": "23.7.502",
+  "version": "23.7.503",
   "channel": "test",
-  "note": "담당자 공유주소를 ?manager=코드 방식으로 고정하고 PWA 자동업데이트·구버전 새로고침 중에도 담당자 코드를 보존합니다.",
-  "build": "v23.7.502-test",
-  "stage": "담당자 링크 화면 진입 고정",
+  "note": "담당자 링크의 서류 payload를 복원하고 빈 링크 전송을 차단하며, 서류 상세보기와 공유 기록방 저장을 수정했습니다.",
+  "build": "v23.7.503-test",
+  "stage": "담당자 링크 서류·상세보기·공유기록 수정",
   "updatedAt": "2026-07-15",
-  "releaseType": "manager-query-route-preserve",
-  "purpose": "담당자 링크가 일반 화면으로 바뀌거나 1초 뒤 사라지는 문제 제거",
-  "description": "카카오톡·문자·이메일 담당자 링크 query 라우팅 및 수신화면 강제 유지"
+  "releaseType": "manager-docs-detail-history-fix",
+  "purpose": "담당자 링크 빈 화면·서류 없음·상세보기 실패·공유 기록 누락 문제 제거",
+  "description": "서버 공유 payload 다중형식 복원, 저장 후 재조회 검증, 수신화면 안정화, 상세보기 모달, 문자·이메일·공유창 기록 저장"
 }

@@ -4876,3 +4876,240 @@ html.sitepass-external-share-route-v500 body #publicScreen.sitepass-recipient-ro
 @media (max-width:420px){
   .sitepass-clean-calendar-days475{height:252px;min-height:252px;}
 }
+
+/* SitePass v23.7.503 - 담당자 링크 화면·서류 상세보기 */
+html.sitepass-external-share-route-v503,
+html.sitepass-external-share-route-v503 body {
+  min-height:100%;
+  background:#f3f6fb;
+}
+html.sitepass-external-share-route-v503 body .topbar,
+body.sitepass-recipient-body-v503 .topbar,
+body.sitepass-recipient-body-v503 #sitepassBottomAppNav,
+body.sitepass-recipient-body-v503 .sitepass-bottom-nav {
+  display:none !important;
+}
+html.sitepass-external-share-route-v503 body #managerPrintScreen.sitepass-recipient-route-active-v503,
+html.sitepass-external-share-route-v503 body #publicScreen.sitepass-recipient-route-active-v503 {
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+  min-height:100vh;
+  padding-top:18px;
+}
+.sitepass-recipient-loading-v503 {
+  min-height:55vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:36px 20px;
+  text-align:center;
+  color:#24324a;
+}
+.sitepass-recipient-loading-v503 span { color:#65728a; font-size:14px; }
+.sitepass-recipient-spinner-v503 {
+  width:38px;
+  height:38px;
+  border:4px solid #dfe7f5;
+  border-top-color:#168eea;
+  border-radius:50%;
+  animation:sitepassRecipientSpinV503 .85s linear infinite;
+}
+@keyframes sitepassRecipientSpinV503 { to { transform:rotate(360deg); } }
+.sitepass-recipient-brand-v503 {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  width:max-content;
+  max-width:100%;
+  margin:0 auto 16px;
+  padding:10px 16px;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 8px 26px rgba(35,57,94,.10);
+}
+.sitepass-recipient-brand-mark-v503 {
+  display:grid;
+  place-items:center;
+  width:40px;
+  height:40px;
+  border-radius:13px;
+  background:linear-gradient(145deg,#168eea,#12b8a6);
+  color:#fff;
+  font-size:24px;
+  font-weight:900;
+}
+.sitepass-recipient-brand-v503 strong {
+  display:flex;
+  align-items:baseline;
+  font-size:30px;
+  line-height:1;
+  letter-spacing:-1.7px;
+  font-style:normal;
+}
+.sitepass-recipient-brand-v503 strong span { color:#123f87; }
+.sitepass-recipient-brand-v503 strong em { color:#20b968; font-style:normal; }
+.manager-empty-docs-v503 {
+  margin:12px 0;
+  padding:18px;
+  border:1px solid #f0c9c9;
+  border-radius:14px;
+  background:#fff5f5;
+  color:#8c2f2f;
+  line-height:1.65;
+  text-align:center;
+}
+.manager-doc-actions-v503 {
+  display:flex;
+  justify-content:flex-end;
+  margin-top:10px;
+}
+.manager-doc-detail-btn-v503 {
+  min-width:112px;
+  min-height:42px;
+  padding:9px 18px;
+  border:0;
+  border-radius:12px;
+  background:#165fc3;
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(22,95,195,.18);
+}
+.manager-doc-detail-btn-v503:active { transform:translateY(1px); }
+body.manager-doc-detail-open-v503 { overflow:hidden !important; }
+.manager-doc-detail-modal-v503 {
+  position:fixed;
+  inset:0;
+  z-index:2147483600;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+.manager-doc-detail-backdrop-v503 {
+  position:absolute;
+  inset:0;
+  background:rgba(11,20,36,.72);
+}
+.manager-doc-detail-sheet-v503 {
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  width:min(960px,100%);
+  max-height:94vh;
+  overflow:hidden;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 24px 80px rgba(0,0,0,.34);
+}
+.manager-doc-detail-head-v503 {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  padding:16px 18px;
+  border-bottom:1px solid #e4e9f2;
+}
+.manager-doc-detail-head-v503 > div { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.manager-doc-detail-head-v503 span { color:#66738a; font-size:12px; font-weight:700; }
+.manager-doc-detail-head-v503 strong { color:#17243b; font-size:18px; word-break:keep-all; }
+.manager-doc-detail-head-v503 button {
+  flex:0 0 auto;
+  width:42px;
+  height:42px;
+  border:0;
+  border-radius:50%;
+  background:#eef2f8;
+  color:#26344b;
+  font-size:30px;
+  line-height:1;
+  cursor:pointer;
+}
+.manager-doc-detail-body-v503 {
+  flex:1 1 auto;
+  overflow:auto;
+  padding:18px;
+  background:#eef2f7;
+}
+.manager-doc-detail-page-v503 {
+  width:min(820px,100%);
+  margin:0 auto 18px;
+  padding:12px;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 4px 20px rgba(26,42,72,.10);
+}
+.manager-doc-detail-page-title-v503 {
+  margin:0 0 10px;
+  color:#33415a;
+  font-size:13px;
+  font-weight:800;
+  word-break:break-all;
+}
+.manager-doc-detail-page-v503 img {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:none;
+  margin:0 auto;
+  object-fit:contain;
+  background:#fff;
+}
+.manager-doc-detail-page-v503 iframe {
+  display:block;
+  width:100%;
+  height:70vh;
+  min-height:520px;
+  border:0;
+  background:#fff;
+}
+.manager-doc-detail-open-file-v503 {
+  display:block;
+  margin-top:10px;
+  padding:11px 14px;
+  border-radius:10px;
+  background:#eef5ff;
+  color:#1458ad;
+  text-align:center;
+  font-weight:800;
+  text-decoration:none;
+}
+.manager-doc-detail-missing-v503 {
+  padding:28px 18px;
+  border-radius:14px;
+  background:#fff5f5;
+  color:#8c2f2f;
+  text-align:center;
+  line-height:1.6;
+}
+.manager-doc-detail-missing-v503 span { font-size:13px; }
+.manager-doc-detail-close-bottom-v503 {
+  flex:0 0 auto;
+  width:calc(100% - 36px);
+  min-height:48px;
+  margin:12px 18px 16px;
+  border:0;
+  border-radius:13px;
+  background:#1f293b;
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+}
+@media (max-width:680px) {
+  html.sitepass-external-share-route-v503 body #managerPrintScreen.sitepass-recipient-route-active-v503,
+  html.sitepass-external-share-route-v503 body #publicScreen.sitepass-recipient-route-active-v503 { padding-top:10px; }
+  .sitepass-recipient-brand-v503 { margin-bottom:10px; padding:8px 14px; }
+  .sitepass-recipient-brand-mark-v503 { width:34px; height:34px; font-size:20px; }
+  .sitepass-recipient-brand-v503 strong { font-size:26px; }
+  .manager-doc-detail-modal-v503 { align-items:stretch; padding:0; }
+  .manager-doc-detail-sheet-v503 { width:100%; max-height:100vh; border-radius:0; }
+  .manager-doc-detail-body-v503 { padding:10px; }
+  .manager-doc-detail-page-v503 { margin-bottom:12px; padding:8px; border-radius:10px; }
+  .manager-doc-detail-page-v503 iframe { height:72vh; min-height:420px; }
+}

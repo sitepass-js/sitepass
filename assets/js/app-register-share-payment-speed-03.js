@@ -1,4 +1,4 @@
-// SitePass v23.7.502 - 담당자 query 링크 및 수신화면 고정 (03/04)
+// SitePass v23.7.503 - 담당자 서류 복원·상세보기·공유기록 수정 (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -30,6 +30,131 @@ function shareOneListItemEmail(code) {
     function renderManagerSharePreviewPanel(item) {
       const archive = getArchiveModule();
       return archive.renderManagerSharePreviewPanel ? archive.renderManagerSharePreviewPanel(item) : '';
+    }
+
+    const SITEPASS_SHARE_HISTORY_KEY_V503 = 'sitepass_share_history_v445';
+
+    function normalizeManagerShareItemV503(item, fallbackCode) {
+      const qrShare = getQrShareModule();
+      if (qrShare && typeof qrShare.normalizeLoadedManagerShareItemV503 === 'function') {
+        const normalized = qrShare.normalizeLoadedManagerShareItemV503(item, fallbackCode || (item && item.code));
+        if (normalized) return normalized;
+      }
+      item = item && typeof item === 'object' ? item : {};
+      const out = Object.assign({}, item);
+      const docs = {};
+      [item, item.item_json, item.item_data, item.payload, item.data].filter(function(value){ return value && typeof value === 'object'; }).forEach(function(source){
+        const sourceDocs = source.docs && typeof source.docs === 'object' && !Array.isArray(source.docs) ? source.docs : {};
+        Object.keys(sourceDocs).forEach(function(key){
+          const doc = sourceDocs[key];
+          if (!doc || typeof doc !== 'object') return;
+          docs[key] = Object.assign({}, docs[key] || {}, doc, { key:String(doc.key || key) });
+        });
+        (Array.isArray(source.documents) ? source.documents : []).forEach(function(doc, index){
+          if (!doc || typeof doc !== 'object') return;
+          const key = String(doc.key || doc.docKey || doc.doc_key || doc.type || doc.kind || ('legacyDocument' + (index + 1))).trim();
+          if (key) docs[key] = Object.assign({}, docs[key] || {}, doc, { key:key });
+        });
+      });
+      Object.keys(docs).forEach(function(key){
+        const doc = docs[key];
+        doc.key = String(doc.key || key);
+        doc.pages = Array.isArray(doc.pages) ? doc.pages.filter(Boolean) : [];
+        if (!doc.fileName && doc.pages.length) doc.fileName = String(doc.pages[0].fileName || doc.title || '첨부파일');
+        if (!doc.pageCount && doc.pages.length) doc.pageCount = doc.pages.length;
+      });
+      out.docs = docs;
+      const code = String(fallbackCode || out.code || out.share_code || out.publicShareCode || out.managerShareCode || '').trim();
+      if (code) {
+        out.code = code;
+        out.share_code = code;
+        out.publicShareCode = code;
+        out.managerShareCode = code;
+      }
+      return out;
+    }
+
+    function getManagerShareStatsV503(item) {
+      item = normalizeManagerShareItemV503(item, item && item.code);
+      const docs = Object.values(item.docs || {}).filter(function(doc){ return doc && typeof doc === 'object'; });
+      let metadataDocs = 0;
+      let actualDocs = 0;
+      let actualPages = 0;
+      docs.forEach(function(doc){
+        const pages = Array.isArray(doc.pages) ? doc.pages : [];
+        const hasMetadata = !!String(doc.fileName || '').trim() || Number(doc.pageCount || 0) > 0 || pages.length > 0;
+        if (hasMetadata) metadataDocs++;
+        const hasDoc = typeof hasRealDocAttachment === 'function' ? hasRealDocAttachment(doc) : !!getManagerShareObjectStoredUrlV496(doc);
+        if (hasDoc) actualDocs++;
+        actualPages += pages.filter(function(page){ return !!getManagerShareObjectStoredUrlV496(page); }).length;
+        if (!pages.length && getManagerShareObjectStoredUrlV496(doc)) actualPages++;
+      });
+      return { docs:docs.length, metadataDocs:metadataDocs, actualDocs:actualDocs, actualPages:actualPages };
+    }
+
+    function formatSitePassShareHistoryTimeV503(date) {
+      const d = date instanceof Date ? date : new Date(date || Date.now());
+      const pad = function(value){ return String(value).padStart(2, '0'); };
+      return pad(d.getMonth() + 1) + '.' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function saveSitePassShareHistoryV503(items, channel, target) {
+      const safeItems = (items || []).filter(Boolean);
+      if (!safeItems.length) return;
+      const now = new Date();
+      let history = [];
+      try { history = JSON.parse(localStorage.getItem(SITEPASS_SHARE_HISTORY_KEY_V503) || '[]'); } catch (e) { history = []; }
+      if (!Array.isArray(history)) history = [];
+      const methodMap = { kakao:'카카오톡/공유', sms:'문자', email:'이메일', copy:'링크 복사' };
+      const method = methodMap[channel] || '링크';
+      safeItems.forEach(function(item){
+        const code = String(item.code || item.share_code || item.publicShareCode || '').trim();
+        history.push({
+          id:'share-v503-' + Date.now() + '-' + Math.random().toString(36).slice(2,8),
+          equipment:getShareItemLabel(item),
+          receiver:(target && target.receiver) || (channel === 'kakao' ? '카카오톡에서 선택한 담당자' : '담당자'),
+          phone:(target && target.phone) || '',
+          email:(target && target.email) || '',
+          method:method,
+          link:makeManagerLink(code, getManagerExpireAt(item)),
+          code:code,
+          createdAt:now.toISOString(),
+          time:formatSitePassShareHistoryTimeV503(now),
+          date:formatSitePassShareHistoryTimeV503(now)
+        });
+      });
+      history = history.slice(-100);
+      try { localStorage.setItem(SITEPASS_SHARE_HISTORY_KEY_V503, JSON.stringify(history)); } catch (e) {}
+      try {
+        const roomPanel = document.getElementById('sitepassChatRoomPanel');
+        const shareTitle = document.getElementById('sitepassChatRoomTitle');
+        if (roomPanel && !roomPanel.classList.contains('sitepass-chat-hidden') && shareTitle && /공유/.test(shareTitle.textContent || '') && typeof window.sitepassOpenChatRoom460 === 'function') {
+          window.sitepassOpenChatRoom460('share');
+        }
+      } catch (e) {}
+    }
+    window.saveSitePassShareHistoryV503 = saveSitePassShareHistoryV503;
+
+    async function verifyManagerShareItemsFromServerV503(items) {
+      const verified = [];
+      for (const item of (items || []).filter(Boolean)) {
+        const code = ensureManagerShareCodeForItem(item);
+        const expected = getManagerShareStatsV503(item);
+        const loaded = await loadManagerShareItemFromSupabase(code, '');
+        if (!loaded || !loaded.ok || !loaded.item) {
+          return { ok:false, message:getShareItemLabel(item) + ' 공유자료를 저장 후 다시 읽지 못했습니다. ' + String(loaded && loaded.message || '') };
+        }
+        const normalized = normalizeManagerShareItemV503(loaded.item, code);
+        const actual = getManagerShareStatsV503(normalized);
+        if (expected.metadataDocs > 0 && actual.metadataDocs === 0) {
+          return { ok:false, message:getShareItemLabel(item) + '의 서류 목록이 서버 공유자료에 저장되지 않았습니다.' };
+        }
+        if (expected.actualDocs > 0 && actual.actualDocs === 0) {
+          return { ok:false, message:getShareItemLabel(item) + '의 서류 사진 주소가 서버 공유자료에서 확인되지 않았습니다.' };
+        }
+        verified.push(rememberManagerShareItem(code, normalized, loaded.expiresAt || getManagerExpireAt(item), ''));
+      }
+      return { ok:true, items:verified };
     }
 
     const PUBLIC_SHARE_TABLE = 'sitepass_public_shares';
@@ -774,8 +899,8 @@ function shareOneListItemEmail(code) {
     async function prepareManagerShareItemsForServerV497(items) {
       const prepared = [];
       for (const rawItem of (items || []).filter(Boolean)) {
-        let item = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(rawItem));
-        item = recoverManagerShareItemFromRegistrationDomV500(item);
+        let item = normalizeManagerShareItemV503(mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(rawItem)), rawItem && rawItem.code);
+        item = normalizeManagerShareItemV503(recoverManagerShareItemFromRegistrationDomV500(item), rawItem && rawItem.code);
         // 서버/구버전 자료를 사용하더라도 방금 만든 공유 만료일·토큰은 유지합니다.
         item.managerExpireAt = rawItem.managerExpireAt || item.managerExpireAt;
         item.managerShareToken = rawItem.managerShareToken || item.managerShareToken;
@@ -794,7 +919,7 @@ function shareOneListItemEmail(code) {
         if (managerShareItemNeedsStorageUploadV496(item)) {
           try {
             const uploaded = await uploadEquipmentItemDocsToSupabaseStorage(item);
-            item = hydrateManagerShareStorageUrlsV497(stripItemDataUrlsForServerStorage(uploaded));
+            item = normalizeManagerShareItemV503(hydrateManagerShareStorageUrlsV497(stripItemDataUrlsForServerStorage(uploaded)), rawItem && rawItem.code);
             Promise.resolve(saveEquipmentItemToSupabase(item, 'manager_share_prepare_v497')).catch(function(e){
               console.warn('담당자 공유 준비 후 장비 서버 갱신 실패:', e);
             });
@@ -805,7 +930,7 @@ function shareOneListItemEmail(code) {
 
         if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
           const recovered = await recoverManagerShareItemFromStorageV498(item);
-          item = recovered && recovered.item ? recovered.item : item;
+          item = normalizeManagerShareItemV503(recovered && recovered.item ? recovered.item : item, rawItem && rawItem.code);
           if (recovered && recovered.ok && countManagerShareStoredUrlsV496(item)) {
             const serverItem = stripItemDataUrlsForServerStorage(item);
             Promise.resolve(saveEquipmentItemToSupabase(serverItem, 'manager_share_storage_recovery_v498')).catch(function(e){
@@ -814,15 +939,22 @@ function shareOneListItemEmail(code) {
           }
         }
 
-        if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
-          // v23.7.500: 예전 등록건의 실제 파일 주소가 유실됐더라도 담당자 링크 화면 자체를
-          // 막지 않습니다. 문서명/만료일 메타정보를 먼저 공유하고 파일 미복구 상태를 명확히 표시합니다.
-          item.shareFilesPendingRecovery = true;
-          item.sharePayloadMode = 'metadata-fallback-v500';
-          item.shareFileRecoveryMessage = (getShareItemLabel(item) || '선택 장비') + '의 기존 사진 파일 주소를 찾지 못했습니다.';
-        } else {
-          item.shareFilesPendingRecovery = false;
+        item = normalizeManagerShareItemV503(item, rawItem && rawItem.code);
+        const shareStatsV503 = getManagerShareStatsV503(item);
+        if (shareStatsV503.metadataDocs > 0 && shareStatsV503.actualDocs === 0) {
+          return {
+            ok:false,
+            message:(getShareItemLabel(item) || '선택 장비') + '의 서류 사진을 서버에 저장하지 못했습니다. 빈 링크가 전송되지 않도록 중단했습니다. 해당 서류를 수정/갱신 화면에서 다시 확인한 뒤 보내주세요.'
+          };
         }
+        if (shareStatsV503.metadataDocs === 0) {
+          return {
+            ok:false,
+            message:(getShareItemLabel(item) || '선택 장비') + '에 공유할 첨부 서류가 없습니다. 등록된 서류를 확인해주세요.'
+          };
+        }
+        item.shareFilesPendingRecovery = false;
+        item.sharePayloadMode = 'verified-storage-v503';
         prepared.push(item);
       }
       return { ok:true, items:prepared };
@@ -961,29 +1093,48 @@ function shareOneListItemEmail(code) {
         return;
       }
 
-      const text = buildManagerShareText(safeItems);
-      const first = safeItems[0];
+      const verified = await verifyManagerShareItemsFromServerV503(safeItems);
+      if (!verified.ok) {
+        alert('담당자 링크 저장 확인에 실패했습니다.\n빈 링크가 전송되지 않도록 전송을 중단했습니다.\n\n' + (verified.message || '서버 공유자료를 확인하지 못했습니다.'));
+        return;
+      }
+      const verifiedItems = (verified.items && verified.items.length) ? verified.items : safeItems;
+      const text = buildManagerShareText(verifiedItems);
+      const first = verifiedItems[0];
       const firstCode = ensureManagerShareCodeForItem(first);
       const firstLink = makeManagerLink(firstCode, getManagerExpireAt(first));
       if (channel === 'sms') {
-        openSmsShare(text);
+        const target = openSmsShare(text);
+        if (target && target.ok) saveSitePassShareHistoryV503(verifiedItems, 'sms', target);
         return;
       }
       if (channel === 'email') {
-        openEmailShare(text, safeItems);
+        const target = openEmailShare(text, verifiedItems);
+        if (target && target.ok) saveSitePassShareHistoryV503(verifiedItems, 'email', target);
         return;
       }
-      openKakaoShare(text, firstLink, safeItems.length);
+      openKakaoShare(text, firstLink, verifiedItems);
     }
 
-    function openKakaoShare(text, firstLink, itemCount) {
+    function openKakaoShare(text, firstLink, items) {
+      const safeItems = (items || []).filter(Boolean);
+      const itemCount = safeItems.length;
+      const copied = function(){
+        copyTextFallback(text, '담당자 공유문을 복사했습니다.\n카카오톡 대화창에 붙여넣으면 됩니다.');
+        saveSitePassShareHistoryV503(safeItems, 'copy', { receiver:'카카오톡에 붙여넣을 담당자' });
+      };
       if (navigator.share) {
         const payload = itemCount === 1
           ? { title:'SitePass 담당자 서류', text:'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.', url:firstLink }
           : { title:'SitePass 담당자 서류', text };
-        navigator.share(payload).catch(() => copyTextFallback(text, '담당자 공유문을 복사했습니다.\n카카오톡 대화창에 붙여넣으면 됩니다.'));
+        navigator.share(payload).then(function(){
+          saveSitePassShareHistoryV503(safeItems, 'kakao', { receiver:'공유창에서 선택한 담당자' });
+        }).catch(function(error){
+          if (error && error.name === 'AbortError') return;
+          copied();
+        });
       } else {
-        copyTextFallback(text, '담당자 공유문을 복사했습니다.\n카카오톡 대화창에 붙여넣으면 됩니다.');
+        copied();
       }
     }
 
@@ -997,11 +1148,12 @@ function normalizePhoneForShare(phone) {
 
     function openSmsShare(text) {
       const phoneRaw = prompt('받는 사람 휴대폰번호를 입력해주세요.\n예: 01012345678');
-      if (phoneRaw === null) return;
+      if (phoneRaw === null) return { ok:false, cancelled:true };
       const phone = normalizePhoneForShare(phoneRaw);
-      if (!phone) { alert('휴대폰번호를 입력해야 문자로 보낼 수 있습니다.'); return; }
+      if (!phone) { alert('휴대폰번호를 입력해야 문자로 보낼 수 있습니다.'); return { ok:false }; }
       const body = encodeURIComponent(text);
       window.location.href = 'sms:' + encodeURIComponent(phone) + '?body=' + body;
+      return { ok:true, phone:phone, receiver:phone };
     }
 
     function openSmsShareToPhones(phones, text) {
@@ -1054,13 +1206,14 @@ function normalizePhoneForShare(phone) {
 
     function openEmailShare(text, items) {
       const email = prompt('받는 사람 이메일을 입력해주세요.\n예: site@example.com');
-      if (email === null) return;
+      if (email === null) return { ok:false, cancelled:true };
       const cleanEmail = String(email || '').trim();
-      if (!cleanEmail || !cleanEmail.includes('@')) { alert('받는 사람 이메일을 정확히 입력해주세요.'); return; }
+      if (!cleanEmail || !cleanEmail.includes('@')) { alert('받는 사람 이메일을 정확히 입력해주세요.'); return { ok:false }; }
       const subjectBase = getShareTitleForItems(items || []);
       const subject = encodeURIComponent('[SitePass] ' + subjectBase + ' QR·링크');
       const body = encodeURIComponent(text);
       window.location.href = 'mailto:' + cleanEmail + '?subject=' + subject + '&body=' + body;
+      return { ok:true, email:cleanEmail, receiver:cleanEmail };
     }
 
     function getDocFolderKeyV486(doc) {
@@ -1284,17 +1437,24 @@ function renderDocExpiryStrip(doc) {
         const routeUrl = new URL(window.location.origin + window.location.pathname);
         routeUrl.searchParams.set('manager', String(code || ''));
         window.history.replaceState({ sitepassRecipient:true, managerCode:String(code || '') }, document.title || 'SitePass', routeUrl.pathname + routeUrl.search);
+        window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V503 = true;
         window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V502 = true;
         window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 = true;
+        window.__SITEPASS_EXTERNAL_SHARE_CODE_V503 = String(code || '');
         window.__SITEPASS_EXTERNAL_SHARE_CODE_V502 = String(code || '');
-        document.documentElement.classList.add('sitepass-external-share-route-v502','sitepass-external-share-route-v500');
+        document.documentElement.classList.add('sitepass-external-share-route-v503','sitepass-external-share-route-v502','sitepass-external-share-route-v500');
+        document.body && document.body.classList.add('sitepass-recipient-body-v503');
       } catch (e) {}
       renderManagerPrint(code, exp, linkSig);
     }
 
 
     function renderManagerPrint(code, expireAt, sig) {
-      const item = getRuntimeItemByCode(code);
+      let item = getRuntimeItemByCode(code);
+      if (item) {
+        item = normalizeManagerShareItemV503(item, code);
+        if (code) item = rememberManagerShareItem(code, item, expireAt || getManagerExpireAt(item), sig || item.managerShareSig || '');
+      }
       const box = document.getElementById('managerPrintBox');
       if (!item) {
         box.innerHTML = '<div class="empty">조회할 수 없는 코드입니다.</div>';
@@ -1330,14 +1490,19 @@ function renderDocExpiryStrip(doc) {
       const fileRecoveryNoticeV500 = item.shareFilesPendingRecovery
         ? '<div class="manager-expire-box"><b>일부 기존 서류 사진 확인이 필요합니다.</b><br>장비 정보와 서류명·만료일은 정상 공유됐지만, 예전 등록 사진 파일 주소가 남아 있지 않은 서류는 다운로드할 수 없습니다.</div>'
         : '';
+      const noDocsNoticeV503 = docs.length
+        ? ''
+        : '<div class="manager-empty-docs-v503"><b>공유된 서류를 확인하지 못했습니다.</b><br>장비업자에게 이 장비 링크를 다시 보내달라고 요청해주세요.</div>';
       box.innerHTML =
+        '<div class="sitepass-recipient-brand-v503"><span class="sitepass-recipient-brand-mark-v503" aria-hidden="true">✓</span><strong><span>Site</span><em>Pass</em></strong></div>' +
         '<div class="manager-received-hero"><div class="eyebrow">QR·링크로 받은 담당자 화면</div><h3>' + escapeHtml(getShareItemLabel(item)) + ' 서류</h3><p>이 화면은 하도급/원청 담당자가 카톡·문자 링크나 QR을 눌렀을 때 바로 보는 다운로드/프린트 전용 화면입니다.</p><div class="manager-status-grid"><div>코드입력 없음</div><div>1일 유효</div><div>수정/갱신 불가</div></div></div>' +
         '<div class="line"><b>장비 등록번호</b><span>' + escapeHtml(item.equipmentNo) + '</span></div>' +
         '<div class="line"><b>장비명</b><span>' + escapeHtml(item.equipmentName) + '</span></div>' +
         '<div class="line"><b>포함서류</b><span>' + escapeHtml(getIncludedGroupText(item)) + '</span></div>' +
         renderD7DeadlineNotice(item) +
+        fileRecoveryNoticeV500 + noDocsNoticeV503 +
         '<div class="manager-expire-box">담당자 접속 만료일: ' + escapeHtml(getManagerExpireText(expireAt || getManagerExpireAt(item))) + '<br>남은 기간: 약 ' + remainingDays + '일<br><span class="small">1일 후 담당자 QR·링크 접속만 차단됩니다.</span></div>' +
-        renderManagerDownloadToolbar(item) +
+        (docs.length ? renderManagerDownloadToolbar(item) : '') +
         '<h3 style="margin-top:14px">다운로드/프린트 서류</h3>' + renderPrintSelectRow(item.code) + (docHtml || '<div class="empty">표시할 서류가 없습니다.</div>') +
         (recipientView.renderSponsorBox ? recipientView.renderSponsorBox() : '<div class="sponsor-box"><div class="small">운영·개발: 제이에스건설</div><a href="https://www.songwongeo.co.kr" target="_blank" rel="noopener">송원건설 홈페이지 바로가기</a></div>');
       showScreen('managerPrintScreen');
@@ -1379,11 +1544,57 @@ function renderManagerDownloadToolbar(item) {
       const hasRealFileV500 = typeof hasRealDocAttachment === 'function' ? hasRealDocAttachment(doc) : hasPrintablePreview;
       const previewHtml = renderPreviewHtmlForPublic(doc, code) || (doc.fileName ? '<div class="preview-wrap show"><div class="preview-title"><span>등록된 서류 정보</span></div><div class="preview-pdf">파일 주소 확인 필요<br><span class="small">서류명과 만료일은 등록되어 있지만 기존 사진 파일 주소를 찾지 못했습니다. 장비업자에게 해당 서류만 다시 공유해달라고 요청해주세요.</span></div>' + renderIdExtraStrip(doc) + '</div>' : '');
       const disabledNote = (doc.fileName && !hasRealFileV500) ? '<div class="print-disabled-note">이 서류는 기존 사진 파일 주소가 없어 현재 다운로드·인쇄할 수 없습니다.</div>' : '';
+      const detailButtonV503 = hasRealFileV500
+        ? '<button type="button" class="manager-doc-detail-btn-v503" onclick="openManagerDocDetailV503(\'' + escapeJs(code) + '\',\'' + escapeJs(doc.key) + '\')">상세보기</button>'
+        : '';
       return '<div class="manager-doc-card" data-public-doc-key="' + escapeHtml(doc.key) + '">' +
         '<div class="manager-doc-row"><label><input type="checkbox" data-print-doc-check value="' + escapeHtml(doc.key) + '" ' + (!doc.fileName || !hasRealFileV500 ? 'disabled' : '') + ' /> <span>' + (index + 1) + '. ' + escapeHtml(title) + '</span></label><span class="badge ' + (doc.fileName ? 'done' : (doc.required ? 'need' : '')) + '">' + (doc.fileName ? statusText : (doc.required ? '미첨부' : '선택안함')) + '</span></div>' +
-        previewHtml + disabledNote +
+        previewHtml + '<div class="manager-doc-actions-v503">' + detailButtonV503 + '</div>' + disabledNote +
       '</div>';
     }
+
+    function getManagerDocPageUrlV503(page, doc) {
+      return String((page && (page.previewDataUrl || page.editDataUrl || page.correctedDataUrl || page.originalDataUrl || page.fileUrl || page.downloadUrl || page.storagePublicUrl || page.publicUrl || page.signedUrl || page.signed_url)) ||
+        (doc && (doc.previewDataUrl || doc.editDataUrl || doc.correctedDataUrl || doc.originalDataUrl || doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || doc.publicUrl || doc.signedUrl || doc.signed_url)) || '').trim();
+    }
+
+    function closeManagerDocDetailV503() {
+      const modal = document.getElementById('managerDocDetailModalV503');
+      if (modal) modal.remove();
+      document.body && document.body.classList.remove('manager-doc-detail-open-v503');
+    }
+
+    function openManagerDocDetailV503(code, key) {
+      const item = normalizeManagerShareItemV503(getRuntimeItemByCode(code), code);
+      const doc = item ? getAttachedDisplayDocs(item).find(function(row){ return String(row && row.key || '') === String(key || ''); }) : null;
+      if (!doc) { alert('상세보기할 서류를 찾지 못했습니다. 링크를 다시 열어주세요.'); return; }
+      const pages = getDocPagesFromDoc(doc);
+      const candidates = pages.length ? pages : [doc];
+      const title = (doc.groupTitle ? doc.groupTitle + ' - ' : '') + (doc.title || doc.fileName || '첨부서류');
+      const pageHtml = candidates.map(function(page, index){
+        const url = getManagerDocPageUrlV503(page, doc);
+        const fileName = String((page && page.fileName) || doc.fileName || title);
+        const fileType = String((page && page.fileType) || doc.fileType || '').toLowerCase();
+        const isPdf = fileType.indexOf('pdf') >= 0 || /\.pdf(?:$|[?#])/i.test(url) || /\.pdf$/i.test(fileName);
+        if (!url) return '<div class="manager-doc-detail-missing-v503">' + escapeHtml(fileName) + '<br><span>파일 주소를 찾지 못했습니다.</span></div>';
+        if (isPdf) {
+          return '<section class="manager-doc-detail-page-v503"><div class="manager-doc-detail-page-title-v503">' + (index + 1) + '. ' + escapeHtml(fileName) + '</div><iframe src="' + escapeHtml(url) + '" title="' + escapeHtml(fileName) + '"></iframe><a class="manager-doc-detail-open-file-v503" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">PDF 새 창에서 열기</a></section>';
+        }
+        return '<section class="manager-doc-detail-page-v503"><div class="manager-doc-detail-page-title-v503">' + (index + 1) + '. ' + escapeHtml(fileName) + '</div><img src="' + escapeHtml(url) + '" alt="' + escapeHtml(fileName) + '" loading="lazy"><a class="manager-doc-detail-open-file-v503" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">원본 새 창에서 열기</a></section>';
+      }).join('');
+      closeManagerDocDetailV503();
+      const modal = document.createElement('div');
+      modal.id = 'managerDocDetailModalV503';
+      modal.className = 'manager-doc-detail-modal-v503';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-label', title + ' 상세보기');
+      modal.innerHTML = '<div class="manager-doc-detail-backdrop-v503" onclick="closeManagerDocDetailV503()"></div><div class="manager-doc-detail-sheet-v503"><div class="manager-doc-detail-head-v503"><div><span>SitePass 서류 상세보기</span><strong>' + escapeHtml(title) + '</strong></div><button type="button" onclick="closeManagerDocDetailV503()" aria-label="닫기">×</button></div><div class="manager-doc-detail-body-v503">' + pageHtml + '</div><button type="button" class="manager-doc-detail-close-bottom-v503" onclick="closeManagerDocDetailV503()">닫기</button></div>';
+      document.body.appendChild(modal);
+      document.body.classList.add('manager-doc-detail-open-v503');
+    }
+    window.openManagerDocDetailV503 = openManagerDocDetailV503;
+    window.closeManagerDocDetailV503 = closeManagerDocDetailV503;
 
     function copyManagerCode(code) {
       const item = getShortcutItem(code);

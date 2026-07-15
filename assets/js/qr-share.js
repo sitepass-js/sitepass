@@ -1,4 +1,4 @@
-// SitePass v23.7.502 - 담당자 링크 query 고정 및 업데이트 경로 보존
+// SitePass v23.7.503 - 담당자 공유 payload 저장·조회 복원 강화
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
@@ -171,6 +171,77 @@
     return data;
   }
 
+  // v23.7.503: 과거 SQL/RPC와 현재 SQL이 item_data, payload, item, item_json 등
+  // 서로 다른 키로 값을 돌려줘도 실제 장비/서류 객체를 하나로 복원합니다.
+  function normalizeLoadedManagerShareItemV503(value, fallbackCode){
+    const seen = new WeakSet();
+    const candidates = [];
+    function collect(node, depth){
+      if (!node || typeof node !== 'object' || depth > 4 || seen.has(node)) return;
+      seen.add(node);
+      if (Array.isArray(node)) {
+        node.forEach(function(entry){ collect(entry, depth + 1); });
+        return;
+      }
+      candidates.push(node);
+      ['item_data','payload','item_json','item','data','share_item','shareItem'].forEach(function(key){
+        if (node[key] && typeof node[key] === 'object') collect(node[key], depth + 1);
+      });
+    }
+    collect(value, 0);
+    if (!candidates.length) return null;
+
+    const merged = {};
+    const docs = {};
+    const documents = [];
+    candidates.slice().reverse().forEach(function(candidate){
+      Object.keys(candidate).forEach(function(key){
+        if (!['item_data','payload','item_json','item','data','share_item','shareItem','docs','documents'].includes(key)) {
+          if (candidate[key] !== undefined && candidate[key] !== null && candidate[key] !== '') merged[key] = candidate[key];
+        }
+      });
+      if (candidate.docs && typeof candidate.docs === 'object' && !Array.isArray(candidate.docs)) {
+        Object.keys(candidate.docs).forEach(function(key){
+          const doc = candidate.docs[key];
+          if (!doc || typeof doc !== 'object') return;
+          docs[key] = Object.assign({}, docs[key] || {}, doc, { key:String(doc.key || key) });
+        });
+      }
+      if (Array.isArray(candidate.documents)) documents.push.apply(documents, candidate.documents);
+    });
+    documents.forEach(function(doc, index){
+      if (!doc || typeof doc !== 'object') return;
+      const key = String(doc.key || doc.docKey || doc.doc_key || doc.type || doc.kind || ('legacyDocument' + (index + 1))).trim();
+      if (!key) return;
+      docs[key] = Object.assign({}, docs[key] || {}, doc, { key:key });
+    });
+    Object.keys(docs).forEach(function(key){
+      const doc = docs[key];
+      doc.key = String(doc.key || key);
+      doc.pages = Array.isArray(doc.pages) ? doc.pages.filter(Boolean) : [];
+      if (!doc.fileName && doc.pages.length) doc.fileName = String(doc.pages[0].fileName || doc.title || '첨부파일');
+      if (!doc.pageCount && doc.pages.length) doc.pageCount = doc.pages.length;
+      docs[key] = doc;
+    });
+    merged.docs = docs;
+    const code = String(fallbackCode || merged.share_code || merged.shareCode || merged.publicShareCode || merged.managerShareCode || merged.code || '').trim();
+    if (code) {
+      merged.code = code;
+      merged.share_code = code;
+      merged.publicShareCode = code;
+      merged.managerShareCode = code;
+    }
+    return merged;
+  }
+
+  function hasLoadedManagerShareItemV503(item){
+    if (!item || typeof item !== 'object') return false;
+    return !!String(item.code || item.share_code || '').trim() && (
+      Object.keys(item.docs || {}).length > 0 ||
+      !!String(item.equipmentNo || item.equipment_no || item.equipmentName || item.equipment_name || '').trim()
+    );
+  }
+
   function formatManagerShareSupabaseErrorV496(error, fallback){
     if (!error) return String(fallback || 'Supabase 저장 오류');
     const parts = [error.code, error.message, error.details, error.hint]
@@ -300,18 +371,20 @@
             };
           }
           const expiresAt = result.expiresAt ? new Date(result.expiresAt).getTime() : (result.expires_at ? new Date(result.expires_at).getTime() : 0);
-          const item = result.item_data || result.item || null;
-          if (!item || !item.code) return { ok:false, message:'공유 데이터가 비어 있습니다.' };
-          const cached = (deps && typeof deps.upsertLocalCache === 'function') ? deps.upsertLocalCache(item) : item;
-          return { ok:true, item:cached || item, expiresAt, rpc:true };
+          const item = normalizeLoadedManagerShareItemV503(result, code);
+          if (hasLoadedManagerShareItemV503(item)) {
+            const cached = (deps && typeof deps.upsertLocalCache === 'function') ? deps.upsertLocalCache(item) : item;
+            return { ok:true, item:cached || item, expiresAt, rpc:true };
+          }
+          // RPC가 빈 item_data만 돌려주는 구버전이면 아래 직접 SELECT로 한 번 더 확인합니다.
         }
-        if (!/not found|Could not find|schema cache|function/i.test(String(rpc.error.message || ''))) {
+        if (rpc.error && !/not found|Could not find|schema cache|function/i.test(String(rpc.error.message || ''))) {
           return { ok:false, message:rpc.error.message || 'Supabase 공유링크 RPC 조회 오류' };
         }
       }
       let query = client
         .from(PUBLIC_SHARE_TABLE)
-        .select('share_code, share_sig, expires_at, item_data')
+        .select('share_code, share_sig, expires_at, item_data, payload')
         .eq('share_code', String(code || ''));
       if (sig) query = query.eq('share_sig', String(sig || ''));
       const { data, error } = await query.limit(1).maybeSingle();
@@ -319,8 +392,8 @@
       if (!data) return { ok:false, notFound:true, message:'공유 링크를 찾을 수 없습니다.' };
       const expiresAt = data.expires_at ? new Date(data.expires_at).getTime() : 0;
       if (expiresAt && nowMs() > expiresAt) return { ok:false, expired:true, expiresAt };
-      const item = data.item_data || null;
-      if (!item || !item.code) return { ok:false, message:'공유 데이터가 비어 있습니다.' };
+      const item = normalizeLoadedManagerShareItemV503(data, code);
+      if (!hasLoadedManagerShareItemV503(item)) return { ok:false, message:'공유 데이터에 장비·서류 정보가 없습니다.' };
       const cached = (deps && typeof deps.upsertLocalCache === 'function') ? deps.upsertLocalCache(item) : item;
       return { ok:true, item:cached || item, expiresAt, direct:true };
     } catch (e) {
@@ -341,6 +414,7 @@
     makeManagerLinkSignatureRaw,
     makeManagerLink,
     parseManagerHash,
+    normalizeLoadedManagerShareItemV503,
     saveManagerShareItemsToSupabase,
     loadManagerShareItemFromSupabase
   };

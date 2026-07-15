@@ -46,7 +46,8 @@
     font-weight:900; font-size:15px; z-index:2147483647;
   }
   html.sitepass-external-share-route-v500 body.sitepass-booting::before,
-  html.sitepass-external-share-route-v502 body.sitepass-booting::before {
+  html.sitepass-external-share-route-v502 body.sitepass-booting::before,
+  html.sitepass-external-share-route-v503 body.sitepass-booting::before {
     content:'담당자 서류를 불러오는 중입니다.' !important;
   }
   html.sitepass-external-share-route-v500 body #signupScreen,
@@ -57,15 +58,14 @@
   html.sitepass-external-share-route-v500 body #pricingScreen,
   html.sitepass-external-share-route-v500 body #usageGuideScreen,
   html.sitepass-external-share-route-v500 body #myAccountScreen,
-  html.sitepass-external-share-route-v500 body #adminScreen,
-  html.sitepass-external-share-route-v500 body #detailScreen {
+  html.sitepass-external-share-route-v500 body #adminScreen {
     display:none !important;
   }
 </style>
 <script>
-/* v23.7.502 - 담당자 링크 query 고정 및 업데이트 중 코드 보존 */
+/* v23.7.503 - 담당자 서류 복원·상세보기·공유기록 및 query 고정 */
 (function(){
-  var declaredVersion = '23.7.502';
+  var declaredVersion = '23.7.503';
   var search = String(location.search || '');
   var hash = String(location.hash || '');
   var external = /[?&](manager|public|share)=/i.test(search) || /#(manager|public|share|qr)=?/i.test(hash);
@@ -82,10 +82,11 @@
     } catch (e) {}
   }
   if (external) {
+    window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V503 = true;
     window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V502 = true;
     window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 = true;
     window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499 = true;
-    document.documentElement.classList.add('sitepass-external-share-route-v502','sitepass-external-share-route-v500');
+    document.documentElement.classList.add('sitepass-external-share-route-v503','sitepass-external-share-route-v502','sitepass-external-share-route-v500');
   }
   document.documentElement.classList.add('sitepass-version-gate-v500');
   var released = false;
@@ -171,9 +172,9 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.502 manager query route preserved -->
+  <!-- SitePass deploy-check: v23.7.503 manager docs detail history fix -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.500" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.503" />
   <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.493" />
 
   <style>
@@ -4115,7 +4116,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.502" defer></script>
+<script src="./assets/js/config.js?v=23.7.503" defer></script>
 <script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.493" defer></script>
 <script src="./assets/js/supabase-api.js?v=23.7.493" defer></script>
 <script src="./assets/js/storage.js?v=23.7.493" defer></script>
@@ -4123,8 +4124,8 @@
 <script src="./assets/js/admin-members.js?v=23.7.493" defer></script>
 <script src="./assets/js/admin-detail.js?v=23.7.493" defer></script>
 <script src="./assets/js/auth-social.js?v=23.7.493" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.502" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.502" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.503" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.503" defer></script>
 <script src="./assets/js/archive.js?v=23.7.493" defer></script>
 <script src="./assets/js/equipment-register.js?v=23.7.493" defer></script>
 <script src="./assets/js/person-auth.js?v=23.7.493" defer></script>
@@ -4136,14 +4137,14 @@
 <script src="./assets/js/app-core-auth-speed-02.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-core-auth-speed-03.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-core-auth-speed-04.js?v=23.7.500" defer></script>
-<script src="./assets/js/sitepass-recipient-route-v502.js?v=23.7.502" defer></script>
+<script src="./assets/js/sitepass-recipient-route-v503.js?v=23.7.503" defer></script>
 <script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.500" defer></script>
 <script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.500" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.496" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.502" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.503" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.496" defer></script>
 <script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.493" defer></script>
