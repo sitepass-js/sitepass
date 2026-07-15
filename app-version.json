@@ -1,12 +1,12 @@
 {
-  "version": "23.7.496",
+  "version": "23.7.497",
   "channel": "test",
-  "note": "선택 카카오톡·문자·이메일 보내기에서 사진 포함 장비목록을 localStorage에 반복 저장하지 않고, 담당자 공유 payload는 Supabase Storage URL 중심으로 가볍게 저장하도록 수정했습니다.",
-  "build": "v23.7.496-test",
-  "stage": "선택 보내기 저장공간 및 담당자 링크 서버 저장 수정",
+  "note": "담당자 링크 준비 시 서버 장비뿐 아니라 현재·구버전 휴대폰 저장자료와 Storage 경로까지 찾아 기존 등록 서류 URL을 복구하도록 수정했습니다.",
+  "build": "v23.7.497-test",
+  "stage": "기존 등록 서류 복구 및 담당자 링크 준비 수정",
   "updatedAt": "2026-07-15",
-  "releaseType": "manager-share-storage-url-only",
-  "purpose": "각 보내기 버튼에서 발생하던 localStorage 용량 초과와 담당자 링크 서버 저장 실패 해결",
-  "notes": "보내기 시 장비 전체 사진 데이터를 브라우저에 다시 저장하지 않습니다. 공유 서버에는 base64/blob을 제거하고 Storage URL과 문서 메타정보만 저장합니다. 기존 보관함 즉시 표시와 백그라운드 동기화는 유지합니다.",
-  "description": "담당자 링크 가벼운 서버 저장"
+  "releaseType": "manager-share-existing-doc-recovery",
+  "purpose": "굴착기/00보0000처럼 서버 목록은 있으나 공유용 파일 URL을 찾지 못하던 문제 해결",
+  "notes": "선택 보내기에서 서버 원본, 서버 캐시, 현재 및 구버전 localStorage 등록자료를 장비번호와 코드로 함께 검색합니다. Storage 경로만 있는 문서는 공개 URL로 복구하고, 로컬 원본만 있으면 Storage 업로드 후 담당자 링크를 저장합니다. 사진 포함 전체 장비목록을 localStorage에 다시 저장하지 않는 v496 개선은 유지합니다.",
+  "description": "기존 등록 문서 경로 복구 후 담당자 링크 저장"
 }

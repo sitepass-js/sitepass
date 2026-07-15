@@ -1,13 +1,13 @@
-const SITEPASS_SW_VERSION = 'v23.7.496';
-const SITEPASS_CACHE = 'sitepass-fast-v23.7.496';
-const SITEPASS_PREVIOUS_CACHE = 'sitepass-fast-v23.7.495';
-const SITEPASS_OLDER_CACHE = 'sitepass-fast-v23.7.494';
+const SITEPASS_SW_VERSION = 'v23.7.497';
+const SITEPASS_CACHE = 'sitepass-fast-v23.7.497';
+const SITEPASS_PREVIOUS_CACHE = 'sitepass-fast-v23.7.496';
+const SITEPASS_OLDER_CACHE = 'sitepass-fast-v23.7.495';
 const SITEPASS_SHELL = [
   './index.html',
   './assets/css/style.css?v=23.7.494',
-  './assets/js/config.js?v=23.7.496',
+  './assets/js/config.js?v=23.7.497',
   './assets/js/app-register-share-payment-speed-02.js?v=23.7.496',
-  './assets/js/app-register-share-payment-speed-03.js?v=23.7.496',
+  './assets/js/app-register-share-payment-speed-03.js?v=23.7.497',
   './assets/js/app-register-share-payment-speed-04.js?v=23.7.496',
   './assets/js/qr-share.js?v=23.7.496'
 ];
@@ -29,7 +29,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    // 바로 전 v495와 v494 캐시는 유지하여 변경되지 않은 JS·이미지를 다시 받지 않게 합니다.
+    // 바로 전 v496과 v495 캐시는 유지하여 변경되지 않은 JS·이미지를 다시 받지 않게 합니다.
     await Promise.all(keys.filter(key => {
       if (!/sitepass/i.test(key)) return false;
       return key !== SITEPASS_CACHE && key !== SITEPASS_PREVIOUS_CACHE && key !== SITEPASS_OLDER_CACHE;
@@ -60,7 +60,7 @@ async function putCurrent(request, response){
 
 async function cachedAcrossVersions(request){
   try {
-    // 현재 v496 캐시를 먼저 보고, 없을 때 v495·v494 캐시를 차례로 재사용합니다.
+    // 현재 v497 캐시를 먼저 보고, 없을 때 v496·v495 캐시를 차례로 재사용합니다.
     const current = await caches.open(SITEPASS_CACHE);
     const currentHit = await current.match(request);
     if (currentHit) return currentHit;

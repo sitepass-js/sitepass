@@ -172,7 +172,7 @@ function shareOneListItemEmail(code) {
       copy.managerShareToken = item?.managerShareToken || getOrCreateManagerShareToken(code);
       copy.managerShareSig = sig || getManagerLinkSignature(code, Number(expireAt || getManagerExpireAt(item)));
       copy.publicShareSavedAt = new Date().toISOString();
-      copy.sharePayloadMode = 'storage-url-only-v496';
+      copy.sharePayloadMode = 'storage-url-recovery-v497';
       return copy;
     }
 
@@ -187,8 +187,81 @@ function shareOneListItemEmail(code) {
 
     function getManagerShareObjectStoredUrlV496(obj) {
       obj = obj && typeof obj === 'object' ? obj : {};
-      const values = [obj.fileUrl, obj.downloadUrl, obj.storagePublicUrl, obj.publicUrl, obj.previewDataUrl, obj.editDataUrl];
+      const values = [
+        obj.fileUrl, obj.downloadUrl, obj.storagePublicUrl, obj.publicUrl,
+        obj.previewDataUrl, obj.editDataUrl, obj.previewUrl, obj.download_url,
+        obj.signedUrl, obj.signed_url, obj.url, obj.imageUrl, obj.image_url
+      ];
       return String(values.find(isManagerShareStoredUrlV496) || '');
+    }
+
+    function getManagerShareStoragePathV497(obj) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      const values = [
+        obj.storagePath, obj.storage_path, obj.filePath, obj.file_path,
+        obj.storageKey, obj.storage_key, obj.objectPath, obj.object_path, obj.path
+      ];
+      const value = String(values.find(function(v){ return !!String(v || '').trim(); }) || '').trim();
+      return isManagerShareStoredUrlV496(value) ? '' : value.replace(/^\/+/, '');
+    }
+
+    function getManagerShareStorageBucketV497(obj, parent) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      parent = parent && typeof parent === 'object' ? parent : {};
+      return String(
+        obj.storageBucket || obj.storage_bucket || obj.bucket || obj.bucketName || obj.bucket_name ||
+        parent.storageBucket || parent.storage_bucket || parent.bucket || parent.bucketName || parent.bucket_name ||
+        (typeof getSitePassStorageBucketName === 'function' ? getSitePassStorageBucketName() : 'sitepass-documents')
+      ).trim() || 'sitepass-documents';
+    }
+
+    function recoverManagerShareStoredUrlFromPathV497(obj, parent) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      const existing = getManagerShareObjectStoredUrlV496(obj);
+      if (existing) return existing;
+      const path = getManagerShareStoragePathV497(obj);
+      if (!path) return '';
+      try {
+        const api = window.SitePassSupabaseApi;
+        if (api && typeof api.storagePublicUrl === 'function') {
+          return String(api.storagePublicUrl(getManagerShareStorageBucketV497(obj, parent), path) || '');
+        }
+      } catch (e) {}
+      return '';
+    }
+
+    function applyManagerShareRecoveredUrlV497(obj, url) {
+      if (!obj || typeof obj !== 'object' || !isManagerShareStoredUrlV496(url)) return obj;
+      obj.fileUrl = obj.fileUrl || url;
+      obj.downloadUrl = obj.downloadUrl || url;
+      obj.storagePublicUrl = obj.storagePublicUrl || url;
+      obj.publicUrl = obj.publicUrl || url;
+      if (!obj.previewDataUrl || isManagerShareEmbeddedUrlV496(obj.previewDataUrl)) obj.previewDataUrl = url;
+      if (!obj.editDataUrl || isManagerShareEmbeddedUrlV496(obj.editDataUrl)) obj.editDataUrl = url;
+      return obj;
+    }
+
+    function hydrateManagerShareStorageUrlsV497(item) {
+      if (!item || typeof item !== 'object') return item;
+      const docs = item.docs && typeof item.docs === 'object' ? item.docs : {};
+      Object.keys(docs).forEach(function(key){
+        const doc = docs[key] && typeof docs[key] === 'object' ? docs[key] : {};
+        const docUrl = recoverManagerShareStoredUrlFromPathV497(doc, item);
+        if (docUrl) applyManagerShareRecoveredUrlV497(doc, docUrl);
+        const pages = Array.isArray(doc.pages) ? doc.pages : [];
+        pages.forEach(function(page){
+          if (!page || typeof page !== 'object') return;
+          const pageUrl = recoverManagerShareStoredUrlFromPathV497(page, doc) || docUrl;
+          if (pageUrl) applyManagerShareRecoveredUrlV497(page, pageUrl);
+        });
+        if (!docUrl) {
+          const firstPageUrl = pages.map(getManagerShareObjectStoredUrlV496).find(Boolean) || '';
+          if (firstPageUrl) applyManagerShareRecoveredUrlV497(doc, firstPageUrl);
+        }
+        docs[key] = doc;
+      });
+      item.docs = docs;
+      return item;
     }
 
     function countManagerShareStoredUrlsV496(item) {
@@ -197,6 +270,21 @@ function shareOneListItemEmail(code) {
         if (getManagerShareObjectStoredUrlV496(doc)) count++;
         (Array.isArray(doc && doc.pages) ? doc.pages : []).forEach(function(page) {
           if (getManagerShareObjectStoredUrlV496(page)) count++;
+        });
+      });
+      return count;
+    }
+
+    function countManagerShareEmbeddedAttachmentsV497(item) {
+      let count = 0;
+      Object.values((item && item.docs) || {}).forEach(function(doc) {
+        if (!doc || typeof doc !== 'object') return;
+        const docValues = [doc.previewDataUrl, doc.editDataUrl, doc.originalDataUrl, doc.correctedDataUrl, doc.dataUrl, doc.fileDataUrl];
+        if (docValues.some(isManagerShareEmbeddedUrlV496)) count++;
+        (Array.isArray(doc.pages) ? doc.pages : []).forEach(function(page) {
+          if (!page || typeof page !== 'object') return;
+          const pageValues = [page.previewDataUrl, page.editDataUrl, page.originalDataUrl, page.correctedDataUrl, page.dataUrl, page.fileDataUrl];
+          if (pageValues.some(isManagerShareEmbeddedUrlV496)) count++;
         });
       });
       return count;
@@ -226,41 +314,111 @@ function shareOneListItemEmail(code) {
       return needsUpload;
     }
 
-    function getBestManagerShareServerItemV496(item) {
-      const code = String(item && item.code || '').trim();
+    function normalizeManagerShareIdentityV497(value) {
+      const text = String(value || '').trim();
+      try {
+        if (typeof normalizeEquipmentNoForSync === 'function') return String(normalizeEquipmentNoForSync(text) || '').trim();
+      } catch (e) {}
+      return text.replace(/\s+/g, '').toUpperCase();
+    }
+
+    function isSameManagerShareEquipmentV497(candidate, target) {
+      if (!candidate || !target) return false;
+      const codeA = String(candidate.code || candidate.equipmentCode || candidate.equipment_code || '').trim();
+      const codeB = String(target.code || target.equipmentCode || target.equipment_code || '').trim();
+      if (codeA && codeB && codeA === codeB) return true;
+      const noA = normalizeManagerShareIdentityV497(candidate.equipmentNo || candidate.equipment_no || candidate.vehicle_number || candidate.registration_no);
+      const noB = normalizeManagerShareIdentityV497(target.equipmentNo || target.equipment_no || target.vehicle_number || target.registration_no);
+      if (noA && noB && noA === noB) return true;
+      return false;
+    }
+
+    function getManagerShareCandidateScoreV497(item) {
+      if (!item) return -1;
+      hydrateManagerShareStorageUrlsV497(item);
+      const stored = countManagerShareStoredUrlsV496(item);
+      const embedded = countManagerShareEmbeddedAttachmentsV497(item);
+      const docCount = Object.keys((item && item.docs) || {}).length;
+      let score = (stored + embedded) * 1000 + stored * 40 + docCount;
+      try { if (typeof getEquipmentItemDataScoreForSync === 'function') score += Number(getEquipmentItemDataScoreForSync(item) || 0); } catch (e) {}
+      return score;
+    }
+
+    function mergeManagerShareCandidatesV497(candidates, rawItem) {
+      const safe = (candidates || []).filter(Boolean);
+      if (!safe.length) return rawItem;
+      const sorted = safe.slice().sort(function(a, b){ return getManagerShareCandidateScoreV497(a) - getManagerShareCandidateScoreV497(b); });
+      const merged = {};
+      const docsByKey = {};
+      sorted.forEach(function(candidate){
+        Object.assign(merged, candidate || {});
+        Object.entries((candidate && candidate.docs) || {}).forEach(function(entry){
+          const key = entry[0];
+          const nextDoc = entry[1];
+          const prevDoc = docsByKey[key];
+          const wrap = function(doc){ return { docs:{ x:doc } }; };
+          if (!prevDoc || getManagerShareCandidateScoreV497(wrap(nextDoc)) >= getManagerShareCandidateScoreV497(wrap(prevDoc))) {
+            docsByKey[key] = nextDoc;
+          }
+        });
+      });
+      merged.docs = docsByKey;
+      // 선택 화면에서 갱신한 만료일·공유토큰과 원래 장비 식별값은 항상 우선합니다.
+      Object.assign(merged, {
+        code: rawItem.code || merged.code,
+        equipmentNo: rawItem.equipmentNo || merged.equipmentNo,
+        equipmentName: rawItem.equipmentName || merged.equipmentName,
+        managerExpireAt: rawItem.managerExpireAt || merged.managerExpireAt,
+        managerShareToken: rawItem.managerShareToken || merged.managerShareToken,
+        publicShareCode: rawItem.publicShareCode || merged.publicShareCode,
+        managerShareCode: rawItem.managerShareCode || merged.managerShareCode
+      });
+      return hydrateManagerShareStorageUrlsV497(merged);
+    }
+
+    function getBestManagerShareServerItemV497(item) {
       const candidates = [item].filter(Boolean);
       try {
         const server = getSitePassServerAuthoritativeEquipmentItems();
-        const found = (server || []).find(function(row){ return String(row && row.code || '').trim() === code; });
-        if (found) candidates.push(found);
+        (server || []).forEach(function(row){ if (isSameManagerShareEquipmentV497(row, item)) candidates.push(row); });
       } catch (e) {}
       try {
         const cached = getServerEquipmentCache();
-        const found = (cached || []).find(function(row){ return String(row && row.code || '').trim() === code; });
-        if (found) candidates.push(found);
+        (cached || []).forEach(function(row){ if (isSameManagerShareEquipmentV497(row, item)) candidates.push(row); });
       } catch (e) {}
-      candidates.sort(function(a, b){ return countManagerShareStoredUrlsV496(b) - countManagerShareStoredUrlsV496(a); });
-      return candidates[0] || item;
+      // v23.7.497: 일반회원 보관함은 서버 기준이지만, 공유할 때는 휴대폰에 남은
+      // 현재/구버전 등록 원본까지 찾아 Storage 업로드에 사용할 수 있게 합니다.
+      try {
+        if (typeof getLocalVisibleEquipmentItemsForServerResync === 'function') {
+          (getLocalVisibleEquipmentItemsForServerResync() || []).forEach(function(row){
+            if (isSameManagerShareEquipmentV497(row, item)) candidates.push(row);
+          });
+        }
+      } catch (e) { console.warn('담당자 공유용 기존 등록자료 검색 실패:', e); }
+      try {
+        const pending = typeof getPendingRegistration === 'function' ? getPendingRegistration() : null;
+        if (pending && pending.item && isSameManagerShareEquipmentV497(pending.item, item)) candidates.push(pending.item);
+      } catch (e) {}
+      return mergeManagerShareCandidatesV497(candidates, item) || item;
     }
 
-    async function prepareManagerShareItemsForServerV496(items) {
+    async function prepareManagerShareItemsForServerV497(items) {
       const prepared = [];
       for (const rawItem of (items || []).filter(Boolean)) {
-        let item = getBestManagerShareServerItemV496(rawItem);
-        // 서버 캐시의 Storage URL을 사용하더라도 방금 만든 공유 만료일·토큰은 유지합니다.
+        let item = getBestManagerShareServerItemV497(rawItem);
+        // 서버/구버전 자료를 사용하더라도 방금 만든 공유 만료일·토큰은 유지합니다.
         item.managerExpireAt = rawItem.managerExpireAt || item.managerExpireAt;
         item.managerShareToken = rawItem.managerShareToken || item.managerShareToken;
         item.publicShareCode = rawItem.publicShareCode || item.publicShareCode;
         item.managerShareCode = rawItem.managerShareCode || item.managerShareCode;
         ensureManagerShareCodeForItem(item);
+        hydrateManagerShareStorageUrlsV497(item);
 
         if (managerShareItemNeedsStorageUploadV496(item)) {
           try {
-            // 등록 직후 Storage 백그라운드 업로드가 끝나지 않았으면 공유 버튼에서 마무리합니다.
             const uploaded = await uploadEquipmentItemDocsToSupabaseStorage(item);
-            item = stripItemDataUrlsForServerStorage(uploaded);
-            // 담당자 링크 저장을 막지 않도록 장비 원본행 갱신은 뒤에서 처리합니다.
-            Promise.resolve(saveEquipmentItemToSupabase(item, 'manager_share_prepare_v496')).catch(function(e){
+            item = hydrateManagerShareStorageUrlsV497(stripItemDataUrlsForServerStorage(uploaded));
+            Promise.resolve(saveEquipmentItemToSupabase(item, 'manager_share_prepare_v497')).catch(function(e){
               console.warn('담당자 공유 준비 후 장비 서버 갱신 실패:', e);
             });
           } catch (e) {
@@ -269,7 +427,10 @@ function shareOneListItemEmail(code) {
         }
 
         if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
-          return { ok:false, message:(getShareItemLabel(item) || '선택 장비') + '의 서버 서류파일을 아직 찾을 수 없습니다. 등록을 다시 확인한 뒤 보내주세요.' };
+          return {
+            ok:false,
+            message:(getShareItemLabel(item) || '선택 장비') + '의 기존 등록 사진을 휴대폰과 서버에서 찾지 못했습니다. 문서가 보이는 기기에서 다시 보내거나 해당 서류만 다시 촬영·저장해주세요.'
+          };
         }
         prepared.push(item);
       }
@@ -391,7 +552,7 @@ function shareOneListItemEmail(code) {
       const initialItems = (refreshedItems && refreshedItems.length ? refreshedItems : requestedItems).filter(Boolean).map(item => { ensureManagerShareCodeForItem(item); return item; });
       if (!initialItems.length) return;
 
-      const prepared = await prepareManagerShareItemsForServerV496(initialItems);
+      const prepared = await prepareManagerShareItemsForServerV497(initialItems);
       if (!prepared.ok) {
         alert('담당자 링크를 준비하지 못했습니다.\n\n' + (prepared.message || '서류 서버 저장 상태를 확인해주세요.'));
         return;
