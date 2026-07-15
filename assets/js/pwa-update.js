@@ -1,4 +1,4 @@
-// SitePass v23.7.502 - 담당자 링크를 보존하는 PWA 자동업데이트
+// SitePass v23.7.507-test - 담당자 링크 보존 + 반복 spfresh 이동 방지
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';
@@ -48,21 +48,19 @@
 
   function makeVersionReloadUrlV502(targetVersion){
     const route = getExternalShareRouteV502();
-    if (!route.external) {
-      const cleanUrl = isOfficialGithubUrl() ? getFixedAppUrl() : (location.origin + location.pathname.replace(/index\.html$/i, ''));
-      return cleanUrl + '?v=' + encodeURIComponent(String(targetVersion).replace(/^v/i,'')) + '&updated=' + encodeURIComponent(targetVersion) + '&spfresh=' + Date.now();
-    }
-    const url = new URL(location.origin + location.pathname.replace(/index\.html$/i, ''));
+    const cleanBase = isOfficialGithubUrl() ? getFixedAppUrl() : (location.origin + location.pathname.replace(/index\.html$/i, ''));
+    const url = new URL(cleanBase, location.href);
     if (route.manager) url.searchParams.set('manager', route.manager);
     else if (route.publicCode) url.searchParams.set('public', route.publicCode);
     url.searchParams.set('v', String(targetVersion).replace(/^v/i,''));
-    url.searchParams.set('spfresh', String(Date.now()));
+    url.searchParams.delete('spfresh');
+    url.searchParams.delete('updated');
     return url.toString();
   }
 
   function normalizeFixedUrl(){
     if (!isOfficialGithubUrl()) return;
-    const needsCleanUrl = /\/index\.html$/i.test(location.pathname) || /[?&]v=/.test(location.search || '');
+    const needsCleanUrl = /\/index\.html$/i.test(location.pathname) || /[?&](?:v|spfresh|updated)=/.test(location.search || '');
     if (!needsCleanUrl) return;
     try {
       const params = new URLSearchParams(location.search || '');
@@ -73,6 +71,8 @@
       } catch (e) {}
       params.delete('v');
       params.delete('expirytest');
+      params.delete('spfresh');
+      params.delete('updated');
       const query = params.toString();
       history.replaceState(history.state || {}, document.title, '/sitepass/' + (query ? ('?' + query) : '') + (location.hash || ''));
     } catch (e) {}
@@ -107,12 +107,20 @@
   async function forceUpdateReload(nextVersion){
     const appVersion = getAppVersion();
     const targetVersion = nextVersion || appVersion;
-    try { localStorage.setItem(VERSION_KEY, targetVersion); } catch (e) {}
-    await prepareSoftUpdate();
+    const targetUrl = makeVersionReloadUrlV502(targetVersion);
+    const guardKey = 'sitepass_update_once:' + String(targetVersion);
     try {
-      try { document.documentElement.classList.add('sitepass-version-gate-v500'); } catch (e) {}
-      location.replace(makeVersionReloadUrlV502(targetVersion));
-    } catch (e) { location.reload(); }
+      if (sessionStorage.getItem(guardKey) === '1') {
+        normalizeFixedUrl();
+        document.documentElement.classList.remove('sitepass-version-gate-v500');
+        return;
+      }
+      sessionStorage.setItem(guardKey, '1');
+      localStorage.setItem(VERSION_KEY, targetVersion);
+    } catch (e) {}
+    await prepareSoftUpdate();
+    try { location.replace(targetUrl); }
+    catch (e) { location.href = targetUrl; }
   }
 
   async function checkAutoUpdate(){

@@ -1,19 +1,17 @@
-const SITEPASS_SW_VERSION = 'v23.7.506';
-const SITEPASS_CACHE = 'sitepass-fast-v23.7.506';
-const SITEPASS_PREVIOUS_CACHE = 'sitepass-fast-v23.7.501';
-const SITEPASS_OLDER_CACHE = 'sitepass-fast-v23.7.500';
+const SITEPASS_SW_VERSION = 'v23.7.507-test';
+const SITEPASS_CACHE = 'sitepass-fast-v23.7.507-test';
 const SITEPASS_SHELL = [
   './index.html',
-  './assets/css/style.css?v=23.7.500',
-  './assets/js/config.js?v=23.7.506',
-  './assets/js/pwa-update.js?v=23.7.506',
-  './assets/js/app-core-auth-speed-04.js?v=23.7.500',
-  './assets/js/sitepass-recipient-route-v506.js?v=23.7.506',
-  './assets/js/app-admin-boot-speed-03.js?v=23.7.500',
-  './assets/js/app-register-share-payment-speed-02.js?v=23.7.496',
-  './assets/js/app-register-share-payment-speed-03.js?v=23.7.506',
-  './assets/js/app-register-share-payment-speed-04.js?v=23.7.496',
-  './assets/js/qr-share.js?v=23.7.506'
+  './recipient.html',
+  './assets/css/style.css?v=23.7.507-test',
+  './assets/js/config.js?v=23.7.507-test',
+  './assets/js/pwa-update.js?v=23.7.507-test',
+  './assets/js/app-core-auth-speed-04.js?v=23.7.507-test',
+  './assets/js/app-admin-boot-speed-03.js?v=23.7.507-test',
+  './assets/js/app-register-share-payment-speed-02.js?v=23.7.507-test',
+  './assets/js/app-register-share-payment-speed-03.js?v=23.7.507-test',
+  './assets/js/app-register-share-payment-speed-04.js?v=23.7.507-test',
+  './assets/js/qr-share.js?v=23.7.507-test'
 ];
 
 self.addEventListener('install', event => {
@@ -31,10 +29,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => {
-      if (!/sitepass/i.test(key)) return false;
-      return key !== SITEPASS_CACHE && key !== SITEPASS_PREVIOUS_CACHE && key !== SITEPASS_OLDER_CACHE;
-    }).map(key => caches.delete(key)));
+    await Promise.all(keys.filter(key => /sitepass/i.test(key) && key !== SITEPASS_CACHE).map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -65,16 +60,7 @@ async function currentCacheMatch(request){
 }
 
 async function cachedAcrossVersions(request){
-  try {
-    const current = await caches.open(SITEPASS_CACHE);
-    const currentHit = await current.match(request);
-    if (currentHit) return currentHit;
-    const previous = await caches.open(SITEPASS_PREVIOUS_CACHE);
-    const previousHit = await previous.match(request);
-    if (previousHit) return previousHit;
-    const older = await caches.open(SITEPASS_OLDER_CACHE);
-    return (await older.match(request)) || null;
-  } catch (e) { return null; }
+  return currentCacheMatch(request);
 }
 
 async function staleWhileRevalidate(request){
@@ -98,20 +84,26 @@ self.addEventListener('fetch', event => {
   }
 
   const sameOrigin = url.origin === self.location.origin;
-  const isNavigate = req.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/sitepass/');
+  const isNavigate = req.mode === 'navigate';
 
-  if (isNavigate) {
+  if (sameOrigin && isNavigate) {
     event.respondWith((async () => {
+      const scopeUrl = new URL(self.registration.scope);
+      let cacheKey = req;
+      if (url.pathname === scopeUrl.pathname || url.pathname.endsWith('/index.html')) {
+        cacheKey = new Request(new URL('./index.html', self.registration.scope));
+      } else if (url.pathname.endsWith('/recipient.html')) {
+        cacheKey = new Request(new URL('./recipient.html', self.registration.scope));
+      }
       try {
-        // v23.7.500: 온라인 새로고침에서는 이전 버전 HTML을 먼저 보여주지 않습니다.
-        const fresh = await withTimeout(fetch(req, { cache:'no-store' }), 5000);
-        await putCurrent('./index.html', fresh.clone());
+        const fresh = await withTimeout(fetch(req, { cache:'no-store' }), 7000);
+        await putCurrent(cacheKey, fresh.clone());
         return fresh;
       } catch (e) {
-        // 오프라인일 때만 현재 v500 캐시를 사용하며 v498/v497 HTML은 반환하지 않습니다.
-        const current = (await currentCacheMatch('./index.html')) || (await currentCacheMatch(req));
+        const current = await currentCacheMatch(cacheKey);
         if (current) return current;
-        try { return await fetch(req, { cache:'no-store' }); } catch (err) { return Response.error(); }
+        try { return await fetch(req, { cache:'no-store' }); }
+        catch (err) { return Response.error(); }
       }
     })());
     return;

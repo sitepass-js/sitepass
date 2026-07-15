@@ -1,4 +1,4 @@
-// SitePass v23.7.506 - 담당자 전용화면·상세보기 복구 (03/04)
+// SitePass v23.7.507-test - 담당자 전용화면·상세보기 복구 (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {

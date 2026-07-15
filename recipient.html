@@ -35,7 +35,7 @@
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.506';
+  var VERSION='23.7.507-test';
   var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
   var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
   var STORAGE_BUCKET='sitepass-documents';
@@ -65,7 +65,7 @@
   function exitViewer(){
     closeModal();
     try{sessionStorage.setItem('sitepass_last_screen_v491',state.fromMember?'listScreen':'homeScreen');}catch(e){}
-    var target='./?v=506&spfresh='+Date.now();
+    var target='./';
     location.replace(target);
   }
   exitButton.addEventListener('click',exitViewer);
