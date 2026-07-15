@@ -4825,3 +4825,24 @@ font-size: 25px !important;
   display:inline !important;
   color:#173f9f !important;
 }
+
+
+/* v23.7.494-test - 모바일 빠른 시작: 화면을 먼저 보여주고 모듈 준비는 뒤에서 완료 */
+body.sitepass-fast-shell-loading::after {
+  content:'';
+  position:fixed;
+  top:0;
+  left:0;
+  width:38%;
+  height:3px;
+  border-radius:0 4px 4px 0;
+  background:#2457d6;
+  z-index:1000001;
+  pointer-events:none;
+  animation:sitepass-fast-shell-progress-v494 1.05s ease-in-out infinite;
+}
+@keyframes sitepass-fast-shell-progress-v494 {
+  0% { transform:translateX(-110%); opacity:.35; }
+  55% { opacity:1; }
+  100% { transform:translateX(275%); opacity:.25; }
+}

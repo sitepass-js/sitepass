@@ -53,9 +53,9 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.493 expiry unread unified direct-room test -->
+  <!-- SitePass deploy-check: v23.7.494 expiry unread unified direct-room test -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.493" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.494" />
   <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.493" />
 
   <style>
@@ -3926,7 +3926,7 @@
 </script>
 
 <script>
-/* v23.7.493 - expirytest 쿼리를 앱 라우팅에서 분리하고 세션 테스트모드로 보존 */
+/* v23.7.494 - expirytest 쿼리를 앱 라우팅에서 분리하고 세션 테스트모드로 보존 */
 (function(){
   var TEST_KEY = 'sitepass_expiry_test_mode_v481';
   try {
@@ -3943,8 +3943,48 @@
   } catch(e) {}
 })();
 </script>
+<script>
+/* v23.7.494 - 휴대폰 빠른 첫 화면: 전체 모듈 다운로드를 기다리지 않고 저장된 화면을 먼저 표시 */
+(function(){
+  try {
+    var search = String(location.search || '');
+    var hash = String(location.hash || '');
+    var externalRoute = /[?&](code|access_token|manager|public|share)=/i.test(search)
+      || /#(manager|public|share|access_token|error)/i.test(hash);
+    if (externalRoute || !document.body) return;
+
+    var base = 'sitePass_v23_7_7_update_original_corrected';
+    var memberKey = base + '_currentMember';
+    var adminKey = base + '_admin_session';
+    function stored(key){
+      try { return sessionStorage.getItem(key) || localStorage.getItem(key) || ''; } catch(e) { return ''; }
+    }
+    function hasMember(){
+      var raw = stored(memberKey);
+      if (!raw) return false;
+      try { var value = JSON.parse(raw); return !!(value && typeof value === 'object'); } catch(e) { return raw.length > 2; }
+    }
+    var screenId = 'signupScreen';
+    if (stored(adminKey) === 'yes') {
+      screenId = 'adminScreen';
+    } else if (hasMember()) {
+      var remembered = '';
+      try { remembered = sessionStorage.getItem('sitepass_last_screen_v491') || ''; } catch(e) {}
+      var allowed = ['homeScreen','registerScreen','listScreen','contactScreen','pricingScreen','usageGuideScreen'];
+      screenId = allowed.indexOf(remembered) >= 0 ? remembered : 'homeScreen';
+    }
+    var target = document.getElementById(screenId);
+    if (!target) return;
+    document.querySelectorAll('.screen').forEach(function(el){ el.classList.add('hidden'); });
+    target.classList.remove('hidden');
+    document.body.classList.add('sitepass-fast-shell-loading');
+    document.body.classList.remove('sitepass-booting');
+    window.__SITEPASS_FAST_SHELL_V494 = screenId;
+  } catch(e) {}
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.493" defer></script>
+<script src="./assets/js/config.js?v=23.7.494" defer></script>
 <script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.493" defer></script>
 <script src="./assets/js/supabase-api.js?v=23.7.493" defer></script>
 <script src="./assets/js/storage.js?v=23.7.493" defer></script>
@@ -3952,7 +3992,7 @@
 <script src="./assets/js/admin-members.js?v=23.7.493" defer></script>
 <script src="./assets/js/admin-detail.js?v=23.7.493" defer></script>
 <script src="./assets/js/auth-social.js?v=23.7.493" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.493" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.494" defer></script>
 <script src="./assets/js/qr-share.js?v=23.7.493" defer></script>
 <script src="./assets/js/archive.js?v=23.7.493" defer></script>
 <script src="./assets/js/equipment-register.js?v=23.7.493" defer></script>
@@ -6011,5 +6051,15 @@
 })();
 </script>
 
+<script>
+(function(){
+  function ready(){
+    try { if (document.body) document.body.classList.remove('sitepass-fast-shell-loading'); } catch(e) {}
+  }
+  if (document.readyState === 'complete') ready();
+  else window.addEventListener('load', function(){ setTimeout(ready, 0); }, { once:true });
+  setTimeout(ready, 4500);
+})();
+</script>
 </body>
 </html>
