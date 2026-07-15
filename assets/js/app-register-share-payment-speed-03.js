@@ -1,4 +1,4 @@
-// SitePass v23.7.512-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.513-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -1357,6 +1357,27 @@ function renderDocExpiryStrip(doc) {
           previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem);
           hydrateManagerShareStorageUrlsV497(previewItem);
           await validateManagerShareStoredFilesV511(previewItem);
+
+          // v23.7.513: 회원 보관함에서 링크화면을 열 때 휴대폰에 남아 있는
+          // data/blob 원본이 있으면 먼저 Storage에 올려 기존 등록건을 자동 복구합니다.
+          // 기존 코드는 공유 전송 경로에서만 업로드했고, 회원용 링크화면은 업로드를 생략해
+          // 같은 장비라도 원본 없음으로 보이는 경우가 있었습니다.
+          if (typeof managerShareItemNeedsStorageUploadV496 === 'function' &&
+              managerShareItemNeedsStorageUploadV496(previewItem) &&
+              typeof uploadEquipmentItemDocsToSupabaseStorage === 'function') {
+            const uploadedPreviewItem = await uploadEquipmentItemDocsToSupabaseStorage(previewItem);
+            previewItem = hydrateManagerShareStorageUrlsV497(
+              typeof stripItemDataUrlsForServerStorage === 'function'
+                ? stripItemDataUrlsForServerStorage(uploadedPreviewItem)
+                : uploadedPreviewItem
+            );
+            await validateManagerShareStoredFilesV511(previewItem);
+            if (typeof saveEquipmentItemToSupabase === 'function') {
+              try { await saveEquipmentItemToSupabase(previewItem, 'member_link_storage_repair_v513'); }
+              catch (saveError) { console.warn('회원 링크화면 원본 복구 후 서버저장 실패:', saveError); }
+            }
+          }
+
           if (managerShareHasAttachmentMetadataV496(previewItem) && !countManagerShareStoredUrlsV496(previewItem)) {
             const recovered = await recoverManagerShareItemFromStorageV498(previewItem);
             previewItem = recovered && recovered.item ? recovered.item : previewItem;
@@ -1388,7 +1409,7 @@ function renderDocExpiryStrip(doc) {
         url.searchParams.set('manager', String(finalCode || ''));
         if (linkSig) url.searchParams.set('sig', String(linkSig));
         url.searchParams.set('from', 'member');
-        url.searchParams.set('v', '23.7.512-test');
+        url.searchParams.set('v', '23.7.513-test');
         window.location.assign(url.toString());
       } finally {
         setTimeout(hideManagerPreviewPreparingV511, 1200);
