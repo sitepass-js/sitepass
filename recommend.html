@@ -688,7 +688,7 @@
     function refreshAppMode431(){
       var activeId = visibleScreen431();
       var loggedIn = isLoggedIn431();
-      var appMode = loggedIn && !['signupScreen','managerAccessScreen','managerPrintScreen','publicScreen'].includes(activeId);
+      var appMode = loggedIn && !['signupScreen','publicScreen'].includes(activeId);
       document.body.classList.toggle('sitepass-app-nav-active', appMode);
       if (appMode && activeId) {
         var signup = document.getElementById('signupScreen');

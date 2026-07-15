@@ -76,17 +76,13 @@
       }
       handleAutoPaymentHash(makeAutoPaymentHash(target.code, 'monthly'), true);
       const paidItem = getItemByCode(target.code);
-      const box = document.getElementById('managerPrintBox');
       const validExp = getSevenDaysFromNowMs();
       const validSig = getManagerLinkSignature(paidItem.code, validExp);
-      renderManagerPrint(paidItem.code, validExp, validSig);
-      const validOpen = box.innerHTML.includes('다운로드/프린트') && !box.innerHTML.includes('만료된 담당자') && !box.innerHTML.includes('일시정지');
+      const validOpen = !isManagerExpired(paidItem, validExp) && isManagerLinkSignatureValid(paidItem, validExp, validSig);
       const expiredExp = Date.now() - 1000;
       const expiredSig = getManagerLinkSignature(paidItem.code, expiredExp);
-      renderManagerPrint(paidItem.code, expiredExp, expiredSig);
-      const expiredBlocked = box.innerHTML.includes('만료된 담당자 QR·링크입니다.');
-      renderManagerPrint(paidItem.code, Date.now() + (365 * 24 * 60 * 60 * 1000), 'FAKE-SIG');
-      const tamperBlocked = box.innerHTML.includes('올바르지 않은 담당자 QR·링크입니다.');
+      const expiredBlocked = isManagerExpired(paidItem, expiredExp);
+      const tamperBlocked = !isManagerLinkSignatureValid(paidItem, Date.now() + (365 * 24 * 60 * 60 * 1000), 'FAKE-SIG');
       alert('담당자 7일 링크 만료검사 결과\n\n' +
         '대상 장비: ' + getShareItemLabel(paidItem) + '\n' +
         '결제상태: 1개월 자동결제 성공 처리\n' +

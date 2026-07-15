@@ -1,4 +1,4 @@
-// SitePass v23.7.507-test - 담당자 전용화면·상세보기 복구 (03/04)
+// SitePass v23.7.509-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -896,42 +896,6 @@ function shareOneListItemEmail(code) {
       return { ok:false, message:'QR 공유 모듈 연결 실패' };
     }
 
-    function showManagerLinkLoadMessage(message) {
-      const box = document.getElementById('managerPrintBox');
-      if (box) box.innerHTML = '<div class="empty">' + escapeHtml(message || '담당자 링크를 확인하고 있습니다.') + '</div>';
-      showScreen('managerPrintScreen');
-    }
-
-    async function renderManagerPrintFromHash(parsed) {
-      if (!parsed || !parsed.code) {
-        showManagerLinkLoadMessage('담당자 링크 정보가 없습니다. 링크를 다시 확인해주세요.');
-        return;
-      }
-      let item = getRuntimeItemByCode(parsed.code);
-      if (!item) {
-        showManagerLinkLoadMessage('서버에서 담당자 링크를 불러오는 중입니다.');
-        const loaded = await loadManagerShareItemFromSupabase(parsed.code, parsed.sig);
-        if (loaded.ok) {
-          item = rememberManagerShareItem(parsed.code, loaded.item, loaded.expiresAt || parsed.exp, parsed.sig);
-          parsed.exp = loaded.expiresAt || parsed.exp;
-        }
-        else if (loaded.expired) {
-          const box = document.getElementById('managerPrintBox');
-          if (box) box.innerHTML = '<div class="manager-expire-box"><b>만료된 담당자 QR·링크입니다.</b><br>이 담당자 접속은 1일이 지나 더 이상 열 수 없습니다.<br>장비업자에게 새 공유 QR·링크를 다시 받아주세요.</div>';
-          showScreen('managerPrintScreen');
-          return;
-        } else {
-          const msg = loaded.notFound
-            ? '조회할 수 없는 코드입니다.<br>장비업자가 1일 링크를 다시 공유해야 합니다.'
-            : '담당자 링크를 서버에서 불러오지 못했습니다.<br>장비업자에게 새 링크를 다시 받아주세요.<br><span class="small">' + escapeHtml(loaded.message || '') + '</span>';
-          const box = document.getElementById('managerPrintBox');
-          if (box) box.innerHTML = '<div class="empty">' + msg + '</div>';
-          showScreen('managerPrintScreen');
-          return;
-        }
-      }
-      renderManagerPrint(parsed.code, parsed.exp, parsed.sig);
-    }
 
     function shareManagerItems(items) {
       shareManagerItemsByChannel(items, 'kakao');
@@ -1130,26 +1094,33 @@ function normalizePhoneForShare(phone) {
     }
 
     function renderDetail(code) {
-      const item = getItems().find(x => x.code === code);
-      if (!item) { alert('장비등록 정보를 찾을 수 없습니다.'); showScreen('listScreen'); return; }
-      currentDetailLink = makeManagerLink(item.code, getManagerExpireAt(item));
+      let item = getRuntimeItemByCode(code) || getItemByCode(code);
+      if (!item) { alert('장비등록 정보를 찾을 수 없습니다. 서버 동기화 후 다시 시도해주세요.'); showScreen('listScreen'); return; }
+      try { item = mergeLegacyManagerShareDocumentsV498(item); } catch (e) {}
+      try { item = hydrateManagerShareStorageUrlsV497(item); } catch (e) {}
+      const itemCode = ensureManagerShareCodeForItem(item) || String(code || '').trim();
+      currentDetailLink = makeManagerLink(itemCode, getManagerExpireAt(item));
       const qrUrl = makeQrUrl(currentDetailLink, 180);
       const detailDocs = getDisplayDocs(item);
-      const docHtml = renderDocFoldersV486(detailDocs, 'memberDetailFoldersV486_' + String(item.code || '').replace(/[^a-zA-Z0-9_-]/g, ''), (doc) => renderDocDetail(doc));
+      const docHtml = renderDocFoldersV486(detailDocs, 'memberDetailFoldersV508_' + String(itemCode || '').replace(/[^a-zA-Z0-9_-]/g, ''), (doc) => renderDocDetail(doc));
       const renewalHtml = isAdminLoggedIn() ? '<div class="notice blue-note">관리자 상세보기에서는 수정/갱신·결제연장 버튼을 숨깁니다. 장비업자에게 알림만 보내고, 실제 수정/갱신은 회원 보관함에서 처리합니다.</div>' : renderRenewPanel(item);
-
-      document.getElementById('detailBox').innerHTML =
-        '<div class="line"><b>장비 등록번호</b><span>' + escapeHtml(item.equipmentNo) + '</span></div>' +
-        '<div class="line"><b>장비명</b><span>' + escapeHtml(item.equipmentName) + '</span></div>' +
+      const fileRecoveryNoticeV508 = item.shareFilesPendingRecovery
+        ? '<div class="notice blue-note"><b>일부 기존 서류의 서버 파일주소를 복구 중입니다.</b><br>링크화면을 누르면 휴대폰에 남은 등록 원본과 Supabase Storage를 다시 확인합니다.</div>'
+        : '';
+      const detailBox = document.getElementById('detailBox');
+      if (!detailBox) { alert('상세보기 화면을 찾지 못했습니다. 새로고침 후 다시 시도해주세요.'); return; }
+      detailBox.innerHTML =
+        '<div class="line"><b>장비 등록번호</b><span>' + escapeHtml(item.equipmentNo || '-') + '</span></div>' +
+        '<div class="line"><b>장비명</b><span>' + escapeHtml(item.equipmentName || '-') + '</span></div>' +
         '<div class="line"><b>포함서류</b><span>' + escapeHtml(getIncludedGroupText(item)) + '</span></div>' +
-        fileRecoveryNoticeV500 +
+        fileRecoveryNoticeV508 +
         renderD7DeadlineNotice(item) +
         '<div class="line"><b>결제단위</b><span>' + escapeHtml(item?.bundleMeta?.paymentText || '장비 및 인력 통합 1세트 결제') + '</span></div>' +
         '<div class="line"><b>서비스상태</b><span>' + escapeHtml(getServiceStatusText(item)) + '</span></div>' +
         '<div class="line"><b>요금제 기준</b><span>' + escapeHtml(item.basicPlan || BASIC_PRICE_TEXT) + '<br>' + escapeHtml(item.alertPlan || ALERT_PRICE_TEXT) + '</span></div>' +
         '<div class="line"><b>전달 정책</b><span>' + escapeHtml(item.forwardPolicy || '공유 후 1일 재전송 가능 예정') + '</span></div>' +
         renewalHtml +
-        '<div class="qr-box" onclick="openManagerPublicView(\'' + escapeJs(item.code) + '\')">' +
+        '<div class="qr-box" onclick="openManagerPublicView(\'' + escapeJs(itemCode) + '\')">' +
           '<img alt="통합 QR" src="' + qrUrl + '">' +
           '<div class="qr-hint">QR 누르면 담당자 다운로드/프린트 화면 바로 열림</div>' +
         '</div>' +
@@ -1265,129 +1236,49 @@ function renderDocExpiryStrip(doc) {
     }
 
 
-    function openManagerByInput() {
-      const code = (document.getElementById('managerCodeInput')?.value || '').trim();
-      if (!code) { alert('담당자에게 받은 링크나 QR로 접속해주세요.'); return; }
-      openManagerPublicView(code);
-    }
-
-    function openManagerPublicView(code, expireAt, sig) {
-      const item = getRuntimeItemByCode(code);
+    async function openManagerPublicView(code, expireAt, sig) {
+      let item = getRuntimeItemByCode(code) || getItemByCode(code);
       if (!item) {
         alert('조회할 수 없는 코드입니다. 서버 동기화 후 다시 시도해주세요.');
         return;
       }
-      const exp = expireAt ? Number(expireAt) : getManagerExpireAt(item);
-      const linkSig = sig || getManagerLinkSignature(code, exp);
+      const originalCode = ensureManagerShareCodeForItem(item) || String(code || '').trim();
+      let preparedItem = item;
       try {
-        sessionStorage.setItem('sitepass_recipient_preview_v506_' + String(code || ''), JSON.stringify({
-          item_data:item,
-          payload:item,
-          expires_at:new Date(exp).toISOString(),
-          share_code:String(code || ''),
-          share_sig:String(linkSig || '')
-        }));
+        const prepared = await prepareManagerShareItemsForServerV497([item]);
+        if (prepared && prepared.ok && prepared.items && prepared.items[0]) preparedItem = prepared.items[0];
+      } catch (e) {
+        console.warn('링크화면 서류 준비 실패:', e);
+      }
+      const finalCode = ensureManagerShareCodeForItem(preparedItem) || originalCode;
+      const exp = expireAt ? Number(expireAt) : getManagerExpireAt(preparedItem);
+      const linkSig = sig || getManagerLinkSignature(finalCode, exp);
+      try {
+        const saveResult = await saveManagerShareItemsToSupabase([preparedItem]);
+        if (!saveResult || !saveResult.ok) console.warn('회원 링크화면 서버 저장 실패:', saveResult && saveResult.message);
+      } catch (e) {
+        console.warn('회원 링크화면 서버 저장 예외:', e);
+      }
+      const snapshot = {
+        item_data:preparedItem,
+        payload:preparedItem,
+        expires_at:new Date(exp).toISOString(),
+        share_code:String(finalCode || ''),
+        share_sig:String(linkSig || '')
+      };
+      try {
+        sessionStorage.setItem('sitepass_recipient_preview_current_' + String(finalCode || ''), JSON.stringify(snapshot));
       } catch (e) {}
       const url = new URL('./recipient.html', window.location.href);
-      url.searchParams.set('manager', String(code || ''));
+      url.search = '';
+      url.hash = '';
+      url.searchParams.set('manager', String(finalCode || ''));
       if (linkSig) url.searchParams.set('sig', String(linkSig));
       url.searchParams.set('from', 'member');
-      url.searchParams.set('v', '506');
+      url.searchParams.set('v', '23.7.509-test');
       window.location.assign(url.toString());
     }
 
-
-    function renderManagerPrint(code, expireAt, sig) {
-      const item = getRuntimeItemByCode(code);
-      const box = document.getElementById('managerPrintBox');
-      if (!item) {
-        box.innerHTML = '<div class="empty">조회할 수 없는 코드입니다.</div>';
-        showScreen('managerPrintScreen');
-        return;
-      }
-      if (isServiceShareBlocked(item)) {
-        box.innerHTML = renderServiceBlockedBox(item);
-        showScreen('managerPrintScreen');
-        return;
-      }
-      // v23.7.350: 서버 sitepass_public_shares에서 직접 불러온 1일 공유링크는
-      // URL에 exp/sig를 붙이지 않는 단일 코드 방식입니다. 이 경우 만료/폐기 검증은
-      // Supabase RPC(sitepass_get_public_share_item)가 이미 수행하므로, 예전 URL 서명 검사를 건너뜁니다.
-      const isServerLoadedManagerShare = !!(item && (item.isPublicShareRuntime || item.publicShareLoadedFromServer || item.publicShareLoadedAt));
-      if (expireAt && !isServerLoadedManagerShare && !isManagerLinkSignatureValid(item, expireAt, sig)) {
-        const recipientView = getRecipientViewModule();
-        box.innerHTML = recipientView.getInvalidManagerLinkHtml ? recipientView.getInvalidManagerLinkHtml() : '<div class="manager-expire-box"><b>올바르지 않은 담당자 QR·링크입니다.</b><br>만료시간이 변경되었거나 이미 폐기된 링크입니다.<br>장비업자에게 새 공유 QR·링크를 다시 받아주세요.</div>';
-        showScreen('managerPrintScreen');
-        return;
-      }
-      if (isManagerExpired(item, expireAt)) {
-        const recipientView = getRecipientViewModule();
-        box.innerHTML = recipientView.getExpiredManagerLinkHtml ? recipientView.getExpiredManagerLinkHtml() : '<div class="manager-expire-box"><b>만료된 담당자 QR·링크입니다.</b><br>이 담당자 접속은 1일이 지나 더 이상 열 수 없습니다.<br>장비업자에게 새 공유 QR·링크를 다시 받아주세요.<br><span class="small">장비업자의 원본 서류함과 수정/갱신 화면은 그대로 유지됩니다.</span></div>';
-        showScreen('managerPrintScreen');
-        return;
-      }
-      currentDetailLink = makeManagerLink(item.code, expireAt || getManagerExpireAt(item));
-      const docs = getAttachedDisplayDocs(item);
-      const docHtml = docs.map((doc, index) => renderManagerDocLine(doc, item.code, index)).join('');
-      const recipientView = getRecipientViewModule();
-      const remainingDays = recipientView.getManagerRemainingDays ? recipientView.getManagerRemainingDays(expireAt || getManagerExpireAt(item)) : Math.ceil(((expireAt || getManagerExpireAt(item)) - Date.now()) / (1000 * 60 * 60 * 24));
-      const fileRecoveryNoticeV500 = item.shareFilesPendingRecovery
-        ? '<div class="manager-expire-box"><b>일부 기존 서류 사진 확인이 필요합니다.</b><br>장비 정보와 서류명·만료일은 정상 공유됐지만, 예전 등록 사진 파일 주소가 남아 있지 않은 서류는 다운로드할 수 없습니다.</div>'
-        : '';
-      box.innerHTML =
-        '<div class="manager-received-hero"><div class="eyebrow">QR·링크로 받은 담당자 화면</div><h3>' + escapeHtml(getShareItemLabel(item)) + ' 서류</h3><p>이 화면은 하도급/원청 담당자가 카톡·문자 링크나 QR을 눌렀을 때 바로 보는 다운로드/프린트 전용 화면입니다.</p><div class="manager-status-grid"><div>코드입력 없음</div><div>1일 유효</div><div>수정/갱신 불가</div></div></div>' +
-        '<div class="line"><b>장비 등록번호</b><span>' + escapeHtml(item.equipmentNo) + '</span></div>' +
-        '<div class="line"><b>장비명</b><span>' + escapeHtml(item.equipmentName) + '</span></div>' +
-        '<div class="line"><b>포함서류</b><span>' + escapeHtml(getIncludedGroupText(item)) + '</span></div>' +
-        renderD7DeadlineNotice(item) +
-        '<div class="manager-expire-box">담당자 접속 만료일: ' + escapeHtml(getManagerExpireText(expireAt || getManagerExpireAt(item))) + '<br>남은 기간: 약 ' + remainingDays + '일<br><span class="small">1일 후 담당자 QR·링크 접속만 차단됩니다.</span></div>' +
-        renderManagerDownloadToolbar(item) +
-        '<h3 style="margin-top:14px">다운로드/프린트 서류</h3>' + renderPrintSelectRow(item.code) + (docHtml || '<div class="empty">표시할 서류가 없습니다.</div>') +
-        (recipientView.renderSponsorBox ? recipientView.renderSponsorBox() : '<div class="sponsor-box"><div class="small">운영·개발: 제이에스건설</div><a href="https://www.songwongeo.co.kr" target="_blank" rel="noopener">송원건설 홈페이지 바로가기</a></div>');
-      showScreen('managerPrintScreen');
-    }
-
-// ---- merged from app-register-share-payment-12.js ----
-// SitePass v23.7.350 - app-register-share-payment finer split (12/15)
-function renderManagerDownloadToolbar(item) {
-      const recipientView = getRecipientViewModule();
-      if (recipientView.renderDownloadToolbar) {
-        return recipientView.renderDownloadToolbar(item, {
-          mode:'manager',
-          showSelection:true,
-          deps:{ getDisplayDocs:getAttachedDisplayDocs, getDocPagesFromDoc, expandPrintablePages, escapeJs }
-        });
-      }
-      const code = item.code || '';
-      const printableCount = getAttachedDisplayDocs(item).reduce((sum, doc) => sum + expandPrintablePages([doc]).length, 0);
-      const attachedPageCount = getAttachedDisplayDocs(item).reduce((sum, doc) => sum + getDocPagesFromDoc(doc).length, 0);
-      return '<div class="print-toolbar download-toolbar">' +
-        '<div class="print-help full">필요한 서류를 체크하고 상단 버튼으로 다운로드/프린트하세요. 첨부 ' + attachedPageCount + '장 / 바로 처리 가능 ' + printableCount + '장</div>' +
-        '<button type="button" class="primary" onclick="downloadAllDocsBundle(\'' + escapeJs(code) + '\')">전체 다운로드</button>' +
-        '<button type="button" class="primary" onclick="printAllDocs(\'' + escapeJs(code) + '\')">전체 프린트</button>' +
-        '<button type="button" class="ghost" onclick="selectAllPrintDocs(true)">전체선택</button>' +
-        '<button type="button" class="secondary" onclick="selectAllPrintDocs(false)">선택해제</button>' +
-        '<button type="button" class="okBtn" onclick="downloadSelectedDocsBundle(\'' + escapeJs(code) + '\')">선택 다운로드</button>' +
-        '<button type="button" class="okBtn" onclick="printSelectedDocs(\'' + escapeJs(code) + '\')">선택 프린트</button>' +
-      '</div>';
-    }
-
-    function renderManagerDocLine(doc, code, index) {
-      const title = (doc.groupTitle ? doc.groupTitle + ' - ' : '') + doc.title;
-      const pages = getDocPagesFromDoc(doc);
-      const pageText = pages.length ? ' · ' + pages.length + '장' : '';
-      const effectiveExpireDate = (window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || '';
-      const expiryText = effectiveExpireDate ? ' / ' + escapeHtml(getExpiryPeriodLabel(doc) + ' ' + getDdayTextWithDays(effectiveExpireDate)) : '';
-      const statusText = escapeHtml(doc.status || getDocStatus(doc)) + pageText + expiryText;
-      const hasPrintablePreview = docHasPrintablePreview(doc);
-      const hasRealFileV500 = typeof hasRealDocAttachment === 'function' ? hasRealDocAttachment(doc) : hasPrintablePreview;
-      const previewHtml = renderPreviewHtmlForPublic(doc, code) || (doc.fileName ? '<div class="preview-wrap show"><div class="preview-title"><span>등록된 서류 정보</span></div><div class="preview-pdf">파일 주소 확인 필요<br><span class="small">서류명과 만료일은 등록되어 있지만 기존 사진 파일 주소를 찾지 못했습니다. 장비업자에게 해당 서류만 다시 공유해달라고 요청해주세요.</span></div>' + renderIdExtraStrip(doc) + '</div>' : '');
-      const disabledNote = (doc.fileName && !hasRealFileV500) ? '<div class="print-disabled-note">이 서류는 기존 사진 파일 주소가 없어 현재 다운로드·인쇄할 수 없습니다.</div>' : '';
-      return '<div class="manager-doc-card" data-public-doc-key="' + escapeHtml(doc.key) + '">' +
-        '<div class="manager-doc-row"><label><input type="checkbox" data-print-doc-check value="' + escapeHtml(doc.key) + '" ' + (!doc.fileName || !hasRealFileV500 ? 'disabled' : '') + ' /> <span>' + (index + 1) + '. ' + escapeHtml(title) + '</span></label><span class="badge ' + (doc.fileName ? 'done' : (doc.required ? 'need' : '')) + '">' + (doc.fileName ? statusText : (doc.required ? '미첨부' : '선택안함')) + '</span></div>' +
-        previewHtml + disabledNote +
-      '</div>';
-    }
 
     function copyManagerCode(code) {
       const item = getShortcutItem(code);

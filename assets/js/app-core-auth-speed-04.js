@@ -275,7 +275,7 @@ function renderAdminContactManager() {
         hash === '#join' || hash === '#signup' || hash === '#sitepass-join' ||
         hash === '#find-id' || hash === '#id-find' || hash === '#sitepass-find-id' ||
         hash === '#find-password' || hash === '#password-find' || hash === '#sitepass-find-password';
-      return authHashRouteActive || hash.startsWith('#pay=') || hash.startsWith('#manager=') || hash.startsWith('#qr=') || /(?:^\?|&)manager=/.test(search);
+      return authHashRouteActive || hash.startsWith('#pay=') || hash.startsWith('#qr=');
     }
 
     function rememberSitePassScreen(id, options) {
@@ -303,21 +303,9 @@ function renderAdminContactManager() {
     }
 
     function showScreen(id, options) {
-      // v23.7.500: 담당자/외부 QR 링크로 들어온 동안에는 로그인·홈 초기화가
-      // 수신자 화면을 1초 뒤 덮어쓰지 못하게 외부 화면만 허용합니다.
-      const managerOnlyScreens = ['managerAccessScreen', 'managerPrintScreen', 'publicScreen'];
-      let externalShareRouteV500 = !!(window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 || window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499);
-      try {
-        const routeSearch = String(window.location.search || '');
-        const routeHash = String(window.location.hash || '');
-        externalShareRouteV500 = externalShareRouteV500 || /[?&](manager|public|share)=/i.test(routeSearch) || /#(manager|public|share|qr)=?/i.test(routeHash);
-      } catch (e) {}
-      if (externalShareRouteV500) {
-        const externalTargetV500 = /(?:^|[?&])manager=|#manager=/i.test(String(window.location.search || '') + String(window.location.hash || ''))
-          ? 'managerPrintScreen'
-          : 'publicScreen';
-        if (!managerOnlyScreens.includes(id) || id === 'managerAccessScreen') id = externalTargetV500;
-      }
+      // v23.7.509-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
+      // 담당자 링크는 recipient.html에서 독립 실행되어 showScreen과 충돌하지 않습니다.
+      const managerOnlyScreens = ['publicScreen'];
       // v23.7.463: 내정보는 화면을 열기 전에 현재 비밀번호를 다시 확인합니다.
       if (sitePassCurrentScreenId === 'myAccountScreen' && id !== 'myAccountScreen') {
         try { if (typeof window.sitePassLockMyAccount462 === 'function') window.sitePassLockMyAccount462(); } catch (e) {}
@@ -347,9 +335,6 @@ function renderAdminContactManager() {
       document.querySelectorAll('.screen').forEach(screen => screen.classList.add('hidden'));
       const target = document.getElementById(id);
       if (target) target.classList.remove('hidden');
-      if (externalShareRouteV500 && typeof window.sitePassEnforceRecipientRouteV500 === 'function') {
-        setTimeout(function(){ try { window.sitePassEnforceRecipientRouteV500(); } catch (e) {} }, 0);
-      }
       // v23.7.216: 새로고침 때 로그인창이 먼저 보였다가 사라지는 깜빡임 방지.
       // 세션/소셜 콜백 확인이 끝난 뒤 최종 화면을 정한 다음에만 화면을 공개합니다.
       document.body.classList.remove('sitepass-booting');
@@ -391,7 +376,6 @@ function renderAdminContactManager() {
         resetSitePassSignupPhoneAuth();
         setTimeout(stabilizeLoginAutofillFields, 60);
       }
-      if (id === 'managerAccessScreen') { setTimeout(() => document.getElementById('managerCodeInput')?.focus(), 80); }
       refreshAdminUi();
       rememberSitePassScreen(id, options || {});
       sitePassCurrentScreenId = id;

@@ -281,14 +281,48 @@ function renderDocCards() {
       return getDocPagesFromBox(card?.querySelector('[data-role="filename"]'));
     }
 
-    function getPrintablePreviewFromPage(page) {
+    function getSitePassStoredPreviewUrlV508(obj, parent) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      parent = parent && typeof parent === 'object' ? parent : {};
+      const values = [
+        obj.previewDataUrl, obj.editDataUrl, obj.correctedDataUrl, obj.originalDataUrl,
+        obj.fileDataUrl, obj.fileObjectUrl, obj.fileUrl, obj.file_url, obj.downloadUrl, obj.download_url,
+        obj.storagePublicUrl, obj.storage_public_url, obj.publicUrl, obj.public_url,
+        obj.previewUrl, obj.preview_url, obj.signedUrl, obj.signed_url, obj.url, obj.src
+      ];
+      const direct = values.map(function(value){ return String(value || '').trim(); }).find(Boolean) || '';
+      if (direct && /^(data:|blob:|https?:\/\/)/i.test(direct)) return direct;
+      const directPath = direct && !/^(첨부됨|미첨부|선택안함|null|undefined|-)$/i.test(direct) ? direct : '';
+      const path = String(directPath ||
+        obj.storagePath || obj.storage_path || obj.filePath || obj.file_path || obj.storageKey || obj.storage_key ||
+        obj.objectPath || obj.object_path || obj.uploadPath || obj.upload_path || obj.path || ''
+      ).trim().replace(/^\/+/, '');
+      if (!path) return '';
+      const bucket = String(
+        obj.storageBucket || obj.storage_bucket || obj.bucket || parent.storageBucket || parent.storage_bucket || parent.bucket ||
+        (window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.storageBucket) || 'sitepass-documents'
+      ).trim() || 'sitepass-documents';
+      try {
+        if (window.SitePassSupabaseApi && typeof window.SitePassSupabaseApi.storagePublicUrl === 'function') {
+          const publicUrl = window.SitePassSupabaseApi.storagePublicUrl(bucket, path);
+          if (publicUrl) return String(publicUrl);
+        }
+      } catch (e) {}
+      try {
+        const base = String(window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.supabaseUrl || '').replace(/\/$/, '');
+        if (base) return base + '/storage/v1/object/public/' + encodeURIComponent(bucket) + '/' + path.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+      } catch (e) {}
+      return '';
+    }
+
+    function getPrintablePreviewFromPage(page, parent) {
       if (!page) return '';
-      return page.previewDataUrl || page.editDataUrl || page.correctedDataUrl || page.originalDataUrl || page.fileUrl || page.downloadUrl || page.storagePublicUrl || page.publicUrl || '';
+      return getSitePassStoredPreviewUrlV508(page, parent);
     }
 
     function normalizeDocPageForPreview(page, index, doc) {
       const p = Object.assign({}, page || {});
-      const fallbackPreview = getPrintablePreviewFromPage(p) || (index === 0 && doc ? (doc.previewDataUrl || doc.editDataUrl || doc.correctedDataUrl || doc.originalDataUrl || doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || doc.publicUrl || '') : '');
+      const fallbackPreview = getPrintablePreviewFromPage(p, doc) || (index === 0 && doc ? getSitePassStoredPreviewUrlV508(doc) : '');
       p.previewDataUrl = fallbackPreview || '';
       if (p.previewDataUrl && !p.previewChoice) p.previewChoice = 'preview';
       p.fileName = p.fileName || (doc && doc.fileName) || '첨부파일';
@@ -308,12 +342,12 @@ function renderDocCards() {
           fileName:doc.fileName || '',
           fileSource:doc.fileSource || '',
           fileType:doc.fileType || '',
-          previewDataUrl:doc.previewDataUrl || doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || doc.publicUrl || '',
+          previewDataUrl:getSitePassStoredPreviewUrlV508(doc),
           originalDataUrl:doc.originalDataUrl || '',
           correctedDataUrl:doc.correctedDataUrl || '',
-          editDataUrl:doc.editDataUrl || doc.previewDataUrl || doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || doc.publicUrl || '',
-          fileUrl:doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || doc.publicUrl || '',
-          downloadUrl:doc.downloadUrl || doc.fileUrl || doc.storagePublicUrl || doc.publicUrl || '',
+          editDataUrl:doc.editDataUrl || getSitePassStoredPreviewUrlV508(doc),
+          fileUrl:doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || doc.publicUrl || getSitePassStoredPreviewUrlV508(doc),
+          downloadUrl:doc.downloadUrl || doc.fileUrl || doc.storagePublicUrl || doc.publicUrl || getSitePassStoredPreviewUrlV508(doc),
           previewChoice:doc.previewChoice || '',
           autoFit:doc.autoFit || ''
         }, 0, doc)];
@@ -327,7 +361,7 @@ function renderDocCards() {
 
     function docHasPrintablePreview(doc) {
       const pages = getDocPagesFromDoc(doc);
-      return pages.some(page => !!getPrintablePreviewFromPage(page)) || !!(doc && (doc.previewDataUrl || doc.correctedDataUrl || doc.originalDataUrl || doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || doc.publicUrl));
+      return pages.some(page => !!getPrintablePreviewFromPage(page, doc)) || !!getSitePassStoredPreviewUrlV508(doc);
     }
 
     function summarizePages(pages) {
@@ -472,14 +506,17 @@ async function buildDocPage(card, file, sourceText) {
       if (imageOnly) {
         return '<div class="page-list clean-page-list">' + (pages || []).map((page, index) => {
           const isPdf = (page.fileType || '').includes('pdf') || String(page.fileName || '').toLowerCase().endsWith('.pdf');
-          const imgSrc = page.previewDataUrl || page.correctedDataUrl || page.originalDataUrl || '';
+          const imgSrc = getPrintablePreviewFromPage(page) || '';
           const labelText = options.docLabel ? (String(options.docLabel) + ((pages || []).length > 1 ? ' ' + (index + 1) + '페이지' : '')) : '';
           const labelHtml = labelText ? '<div class="page-file-label">' + escapeHtml(labelText) + '</div>' : '';
           let body = '';
-          if (imgSrc) {
+          if (isPdf) {
+            const pdfPage = Object.assign({}, page, { fileObjectUrl:imgSrc || page.fileObjectUrl || '', fileDataUrl:imgSrc || page.fileDataUrl || '' });
+            body = renderPdfAttachedBox(pdfPage, imgSrc ? '등록된 PDF 파일을 바로 확인할 수 있습니다.' : '선택한 PDF 파일입니다.');
+          } else if (imgSrc) {
             body = '<div class="paper-frame"><img class="preview-img" alt="첨부 이미지" src="' + imgSrc + '" data-preview-src="' + imgSrc + '" onclick="openPreviewModal(this.dataset.previewSrc)"></div>';
           } else {
-            body = isPdf ? renderPdfAttachedBox(page, '선택한 PDF 파일입니다.') : '<div class="preview-pdf">첨부됨<br><span class="small">이미지 저장본이 없으면 서버 저장 단계에서 원본 파일 보기로 연결합니다.</span></div>';
+            body = '<div class="preview-pdf">첨부됨<br><span class="small">이미지 저장본이 없으면 서버 저장 단계에서 원본 파일 보기로 연결합니다.</span></div>';
           }
           return '<div class="page-item clean-page-item">' + labelHtml + body + '</div>';
         }).join('') + '</div>';

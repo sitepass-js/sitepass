@@ -1464,12 +1464,17 @@ let sitePassStorageQuotaNoticeShownV496 = false;
 
     function getAttachmentUrlFromPageOrDoc(obj) {
       obj = obj && typeof obj === 'object' ? obj : {};
-      return obj.previewDataUrl || obj.editDataUrl || obj.correctedDataUrl || obj.originalDataUrl || obj.fileUrl || obj.downloadUrl || obj.storagePublicUrl || obj.publicUrl || '';
+      return obj.previewDataUrl || obj.editDataUrl || obj.correctedDataUrl || obj.originalDataUrl ||
+        obj.fileDataUrl || obj.dataUrl || obj.fileObjectUrl || obj.blobUrl ||
+        obj.fileUrl || obj.file_url || obj.downloadUrl || obj.download_url ||
+        obj.storagePublicUrl || obj.storage_public_url || obj.publicUrl || obj.public_url || obj.url || obj.src || '';
     }
 
     function getStoredAttachmentUrl(obj) {
       obj = obj && typeof obj === 'object' ? obj : {};
-      return obj.fileUrl || obj.downloadUrl || obj.storagePublicUrl || obj.publicUrl || obj.previewDataUrl || obj.editDataUrl || '';
+      return obj.fileUrl || obj.file_url || obj.downloadUrl || obj.download_url || obj.storagePublicUrl || obj.storage_public_url ||
+        obj.publicUrl || obj.public_url || obj.previewUrl || obj.preview_url || obj.signedUrl || obj.signed_url || obj.url ||
+        obj.previewDataUrl || obj.editDataUrl || '';
     }
 
     function sanitizeStoragePathPart(value, fallback) {
@@ -2140,14 +2145,30 @@ let sitePassStorageQuotaNoticeShownV496 = false;
     function getItemByCode(code) {
       const targetCode = String(code || '').trim();
       if (!targetCode) return null;
-      const found = getItems().find(item => String(item?.code || '').trim() === targetCode);
-      if (found) return found;
+      function matches(item) {
+        if (!item || typeof item !== 'object') return false;
+        const values = [
+          item.code, item.share_code, item.shareCode, item.publicShareCode, item.managerShareCode,
+          item.qrCode, item.qr_code, item.equipmentCode, item.equipment_code, item.id,
+          item.item_json && item.item_json.code,
+          item.payload && item.payload.code,
+          item.item_data && item.item_data.code
+        ];
+        return values.some(function(value){ return String(value || '').trim() === targetCode; });
+      }
+      const found = getItems().find(matches);
+      if (found) {
+        if (!found.code) found.code = targetCode;
+        return found;
+      }
       try {
         const fast = [];
         if (window.sitePassFastCompletionItem) fast.push(window.sitePassFastCompletionItem);
         if (Array.isArray(window.sitePassFastCompletionItems)) fast.push.apply(fast, window.sitePassFastCompletionItems);
         fast.push.apply(fast, getSitePassUnsyncedEquipmentItemsV476());
-        return fast.find(function(item){ return String(item && item.code || '').trim() === targetCode; }) || null;
+        const fallback = fast.find(matches) || null;
+        if (fallback && !fallback.code) fallback.code = targetCode;
+        return fallback;
       } catch (e) { return null; }
     }
 

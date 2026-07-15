@@ -369,7 +369,7 @@ function promptRegistrationDraftIfNeeded(reason) {
       const pendingPay = getPendingRegistration();
       if (pendingPay && pendingPay.item) {
         const activePending = Array.from(document.querySelectorAll('.screen:not(.hidden)')).map(el => el.id)[0] || '';
-        if (activePending !== 'pricingScreen' && activePending !== 'detailScreen' && activePending !== 'publicScreen' && activePending !== 'managerPrintScreen') {
+        if (activePending !== 'pricingScreen' && activePending !== 'detailScreen' && activePending !== 'publicScreen') {
           registrationDraftPromptOpen = true;
           const label = pendingPay.item.equipmentNo || pendingPay.item.equipmentName || '결제 대기 중인 장비';
           const tier = getPendingRegistrationTierText(pendingPay);
@@ -386,7 +386,7 @@ function promptRegistrationDraftIfNeeded(reason) {
       }
       if (!hasRegistrationDraft()) return false;
       const active = Array.from(document.querySelectorAll('.screen:not(.hidden)')).map(el => el.id)[0] || '';
-      if (active === 'registerScreen' || active === 'pricingScreen' || active === 'detailScreen' || active === 'publicScreen' || active === 'managerPrintScreen') return false;
+      if (active === 'registerScreen' || active === 'pricingScreen' || active === 'detailScreen' || active === 'publicScreen') return false;
       registrationDraftPromptOpen = true;
       const draft = getRegistrationDraft();
       const label = draft?.equipmentNo || draft?.equipmentName || '작성 중인 장비';

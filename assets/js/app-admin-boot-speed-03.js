@@ -823,7 +823,15 @@ function expireUnpaidPaymentTestData() {
       }
       if (hash.startsWith('#manager=') || /(?:^\?|&)manager=/.test(search)) {
         const parsed = hash.startsWith('#manager=') ? parseManagerHash(hash) : parseManagerHash(search);
-        renderManagerPrintFromHash(parsed);
+        if (parsed && parsed.code) {
+          const target = new URL('./recipient.html', window.location.href);
+          target.search = '';
+          target.hash = '';
+          target.searchParams.set('manager', String(parsed.code));
+          if (parsed.sig) target.searchParams.set('sig', String(parsed.sig));
+          target.searchParams.set('v', '23.7.509-test');
+          window.location.replace(target.toString());
+        }
         return true;
       }
       if (hash.startsWith('#qr=')) {
@@ -904,21 +912,8 @@ function expireUnpaidPaymentTestData() {
         updateSignupTermsUi();
         registerSitePassServiceWorker();
         updateHomeInstallButtonState();
-        // v23.7.500: 담당자/외부 링크에서는 회원 로그인 복원과 보관함 동기화를 먼저 돌리지 않습니다.
-        // 링크 화면을 즉시 고정한 뒤 서버 공유자료만 불러옵니다.
-        let externalShareBootV500 = !!(window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 || window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499);
-        try {
-          externalShareBootV500 = externalShareBootV500 || /[?&](manager|public|share)=/i.test(String(window.location.search || '')) || /#(manager|public|share|qr)=?/i.test(String(window.location.hash || ''));
-        } catch (e) {}
-        if (externalShareBootV500) {
-          window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 = true;
-          window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499 = true;
-          try { document.documentElement.classList.add('sitepass-external-share-route-v500'); } catch (e) {}
-          if (checkHash()) {
-            try { document.body.classList.remove('sitepass-booting'); } catch (e) {}
-            return;
-          }
-        }
+        // v23.7.509-test: 담당자 링크는 head 단계에서 recipient.html로 이동합니다.
+        // 메인 앱 부팅은 더 이상 담당자 화면을 강제로 고정하지 않습니다.
         clearLegacyAutoLoginState();
         const didCleanReset = resetSitePassTestDataOnce();
         ensureAdminSampleData();

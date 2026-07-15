@@ -374,14 +374,15 @@ function renderList() {
   }
 
   const cards = items.map(item => {
+    const cardCode = getArchiveShareCode(item);
     const ownerInfo = isAdminMode
       ? '<div class="small">장비업자: ' + escapeHtml(item.ownerName || item.ownerSignupId || '미지정') + (item.ownerPhone ? ' / ' + escapeHtml(item.ownerPhone) : ' / 휴대폰 미등록') + '</div>'
       : '';
     const actionButtons = isAdminMode
-      ? '<div class="actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(item.code) + '\')">상세보기</button><button class="primary" onclick="openAdminQrLink(\'' + escapeJs(item.code) + '\')">큐알링크</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(item.code) + '\')">삭제</button></div>'
-      : '<div class="archive-card-actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(item.code) + '\')">상세보기</button><button class="primary" onclick="startEditEquipment(\'' + escapeJs(item.code) + '\')">수정/갱신</button><button class="ghost" onclick="openManagerPublicView(\'' + escapeJs(item.code) + '\')">링크화면</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(item.code) + '\')">삭제</button></div>';
+      ? '<div class="actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(cardCode) + '\')">상세보기</button><button class="primary" onclick="openAdminQrLink(\'' + escapeJs(cardCode) + '\')">큐알링크</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(cardCode) + '\')">삭제</button></div>'
+      : '<div class="archive-card-actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(cardCode) + '\')">상세보기</button><button class="primary" onclick="startEditEquipment(\'' + escapeJs(cardCode) + '\')">수정/갱신</button><button class="ghost" onclick="openManagerPublicView(\'' + escapeJs(cardCode) + '\')">링크화면</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(cardCode) + '\')">삭제</button></div>';
     return '<div class="list-item">' +
-      '<div class="list-item-head"><strong>' + escapeHtml(getItemTitle(item)) + '</strong><label class="list-select-label"><input type="checkbox" data-list-share-check value="' + escapeHtml(item.code) + '" /> 선택</label></div>' +
+      '<div class="list-item-head"><strong>' + escapeHtml(getItemTitle(item)) + '</strong><label class="list-select-label"><input type="checkbox" data-list-share-check value="' + escapeHtml(cardCode) + '" /> 선택</label></div>' +
       ownerInfo +
       '<div class="small">포함서류: ' + escapeHtml(getIncludedGroupText(item)) + '</div>' +
       '<div class="small">결제단위: ' + escapeHtml(item?.bundleMeta?.paymentText || '장비등록 1건') + '</div>' +

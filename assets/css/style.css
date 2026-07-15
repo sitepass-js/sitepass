@@ -4848,7 +4848,7 @@ body.sitepass-fast-shell-loading::after {
 }
 
 
-/* v23.7.500-test - 달력 6주 고정 + 외부 담당자 화면 강제 유지 */
+/* v23.7.509-test - 달력 6주 고정 (담당자 화면 강제 고정 제거) */
 .sitepass-clean-calendar-days475{
   grid-template-rows:repeat(6,minmax(0,1fr));
   height:282px;
@@ -4858,20 +4858,6 @@ body.sitepass-fast-shell-loading::after {
 .sitepass-clean-calendar-empty475{
   aspect-ratio:auto;
   min-height:0;
-}
-html.sitepass-external-share-route-v500 body #managerPrintScreen.sitepass-recipient-route-active-v500,
-html.sitepass-external-share-route-v500 body #publicScreen.sitepass-recipient-route-active-v500{
-  display:block!important;
-  visibility:visible!important;
-  opacity:1!important;
-  pointer-events:auto!important;
-  height:auto!important;
-  min-height:100vh!important;
-  overflow:visible!important;
-}
-html.sitepass-external-share-route-v500 body #managerPrintScreen.sitepass-recipient-route-active-v500.hidden,
-html.sitepass-external-share-route-v500 body #publicScreen.sitepass-recipient-route-active-v500.hidden{
-  display:block!important;
 }
 @media (max-width:420px){
   .sitepass-clean-calendar-days475{height:252px;min-height:252px;}

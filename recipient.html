@@ -35,7 +35,7 @@
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.507-test';
+  var VERSION='23.7.509-test';
   var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
   var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
   var STORAGE_BUCKET='sitepass-documents';
@@ -65,19 +65,32 @@
   function exitViewer(){
     closeModal();
     try{sessionStorage.setItem('sitepass_last_screen_v491',state.fromMember?'listScreen':'homeScreen');}catch(e){}
-    var target='./';
-    location.replace(target);
+    var target=new URL('./',location.href);
+    target.search='';
+    target.hash='';
+    location.replace(target.toString());
   }
   exitButton.addEventListener('click',exitViewer);
 
+  function parseObject(value){
+    if(!value)return null;
+    if(typeof value==='object')return value;
+    if(typeof value==='string'){
+      var text=value.trim();
+      if(!text)return null;
+      try{var parsed=JSON.parse(text);return parsed&&typeof parsed==='object'?parsed:null;}catch(e){return null;}
+    }
+    return null;
+  }
   function collectCandidates(root){
     var out=[],seen=new WeakSet();
-    function walk(node,depth){
-      if(!node||typeof node!=='object'||depth>5||seen.has(node))return;
+    function walk(input,depth){
+      var node=parseObject(input);
+      if(!node||depth>7||seen.has(node))return;
       seen.add(node);
       if(Array.isArray(node)){node.forEach(function(v){walk(v,depth+1);});return;}
       out.push(node);
-      ['item_data','payload','item_json','item','data','share_item','shareItem','result'].forEach(function(key){if(node[key]&&typeof node[key]==='object')walk(node[key],depth+1);});
+      ['item_data','payload','item_json','item','data','share_item','shareItem','result','row','record'].forEach(function(key){if(node[key])walk(node[key],depth+1);});
     }
     walk(root,0);return out;
   }
@@ -85,8 +98,10 @@
     var candidates=collectCandidates(root),merged={},docs={};
     candidates.slice().reverse().forEach(function(c){
       Object.keys(c).forEach(function(key){if(['item_data','payload','item_json','item','data','share_item','shareItem','result','docs','documents'].indexOf(key)<0&&c[key]!==undefined&&c[key]!==null&&c[key]!=='')merged[key]=c[key];});
-      if(c.docs&&typeof c.docs==='object'&&!Array.isArray(c.docs))Object.keys(c.docs).forEach(function(key){var d=c.docs[key];if(d&&typeof d==='object')docs[key]=Object.assign({},docs[key]||{},d,{key:String(d.key||key)});});
-      if(Array.isArray(c.documents))c.documents.forEach(function(d,i){if(!d||typeof d!=='object')return;var key=String(d.key||d.docKey||d.doc_key||d.type||d.kind||('document'+(i+1))).trim();if(key)docs[key]=Object.assign({},docs[key]||{},d,{key:key});});
+      var cDocs=parseObject(c.docs);
+      if(cDocs&&!Array.isArray(cDocs))Object.keys(cDocs).forEach(function(key){var d=parseObject(cDocs[key]);if(d)docs[key]=Object.assign({},docs[key]||{},d,{key:String(d.key||key)});});
+      var cDocuments=parseObject(c.documents)||c.documents;
+      if(Array.isArray(cDocuments))cDocuments.forEach(function(raw,i){var d=parseObject(raw);if(!d)return;var key=String(d.key||d.docKey||d.doc_key||d.type||d.kind||('document'+(i+1))).trim();if(key)docs[key]=Object.assign({},docs[key]||{},d,{key:key});});
     });
     merged.docs=docs;merged.code=String(code||merged.code||merged.share_code||merged.publicShareCode||merged.managerShareCode||'').trim();
     return merged;
@@ -113,9 +128,26 @@
     for(var k=0;k<nestedKeys.length;k++){var n=value[nestedKeys[k]];if(n&&typeof n==='object'){var found=resolveUrl(n);if(found)return found;}}
     return '';
   }
+  function safePart(value,fallback){var text=String(value||fallback||'file').trim();return text.replace(/[^0-9a-zA-Z가-힣._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||String(fallback||'file');}
+  function extensionOf(page,doc){var name=firstValue(page,['fileName','filename','name'])||firstValue(doc,['fileName','filename','name']);var m=String(name||'').toLowerCase().match(/\.([a-z0-9]{2,5})$/);if(m)return m[1];var type=firstValue(page,['fileType','mimeType','mime_type','type'])||firstValue(doc,['fileType','mimeType','mime_type','type']);if(/pdf/i.test(type))return 'pdf';if(/png/i.test(type))return 'png';if(/webp/i.test(type))return 'webp';return 'jpg';}
+  function deriveStorageUrl(page,doc,docKey,index){
+    if(!state.item)return '';
+    var owner=firstValue(state.item,['ownerSignupId','owner_signup_id','ownerProviderId','owner_provider_id','ownerMemberId','owner_member_id']);
+    var code=firstValue(state.item,['originalEquipmentCode','equipmentCode','equipment_code','code'])||state.code;
+    if(!owner||!code||!docKey)return '';
+    var pageId=firstValue(page,['id','pageId','page_id','uid','fileId','file_id'])||('page_'+(Number(index||0)+1));
+    var path=[safePart(owner,'owner'),safePart(code,'code'),safePart(docKey,'document'),safePart(pageId,'page_'+(Number(index||0)+1))+'.'+extensionOf(page,doc)].join('/');
+    return absoluteStorageUrl(path,firstValue(page,['storageBucket','storage_bucket','bucket'])||firstValue(doc,['storageBucket','storage_bucket','bucket'])||STORAGE_BUCKET);
+  }
+  function resolveDocUrl(page,doc,docKey,index){return resolveUrl(page)||resolveUrl(doc)||deriveStorageUrl(page||{},doc||{},docKey,index);}
+
   function pageList(doc){
     var arrays=['pages','files','attachments','images','items'];
-    for(var i=0;i<arrays.length;i++){if(Array.isArray(doc[arrays[i]])&&doc[arrays[i]].length)return doc[arrays[i]].filter(Boolean).map(function(p){return typeof p==='string'?{url:p,fileName:p.split('/').pop()}:p;});}
+    for(var i=0;i<arrays.length;i++){
+      var list=doc[arrays[i]];
+      if(typeof list==='string'){try{list=JSON.parse(list);}catch(e){}}
+      if(Array.isArray(list)&&list.length)return list.filter(Boolean).map(function(p){if(typeof p==='string'){var parsed=parseObject(p);return parsed||{url:p,fileName:p.split('/').pop()};}return p;});
+    }
     return resolveUrl(doc)?[doc]:[];
   }
   function normalizeDocs(item){
@@ -143,7 +175,7 @@
     var equipmentNo=firstValue(item,['equipmentNo','equipment_no','registrationNo','vehicleNo'])||'-';
     var expireHtml=state.expiresAt?'<div class="expire"><strong>담당자 링크 만료일</strong>'+esc(formatDate(state.expiresAt))+'까지 열람할 수 있습니다.</div>':'';
     var docsHtml=state.docs.map(function(doc,index){
-      var pages=doc.pages,first=pages[0]||doc.raw,url=resolveUrl(first)||resolveUrl(doc.raw),meta=[];
+      var pages=doc.pages,first=pages[0]||doc.raw,url=resolveDocUrl(first,doc.raw,doc.key,0),meta=[];
       if(pages.length)meta.push(pages.length+'장');if(doc.expireDate)meta.push('만료 '+formatDate(doc.expireDate));if(doc.status)meta.push(doc.status);
       return '<article class="doc-card"><div class="doc-head"><div class="doc-title"><small>'+esc(doc.groupTitle||'제출서류')+'</small><strong>'+(index+1)+'. '+esc(doc.title)+'</strong></div><span class="badge '+(url?'':'missing')+'">'+(url?'첨부됨':'파일확인')+'</span></div><div class="doc-meta">'+esc(meta.join(' · ')||(doc.fileName||'등록된 서류'))+'</div><div class="doc-actions"><button class="detail-btn" type="button" data-detail-index="'+index+'">상세보기</button>'+(url?'<a class="file-link" href="'+esc(url)+'" target="_blank" rel="noopener">원본 열기</a>':'<span class="file-link disabled">원본 없음</span>')+'</div></article>';
     }).join('');
@@ -166,7 +198,23 @@
     if(!res.ok)throw new Error((data&&data.message)||('서버 직접조회 오류 '+res.status));
     return {root:Array.isArray(data)?data[0]:data};
   }
-  function previewSnapshot(){try{var raw=sessionStorage.getItem('sitepass_recipient_preview_v506_'+state.code);if(!raw)return null;var parsed=JSON.parse(raw);return parsed&&typeof parsed==='object'?parsed:null;}catch(e){return null;}}
+  function previewSnapshot(){
+    var currentKey='sitepass_recipient_preview_current_'+state.code;
+    var keys=[currentKey,'sitepass_recipient_preview_v508_'+state.code,'sitepass_recipient_preview_v507_'+state.code,'sitepass_recipient_preview_v506_'+state.code];
+    for(var i=0;i<keys.length;i++){
+      try{
+        var raw=sessionStorage.getItem(keys[i]);if(!raw)continue;
+        var parsed=JSON.parse(raw);
+        if(parsed&&typeof parsed==='object'){
+          if(keys[i]!==currentKey){
+            try{sessionStorage.setItem(currentKey,JSON.stringify(parsed));}catch(ignore){}
+          }
+          return parsed;
+        }
+      }catch(e){}
+    }
+    return null;
+  }
   async function load(){
     if(!state.code){renderError('담당자 링크 정보가 없습니다.','링크 주소를 다시 확인해주세요.',false);return;}
     content.className='card loading';content.innerHTML='<span class="spinner" aria-hidden="true"></span><b>담당자 서류를 불러오는 중입니다.</b><span>서버에서 최신 공유자료를 확인하고 있습니다.</span>';
@@ -189,7 +237,7 @@
   function openDetail(index){
     var doc=state.docs[Number(index)];if(!doc)return;
     var pages=doc.pages.length?doc.pages:[doc.raw];
-    var html=pages.map(function(page,i){var url=resolveUrl(page)||resolveUrl(doc.raw),name=firstValue(page,['fileName','filename','name'])||doc.fileName||doc.title;if(!url)return '<section class="page"><div class="page-title">'+(i+1)+'. '+esc(name)+'</div><div class="missing-page">파일 주소를 찾지 못했습니다.<br>장비업자에게 이 서류를 다시 등록해달라고 요청해주세요.</div></section>';var body=isPdf(page,doc)?'<iframe src="'+esc(url)+'" title="'+esc(name)+'"></iframe>':'<img src="'+esc(url)+'" alt="'+esc(name)+'">';return '<section class="page"><div class="page-title">'+(i+1)+'. '+esc(name)+'</div>'+body+'<div class="page-actions"><a href="'+esc(url)+'" target="_blank" rel="noopener">원본 새 창</a><button type="button" data-print-url="'+esc(url)+'">인쇄</button></div></section>';}).join('');
+    var html=pages.map(function(page,i){var url=resolveDocUrl(page,doc.raw,doc.key,i),name=firstValue(page,['fileName','filename','name'])||doc.fileName||doc.title;if(!url)return '<section class="page"><div class="page-title">'+(i+1)+'. '+esc(name)+'</div><div class="missing-page">파일 주소를 찾지 못했습니다.<br>장비업자에게 이 서류를 다시 등록해달라고 요청해주세요.</div></section>';var body=isPdf(page,doc)?'<iframe src="'+esc(url)+'" title="'+esc(name)+'"></iframe>':'<img src="'+esc(url)+'" alt="'+esc(name)+'">';return '<section class="page"><div class="page-title">'+(i+1)+'. '+esc(name)+'</div>'+body+'<div class="page-actions"><a href="'+esc(url)+'" target="_blank" rel="noopener">원본 새 창</a><button type="button" data-print-url="'+esc(url)+'">인쇄</button></div></section>';}).join('');
     closeModal();var modal=document.createElement('div');modal.id='docModal';modal.className='modal';modal.innerHTML='<div class="backdrop" data-close-modal></div><div class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(doc.title)+' 상세보기"><div class="modal-head"><div><small>SitePass 서류 상세보기</small><strong>'+esc(doc.title)+'</strong></div><button class="close-x" type="button" data-close-modal aria-label="닫기">×</button></div><div class="modal-body">'+html+'</div><button class="close-bottom" type="button" data-close-modal>닫기</button></div>';document.body.appendChild(modal);document.body.classList.add('modal-open');
   }
   document.addEventListener('click',function(event){var detail=event.target.closest&&event.target.closest('[data-detail-index]');if(detail){event.preventDefault();openDetail(detail.getAttribute('data-detail-index'));return;}var retry=event.target.closest&&event.target.closest('[data-retry]');if(retry){event.preventDefault();load();return;}var close=event.target.closest&&event.target.closest('[data-close-modal]');if(close){event.preventDefault();closeModal();return;}var print=event.target.closest&&event.target.closest('[data-print-url]');if(print){event.preventDefault();printUrl(print.getAttribute('data-print-url'));}});
