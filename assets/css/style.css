@@ -634,6 +634,20 @@
       min-height:18px;
       margin:0;
     }
+    .archive-card-actions {
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:8px;
+      margin-top:14px;
+    }
+    .archive-card-actions button {
+      min-width:0;
+      min-height:46px;
+      padding:11px 5px;
+      font-size:13px;
+      line-height:1.2;
+      word-break:keep-all;
+    }
     .small { color:var(--muted); font-size:13px; line-height:1.5; }
     .line {
       display:flex;
@@ -784,6 +798,8 @@
       .card { padding:15px; border-radius:16px; }
       h1 { font-size:24px; }
       .menu-grid, .actions, .file-row, .compare-grid, .preview-actions { grid-template-columns:1fr; }
+      .archive-card-actions { grid-template-columns:repeat(4, minmax(0, 1fr)); gap:5px; }
+      .archive-card-actions button { min-height:43px; padding:9px 2px; font-size:11px; letter-spacing:-.35px; }
       .list-share-actions { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
       .list-share-actions button { font-size:12px; padding:11px 4px; }
       .paper-frame { width:min(100%,210px); height:298px; }
@@ -4625,7 +4641,7 @@ font-size: 25px !important;
 }
 
 
-/* v23.7.486 - 상세보기 장비/기사/인부 폴더 */
+/* v23.7.487 - 상세보기 장비/기사/인부 폴더 */
 .doc-folders-v486{margin-top:10px}
 .doc-folder-tabs-v486{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:10px;border-bottom:2px solid #d9e4f5;padding:0 4px}
 .doc-folder-tab-v486{min-height:46px;padding:10px 7px 9px;border:1px solid #d7e2f5;border-bottom:0;border-radius:14px 14px 0 0;background:#f4f7fc;color:#63728c;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}

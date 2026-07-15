@@ -1,6 +1,14 @@
 // SitePass v23.7.350 - speed optimized medium chunk (app-admin-boot-speed 03/03)
 // ---- merged from app-admin-boot-11.js ----
 // SitePass v23.7.350 - app-admin-boot finer split (11/14)
+let sitePassAdminRenderTimer487 = 0;
+function requestAdminRender487(delay) {
+      clearTimeout(sitePassAdminRenderTimer487);
+      sitePassAdminRenderTimer487 = setTimeout(function(){
+        try { renderAdmin(); } catch (e) { console.warn('관리자 화면 안정화 렌더 실패:', e); }
+      }, Number(delay || 90));
+    }
+window.sitePassRequestAdminRender487 = requestAdminRender487;
 function renderAdmin() {
       if (!isAdminLoggedIn()) { showScreen('signupScreen'); return; }
       if (!sitePassEquipmentSyncing && (!sitePassEquipmentSyncedAt || Date.now() - sitePassEquipmentSyncedAt > 30000)) {
@@ -51,6 +59,13 @@ function renderAdmin() {
         topSummary +
         renderAdminTodoSummary({ waitingContacts, paymentDue, paused, expiringDocs, expiredDocs, grace14Items }) +
         renderAdminStaffManager(members) + renderAdminContactManager();
+      setTimeout(function(){
+        try {
+          if (window.SitePassPushNotify && typeof window.SitePassPushNotify.refreshPanel === 'function') {
+            window.SitePassPushNotify.refreshPanel();
+          }
+        } catch (e) {}
+      }, 30);
     }
 
     function deleteItem(code) {

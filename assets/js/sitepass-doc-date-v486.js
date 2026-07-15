@@ -1,4 +1,4 @@
-/* SitePass v23.7.486-test - 안전교육 이수일 + 3년 호환 처리 */
+/* SitePass v23.7.487-test - 안전교육 이수일 + 3년 호환 처리 */
 (function(){
   'use strict';
 

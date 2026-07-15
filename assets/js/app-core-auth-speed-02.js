@@ -505,7 +505,6 @@ function saveMemberTest(member) {
       }
       adminSupabaseMemberSyncing = true;
       adminSupabaseMemberSyncMessage = '인터넷 서버 회원목록 불러오는 중...';
-      renderAdmin();
       try {
         let rows = [];
         let rpcErrorMessage = '';
@@ -589,7 +588,8 @@ function saveMemberTest(member) {
         if (forceAlert) alert(adminSupabaseMemberSyncMessage);
       } finally {
         adminSupabaseMemberSyncing = false;
-        renderAdmin();
+        if (typeof window.sitePassRequestAdminRender487 === 'function') window.sitePassRequestAdminRender487(100);
+        else renderAdmin();
       }
     }
 

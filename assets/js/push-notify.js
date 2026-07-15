@@ -760,27 +760,36 @@
     return String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
   }
 
+  let pushPanelRefreshTimer487 = 0;
+  let pushPanelLastHtml487 = '';
+
   function injectPanel(){
     const adminScreen = document.getElementById('adminScreen');
     const adminBox = document.getElementById('adminBox');
     if (!adminScreen || !adminBox || adminScreen.classList.contains('hidden')) return;
     const existing = document.getElementById('sitepassPushPanel');
     const html = renderPanelHtml();
-    if (existing) {
-      existing.outerHTML = html;
+    if (existing && (pushPanelLastHtml487 === html || existing.outerHTML === html)) {
+      pushPanelLastHtml487 = html;
       return;
     }
     const wrapper = document.createElement('div');
     wrapper.innerHTML = html;
     const node = wrapper.firstElementChild;
     if (!node) return;
+    pushPanelLastHtml487 = html;
+    if (existing) {
+      existing.replaceWith(node);
+      return;
+    }
     const firstCard = adminBox.querySelector('.card');
     if (firstCard && firstCard.parentNode === adminBox) adminBox.insertBefore(node, firstCard);
     else adminBox.appendChild(node);
   }
 
   function refreshPanel(){
-    setTimeout(injectPanel, 80);
+    clearTimeout(pushPanelRefreshTimer487);
+    pushPanelRefreshTimer487 = setTimeout(injectPanel, 100);
   }
 
   function setupPushButtonDelegates(){
@@ -804,11 +813,12 @@
   function boot(){
     setupPushButtonDelegates();
     refreshPanel();
-    setInterval(refreshPanel, 2500);
-    try {
-      const observer = new MutationObserver(() => refreshPanel());
-      observer.observe(document.body, { childList: true, subtree: true });
-    } catch (e) {}
+    // v23.7.487: 전체 body MutationObserver가 자기 패널 교체까지 다시 감지해
+    // 관리자 화면을 계속 깜박이게 하던 순환을 제거합니다.
+    setInterval(function(){
+      const adminScreen = document.getElementById('adminScreen');
+      if (adminScreen && !adminScreen.classList.contains('hidden')) refreshPanel();
+    }, 15000);
   }
 
   window.sitepassRequestPushPermission = requestPermission;
@@ -820,6 +830,7 @@
 
   window.SitePassPushNotify = {
     version: APP_VERSION,
+    refreshPanel,
     getSupportStatus,
     requestPermission,
     sendLocalTestNotification,

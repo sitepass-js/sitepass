@@ -295,7 +295,7 @@ function renderList() {
       : '';
     const actionButtons = isAdminMode
       ? '<div class="actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(item.code) + '\')">상세보기</button><button class="primary" onclick="openAdminQrLink(\'' + escapeJs(item.code) + '\')">큐알링크</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(item.code) + '\')">삭제</button></div>'
-      : '<div class="actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(item.code) + '\')">상세보기</button><button class="ghost" onclick="openManagerPublicView(\'' + escapeJs(item.code) + '\')">담당자화면</button><button class="primary" onclick="startEditEquipment(\'' + escapeJs(item.code) + '\')">수정/갱신</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(item.code) + '\')">삭제</button></div>';
+      : '<div class="archive-card-actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(item.code) + '\')">상세보기</button><button class="primary" onclick="startEditEquipment(\'' + escapeJs(item.code) + '\')">수정/갱신</button><button class="ghost" onclick="openManagerPublicView(\'' + escapeJs(item.code) + '\')">링크화면</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(item.code) + '\')">삭제</button></div>';
     return '<div class="list-item">' +
       '<div class="list-item-head"><strong>' + escapeHtml(getItemTitle(item)) + '</strong><label class="list-select-label"><input type="checkbox" data-list-share-check value="' + escapeHtml(item.code) + '" /> 선택</label></div>' +
       ownerInfo +

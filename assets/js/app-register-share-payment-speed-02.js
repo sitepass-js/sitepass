@@ -579,7 +579,12 @@ function resetForm(clearEdit = true) {
         sitePassEquipmentSyncMessage = '서버 장비목록 동기화: ' + serverItems.length + '대 / 화면합산 ' + mergedItems.length + '대';
         try { updateHomeRegistrationButton(); } catch (e) {}
         try { refreshMemberUi(); } catch (e) {}
-        try { if (isAdminLoggedIn() && sitePassCurrentScreenId === 'adminScreen') renderAdmin(); } catch (e) {}
+        try {
+          if (isAdminLoggedIn() && sitePassCurrentScreenId === 'adminScreen') {
+            if (typeof window.sitePassRequestAdminRender487 === 'function') window.sitePassRequestAdminRender487(100);
+            else renderAdmin();
+          }
+        } catch (e) {}
         try { if (sitePassCurrentScreenId === 'listScreen') renderList(); } catch (e) {}
         return { ok:true, count:serverItems.length, visibleCount:serverItems.length };
       } catch (e) {
@@ -701,7 +706,7 @@ function resetForm(clearEdit = true) {
       ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       const ownerPrimary = [item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
         .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
-      // v23.7.486: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
+      // v23.7.487: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
       // SB-로그인아이디 형식을 현재 회원 고유키로 함께 계산하여 정상 서버자료를 누락시키지 않습니다.
       if (ownerPrimary.length) {
         if (currentPrimary.length && ownerPrimary.some(function(key) { return currentPrimary.indexOf(key) >= 0; })) return true;
@@ -1850,10 +1855,10 @@ function setItems(items) {
           '<div class="small">서비스상태: ' + escapeHtml(getServiceStatusText(x)) + '</div>' +
           '<div class="small">담당자 QR·링크 만료: ' + expireText + '</div>' +
           (isNew ? '<div class="small">등록 직후에는 새 등록건을 먼저 표시하고 기존 보관함 항목은 함께 보존합니다.</div>' : '') +
-          '<div class="actions">' +
+          '<div class="archive-card-actions">' +
             '<button class="ghost" onclick="renderDetail(\'' + code + '\')">상세보기</button>' +
-            '<button class="ghost" onclick="openManagerPublicView(\'' + code + '\')">담당자화면</button>' +
             '<button class="primary" onclick="startEditEquipment(\'' + code + '\')">수정/갱신</button>' +
+            '<button class="ghost" onclick="openManagerPublicView(\'' + code + '\')">링크화면</button>' +
             '<button class="dangerBtn" onclick="deleteItem(\'' + code + '\')">삭제</button>' +
           '</div>' +
         '</div>';
