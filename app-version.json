@@ -1,12 +1,12 @@
 {
-  "version": "23.7.498",
+  "version": "23.7.499",
   "channel": "test",
-  "note": "PC 보관함/새로고침 시 화면 폭이 넓어졌다 줄어드는 현상을 막고, 장비 서버 데이터에 URL이 누락된 기존 Storage 파일을 회원·장비·서류 경로로 직접 찾아 담당자 링크를 준비하도록 수정했습니다.",
-  "build": "v23.7.498-test",
-  "stage": "PC 화면 폭 안정화 및 기존 Storage 파일 직접 복구",
+  "note": "휴대폰 새로고침 때 예전 화면이 순간 보였다 다시 바뀌는 현상을 막고, 담당자 링크 화면이 1초 뒤 로그인 화면에 덮이는 문제를 차단했습니다. 기존 공개공유 payload와 Storage 실제 폴더를 추가 검색해 파일 주소 복구도 보강했습니다.",
+  "build": "v23.7.499-test",
+  "stage": "새로고침 화면 고정 및 담당자 링크 전용 초기화",
   "updatedAt": "2026-07-15",
-  "releaseType": "pc-layout-stability-and-storage-orphan-recovery",
-  "purpose": "PC 레이아웃 이동 제거와 굴착기/00보0000 기존 등록 서류 공유 복구",
-  "notes": "로그인 회원 화면의 앱 폭을 초기 렌더링부터 780px로 고정합니다. 담당자 보내기에서는 서버 item_json에 파일 URL이 없어도 Supabase Storage의 owner/code/doc 경로를 직접 조회하고, 목록 조회가 막히면 기존 업로드 경로 규칙으로 파일 주소를 추정·확인해 복구합니다.",
-  "description": "PC 화면 폭 고정 및 Storage 고아 문서 URL 복구"
+  "releaseType": "no-stale-screen-and-recipient-route-lock",
+  "purpose": "구버전 화면 깜빡임 제거, 담당자 링크 화면 유지, 기존 등록 서류 공유 복구",
+  "notes": "최신 버전 확인 전에는 이전 로그인·보관함 화면 대신 중립 로딩 화면만 표시합니다. 외부 담당자/QR 링크에서는 일반회원 로그인 복원과 보관함 동기화를 건너뛰고 수신자 화면만 허용합니다. 공유 시 현재 장비 자료에 URL이 없으면 이전 sitepass_public_shares payload와 Storage owner/code 실제 폴더를 추가 검색합니다.",
+  "description": "새로고침 구버전 화면 차단 및 담당자 링크 화면 고정"
 }

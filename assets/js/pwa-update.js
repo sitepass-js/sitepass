@@ -1,4 +1,4 @@
-// SitePass v23.7.277 PWA update notice/push base - PWA 자동업데이트/서비스워커 전용 파일
+// SitePass v23.7.499 PWA update without old-screen flash / v23.7.277 base - PWA 자동업데이트/서비스워커 전용 파일
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';
@@ -84,7 +84,8 @@
     await prepareSoftUpdate();
     try {
       const cleanUrl = isOfficialGithubUrl() ? getFixedAppUrl() : (location.origin + location.pathname.replace(/index\.html$/i, ''));
-      location.replace(cleanUrl + '?updated=' + encodeURIComponent(targetVersion));
+      try { document.documentElement.classList.add('sitepass-version-gate-v499'); } catch (e) {}
+      location.replace(cleanUrl + '?v=' + encodeURIComponent(String(targetVersion).replace(/^v/i,'')) + '&updated=' + encodeURIComponent(targetVersion) + '&spfresh=' + Date.now());
     } catch (e) { location.reload(); }
   }
 
@@ -115,7 +116,7 @@
         localStorage.setItem(UPDATE_RELOAD_KEY, reloadKey);
         localStorage.setItem(UPDATE_NOTICE_KEY, latestVersion);
       } catch (e) {}
-      alert('SitePass 새 버전이 있습니다.\n최신 화면으로 업데이트합니다.');
+      try { document.documentElement.classList.add('sitepass-version-gate-v499'); } catch (e) {}
       await forceUpdateReload(latestVersion);
     } catch (e) {
       // app-version.json이 아직 없거나 네트워크가 막힌 경우 현재 HTML 버전을 사용합니다.

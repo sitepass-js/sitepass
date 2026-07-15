@@ -1,4 +1,4 @@
-// SitePass v23.7.498 - manager share Storage orphan-file recovery + speed optimized medium chunk (03/04)
+// SitePass v23.7.499 - previous public-share + Storage folder recovery + recipient stability (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -641,7 +641,7 @@ function shareOneListItemEmail(code) {
         const doc = docs[key];
         return doc && typeof doc === 'object' && !getManagerShareObjectStoredUrlV496(doc);
       });
-      if (!owners.length || !codes.length || !docKeys.length) return { ok:false, item:item, recovered:0 };
+      if (!owners.length || !codes.length) return { ok:false, item:item, recovered:0 };
 
       // 먼저 Storage 목록 조회로 실제 파일명을 찾습니다. 목록 권한이 없으면 아래의 경로 추정 방식으로 보완합니다.
       const listPairs = [];
@@ -655,7 +655,9 @@ function shareOneListItemEmail(code) {
           if (!result.ok || !result.data.length) return 0;
           return applyManagerShareStorageFilesV498(item, pair.owner, pair.codePart, docFolder, result.data);
         }));
-        return folderResults.reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
+        let count = folderResults.reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
+        if (!count) count = await discoverManagerShareStorageFoldersV499(item, bucket, pair.owner, pair.codePart);
+        return count;
       }));
       const listedRecoveredCount = listPairResults.reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
       if (listedRecoveredCount > 0) {
@@ -686,6 +688,48 @@ function shareOneListItemEmail(code) {
       return { ok:false, item:item, recovered:0 };
     }
 
+
+    async function recoverManagerShareItemFromPreviousPublicShareV499(item) {
+      try {
+        const client = getSitePassSupabaseClient();
+        const code = String(item && (item.code || item.publicShareCode || item.managerShareCode) || '').trim();
+        if (!client || !code || typeof client.from !== 'function') return { ok:false, item:item };
+        const result = await withManagerShareTimeoutV498(
+          client.from(PUBLIC_SHARE_TABLE)
+            .select('item_data,payload,share_code,updated_at')
+            .eq('share_code', code)
+            .order('updated_at', { ascending:false })
+            .limit(1)
+            .maybeSingle(),
+          1800
+        );
+        if (!result || result.error || !result.data) return { ok:false, item:item, error:result && result.error };
+        const previous = result.data.item_data || result.data.payload;
+        if (!previous || typeof previous !== 'object') return { ok:false, item:item };
+        const merged = mergeManagerShareCandidatesV497([item, previous], item);
+        hydrateManagerShareStorageUrlsV497(merged);
+        return { ok:countManagerShareStoredUrlsV496(merged) > 0 || countManagerShareEmbeddedAttachmentsV497(merged) > 0, item:merged };
+      } catch (e) {
+        return { ok:false, item:item, error:e };
+      }
+    }
+
+    async function discoverManagerShareStorageFoldersV499(item, bucket, owner, codePart) {
+      const rootPath = [owner, codePart].join('/');
+      const root = await listManagerShareStorageFolderV498(bucket, rootPath);
+      if (!root.ok || !root.data.length) return 0;
+      const folders = root.data.map(function(entry){ return String(entry && entry.name || '').trim(); })
+        .filter(function(name){ return !!name && name !== '.emptyFolderPlaceholder'; })
+        .slice(0, 30);
+      if (!folders.length) return 0;
+      const counts = await Promise.all(folders.map(async function(folder){
+        const child = await listManagerShareStorageFolderV498(bucket, [rootPath, folder].join('/'));
+        if (!child.ok || !child.data.length) return 0;
+        return applyManagerShareStorageFilesV498(item, owner, codePart, folder, child.data);
+      }));
+      return counts.reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
+    }
+
     async function prepareManagerShareItemsForServerV497(items) {
       const prepared = [];
       for (const rawItem of (items || []).filter(Boolean)) {
@@ -697,6 +741,13 @@ function shareOneListItemEmail(code) {
         item.managerShareCode = rawItem.managerShareCode || item.managerShareCode;
         ensureManagerShareCodeForItem(item);
         hydrateManagerShareStorageUrlsV497(item);
+
+        // v23.7.499: 현재 장비 item_json에 URL이 빠졌더라도 예전에 정상 저장된
+        // 담당자 공유 payload에 파일 주소/사진이 남아 있으면 먼저 합쳐 복구합니다.
+        if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
+          const previousShare = await recoverManagerShareItemFromPreviousPublicShareV499(item);
+          if (previousShare && previousShare.item) item = previousShare.item;
+        }
 
         if (managerShareItemNeedsStorageUploadV496(item)) {
           try {

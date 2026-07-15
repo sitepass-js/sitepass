@@ -35,6 +35,72 @@
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.493" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
 
+
+<style id="sitepassBootGateV499">
+  html.sitepass-version-gate-v499 body { visibility:hidden !important; }
+  html.sitepass-version-gate-v499::before {
+    content:'SitePass를 여는 중입니다.';
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:24px; background:#f3f6fb; color:#26334d;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",Arial,sans-serif;
+    font-weight:900; font-size:15px; z-index:2147483647;
+  }
+  html.sitepass-external-share-route-v499 body.sitepass-booting::before {
+    content:'담당자 서류를 불러오는 중입니다.' !important;
+  }
+  html.sitepass-external-share-route-v499 body #signupScreen,
+  html.sitepass-external-share-route-v499 body #homeScreen,
+  html.sitepass-external-share-route-v499 body #registerScreen,
+  html.sitepass-external-share-route-v499 body #listScreen,
+  html.sitepass-external-share-route-v499 body #contactScreen,
+  html.sitepass-external-share-route-v499 body #pricingScreen,
+  html.sitepass-external-share-route-v499 body #usageGuideScreen,
+  html.sitepass-external-share-route-v499 body #myAccountScreen,
+  html.sitepass-external-share-route-v499 body #adminScreen,
+  html.sitepass-external-share-route-v499 body #detailScreen {
+    display:none !important;
+  }
+</style>
+<script>
+/* v23.7.499 - 구버전 화면 노출 방지 + 담당자 링크 전용 초기화 잠금 */
+(function(){
+  var declaredVersion = '23.7.499';
+  var search = String(location.search || '');
+  var hash = String(location.hash || '');
+  var external = /[?&](manager|public|share|code|access_token)=/i.test(search) || /#(manager|public|share|qr|access_token|error)=?/i.test(hash);
+  if (external) {
+    window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499 = true;
+    document.documentElement.classList.add('sitepass-external-share-route-v499');
+  }
+  document.documentElement.classList.add('sitepass-version-gate-v499');
+  var released = false;
+  function release(){
+    if (released) return;
+    released = true;
+    document.documentElement.classList.remove('sitepass-version-gate-v499');
+  }
+  var timer = setTimeout(release, 1400);
+  try {
+    fetch('./app-version.json?boot=' + Date.now(), { cache:'no-store' })
+      .then(function(res){ return res && res.ok ? res.json() : null; })
+      .then(function(info){
+        var latest = String(info && info.version || '').replace(/^v/i, '').trim();
+        if (latest && latest !== declaredVersion) {
+          clearTimeout(timer);
+          var url = new URL(location.href);
+          url.searchParams.set('v', latest);
+          url.searchParams.set('spfresh', String(Date.now()));
+          location.replace(url.toString());
+          return;
+        }
+        clearTimeout(timer);
+        release();
+      })
+      .catch(function(){ clearTimeout(timer); release(); });
+  } catch(e) { clearTimeout(timer); release(); }
+})();
+</script>
+
 <script>
 (function(){
   function routeFromHash(){
@@ -90,7 +156,7 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.498 PC width stability + orphan Storage document recovery -->
+  <!-- SitePass deploy-check: v23.7.499 no-old-screen flash + recipient route lock + previous share/storage recovery -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
   <link rel="stylesheet" href="./assets/css/style.css?v=23.7.494" />
   <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.493" />
@@ -4034,7 +4100,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.498" defer></script>
+<script src="./assets/js/config.js?v=23.7.499" defer></script>
 <script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.493" defer></script>
 <script src="./assets/js/supabase-api.js?v=23.7.493" defer></script>
 <script src="./assets/js/storage.js?v=23.7.493" defer></script>
@@ -4042,7 +4108,7 @@
 <script src="./assets/js/admin-members.js?v=23.7.493" defer></script>
 <script src="./assets/js/admin-detail.js?v=23.7.493" defer></script>
 <script src="./assets/js/auth-social.js?v=23.7.493" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.495" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.499" defer></script>
 <script src="./assets/js/qr-share.js?v=23.7.496" defer></script>
 <script src="./assets/js/archive.js?v=23.7.493" defer></script>
 <script src="./assets/js/equipment-register.js?v=23.7.493" defer></script>
@@ -4054,18 +4120,18 @@
 <script src="./assets/js/app-core-auth-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-core-auth-speed-02.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-core-auth-speed-03.js?v=23.7.493" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.493" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.499" defer></script>
 <script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.496" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.498" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.499" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.496" defer></script>
 <script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.493" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.493" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.499" defer></script>
 <script src="./assets/js/push-notify.js?v=23.7.493" defer></script>
 <script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.493" defer></script>
 <script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.493" defer></script>

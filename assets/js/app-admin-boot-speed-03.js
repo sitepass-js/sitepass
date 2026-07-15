@@ -904,6 +904,20 @@ function expireUnpaidPaymentTestData() {
         updateSignupTermsUi();
         registerSitePassServiceWorker();
         updateHomeInstallButtonState();
+        // v23.7.499: 담당자/외부 링크에서는 회원 로그인 복원과 보관함 동기화를 먼저 돌리지 않습니다.
+        // 링크 화면을 즉시 고정한 뒤 서버 공유자료만 불러옵니다.
+        let externalShareBootV499 = !!window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499;
+        try {
+          externalShareBootV499 = externalShareBootV499 || /[?&](manager|public|share|code|access_token)=/i.test(String(window.location.search || '')) || /#(manager|public|share|qr|access_token|error)=?/i.test(String(window.location.hash || ''));
+        } catch (e) {}
+        if (externalShareBootV499) {
+          window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499 = true;
+          try { document.documentElement.classList.add('sitepass-external-share-route-v499'); } catch (e) {}
+          if (checkHash()) {
+            try { document.body.classList.remove('sitepass-booting'); } catch (e) {}
+            return;
+          }
+        }
         clearLegacyAutoLoginState();
         const didCleanReset = resetSitePassTestDataOnce();
         ensureAdminSampleData();
