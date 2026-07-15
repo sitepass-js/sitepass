@@ -103,9 +103,20 @@ function cssEscapeValue(value) {
 
     function makeManagerLink(code, expireAt) {
       const qrShare = getQrShareModule();
-      if (qrShare.makeManagerLink) return qrShare.makeManagerLink(code, expireAt, getManagerLinkSignature);
-      const baseUrl = window.location.origin + window.location.pathname;
-      return baseUrl + '?manager=' + encodeURIComponent(code || '');
+      let link = qrShare.makeManagerLink
+        ? qrShare.makeManagerLink(code, expireAt, getManagerLinkSignature)
+        : (window.location.origin + window.location.pathname + '?manager=' + encodeURIComponent(code || ''));
+      const trackingToken = String(window.sitePassShareTrackingTokenV521 || '').trim();
+      if (trackingToken) {
+        try {
+          const url = new URL(link, window.location.href);
+          url.searchParams.set('sid', trackingToken);
+          link = url.toString();
+        } catch (e) {
+          link += (String(link).includes('?') ? '&' : '?') + 'sid=' + encodeURIComponent(trackingToken);
+        }
+      }
+      return link;
     }
 
     function parseManagerHash(hash) {

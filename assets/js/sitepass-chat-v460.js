@@ -1,4 +1,4 @@
-/* SitePass v23.7.493-test - 테스트 알림 4개 배지 유지·실제 방 열람 시에만 읽음 처리 */
+/* SitePass v23.7.521-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
 (function(){
   'use strict';
 
@@ -21,10 +21,14 @@
   var deleteMode = false;
   var selectedDeleteGroups = Object.create(null);
   var lastExpiryUnreadCount479 = -1;
+  var SHARE_TRACKING_CACHE_PREFIX_V521 = 'sitepass_share_tracking_cache_v521:';
+  var shareTrackingRowsV521 = [];
+  var shareTrackingLoadingV521 = false;
+  var shareTrackingLastFetchAtV521 = 0;
 
   var ROOMS = {
     expiry: { title: '만료 알림방', icon: '⏰', desc: 'D-30·D-15·D-7·D-DAY 만료 알림을 확인합니다.', type: 'system' },
-    share: { title: '공유 기록방', icon: '🔗', desc: '누구에게 언제 링크를 보냈는지 확인합니다.', type: 'system' },
+    share: { title: '공유 기록방', icon: '🔗', desc: '링크 전송시간과 최초 열람확인을 확인합니다.', type: 'system' },
     admin: { title: '관리자 채팅방', icon: '👨‍💼', desc: '관리자와 1:1로 메시지를 주고받습니다.', type: 'admin' }
   };
 
@@ -102,6 +106,127 @@
       email: String(member.email || '').trim().toLowerCase(),
       member: member
     };
+  }
+
+  function shareTrackingCacheKeyV521(){ return SHARE_TRACKING_CACHE_PREFIX_V521 + (currentIdentity().key || 'guest'); }
+  function shareTrackingMemberPayloadV521(){
+    var identity = currentIdentity();
+    var member = identity.member || {};
+    return {
+      id: String(member.id || member.memberId || member.userId || ''),
+      member_id: String(member.memberId || member.id || member.userId || ''),
+      signup_id: String(member.signupId || member.loginId || member.signup_id || member.login_id || member.supabaseLoginId || identity.loginId || ''),
+      login_id: String(member.loginId || member.signupId || member.login_id || member.signup_id || member.supabaseLoginId || identity.loginId || ''),
+      provider_id: String(member.providerId || member.provider_id || ''),
+      auth_user_id: String(member.authUserId || member.auth_user_id || member.supabaseAuthUserId || ''),
+      phone: String(identity.phone || '').replace(/[^0-9]/g,''),
+      name: String(identity.name || '')
+    };
+  }
+  function shareTimeTextV521(value){
+    var d = value ? new Date(value) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+    var hour = d.getHours();
+    var period = hour < 12 ? '오전' : '오후';
+    var displayHour = hour % 12 || 12;
+    return (d.getMonth()+1) + '월 ' + d.getDate() + '일 ' + period + ' ' + displayHour + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+  function formatSharePhoneV521(value){
+    var digits = String(value || '').replace(/[^0-9]/g,'');
+    if (digits.length === 11) return digits.slice(0,3) + '-' + digits.slice(3,7) + '-' + digits.slice(7);
+    if (digits.length === 10) return digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+    return String(value || '');
+  }
+  function normalizeShareTrackingRowV521(row){
+    if (!row || typeof row !== 'object') return null;
+    return {
+      id: row.id,
+      tracking_token: String(row.tracking_token || row.trackingToken || ''),
+      owner_login_id: String(row.owner_login_id || row.ownerLoginId || ''),
+      channel: String(row.channel || ''),
+      receiver: String(row.receiver || ''),
+      phone: String(row.phone || ''),
+      email: String(row.email || ''),
+      equipment_no: String(row.equipment_no || row.equipmentNo || ''),
+      equipment_label: String(row.equipment_label || row.equipmentLabel || ''),
+      sent_at: row.sent_at || row.sentAt || '',
+      first_viewed_at: row.first_viewed_at || row.firstViewedAt || '',
+      last_viewed_at: row.last_viewed_at || row.lastViewedAt || '',
+      view_count: Number(row.view_count || row.viewCount || 0),
+      sent_notice_read_at: row.sent_notice_read_at || row.sentNoticeReadAt || '',
+      view_notice_read_at: row.view_notice_read_at || row.viewNoticeReadAt || '',
+      canceled_at: row.canceled_at || row.canceledAt || '',
+      prepared_at: row.prepared_at || row.preparedAt || '',
+      updated_at: row.updated_at || row.updatedAt || ''
+    };
+  }
+  function loadShareTrackingCacheV521(){
+    var rows = loadJson(shareTrackingCacheKeyV521(), []);
+    shareTrackingRowsV521 = Array.isArray(rows) ? rows.map(normalizeShareTrackingRowV521).filter(Boolean) : [];
+    return shareTrackingRowsV521;
+  }
+  function saveShareTrackingCacheV521(rows){
+    shareTrackingRowsV521 = (Array.isArray(rows) ? rows : []).map(normalizeShareTrackingRowV521).filter(Boolean).slice(0,200);
+    saveJson(shareTrackingCacheKeyV521(), shareTrackingRowsV521);
+    return shareTrackingRowsV521;
+  }
+  function mergeShareTrackingRowV521(row){
+    var normalized = normalizeShareTrackingRowV521(row);
+    if (!normalized || !normalized.tracking_token) return null;
+    var rows = loadShareTrackingCacheV521().slice();
+    var index = rows.findIndex(function(item){ return item.tracking_token === normalized.tracking_token; });
+    if (index >= 0) rows[index] = Object.assign({}, rows[index], normalized);
+    else rows.unshift(normalized);
+    saveShareTrackingCacheV521(rows);
+    return normalized;
+  }
+  async function refreshShareTrackingServerV521(force){
+    var identity = currentIdentity();
+    if (!identity.loginId || !window.sitepassSupabase || typeof window.sitepassSupabase.rpc !== 'function') return {ok:false, skipped:true};
+    var now = Date.now();
+    if (!force && (shareTrackingLoadingV521 || now - shareTrackingLastFetchAtV521 < 25000)) return {ok:true, cached:true};
+    shareTrackingLoadingV521 = true;
+    shareTrackingLastFetchAtV521 = now;
+    try {
+      var result = await window.sitepassSupabase.rpc('sitepass_list_share_notifications_v521', {
+        p_member: shareTrackingMemberPayloadV521(),
+        p_limit: 100
+      });
+      if (result && result.error) throw result.error;
+      var rows = Array.isArray(result && result.data) ? result.data : [];
+      saveShareTrackingCacheV521(rows);
+      renderRoomList();
+      if (currentRoomId === 'share') {
+        renderMessages('share');
+        setTimeout(function(){ if (currentRoomId === 'share' && unreadCount('share') > 0) markShareTrackingReadV521(); }, 350);
+      }
+      return {ok:true, rows:shareTrackingRowsV521};
+    } catch(e) {
+      console.warn('SitePass 공유 알림 서버조회 실패:', e);
+      return {ok:false, message:e && e.message ? e.message : String(e || '')};
+    } finally {
+      shareTrackingLoadingV521 = false;
+    }
+  }
+  async function markShareTrackingReadV521(){
+    if (!window.sitepassSupabase || typeof window.sitepassSupabase.rpc !== 'function') return false;
+    try {
+      var result = await window.sitepassSupabase.rpc('sitepass_mark_share_notifications_read_v521', { p_member: shareTrackingMemberPayloadV521() });
+      if (result && result.error) throw result.error;
+      var now = new Date().toISOString();
+      var rows = loadShareTrackingCacheV521().map(function(row){
+        if (row.sent_at && !row.sent_notice_read_at) row.sent_notice_read_at = now;
+        if (row.first_viewed_at && !row.view_notice_read_at) row.view_notice_read_at = now;
+        return row;
+      });
+      saveShareTrackingCacheV521(rows);
+      renderRoomList();
+      if (currentRoomId === 'share') renderMessages('share');
+      return true;
+    } catch(e) {
+      console.warn('SitePass 공유 알림 읽음처리 실패:', e);
+      return false;
+    }
   }
 
   function noticeSettings(){
@@ -387,28 +512,57 @@
   function shareMessages(){
     var messages = [{
       id: 'share-guide', from: 'SitePass', kind: 'system', time: '안내',
-      text: '카톡·문자·링크로 공유한 기록을 확인합니다.'
+      text: '카카오톡·문자 링크 전송과 최초 열람확인을 확인합니다.'
     }];
-    var history = loadJson('sitepass_share_history_v445', []);
-    if (Array.isArray(history) && history.length) {
-      history.slice(-30).reverse().forEach(function(row, index){
+    var rows = loadShareTrackingCacheV521().filter(function(row){ return row && !row.canceled_at && (row.sent_at || row.first_viewed_at); });
+    var events = [];
+    rows.forEach(function(row){
+      var equipment = String(row.equipment_no || row.equipment_label || '장비서류').trim();
+      var channel = row.channel === 'sms' ? '문자' : (row.channel === 'kakao' ? '카카오톡' : '이메일');
+      var phone = formatSharePhoneV521(row.phone || row.receiver || '');
+      if (row.sent_at) {
+        events.push({
+          id: 'share-sent-' + (row.tracking_token || row.id),
+          from: 'SitePass', kind: 'system', time: shareTimeTextV521(row.sent_at),
+          sortAt: row.sent_at,
+          text: (row.channel === 'sms' && phone ? phone + '\n' : '') + equipment + ' ' + channel + ' 링크 전송',
+          read: !!row.sent_notice_read_at
+        });
+      }
+      if (row.first_viewed_at) {
+        events.push({
+          id: 'share-viewed-' + (row.tracking_token || row.id),
+          from: 'SitePass', kind: 'system', time: shareTimeTextV521(row.first_viewed_at),
+          sortAt: row.first_viewed_at,
+          text: (row.channel === 'sms' && phone ? phone + '\n' : '') + equipment + ' ' + channel + ' 링크 열람확인',
+          read: !!row.view_notice_read_at
+        });
+      }
+    });
+    events.sort(function(a,b){ return new Date(a.sortAt || 0) - new Date(b.sortAt || 0); });
+    messages = messages.concat(events);
+
+    var legacy = loadJson('sitepass_share_history_v445', []);
+    if (Array.isArray(legacy) && legacy.length) {
+      legacy.slice(-20).forEach(function(row, index){
+        if (!row || row.trackingToken || row.tracking_token) return;
         var lines = [
           (row.equipment || '서류 링크') + ' · ' + (row.status || '공유 실행'),
-          '받는 곳: ' + (row.receiver || '담당자'),
           '공유방식: ' + (row.method || '링크')
         ];
-        if (row.phone) lines.push('전화번호: ' + row.phone);
+        if (row.phone) lines.push('전화번호: ' + formatSharePhoneV521(row.phone));
         if (row.email) lines.push('이메일: ' + row.email);
         messages.push({
-          id: 'share-' + hashText(JSON.stringify(row) + index),
-          from: 'SitePass', kind: 'system', time: row.time || row.date || '공유기록',
+          id: 'share-legacy-' + hashText(JSON.stringify(row) + index),
+          from: 'SitePass', kind: 'system', time: row.time || row.date || '이전 기록',
           text: lines.join('\n')
         });
       });
-    } else {
+    }
+    if (messages.length === 1) {
       messages.push({
         id: 'share-empty', from: 'SitePass', kind: 'system', time: '안내',
-        text: '아직 저장된 공유 기록이 없습니다. 문자·카톡 공유 기록이 생기면 이 방에 표시됩니다.'
+        text: '아직 링크 전송 기록이 없습니다. 카카오톡이나 문자로 링크를 보내면 이 방에 표시됩니다.'
       });
     }
     return messages;
@@ -539,6 +693,14 @@
     if (roomId === 'expiry') {
       return expiryMessages(false).filter(function(msg){ return !!msg.deletable && !msg.read; }).length;
     }
+    if (roomId === 'share') {
+      return loadShareTrackingCacheV521().reduce(function(total,row){
+        if (!row || row.canceled_at) return total;
+        if (row.sent_at && !row.sent_notice_read_at) total += 1;
+        if (row.first_viewed_at && !row.view_notice_read_at) total += 1;
+        return total;
+      }, 0);
+    }
     if (roomId === 'admin') {
       var identity = currentIdentity();
       return getContactsSafe().filter(function(item){
@@ -548,7 +710,7 @@
     return 0;
   }
 
-  function totalUnreadCount(){ return unreadCount('expiry') + unreadCount('admin'); }
+  function totalUnreadCount(){ return unreadCount('expiry') + unreadCount('share') + unreadCount('admin'); }
 
   function updateHomeExpiryUnread479(force){
     var count = unreadCount('expiry');
@@ -698,6 +860,14 @@
     resetDeleteMode();
     if (roomId === 'expiry') markExpiryRoomRead();
     if (roomId === 'admin') markAdminRepliesReadByMember();
+    if (roomId === 'share') {
+      refreshShareTrackingServerV521(true).then(function(){
+        if (currentRoomId !== 'share') return;
+        renderMessages('share');
+        renderRoomList();
+        setTimeout(function(){ if (currentRoomId === 'share') markShareTrackingReadV521(); }, 350);
+      });
+    }
     var room = ROOMS[roomId];
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
@@ -738,6 +908,7 @@
 
   window.sitepassOpenChatInbox460 = function(){
     window.sitepassBackToChatList460();
+    refreshShareTrackingServerV521(false);
     return false;
   };
 
@@ -755,8 +926,24 @@
     try { if (currentRoomId === 'share') renderMessages('share'); } catch(e) {}
     return true;
   };
+  window.sitePassAddShareTrackingRowV521 = function(row){
+    var saved = mergeShareTrackingRowV521(row);
+    if (!saved) return false;
+    try { renderRoomList(); } catch(e) {}
+    try {
+      if (currentRoomId === 'share') {
+        renderMessages('share');
+        setTimeout(function(){ if (currentRoomId === 'share') markShareTrackingReadV521(); }, 350);
+      }
+    } catch(e) {}
+    try { updateBottomUnreadBadge(); } catch(e) {}
+    return true;
+  };
   window.addEventListener('sitepass-share-history-updated-v520', function(){
     try { window.sitepassRefreshShareHistoryV520(); } catch(e) {}
+  });
+  window.addEventListener('sitepass-share-tracking-updated-v521', function(event){
+    try { window.sitePassAddShareTrackingRowV521(event && event.detail); } catch(e) {}
   });
 
   window.sitepassOpenShareFromHome479 = function(){
@@ -949,10 +1136,12 @@
   }
 
   function init(){
+    loadShareTrackingCacheV521();
     renderRoomList();
     wrapBottomNav();
     updateBottomUnreadBadge();
     updateHomeExpiryUnread479(true);
+    refreshShareTrackingServerV521(false);
   }
 
   window.sitepassOpenChatRoom445 = window.sitepassOpenChatRoom460;
@@ -966,6 +1155,8 @@
     setTimeout(init, 600);
   });
   window.addEventListener('pageshow', function(){ setTimeout(init, 100); });
+  window.addEventListener('focus', function(){ refreshShareTrackingServerV521(false); });
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshShareTrackingServerV521(false); });
   setInterval(function(){
     var screen = $('contactScreen');
     var panelOpen = !!screen && !screen.classList.contains('hidden')
@@ -980,6 +1171,7 @@
       markExpiryRoomRead();
       renderMessages('expiry');
     }
+    if (!document.hidden) refreshShareTrackingServerV521(false);
     renderRoomList();
     updateBottomUnreadBadge();
   }, 2500);

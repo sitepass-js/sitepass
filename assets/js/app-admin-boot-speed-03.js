@@ -829,7 +829,7 @@ function expireUnpaidPaymentTestData() {
           target.hash = '';
           target.searchParams.set('manager', String(parsed.code));
           if (parsed.sig) target.searchParams.set('sig', String(parsed.sig));
-          target.searchParams.set('v', '23.7.520-test');
+          target.searchParams.set('v', '23.7.521-test');
           window.location.replace(target.toString());
         }
         return true;
@@ -912,7 +912,7 @@ function expireUnpaidPaymentTestData() {
         updateSignupTermsUi();
         registerSitePassServiceWorker();
         updateHomeInstallButtonState();
-        // v23.7.520-test: 담당자 링크는 head 단계에서 recipient.html로 이동합니다.
+        // v23.7.521-test: 담당자 링크는 head 단계에서 recipient.html로 이동합니다.
         // 메인 앱 부팅은 더 이상 담당자 화면을 강제로 고정하지 않습니다.
         clearLegacyAutoLoginState();
         const didCleanReset = resetSitePassTestDataOnce();
