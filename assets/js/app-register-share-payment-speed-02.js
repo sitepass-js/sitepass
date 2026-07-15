@@ -1477,6 +1477,54 @@ let sitePassStorageQuotaNoticeShownV496 = false;
         obj.previewDataUrl || obj.editDataUrl || '';
     }
 
+
+    function getStoredAttachmentPath(obj) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      return String(obj.storagePath || obj.storage_path || obj.objectPath || obj.object_path || '').replace(/^\/+/, '').trim();
+    }
+
+    function getStoredAttachmentBucket(obj) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      return String(obj.storageBucket || obj.storage_bucket || obj.bucket || getSitePassStorageBucketName()).trim() || getSitePassStorageBucketName();
+    }
+
+    function setSitePassRegistrationUploadBusyV515(busy, text) {
+      const button = document.getElementById('saveBundleButton');
+      if (button) {
+        if (!button.dataset.normalTextV515) button.dataset.normalTextV515 = button.textContent || '등록완료';
+        button.disabled = !!busy;
+        button.setAttribute('aria-busy', busy ? 'true' : 'false');
+        button.textContent = busy ? (text || '서류 업로드 중...') : (button.dataset.normalTextV515 || '등록완료');
+      }
+      let box = document.getElementById('sitePassStorageUploadProgressV515');
+      if (busy && !box) {
+        box = document.createElement('div');
+        box.id = 'sitePassStorageUploadProgressV515';
+        box.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:rgba(15,23,42,.52);display:flex;align-items:center;justify-content:center;padding:20px;';
+        box.innerHTML = '<div style="width:min(420px,100%);background:#fff;border-radius:18px;padding:22px;box-shadow:0 24px 70px rgba(15,23,42,.28);text-align:center"><div style="font-size:18px;font-weight:900;color:#0f172a;margin-bottom:8px">서류를 서버에 저장하고 있습니다</div><div data-progress-text style="font-size:14px;line-height:1.55;color:#475569">잠시만 기다려주세요.</div><div style="height:9px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:14px"><div data-progress-bar style="height:100%;width:3%;background:#f2b705;border-radius:999px;transition:width .2s ease"></div></div><div style="font-size:12px;color:#64748b;margin-top:10px">업로드가 끝나기 전에는 등록완료로 처리하지 않습니다.</div></div>';
+        document.body.appendChild(box);
+      }
+      if (!busy && box) box.remove();
+      if (busy && box && text) {
+        const t = box.querySelector('[data-progress-text]');
+        if (t) t.textContent = text;
+      }
+    }
+
+    function updateSitePassRegistrationUploadProgressV515(current, total, label) {
+      const box = document.getElementById('sitePassStorageUploadProgressV515');
+      if (!box) return;
+      const safeTotal = Math.max(1, Number(total || 1));
+      const safeCurrent = Math.max(0, Math.min(safeTotal, Number(current || 0)));
+      const percent = Math.max(3, Math.round((safeCurrent / safeTotal) * 100));
+      const bar = box.querySelector('[data-progress-bar]');
+      const text = box.querySelector('[data-progress-text]');
+      if (bar) bar.style.width = percent + '%';
+      if (text) text.textContent = (label ? label + ' · ' : '') + safeCurrent + '/' + safeTotal + '개 확인 중';
+      const button = document.getElementById('saveBundleButton');
+      if (button) button.textContent = '서류 업로드 ' + safeCurrent + '/' + safeTotal;
+    }
+
     function sanitizeStoragePathPart(value, fallback) {
       const text = String(value || fallback || 'file').trim();
       const safe = text.replace(/[^0-9a-zA-Z가-힣._-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80);
@@ -1521,21 +1569,29 @@ let sitePassStorageQuotaNoticeShownV496 = false;
 
     async function uploadSingleDocPageToSupabaseStorage(item, docKey, doc, page, pageIndex) {
       const supabaseApi = window.SitePassSupabaseApi;
-      if (!supabaseApi || typeof supabaseApi.storageUpload !== 'function') return { ok:false, skipped:true, error:'Supabase Storage API 없음' };
-      // v23.7.514-test: 오래된 URL이 previewDataUrl에 남아 있어도
-      // original/corrected/data/blob 원본이 있으면 반드시 원본을 먼저 업로드합니다.
+      if (!supabaseApi || typeof supabaseApi.storageUpload !== 'function') return { ok:false, error:'Supabase Storage API 없음' };
       const embeddedValues = [
         page && page.previewDataUrl, page && page.editDataUrl, page && page.correctedDataUrl, page && page.originalDataUrl, page && page.fileDataUrl, page && page.dataUrl, page && page.fileObjectUrl, page && page.blobUrl,
         doc && doc.previewDataUrl, doc && doc.editDataUrl, doc && doc.correctedDataUrl, doc && doc.originalDataUrl, doc && doc.fileDataUrl, doc && doc.dataUrl, doc && doc.fileObjectUrl, doc && doc.blobUrl
       ];
-      const source = embeddedValues.find(function(value){ return isDataUrlAttachment(value) || isBlobUrlAttachment(value); }) ||
-        getAttachmentUrlFromPageOrDoc(page) || getAttachmentUrlFromPageOrDoc(doc);
-      if (!source || (!isDataUrlAttachment(source) && !isBlobUrlAttachment(source))) {
-        const existingUrl = getStoredAttachmentUrl(page) || getStoredAttachmentUrl(doc);
-        return existingUrl ? { ok:true, skipped:true, publicUrl:existingUrl } : { ok:false, skipped:true, error:'업로드할 이미지 데이터 없음' };
+      const source = embeddedValues.find(function(value){ return isDataUrlAttachment(value) || isBlobUrlAttachment(value); }) || '';
+      const existingPath = getStoredAttachmentPath(page) || getStoredAttachmentPath(doc);
+      const existingBucket = getStoredAttachmentBucket(page && getStoredAttachmentPath(page) ? page : doc);
+
+      // 이미 Storage 경로가 있는 자료는 실제 객체가 존재하는지 먼저 검증합니다.
+      if (!source && existingPath && typeof supabaseApi.storageExists === 'function') {
+        const existsResult = await supabaseApi.storageExists(existingBucket, existingPath);
+        if (existsResult && existsResult.exists) {
+          const existingPublicUrl = typeof supabaseApi.storagePublicUrl === 'function' ? supabaseApi.storagePublicUrl(existingBucket, existingPath) : getStoredAttachmentUrl(page) || getStoredAttachmentUrl(doc);
+          return { ok:true, existing:true, verified:true, bucket:existingBucket, path:existingPath, publicUrl:existingPublicUrl };
+        }
+      }
+
+      if (!source) {
+        return { ok:false, reattachRequired:true, error:'원본 파일 데이터가 없습니다. 이 서류를 다시 첨부해주세요.' };
       }
       const blob = await attachmentValueToBlob(source);
-      if (!blob) return { ok:false, error:'이미지 Blob 변환 실패' };
+      if (!blob || !blob.size) return { ok:false, error:'첨부파일을 업로드 형식으로 변환하지 못했습니다.' };
       const bucket = getSitePassStorageBucketName();
       const owner = sanitizeStoragePathPart(item.ownerSignupId || item.ownerProviderId || item.ownerMemberId || 'anonymous', 'owner');
       const code = sanitizeStoragePathPart(item.code || item.equipmentNo || ('draft_' + Date.now()), 'code');
@@ -1545,8 +1601,17 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       const path = owner + '/' + code + '/' + docPart + '/' + pageId + '.' + ext;
       const result = await supabaseApi.storageUpload(bucket, path, blob, { upsert:true, cacheControl:'31536000', contentType: blob.type || undefined });
       if (result && result.error) return { ok:false, error:result.error };
+
+      // 업로드 응답만 믿지 않고 storage.objects 목록에서 실제 생성 여부를 재확인합니다.
+      if (typeof supabaseApi.storageExists === 'function') {
+        const verifyResult = await supabaseApi.storageExists(bucket, path);
+        if (!verifyResult || !verifyResult.exists) {
+          return { ok:false, error:(verifyResult && verifyResult.error) || '업로드 응답은 성공했지만 Storage에서 파일을 확인하지 못했습니다.' };
+        }
+      }
       const publicUrl = (typeof supabaseApi.storagePublicUrl === 'function') ? supabaseApi.storagePublicUrl(bucket, path) : '';
-      return { ok:true, bucket, path, publicUrl };
+      if (!publicUrl) return { ok:false, error:'Storage 파일주소를 만들지 못했습니다.' };
+      return { ok:true, uploaded:true, verified:true, bucket, path, publicUrl };
     }
 
     function applyStorageUploadResultToPage(page, result) {
@@ -1615,62 +1680,106 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       return out;
     }
 
-    async function uploadEquipmentItemDocsToSupabaseStorage(item) {
+    async function uploadEquipmentItemDocsToSupabaseStorage(item, onProgress) {
       const out = JSON.parse(JSON.stringify(item || {}));
       out.docs = out.docs || {};
       let uploadCount = 0;
+      let verifiedCount = 0;
       let failCount = 0;
-      const docEntries = Object.entries(out.docs || {});
+      const failedDocs = [];
+      const failureReasons = [];
+      const docEntries = Object.entries(out.docs || {}).filter(function(entry){ return docLooksAttached(entry[1]); });
+      let totalPages = 0;
+      docEntries.forEach(function(entry){
+        const doc = entry[1] && typeof entry[1] === 'object' ? entry[1] : {};
+        const pages = Array.isArray(doc.pages) && doc.pages.length ? doc.pages : (doc.fileName ? [doc] : []);
+        totalPages += pages.length;
+      });
+      if (!totalPages) throw new Error('업로드할 첨부서류가 없습니다. 서류를 다시 첨부해주세요.');
+      let completedPages = 0;
+      if (typeof onProgress === 'function') onProgress(0, totalPages, '업로드 준비');
+
       for (const entry of docEntries) {
         const docKey = entry[0];
         const doc = entry[1] && typeof entry[1] === 'object' ? entry[1] : {};
         const pages = Array.isArray(doc.pages) && doc.pages.length ? doc.pages : (doc.fileName ? [{
           id:'legacy_' + docKey + '_1',
           fileName:doc.fileName || '첨부파일',
-          previewDataUrl:doc.previewDataUrl || doc.editDataUrl || doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || '',
-          editDataUrl:doc.editDataUrl || doc.previewDataUrl || ''
+          previewDataUrl:doc.previewDataUrl || doc.editDataUrl || doc.originalDataUrl || doc.correctedDataUrl || doc.fileDataUrl || doc.dataUrl || doc.fileObjectUrl || doc.blobUrl || '',
+          editDataUrl:doc.editDataUrl || doc.previewDataUrl || '',
+          storageBucket:doc.storageBucket || doc.storage_bucket || '',
+          storagePath:doc.storagePath || doc.storage_path || ''
         }] : []);
+        if (!pages.length) {
+          failCount++;
+          failedDocs.push((doc.groupTitle ? doc.groupTitle + ' - ' : '') + (doc.title || doc.fileName || docKey));
+          continue;
+        }
         for (let i = 0; i < pages.length; i++) {
+          const label = (doc.groupTitle ? doc.groupTitle + ' - ' : '') + (doc.title || doc.fileName || docKey);
           try {
             const result = await uploadSingleDocPageToSupabaseStorage(out, docKey, doc, pages[i], i);
             if (result && result.ok && result.publicUrl) {
               pages[i] = applyStorageUploadResultToPage(pages[i], result);
-              uploadCount++;
-            } else if (result && result.skipped) {
-              // 이미 URL이 있거나 업로드 대상이 없으면 실패로 치지 않습니다.
+              verifiedCount++;
+              if (result.uploaded) uploadCount++;
             } else {
               failCount++;
+              failedDocs.push(label + (pages.length > 1 ? ' ' + (i + 1) + '페이지' : ''));
+              const reason = result && result.error ? (result.error.message || result.error.error_description || result.error) : 'Storage 업로드 실패';
+              failureReasons.push(String(reason || 'Storage 업로드 실패'));
             }
           } catch (e) {
             console.warn('서류 Storage 업로드 실패:', docKey, e);
             failCount++;
+            failedDocs.push(label + (pages.length > 1 ? ' ' + (i + 1) + '페이지' : ''));
+            failureReasons.push(String(e && e.message ? e.message : e || 'Storage 업로드 예외'));
+          } finally {
+            completedPages++;
+            if (typeof onProgress === 'function') onProgress(completedPages, totalPages, label);
           }
         }
         doc.pages = pages;
-        const firstUrl = pages.map(getStoredAttachmentUrl).find(Boolean) || getStoredAttachmentUrl(doc);
+        const firstStoredPage = pages.find(function(page){ return getStoredAttachmentPath(page) && getStoredAttachmentUrl(page); }) || pages.find(function(page){ return getStoredAttachmentUrl(page); }) || null;
+        const firstUrl = firstStoredPage ? getStoredAttachmentUrl(firstStoredPage) : '';
         if (firstUrl) {
           doc.previewDataUrl = firstUrl;
           doc.editDataUrl = firstUrl;
-          doc.fileUrl = doc.fileUrl || firstUrl;
-          doc.downloadUrl = doc.downloadUrl || firstUrl;
-          doc.storagePublicUrl = doc.storagePublicUrl || firstUrl;
-          doc.publicUrl = doc.publicUrl || firstUrl;
+          doc.fileUrl = firstUrl;
+          doc.downloadUrl = firstUrl;
+          doc.storagePublicUrl = firstUrl;
+          doc.publicUrl = firstUrl;
+          doc.storageBucket = firstStoredPage.storageBucket || getSitePassStorageBucketName();
+          doc.storagePath = firstStoredPage.storagePath || '';
           doc.originalDataUrl = '';
           doc.correctedDataUrl = '';
           doc.storageMode = 'supabase-storage';
         }
         out.docs[docKey] = doc;
       }
-      out.storageMode = 'supabase-storage-v328';
+      out.storageMode = 'supabase-storage-v515';
       out.storageUploadedAt = new Date().toISOString();
       out.storageUploadCount = uploadCount;
+      out.storageVerifiedCount = verifiedCount;
+      out.storageExpectedCount = totalPages;
       out.storageUploadFailCount = failCount;
+      if (failCount > 0 || verifiedCount !== totalPages) {
+        const unique = Array.from(new Set(failedDocs)).slice(0, 12);
+        const uniqueReasons = Array.from(new Set(failureReasons)).slice(0, 3);
+        const error = new Error(`서류 ${totalPages}개 중 ${verifiedCount}개만 서버에서 확인되었습니다.
+
+다시 첨부가 필요한 서류:
+${unique.join('\n') || '확인 필요'}${uniqueReasons.length ? '\n\n서버 응답:\n' + uniqueReasons.join('\n') : ''}`);
+        error.failedDocs = unique;
+        error.storageItem = out;
+        throw error;
+      }
       return out;
     }
 
-    async function uploadAndPersistEquipmentItemDocsInBackground(item, reason) {
+    async function uploadAndPersistEquipmentItemDocsInBackground(item, reason, onProgress) {
       try {
-        const storageItem = await uploadEquipmentItemDocsToSupabaseStorage(item);
+        const storageItem = await uploadEquipmentItemDocsToSupabaseStorage(item, onProgress);
         const serverItem = stripItemDataUrlsForServerStorage(storageItem);
         let persistResult = null;
         try { persistResult = await saveEquipmentItemToSupabase(serverItem, reason || 'storage_background'); } catch (e) { console.warn('Storage 업로드 후 서버저장 실패:', e); persistResult = { ok:false, error:e }; }
@@ -2042,97 +2151,84 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       }
     }
 
-    function completeTestRegistrationInstantly(item, paymentTier) {
-      // v23.7.350: 등록완료 대기시간을 없애기 위해 결제완료 변환/가벼운 저장/화면이동을 동기적으로 끝냅니다.
+    async function completeTestRegistrationInstantly(item, paymentTier) {
+      if (sitePassRegistrationCompletionBusy) return false;
+      sitePassRegistrationCompletionBusy = true;
       item = (item && typeof item === 'object') ? item : {};
-      const validation = validateRegistrationItemHasDownloadableDocs(item);
-      if (!validation.ok) {
-        alert(validation.message || '서류 사진 데이터가 없어 등록을 중단합니다.');
-        return;
-      }
-      const now = new Date();
-      const nowIso = now.toISOString();
-      const info = { key:'test-free', label:'테스트 무료등록', price:'결제없음', days:60, serviceStatus:'실사용베타', planText:'테스트 무료등록 · 결제없음', additional: paymentTier === 'additional' };
-      const equipmentRegister = getEquipmentRegisterModule ? getEquipmentRegisterModule() : {};
-      let paidItem = equipmentRegister && equipmentRegister.buildPaidRegistrationItem
-        ? equipmentRegister.buildPaidRegistrationItem({
-            item,
-            info,
-            nowIso,
-            trialEndsAt:addDaysIso(nowIso, info.days),
-            managerExpireAt:new Date(getSevenDaysFromNowMs()).toISOString(),
-            managerShareToken:makeManagerShareToken(),
-            paymentTier:paymentTier || 'first'
-          })
-        : {
-            ...item,
-            serviceStatus: info.serviceStatus,
-            paymentPlan: info.key,
-            basicPlan: info.planText,
-            paidAt: nowIso,
-            trialEndsAt: addDaysIso(nowIso, info.days),
-            managerExpireAt: new Date(getSevenDaysFromNowMs()).toISOString(),
-            managerShareToken: makeManagerShareToken(),
-            paymentStatus: '등록결제완료',
-            paymentAmount: info.price,
-            paymentMethod: '등록 결제 테스트 처리',
-            paymentTier: paymentTier || 'first',
-            updatedAt: nowIso
-          };
-      if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
-      paidItem = markSitePassEquipmentUnsyncedV476(applyCurrentMemberOwnerForEquipmentSync(paidItem, true), 'test_registration');
-      try { sitePassUnsyncedRetryingCodesV476.add(String(paidItem.code || '')); } catch (e) {}
+      setSitePassRegistrationUploadBusyV515(true, '업로드 준비 중...');
+      try {
+        try { saveRegistrationDraftNow(); } catch (e) {}
+        const validation = validateRegistrationItemHasDownloadableDocs(item);
+        if (!validation.ok) throw new Error(validation.message || '서류 사진 데이터가 없어 등록을 중단합니다.');
 
-      // v23.7.350: 등록완료 화면 전환을 어떤 저장/병합 작업보다 먼저 실행합니다.
-      // v325에서 기존 보관함 보존 병합이 등록완료 흐름을 붙잡아 보관함으로 안 넘어가는 문제가 있었습니다.
-      const immediateItems = getImmediateRegistrationCompletionItems(paidItem);
-      try { window.sitePassFastCompletionItems = immediateItems; } catch (e) {}
-      try { rememberRuntimeEquipmentItems(immediateItems); } catch (e) {}
-      try { clearPendingRegistration(); } catch (e) {}
-      try { clearRegistrationDraft(); } catch (e) {}
-      sitePassEquipmentSyncMessage = '테스트 등록완료: 화면 먼저 표시, 저장/서버 동기화는 뒤에서 처리 중';
-      const movedToList = showListScreenImmediatelyForRegistration(paidItem);
-      if (!movedToList) {
-        try { showScreen('listScreen', { replace:true }); } catch (e) { console.warn('보관함 화면 이동 실패:', e); }
-      }
+        const now = new Date();
+        const nowIso = now.toISOString();
+        const info = { key:'test-free', label:'테스트 무료등록', price:'결제없음', days:60, serviceStatus:'실사용베타', planText:'테스트 무료등록 · 결제없음', additional: paymentTier === 'additional' };
+        const equipmentRegister = getEquipmentRegisterModule ? getEquipmentRegisterModule() : {};
+        let paidItem = equipmentRegister && equipmentRegister.buildPaidRegistrationItem
+          ? equipmentRegister.buildPaidRegistrationItem({
+              item, info, nowIso,
+              trialEndsAt:addDaysIso(nowIso, info.days),
+              managerExpireAt:new Date(getSevenDaysFromNowMs()).toISOString(),
+              managerShareToken:makeManagerShareToken(),
+              paymentTier:paymentTier || 'first'
+            })
+          : {
+              ...item, serviceStatus:info.serviceStatus, paymentPlan:info.key, basicPlan:info.planText, paidAt:nowIso,
+              trialEndsAt:addDaysIso(nowIso, info.days), managerExpireAt:new Date(getSevenDaysFromNowMs()).toISOString(),
+              managerShareToken:makeManagerShareToken(), paymentStatus:'등록결제완료', paymentAmount:info.price,
+              paymentMethod:'등록 결제 테스트 처리', paymentTier:paymentTier || 'first', updatedAt:nowIso
+            };
+        if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
+        paidItem = applyCurrentMemberOwnerForEquipmentSync(paidItem, true);
 
-      let saveResult = { ok:false, mode:'scheduled' };
-      setTimeout(function(){
-        try {
-          const items = getImmediateRegistrationCompletionItems(paidItem);
-          saveResult = setItemsForImmediateRegistrationCompletion(items);
-          if (!saveResult.ok) {
-            try { rememberRuntimeEquipmentItems(items); } catch (e) {}
-            console.warn('테스트 즉시 등록완료: 브라우저 저장은 실패했지만 현재 화면 보관함 표시를 우선 진행합니다.');
-          }
-        } catch (e) {
-          console.warn('테스트 즉시 등록완료 후 보관함 저장/병합 실패:', e);
+        const uploaded = await uploadAndPersistEquipmentItemDocsInBackground(
+          paidItem,
+          'test_free_completed_storage_verified_v515',
+          updateSitePassRegistrationUploadProgressV515
+        );
+        if (!uploaded || !uploaded.ok || !uploaded.item) {
+          const detail = uploaded && uploaded.error ? (uploaded.error.message || uploaded.error) : '서버 저장 결과를 확인하지 못했습니다.';
+          throw new Error(String(detail || '서류 서버 저장 실패'));
         }
-      }, 80);
-      setTimeout(function(){
-        try {
-          const note = saveResult && saveResult.ok ? getStorageFallbackNote(saveResult) : '\n\n보관함 화면을 먼저 표시했습니다. 저장은 뒤에서 처리 중입니다.';
-          alert(`테스트 등록이 완료되었습니다.\n\n${escapePlainTextForAlert(paidItem.equipmentName || '장비')} QR링크가 생성되고 보관함에 표시되었습니다.${note}\n\n※ 서버 동기화는 뒤에서 처리합니다. 테스트 기간에는 결제단계를 건너뜁니다.`);
-        } catch (e) {}
-      }, 250);
-      setTimeout(function(){
+        const savedItem = uploaded.item;
+        if (Number(savedItem.storageUploadFailCount || 0) > 0 || Number(savedItem.storageVerifiedCount || 0) < Number(savedItem.storageExpectedCount || 0)) {
+          throw new Error('모든 첨부서류의 서버 저장 확인이 끝나지 않았습니다.');
+        }
+
+        const items = getImmediateRegistrationCompletionItems(savedItem);
+        const saveResult = setItemsForImmediateRegistrationCompletion(items);
+        try { rememberRuntimeEquipmentItems(items); } catch (e) {}
+        try { clearPendingRegistration(); } catch (e) {}
+        try { clearRegistrationDraft(); } catch (e) {}
         try { resetForm(false); } catch (e) {}
         try { updateHomeRegistrationButton(); } catch (e) {}
-      }, 1000);
-      setTimeout(function(){
-        try {
-          if (!itemHasDownloadableDocData(paidItem)) {
-            console.warn('사진 데이터 없는 등록건은 빈 QR 방지를 위해 백그라운드 서버저장을 생략합니다.');
-            return;
-          }
-          Promise.resolve(uploadAndPersistEquipmentItemDocsInBackground(paidItem, 'test_free_completed_storage_background')).then(function(bgResult){
-            sitePassEquipmentSyncMessage = bgResult && bgResult.ok ? '서류파일 서버저장 완료: QR/보관함은 Storage URL 사용' : ('서류파일 서버저장 확인 필요: ' + (bgResult?.error?.message || bgResult?.error || '알 수 없음'));
-          }).catch(function(e){
-            console.warn('테스트 즉시 등록완료 후 Storage 백그라운드 저장 실패:', e);
-            sitePassEquipmentSyncMessage = '서류파일 서버저장 확인 필요: ' + (e?.message || e);
-          }).finally(function(){ try { sitePassUnsyncedRetryingCodesV476.delete(String(paidItem.code || '')); } catch (e) {} });
-        } catch (e) {}
-      }, 3500);
+        sitePassEquipmentSyncMessage = '서류파일 서버저장 완료: ' + Number(savedItem.storageVerifiedCount || 0) + '개 확인';
+
+        window.sitePassFastCompletionItems = items;
+        const movedToList = showListScreenImmediatelyForRegistration(savedItem);
+        if (!movedToList) {
+          try { showScreen('listScreen', { replace:true }); } catch (e) { console.warn('보관함 화면 이동 실패:', e); }
+        }
+        const note = saveResult && saveResult.ok ? getStorageFallbackNote(saveResult) : '';
+        alert(`테스트 등록이 완료되었습니다.
+
+${escapePlainTextForAlert(savedItem.equipmentName || '장비')} 서류 ${Number(savedItem.storageVerifiedCount || 0)}개를 Storage에서 확인한 뒤 보관함에 저장했습니다.${note}`);
+        return true;
+      } catch (e) {
+        console.error('v515 등록 전 Storage 업로드/확인 실패:', e);
+        try { saveRegistrationDraftNow(); } catch (draftError) {}
+        const message = e && e.message ? e.message : String(e || '알 수 없는 오류');
+        alert(`등록완료로 처리하지 않았습니다.
+
+${message}
+
+작성내용은 유지됩니다. 오류가 난 서류를 다시 첨부한 뒤 등록완료를 눌러주세요.`);
+        return false;
+      } finally {
+        setSitePassRegistrationUploadBusyV515(false);
+        sitePassRegistrationCompletionBusy = false;
+      }
     }
     window.completeTestRegistrationInstantly = completeTestRegistrationInstantly;
 

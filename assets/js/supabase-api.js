@@ -93,6 +93,31 @@
     }
   }
 
+
+  async function storageExists(bucket, path){
+    const client = getClient();
+    if (!client || !client.storage || typeof client.storage.from !== 'function') {
+      return { exists:false, error:{ message:'Supabase Storage 연결 없음' } };
+    }
+    const cleanPath = String(path || '').replace(/^\/+|\/+$/g, '');
+    if (!cleanPath) return { exists:false, error:{ message:'Storage 경로 없음' } };
+    const slash = cleanPath.lastIndexOf('/');
+    const folder = slash >= 0 ? cleanPath.slice(0, slash) : '';
+    const fileName = slash >= 0 ? cleanPath.slice(slash + 1) : cleanPath;
+    try {
+      const result = await client.storage.from(String(bucket || '')).list(folder, {
+        limit: 100,
+        search: fileName,
+        sortBy: { column:'name', order:'asc' }
+      });
+      if (result && result.error) return { exists:false, error:result.error };
+      const rows = Array.isArray(result && result.data) ? result.data : [];
+      return { exists:rows.some(function(row){ return String(row && row.name || '') === fileName; }), data:rows, error:null };
+    } catch (e) {
+      return { exists:false, error:e };
+    }
+  }
+
   async function signOut(){
     const client = getClient();
     if (!client || !client.auth || typeof client.auth.signOut !== 'function') return { error: null };
@@ -109,6 +134,7 @@
     update,
     storageUpload,
     storagePublicUrl,
+    storageExists,
     signOut
   };
 })();

@@ -1002,17 +1002,28 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       if (oldItem) {
         if (!requirePrivateEditReverification(oldItem, item)) return;
         item.updateHistory.unshift({ at:nowIso, summary:buildUpdateSummary(oldItem, item).slice(0, 12) });
-        items[editIndex] = item;
-        const saveResult = setItemsWithFallback(items);
-        let editServerResult = null;
-        try { editServerResult = await saveEquipmentItemToSupabase(item, 'edit'); } catch (e) { console.warn('수정 장비 서버 저장 실패:', e); editServerResult = { ok:false, error:e }; }
-        if (!saveResult.ok && !(editServerResult && editServerResult.ok)) {
-          alert('브라우저 저장공간과 서버 저장이 모두 실패했습니다. 사진 용량을 줄이거나 기존 코드를 정리한 뒤 다시 시도해주세요.');
+        if (typeof setSitePassRegistrationUploadBusyV515 === 'function') setSitePassRegistrationUploadBusyV515(true, '수정 서류 업로드 준비 중...');
+        let editUploadResult = null;
+        try {
+          try { saveRegistrationDraftNow(); } catch (e) {}
+          editUploadResult = await uploadAndPersistEquipmentItemDocsInBackground(item, 'edit_storage_verified_v515', updateSitePassRegistrationUploadProgressV515);
+        } catch (e) {
+          editUploadResult = { ok:false, error:e };
+        } finally {
+          if (typeof setSitePassRegistrationUploadBusyV515 === 'function') setSitePassRegistrationUploadBusyV515(false);
+        }
+        if (!editUploadResult || !editUploadResult.ok || !editUploadResult.item) {
+          const message = editUploadResult && editUploadResult.error ? (editUploadResult.error.message || editUploadResult.error) : '서류 서버 저장 실패';
+          alert('수정내용을 저장하지 않았습니다.\n\n' + message + '\n\n원본이 없는 기존 서류는 다시 첨부한 뒤 저장해주세요.');
           return;
         }
+        const savedEditItem = editUploadResult.item;
+        items[editIndex] = savedEditItem;
+        const saveResult = setItemsWithFallback(items);
         const editSavedLightNote = getStorageFallbackNote(saveResult);
         alert(`수정내용이 저장되었습니다.
 
+Storage 확인: ${Number(savedEditItem.storageVerifiedCount || 0)}개
 포함: ${bundleMeta.includedGroupNames.join(', ')}${editSavedLightNote}`);
         clearRegistrationDraft();
         editingCode = '';
@@ -1034,15 +1045,14 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
         // 이전 v317~v320에서는 completePendingRegistrationPayment() 안쪽에서 남은 처리 때문에
         // 등록완료 버튼 이후 대기가 길어질 수 있었습니다.
         pendingRegistrationItemMemory = pending;
-        clearPendingRegistration();
-        pendingRegistrationItemMemory = pending;
-        clearRegistrationDraft();
-        console.info('SitePass 테스트 모드: 즉시 등록완료/보관함 이동 처리 시작');
+        // v23.7.515-test: Storage 업로드와 실제 파일 확인이 끝나기 전에는
+        // 초안·서류 데이터를 지우거나 보관함 완료화면으로 이동하지 않습니다.
+        console.info('SitePass 테스트 모드: Storage 선업로드/검증 후 등록완료 처리 시작');
         try {
           if (typeof completeTestRegistrationInstantly === 'function') {
-            completeTestRegistrationInstantly(item, pending.paymentTier || (isAdditionalRegistration ? 'additional' : 'first'));
+            await completeTestRegistrationInstantly(item, pending.paymentTier || (isAdditionalRegistration ? 'additional' : 'first'));
           } else {
-            setTimeout(function(){ completePendingRegistrationPayment('test-free'); }, 0);
+            await completePendingRegistrationPayment('test-free');
           }
         } catch (e) {
           console.error('테스트 즉시 등록완료 처리 실패:', e);
