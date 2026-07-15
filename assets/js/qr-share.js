@@ -1,4 +1,4 @@
-// SitePass v23.7.496 - QR/1일 담당자 공유링크 공통 파일
+// SitePass v23.7.501 - QR/1일 담당자 공유링크 공통 파일
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
@@ -177,13 +177,47 @@
     return parts.length ? Array.from(new Set(parts)).join(' / ') : String(fallback || 'Supabase 저장 오류');
   }
 
-  async function saveManagerShareItemsByRpc(client, rows){
+  function getManagerShareMemberPayloadV501(deps){
+    let member = null;
+    try {
+      if (deps && typeof deps.getMember === 'function') member = deps.getMember();
+    } catch (e) { member = null; }
+    member = member && typeof member === 'object' ? member : {};
+    return {
+      id: String(member.id || member.memberId || member.userId || ''),
+      signup_id: String(member.signupId || member.loginId || member.signup_id || member.login_id || member.supabaseLoginId || ''),
+      provider_id: String(member.providerId || member.provider_id || ''),
+      phone: String(member.phone || member.phoneNumber || member.signupIdentityPhone || member.verifiedPhone || '').replace(/[^0-9]/g, ''),
+      name: String(member.name || member.fullName || member.signupIdentityName || member.verifiedName || '')
+    };
+  }
+
+  function isManagerShareRpcMissingV501(error){
+    const code = String(error && error.code || '');
+    const message = String(error && (error.message || error.details || error.hint) || '').toLowerCase();
+    return code === 'PGRST202' || message.includes('could not find the function') || message.includes('schema cache') || message.includes('sitepass_upsert_public_shares_v501');
+  }
+
+  async function saveManagerShareItemsByRpc(client, rows, deps){
     if (!client || typeof client.rpc !== 'function') return { ok:false, skipped:true, message:'Supabase RPC 연결 객체가 없습니다.' };
-    const { data, error } = await client.rpc('sitepass_upsert_public_shares', { p_rows: rows });
-    if (error) return { ok:false, message:formatManagerShareSupabaseErrorV496(error, 'Supabase 공유링크 RPC 저장 오류') };
+    const member = getManagerShareMemberPayloadV501(deps || {});
+    if (!member.signup_id && !member.provider_id && !member.phone) {
+      return { ok:false, message:'SitePass 로그인 회원정보를 확인하지 못했습니다. 로그아웃 후 다시 로그인해주세요.' };
+    }
+    const { data, error } = await client.rpc('sitepass_upsert_public_shares_v501', {
+      p_rows: rows,
+      p_member: member
+    });
+    if (error) {
+      const message = formatManagerShareSupabaseErrorV496(error, 'Supabase 공유링크 RPC 저장 오류');
+      if (isManagerShareRpcMissingV501(error)) {
+        return { ok:false, sqlRequired:true, message:message + ' / v501 담당자 공유링크 SQL을 먼저 실행해주세요.' };
+      }
+      return { ok:false, message };
+    }
     const result = normalizeRpcPublicShareResult(data) || {};
     if (result.ok === false) return { ok:false, message:result.message || result.error || '공유링크 RPC 저장 실패' };
-    return { ok:true, saved:Number(result.saved || rows.length || 0), rpc:true };
+    return { ok:true, saved:Number(result.saved || rows.length || 0), rpc:true, version:'v501' };
   }
 
   async function saveManagerShareItemsToSupabase(items, deps){
@@ -195,6 +229,8 @@
     if (!safeItems.length) return { ok:true, saved:0 };
     try {
       const nowIso = new Date().toISOString();
+      const memberPayloadV501 = getManagerShareMemberPayloadV501(deps || {});
+      const memberOwnerLoginIdV501 = String(memberPayloadV501.signup_id || memberPayloadV501.provider_id || '').trim();
       const rows = safeItems.map(item => {
         const code = ensureManagerShareCodeForItem(item);
         const expireAt = (deps && typeof deps.getExpireAt === 'function') ? deps.getExpireAt(item) : getSevenDaysFromNowMs();
@@ -211,18 +247,19 @@
           share_title: label,
           equipment_no: String(item.equipmentNo || ''),
           equipment_name: String(item.equipmentName || ''),
-          owner_login_id: String(item.ownerSignupId || item.ownerProviderId || ''),
+          owner_login_id: String(memberOwnerLoginIdV501 || item.ownerSignupId || item.ownerProviderId || ''),
           updated_at: nowIso
         };
       }).filter(row => row.share_code && row.share_sig);
       if (!rows.length) return { ok:false, message:'저장할 담당자 링크 정보가 없습니다.' };
       if (typeof client.rpc === 'function') {
-        let rpcSaved = await saveManagerShareItemsByRpc(client, rows);
+        let rpcSaved = await saveManagerShareItemsByRpc(client, rows, deps || {});
         if (rpcSaved.ok) return rpcSaved;
+        if (rpcSaved.sqlRequired) return rpcSaved;
         // v23.7.496: 휴대폰 네트워크/DB 순간 지연은 가벼운 URL 전용 payload로 한 번만 재시도합니다.
         if (/timeout|timed out|statement|canceling|network|fetch/i.test(String(rpcSaved.message || ''))) {
           await new Promise(function(resolve){ setTimeout(resolve, 350); });
-          rpcSaved = await saveManagerShareItemsByRpc(client, rows);
+          rpcSaved = await saveManagerShareItemsByRpc(client, rows, deps || {});
           if (rpcSaved.ok) return rpcSaved;
         }
         // RPC가 아직 적용되지 않은 경우에만 기존 직접 upsert를 fallback으로 시도합니다.

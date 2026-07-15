@@ -1,11 +1,11 @@
 {
-  "version": "23.7.500",
+  "version": "23.7.501",
   "channel": "test",
-  "note": "등록 달력을 항상 6주 42칸으로 고정했습니다. 담당자 링크 화면은 외부 링크 전용 가드가 계속 유지해 다른 화면 보정 코드가 1초 뒤 숨기지 못하게 했습니다. 기존 사진 주소가 유실된 장비도 등록 화면 DOM·서버·Storage 순서로 복구를 시도하고, 복구 실패 시 링크 화면 자체는 열리도록 메타정보 공유로 전환합니다.",
-  "build": "v23.7.500-test",
-  "stage": "달력 고정 및 담당자 링크 지속 표시",
+  "note": "담당자 공유링크 저장 시 Supabase Auth 세션을 요구해 P0001 login required가 발생하던 문제를 SitePass 자체 회원 로그인 확인 RPC로 분리했습니다. 서버 저장 성공 후에만 카카오톡·문자·이메일 전송을 진행합니다.",
+  "build": "v23.7.501-test",
+  "stage": "담당자 공유링크 서버 저장 로그인 수정",
   "updatedAt": "2026-07-15",
-  "releaseType": "fixed-calendar-recipient-persist-metadata-fallback",
-  "purpose": "달력 크기 고정, 담당자 화면 사라짐 차단, 기존 사진 복구 실패 시 링크 생성 유지",
-  "description": "달력 42칸 고정 및 담당자 링크 강제 유지"
+  "releaseType": "public-share-sitepass-login-rpc-fix",
+  "purpose": "P0001 login required 제거 및 담당자 링크 정상 저장",
+  "description": "SitePass 회원정보 기반 담당자 공유 RPC v501 적용"
 }

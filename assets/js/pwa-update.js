@@ -1,4 +1,4 @@
-// SitePass v23.7.500 PWA update without old-screen flash / v23.7.277 base - PWA 자동업데이트/서비스워커 전용 파일
+// SitePass v23.7.501 PWA update without old-screen flash / v23.7.277 base - PWA 자동업데이트/서비스워커 전용 파일
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';

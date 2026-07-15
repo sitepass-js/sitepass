@@ -1,4 +1,4 @@
-// SitePass v23.7.500 - DOM/photo recovery fallback + recipient stability (03/04)
+// SitePass v23.7.501 - DOM/photo recovery fallback + recipient stability (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -842,7 +842,8 @@ function shareOneListItemEmail(code) {
           getExpireAt: getManagerExpireAt,
           getSignature: getManagerLinkSignature,
           cloneItem: cloneShareItemForServer,
-          getLabel: getShareItemLabel
+          getLabel: getShareItemLabel,
+          getMember: getManagerShareCurrentMemberV498
         });
       }
       const client = getSitePassSupabaseClient();
@@ -953,8 +954,8 @@ function shareOneListItemEmail(code) {
       const saved = await saveManagerShareItemsToSupabase(safeItems);
       if (!saved.ok) {
         const message = String(saved.message || '알 수 없는 오류');
-        const sqlHint = /not found|Could not find|schema cache|function|permission|42501/i.test(message)
-          ? '\n\nSupabase의 public shares RPC/권한 SQL 적용 상태를 확인해주세요.'
+        const sqlHint = /P0001|login required|not found|Could not find|schema cache|function|permission|42501|v501 담당자 공유링크 SQL/i.test(message)
+          ? '\n\nSupabase의 v501 담당자 공유링크 SQL을 실행한 뒤 다시 보내주세요.'
           : '';
         alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있어 전송을 중단했습니다.' + sqlHint + '\n\n오류: ' + message);
         return;

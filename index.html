@@ -62,9 +62,9 @@
   }
 </style>
 <script>
-/* v23.7.500 - 구버전 화면 노출 방지 + 담당자 링크 전용 초기화 잠금 */
+/* v23.7.501 - 담당자 공유 RPC SitePass 로그인 연동 */
 (function(){
-  var declaredVersion = '23.7.500';
+  var declaredVersion = '23.7.501';
   var search = String(location.search || '');
   var hash = String(location.hash || '');
   var external = /[?&](manager|public|share)=/i.test(search) || /#(manager|public|share|qr)=?/i.test(hash);
@@ -157,7 +157,7 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.500 fixed calendar + persistent recipient route + metadata fallback -->
+  <!-- SitePass deploy-check: v23.7.501 public share SitePass login RPC fix -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
   <link rel="stylesheet" href="./assets/css/style.css?v=23.7.500" />
   <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.493" />
@@ -4101,7 +4101,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.500" defer></script>
+<script src="./assets/js/config.js?v=23.7.501" defer></script>
 <script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.493" defer></script>
 <script src="./assets/js/supabase-api.js?v=23.7.493" defer></script>
 <script src="./assets/js/storage.js?v=23.7.493" defer></script>
@@ -4109,8 +4109,8 @@
 <script src="./assets/js/admin-members.js?v=23.7.493" defer></script>
 <script src="./assets/js/admin-detail.js?v=23.7.493" defer></script>
 <script src="./assets/js/auth-social.js?v=23.7.493" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.500" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.496" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.501" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.501" defer></script>
 <script src="./assets/js/archive.js?v=23.7.493" defer></script>
 <script src="./assets/js/equipment-register.js?v=23.7.493" defer></script>
 <script src="./assets/js/person-auth.js?v=23.7.493" defer></script>
@@ -4129,7 +4129,7 @@
 <script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.500" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.496" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.500" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.501" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.496" defer></script>
 <script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.493" defer></script>
