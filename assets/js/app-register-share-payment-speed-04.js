@@ -105,7 +105,7 @@ function cssEscapeValue(value) {
       const qrShare = getQrShareModule();
       if (qrShare.makeManagerLink) return qrShare.makeManagerLink(code, expireAt, getManagerLinkSignature);
       const baseUrl = window.location.origin + window.location.pathname;
-      return baseUrl + '#manager=' + encodeURIComponent(code || '');
+      return baseUrl + '?manager=' + encodeURIComponent(code || '');
     }
 
     function parseManagerHash(hash) {

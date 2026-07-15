@@ -1,11 +1,11 @@
 {
-  "version": "23.7.501",
+  "version": "23.7.502",
   "channel": "test",
-  "note": "담당자 공유링크 저장 시 Supabase Auth 세션을 요구해 P0001 login required가 발생하던 문제를 SitePass 자체 회원 로그인 확인 RPC로 분리했습니다. 서버 저장 성공 후에만 카카오톡·문자·이메일 전송을 진행합니다.",
-  "build": "v23.7.501-test",
-  "stage": "담당자 공유링크 서버 저장 로그인 수정",
+  "note": "담당자 공유주소를 ?manager=코드 방식으로 고정하고 PWA 자동업데이트·구버전 새로고침 중에도 담당자 코드를 보존합니다.",
+  "build": "v23.7.502-test",
+  "stage": "담당자 링크 화면 진입 고정",
   "updatedAt": "2026-07-15",
-  "releaseType": "public-share-sitepass-login-rpc-fix",
-  "purpose": "P0001 login required 제거 및 담당자 링크 정상 저장",
-  "description": "SitePass 회원정보 기반 담당자 공유 RPC v501 적용"
+  "releaseType": "manager-query-route-preserve",
+  "purpose": "담당자 링크가 일반 화면으로 바뀌거나 1초 뒤 사라지는 문제 제거",
+  "description": "카카오톡·문자·이메일 담당자 링크 query 라우팅 및 수신화면 강제 유지"
 }

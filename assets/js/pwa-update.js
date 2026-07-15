@@ -1,4 +1,4 @@
-// SitePass v23.7.501 PWA update without old-screen flash / v23.7.277 base - PWA 자동업데이트/서비스워커 전용 파일
+// SitePass v23.7.502 - 담당자 링크를 보존하는 PWA 자동업데이트
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';
@@ -31,6 +31,33 @@
 
   function isOfficialGithubUrl(){
     return location.hostname === 'sitepass-js.github.io' && location.pathname.indexOf('/sitepass') === 0;
+  }
+
+
+  function getExternalShareRouteV502(){
+    try {
+      const url = new URL(location.href);
+      let manager = String(url.searchParams.get('manager') || '').trim();
+      let publicCode = String(url.searchParams.get('public') || url.searchParams.get('share') || '').trim();
+      const hash = String(url.hash || '');
+      if (!manager && /^#manager=/i.test(hash)) manager = decodeURIComponent(hash.replace(/^#manager=/i, '').split('&')[0] || '');
+      if (!publicCode && /^#(?:public|share|qr)=/i.test(hash)) publicCode = decodeURIComponent(hash.replace(/^#(?:public|share|qr)=/i, '').split('&')[0] || '');
+      return { external:!!(manager || publicCode), manager, publicCode };
+    } catch (e) { return { external:false, manager:'', publicCode:'' }; }
+  }
+
+  function makeVersionReloadUrlV502(targetVersion){
+    const route = getExternalShareRouteV502();
+    if (!route.external) {
+      const cleanUrl = isOfficialGithubUrl() ? getFixedAppUrl() : (location.origin + location.pathname.replace(/index\.html$/i, ''));
+      return cleanUrl + '?v=' + encodeURIComponent(String(targetVersion).replace(/^v/i,'')) + '&updated=' + encodeURIComponent(targetVersion) + '&spfresh=' + Date.now();
+    }
+    const url = new URL(location.origin + location.pathname.replace(/index\.html$/i, ''));
+    if (route.manager) url.searchParams.set('manager', route.manager);
+    else if (route.publicCode) url.searchParams.set('public', route.publicCode);
+    url.searchParams.set('v', String(targetVersion).replace(/^v/i,''));
+    url.searchParams.set('spfresh', String(Date.now()));
+    return url.toString();
   }
 
   function normalizeFixedUrl(){
@@ -83,9 +110,8 @@
     try { localStorage.setItem(VERSION_KEY, targetVersion); } catch (e) {}
     await prepareSoftUpdate();
     try {
-      const cleanUrl = isOfficialGithubUrl() ? getFixedAppUrl() : (location.origin + location.pathname.replace(/index\.html$/i, ''));
       try { document.documentElement.classList.add('sitepass-version-gate-v500'); } catch (e) {}
-      location.replace(cleanUrl + '?v=' + encodeURIComponent(String(targetVersion).replace(/^v/i,'')) + '&updated=' + encodeURIComponent(targetVersion) + '&spfresh=' + Date.now());
+      location.replace(makeVersionReloadUrlV502(targetVersion));
     } catch (e) { location.reload(); }
   }
 
@@ -107,6 +133,12 @@
       const info = await res.json();
       const latestVersion = String(info.version || '').trim();
       if (!latestVersion || latestVersion === appVersion) return;
+      const externalRouteV502 = getExternalShareRouteV502();
+      if (externalRouteV502.external) {
+        try { localStorage.setItem(VERSION_KEY, latestVersion); } catch (e) {}
+        try { await prepareSoftUpdate(); } catch (e) {}
+        return;
+      }
       const reloadKey = latestVersion + ':remote';
       try {
         // 같은 최신버전으로 이미 새로고침을 시도했다면 알림을 반복하지 않습니다.

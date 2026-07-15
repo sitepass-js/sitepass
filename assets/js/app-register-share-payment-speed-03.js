@@ -1,4 +1,4 @@
-// SitePass v23.7.501 - DOM/photo recovery fallback + recipient stability (03/04)
+// SitePass v23.7.502 - 담당자 query 링크 및 수신화면 고정 (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -1280,7 +1280,15 @@ function renderDocExpiryStrip(doc) {
       }
       const exp = expireAt ? Number(expireAt) : getManagerExpireAt(item);
       const linkSig = sig || getManagerLinkSignature(code, exp);
-      window.location.hash = '#manager=' + encodeURIComponent(code) + '&exp=' + encodeURIComponent(String(exp)) + '&sig=' + encodeURIComponent(linkSig);
+      try {
+        const routeUrl = new URL(window.location.origin + window.location.pathname);
+        routeUrl.searchParams.set('manager', String(code || ''));
+        window.history.replaceState({ sitepassRecipient:true, managerCode:String(code || '') }, document.title || 'SitePass', routeUrl.pathname + routeUrl.search);
+        window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V502 = true;
+        window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 = true;
+        window.__SITEPASS_EXTERNAL_SHARE_CODE_V502 = String(code || '');
+        document.documentElement.classList.add('sitepass-external-share-route-v502','sitepass-external-share-route-v500');
+      } catch (e) {}
       renderManagerPrint(code, exp, linkSig);
     }
 

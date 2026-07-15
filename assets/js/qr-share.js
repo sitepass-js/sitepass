@@ -1,4 +1,4 @@
-// SitePass v23.7.501 - QR/1일 담당자 공유링크 공통 파일
+// SitePass v23.7.502 - 담당자 링크 query 고정 및 업데이트 경로 보존
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
@@ -99,10 +99,12 @@
 
   function makeManagerLink(code, expireAt, getSignature){
     const baseUrl = getCleanShareBaseUrl();
-    // v23.7.350: 문자앱/카톡 미리보기에서 &exp, &sig 뒤가 잘리는 경우가 있어
-    // 담당자 링크는 단일 query 파라미터만 노출합니다.
-    // 만료일과 검증은 Supabase sitepass_public_shares의 expires_at 기준으로 서버에서 처리합니다.
-    return baseUrl + '#manager=' + encodeURIComponent(code || '');
+    // v23.7.502: 카카오톡·문자·메일·PWA에서 #fragment가 잘리거나
+    // 자동업데이트 중 사라지지 않도록 담당자 코드를 query 파라미터로 고정합니다.
+    // 만료일과 검증은 Supabase sitepass_public_shares의 expires_at 기준입니다.
+    const url = new URL(baseUrl, window.location.origin);
+    url.searchParams.set('manager', String(code || ''));
+    return url.toString();
   }
 
   function parseManagerHash(hash){
