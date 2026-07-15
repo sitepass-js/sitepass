@@ -593,7 +593,7 @@
     }
     
   </style>
-  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.485">
+  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.486">
 </head>
 <body>
   <main class="wrap">
@@ -976,7 +976,7 @@
           if (typeof showScreen === 'function') showScreen('contactScreen');
         } catch(e) {}
         hideOtherScreens434('contactScreen');
-        // v23.7.485: ?expirytest=1 주소에서도 알림/채팅 하단버튼이 항상 목록을 열도록 직접 연결합니다.
+        // v23.7.486: ?expirytest=1 주소에서도 알림/채팅 하단버튼이 항상 목록을 열도록 직접 연결합니다.
         setTimeout(function(){
           try { if (typeof window.sitepassOpenChatInbox460 === 'function') window.sitepassOpenChatInbox460(); } catch(e) {}
         }, 0);
@@ -1207,7 +1207,7 @@
 
   
 <script>
-/* v23.7.485 - expirytest 쿼리를 앱 라우팅에서 분리하고 세션 테스트모드로 보존 */
+/* v23.7.486 - expirytest 쿼리를 앱 라우팅에서 분리하고 세션 테스트모드로 보존 */
 (function(){
   var TEST_KEY = 'sitepass_expiry_test_mode_v481';
   try {
@@ -1224,9 +1224,9 @@
   } catch(e) {}
 })();
 </script>
-<script src="./assets/js/sitepass-chat-v460.js?v=23.7.485"></script>
+<script src="./assets/js/sitepass-chat-v460.js?v=23.7.486"></script>
 <script>
-/* v23.7.485 - 테스트모드 포함 알림/채팅 하단버튼 최우선 직접 라우팅 */
+/* v23.7.486 - 테스트모드 포함 알림/채팅 하단버튼 최우선 직접 라우팅 */
 (function(){
   function isAlertChatButton(target){
     var button = target && target.closest ? target.closest('#sitepassBottomAppNav button') : null;
@@ -1306,6 +1306,6 @@
 })();
 </script>
 
-<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.485" defer></script>
+<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.486" defer></script>
 </body>
 </html>

@@ -39,7 +39,7 @@
     if (!needsCleanUrl) return;
     try {
       const params = new URLSearchParams(location.search || '');
-      // v23.7.485: expirytest는 세션 플래그로 옮기고 URL에서는 제거해 일반 앱 라우팅과 완전히 분리합니다.
+      // v23.7.486: expirytest는 세션 플래그로 옮기고 URL에서는 제거해 일반 앱 라우팅과 완전히 분리합니다.
       try {
         if (params.get('expirytest') === '1') sessionStorage.setItem('sitepass_expiry_test_mode_v481', '1');
         else if (params.get('expirytest') === '0') sessionStorage.removeItem('sitepass_expiry_test_mode_v481');

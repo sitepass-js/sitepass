@@ -350,7 +350,7 @@
   }
 
   function getDocExpireDate(doc){
-    return doc && (doc.expireDate || doc.expiryDate || doc.date || doc.expire_at || doc.expires_at || doc.inspectionExpireDate || doc.insuranceExpireDate || '');
+    return doc && ((window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || doc.expiryDate || doc.date || doc.expire_at || doc.expires_at || doc.inspectionExpireDate || doc.insuranceExpireDate || '');
   }
 
   function getItemTitle(item){

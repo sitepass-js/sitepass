@@ -1,4 +1,4 @@
-/* SitePass v23.7.485-test - 테스트 알림 4개 배지 유지·실제 방 열람 시에만 읽음 처리 */
+/* SitePass v23.7.486-test - 테스트 알림 4개 배지 유지·실제 방 열람 시에만 읽음 처리 */
 (function(){
   'use strict';
 
@@ -204,7 +204,7 @@
         var doc = docsObject[docKey];
         if (!doc || typeof doc !== 'object') return;
         var status = String(doc.status || '').trim();
-        var raw = doc.expireDate || doc.expiryDate || doc.expiredAt || '';
+        var raw = (window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || doc.expiryDate || doc.expiredAt || '';
         var managed = doc.expiry === true || !!raw || status === '만료' || status === '만료임박';
         if (!managed) return;
         var base = itemStable + '|' + String(docKey || doc.key || doc.title || 'document');

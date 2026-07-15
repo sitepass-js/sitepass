@@ -67,10 +67,11 @@ function renderAdmin() {
 
     function getDocStatus(doc) {
       if (!doc.fileName) return doc.required ? '미첨부' : '선택안함';
-      if (!doc.expiry || !doc.expireDate) return '첨부됨';
+      const effectiveDate = (window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || '';
+      if (!doc.expiry || !effectiveDate) return '첨부됨';
       const today = new Date();
       today.setHours(0,0,0,0);
-      const end = new Date(doc.expireDate);
+      const end = new Date(effectiveDate);
       const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
       if (diff < 0) return '만료';
       if (diff <= 30) return '만료임박';
@@ -92,12 +93,13 @@ function renderAdmin() {
       // v23.7.350: 보관함/관리자 목록에 장비가 아닌 인부/기사 전용 항목이나
       // 저장공간 부족으로 docs가 축약된 항목이 섞여도 화면 렌더링이 멈추지 않게 방어합니다.
       docs = (docs && typeof docs === 'object') ? docs : {};
-      const targets = ['equipmentInspection','insurancePolicy','ndtInspection','driverLicense'];
+      const targets = ['equipmentInspection','insurancePolicy','ndtInspection','driverLicense','driverMachinerySafetyTraining'];
       const parts = targets
         .map(key => docs && docs[key])
         .filter(Boolean)
-        .filter(doc => doc && doc.expireDate)
-        .map(doc => (doc.title || '서류') + ' ' + getDdayText(doc.expireDate));
+        .map(doc => ({ doc, expireDate:(window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || '' }))
+        .filter(row => !!row.expireDate)
+        .map(row => (row.doc.title || '서류') + ' ' + getDdayText(row.expireDate));
       return parts.length ? parts.join(' / ') : '만료날짜 입력 없음';
     }
 

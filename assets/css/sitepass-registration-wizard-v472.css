@@ -33,3 +33,22 @@
   .sitepass-registration-wizard-head472{display:block}
   .sitepass-wizard-actions470{grid-template-columns:1fr}
 }
+
+
+/* v23.7.486 - 수정/갱신 장비·기사·인부 폴더 */
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-wizard-head472 b:before{content:'수정 폴더 · ';color:#2c5bd7}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-progress472{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;border-bottom:2px solid #d8e3f5;padding:0 2px}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472{min-height:46px;border-radius:14px 14px 0 0;border-bottom:0;cursor:pointer!important;padding:8px 5px;background:#f4f7fc}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472.not-selected{display:none}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472 .target-check472{display:none}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472 i{display:none}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472 span:last-child{font-size:0}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472[data-registration-target="equipment"] span:last-child:after{content:'장비서류';font-size:13px}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472[data-registration-target="driver"] span:last-child:after{content:'기사서류';font-size:13px}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472[data-registration-target="worker"] span:last-child:after{content:'인부서류';font-size:13px}
+#registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472.active{background:#fff;box-shadow:0 -2px 0 #2c5bd7 inset;color:#1748bd}
+@media(max-width:520px){
+  #registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-progress472{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472{justify-content:center;padding:8px 2px}
+  #registerScreen.sitepass-edit-folder-mode486 .sitepass-registration-target472[data-registration-target] span:last-child:after{font-size:12px}
+}

@@ -4623,3 +4623,19 @@ font-size: 25px !important;
   background:#edf5ff;
   color:#174ea6;
 }
+
+
+/* v23.7.486 - 상세보기 장비/기사/인부 폴더 */
+.doc-folders-v486{margin-top:10px}
+.doc-folder-tabs-v486{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:10px;border-bottom:2px solid #d9e4f5;padding:0 4px}
+.doc-folder-tab-v486{min-height:46px;padding:10px 7px 9px;border:1px solid #d7e2f5;border-bottom:0;border-radius:14px 14px 0 0;background:#f4f7fc;color:#63728c;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}
+.doc-folder-tab-v486 b{display:inline-grid;place-items:center;min-width:23px;height:23px;padding:0 6px;border-radius:999px;background:#e4eaf4;color:#56657d;font-size:12px}
+.doc-folder-tab-v486.active{background:#fff;color:#1748bd;border-color:#86a9ff;box-shadow:0 -2px 0 #2c5bd7 inset}
+.doc-folder-tab-v486.active b{background:#2c5bd7;color:#fff}
+.doc-folder-panel-v486.hidden{display:none!important}
+.doc-folder-panel-v486>.doc-card:last-child{margin-bottom:0}
+@media(max-width:520px){
+  .doc-folder-tabs-v486{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:0}
+  .doc-folder-tab-v486{min-height:44px;padding:9px 3px;font-size:12px;gap:4px;word-break:keep-all}
+  .doc-folder-tab-v486 b{min-width:20px;height:20px;padding:0 4px;font-size:11px}
+}

@@ -397,7 +397,7 @@ function resetForm(clearEdit = true) {
         if (isSitePassMemberServerAuthoritativeMode()) {
           // v23.7.350: 일반회원 보관함은 서버목록만 최종 기준으로 사용합니다.
           // PC에 남은 구버전 localStorage 장비를 섞으면 삭제/휴대폰/다른PC 동기화가 계속 꼬입니다.
-          return filterBrokenNoPhotoRegistrationItems(filterCurrentMemberEquipmentStorageScope(mergePendingRegistrationIntoItems(mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems(), getSitePassUnsyncedEquipmentItemsV476()))));
+          return (window.sitePassNormalizeItemsDocDatesV486 || function(x){ return x; })(filterBrokenNoPhotoRegistrationItems(filterCurrentMemberEquipmentStorageScope(mergePendingRegistrationIntoItems(mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems(), getSitePassUnsyncedEquipmentItemsV476())))));
         }
         const localLists = [
           readLocalJsonArray(PREV_STORAGE_KEY),
@@ -409,11 +409,11 @@ function resetForm(clearEdit = true) {
           readLocalJsonArray(PREV_STORAGE_KEY_7),
           readLocalJsonArray(STORAGE_KEY)
         ];
-        return filterBrokenNoPhotoRegistrationItems(mergePendingRegistrationIntoItems(mergeEquipmentItemLists.apply(null, localLists.concat([runtimeEquipmentItems]))));
+        return (window.sitePassNormalizeItemsDocDatesV486 || function(x){ return x; })(filterBrokenNoPhotoRegistrationItems(mergePendingRegistrationIntoItems(mergeEquipmentItemLists.apply(null, localLists.concat([runtimeEquipmentItems])))));
       }
       catch (error) {
-        if (isSitePassMemberServerAuthoritativeMode()) return filterBrokenNoPhotoRegistrationItems(filterCurrentMemberEquipmentStorageScope(mergePendingRegistrationIntoItems(mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems(), getSitePassUnsyncedEquipmentItemsV476()))));
-        return filterBrokenNoPhotoRegistrationItems(mergePendingRegistrationIntoItems(runtimeEquipmentItems));
+        if (isSitePassMemberServerAuthoritativeMode()) return (window.sitePassNormalizeItemsDocDatesV486 || function(x){ return x; })(filterBrokenNoPhotoRegistrationItems(filterCurrentMemberEquipmentStorageScope(mergePendingRegistrationIntoItems(mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems(), getSitePassUnsyncedEquipmentItemsV476())))));
+        return (window.sitePassNormalizeItemsDocDatesV486 || function(x){ return x; })(filterBrokenNoPhotoRegistrationItems(mergePendingRegistrationIntoItems(runtimeEquipmentItems)));
       }
     }
 
@@ -701,7 +701,7 @@ function resetForm(clearEdit = true) {
       ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       const ownerPrimary = [item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
         .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
-      // v23.7.485: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
+      // v23.7.486: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
       // SB-로그인아이디 형식을 현재 회원 고유키로 함께 계산하여 정상 서버자료를 누락시키지 않습니다.
       if (ownerPrimary.length) {
         if (currentPrimary.length && ownerPrimary.some(function(key) { return currentPrimary.indexOf(key) >= 0; })) return true;
@@ -1148,7 +1148,7 @@ function resetForm(clearEdit = true) {
         const rows = parseSupabaseEquipmentRows(data);
         if (error) {
           if (isSitePassMemberEquipmentListRpcMissingV485(error)) {
-            sitePassEquipmentSyncMessage = 'Supabase v23.7.485 회원별 보관함 조회 SQL을 먼저 실행해주세요.';
+            sitePassEquipmentSyncMessage = '회원별 보관함 조회용 Supabase SQL을 먼저 실행해주세요.';
           } else {
             sitePassEquipmentSyncMessage = '내 보관함 서버목록 불러오기 실패: ' + (error.message || JSON.stringify(error));
           }
@@ -1647,7 +1647,7 @@ function setItems(items) {
       const count = Array.isArray(doc.pages) ? doc.pages.length : Number(doc.pageCount || 0);
       const tiny = {};
       [
-        'key','title','groupKey','groupTitle','required','expiry','expireDate','dateLabel','fileName',
+        'key','title','groupKey','groupTitle','required','expiry','expireDate','educationDate','dateMode','dateLabel','fileName',
         'workerUid','workerIndex','workerType','workerLabel','workerPhone','workerTask',
         'driverPhone','personPhone','authPhone','authPersonName','authBirth6','authGenderDigit',
         'authCarrier','authVerified','authVerifiedAt','juminMasked','authJuminMasked'

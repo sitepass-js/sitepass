@@ -527,8 +527,8 @@ function fillDocsForEdit(item) {
         const dateInput = card.querySelector('[data-date-key]');
         if (dateInput) {
           const editDate = isEducationPlus3YearsCardV478(card)
-            ? (doc.educationDate || doc.trainingDate || doc.issueDate || doc.expireDate || '')
-            : (doc.expireDate || '');
+            ? ((window.sitePassGetEducationDateV486 && window.sitePassGetEducationDateV486(doc)) || doc.educationDate || doc.trainingDate || doc.issueDate || doc.expireDate || '')
+            : ((window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || '');
           setCleanDateValue(dateInput, editDate);
         }
         const driverPhone = card.querySelector('[data-extra-key="driverPhone"]');

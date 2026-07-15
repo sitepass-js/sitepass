@@ -69,7 +69,8 @@
     try { target?.scrollIntoView({behavior:'smooth', block:'start'}); } catch(e) { window.scrollTo(0,0); }
   }
   function lockTargetSelection(){
-    const locked = currentStep !== 'equipment';
+    const editFolderMode = !!(typeof editingCode !== 'undefined' && editingCode);
+    const locked = editFolderMode || currentStep !== 'equipment';
     ['includeDriverDocs','includeWorkerDocs'].forEach(function(id){
       const input = document.getElementById(id);
       if (!input) return;
@@ -80,6 +81,9 @@
     if (equipmentInput) { equipmentInput.checked = true; equipmentInput.disabled = true; }
   }
   function setProgress(step){
+    const register = qs('#registerScreen');
+    const editFolderMode = !!(typeof editingCode !== 'undefined' && editingCode);
+    if (register) register.classList.toggle('sitepass-edit-folder-mode486', editFolderMode);
     const activeStage = ({equipment:1,driver:2,worker:3})[step] || 1;
     qsa('#registrationWizardProgress472 [data-wizard-stage]').forEach(function(el){
       const n = Number(el.dataset.wizardStage || 0);
@@ -94,7 +98,9 @@
     if (title) title.textContent = labelForStep(step);
     const desc = qs('#registrationWizardStepDesc472');
     if (desc) {
-      if (step === 'equipment') {
+      if (editFolderMode) {
+        desc.textContent = '장비·기사·인부 폴더를 눌러 필요한 서류만 수정한 뒤 수정내용 저장을 눌러주세요.';
+      } else if (step === 'equipment') {
         desc.textContent = '장비서류는 필수입니다. 기사·인부 서류도 등록할 경우 먼저 체크한 뒤 장비서류를 작성해주세요.';
       } else if (step === 'driver') {
         desc.textContent = driverIsVerified()
@@ -128,8 +134,15 @@
   function setButtons(step){
     const back = qs('#wizardBackButton470');
     const main = qs('#saveBundleButton');
-    if (back) back.classList.toggle('hidden', step === 'equipment');
+    const editFolderMode = !!(typeof editingCode !== 'undefined' && editingCode);
+    if (back) back.classList.toggle('hidden', editFolderMode || step === 'equipment');
     if (!main) return;
+    if (editFolderMode) {
+      main.onclick = window.sitePassRegistrationWizardSaveEdit486;
+      main.classList.remove('hidden');
+      main.textContent = '수정내용 저장';
+      return;
+    }
     main.onclick = window.sitePassRegistrationWizardNext472;
     const authPending = (step === 'driver' && !driverIsVerified()) || (step === 'worker' && workerVerifiedCount() < 1);
     main.classList.toggle('hidden', authPending);
@@ -273,6 +286,20 @@
     try { await saveEquipment(); }
     finally { if (btn) btn.disabled = false; }
   }
+  async function saveEdit486(){
+    await finalize();
+  }
+  window.sitePassRegistrationWizardSaveEdit486 = saveEdit486;
+
+  function openEditFolder486(step){
+    if (!(typeof editingCode !== 'undefined' && editingCode)) return false;
+    if (step === 'driver' && !includeDriver()) return false;
+    if (step === 'worker' && !includeWorker()) return false;
+    applyStep(step, {persist:true, scroll:true});
+    return true;
+  }
+  window.sitePassOpenEditFolder486 = openEditFolder486;
+
   function back(){
     if (currentStep === 'driver') return applyStep('equipment');
     if (currentStep === 'worker') return applyStep(includeDriver() ? 'driver' : 'equipment');
@@ -375,6 +402,20 @@
   }
   function init(){
     installWrappers();
+    const progress = qs('#registrationWizardProgress472');
+    if (progress && !progress.dataset.editFolderBound486) {
+      progress.dataset.editFolderBound486 = 'true';
+      progress.addEventListener('click', function(event){
+        if (!(typeof editingCode !== 'undefined' && editingCode)) return;
+        const tab = event.target.closest('[data-wizard-stage]');
+        if (!tab || !progress.contains(tab)) return;
+        const step = ({'1':'equipment','2':'driver','3':'worker'})[String(tab.dataset.wizardStage || '')];
+        if (!step) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openEditFolder486(step);
+      }, true);
+    }
     currentStep = readStep();
     applyStep(currentStep,{persist:false,scroll:false});
     observeAuth();

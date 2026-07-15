@@ -371,6 +371,40 @@ function normalizePhoneForShare(phone) {
       window.location.href = 'mailto:' + cleanEmail + '?subject=' + subject + '&body=' + body;
     }
 
+    function getDocFolderKeyV486(doc) {
+      const key = String(doc?.groupKey || 'equipment');
+      return ['equipment','driver','worker'].includes(key) ? key : 'equipment';
+    }
+
+    function switchDocFolderV486(folderId, groupKey) {
+      const root = document.getElementById(folderId);
+      if (!root) return;
+      root.querySelectorAll('[data-doc-folder-tab]').forEach(tab => {
+        const active = tab.dataset.docFolderTab === groupKey;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      root.querySelectorAll('[data-doc-folder-panel]').forEach(panel => {
+        panel.classList.toggle('hidden', panel.dataset.docFolderPanel !== groupKey);
+      });
+    }
+    window.switchDocFolderV486 = switchDocFolderV486;
+
+    function renderDocFoldersV486(docs, folderId, renderOne) {
+      const list = Array.isArray(docs) ? docs : [];
+      const groups = [
+        {key:'equipment', label:'장비서류'},
+        {key:'driver', label:'기사서류'},
+        {key:'worker', label:'인부서류'}
+      ].map(group => ({ ...group, docs:list.filter(doc => getDocFolderKeyV486(doc) === group.key) }))
+       .filter(group => group.docs.length > 0);
+      if (!groups.length) return '<div class="empty">표시할 서류가 없습니다.</div>';
+      const activeKey = groups.some(group => group.key === 'equipment') ? 'equipment' : groups[0].key;
+      const tabs = groups.map(group => '<button type="button" role="tab" class="doc-folder-tab-v486 ' + (group.key === activeKey ? 'active' : '') + '" data-doc-folder-tab="' + group.key + '" aria-selected="' + (group.key === activeKey ? 'true' : 'false') + '" onclick="switchDocFolderV486(\'' + escapeJs(folderId) + '\',\'' + group.key + '\')"><span>' + escapeHtml(group.label) + '</span><b>' + group.docs.length + '</b></button>').join('');
+      const panels = groups.map(group => '<div class="doc-folder-panel-v486 ' + (group.key === activeKey ? '' : 'hidden') + '" data-doc-folder-panel="' + group.key + '">' + group.docs.map((doc, index) => renderOne(doc, index)).join('') + '</div>').join('');
+      return '<div id="' + escapeHtml(folderId) + '" class="doc-folders-v486"><div class="doc-folder-tabs-v486" role="tablist">' + tabs + '</div>' + panels + '</div>';
+    }
+
     function openAdminQrLink(code) {
       const item = getRuntimeItemByCode(code);
       if (!item) { alert('QR을 열 장비서류를 찾을 수 없습니다.'); return; }
@@ -385,7 +419,7 @@ function normalizePhoneForShare(phone) {
       currentDetailLink = makeManagerLink(item.code, getManagerExpireAt(item));
       const qrUrl = makeQrUrl(currentDetailLink, 240);
       const docs = getDisplayDocs(item);
-      const docHtml = docs.map(doc => renderDocDetail(doc)).join('');
+      const docHtml = renderDocFoldersV486(docs, 'adminDetailFoldersV486_' + String(item.code || '').replace(/[^a-zA-Z0-9_-]/g, ''), (doc) => renderDocDetail(doc));
       document.getElementById('detailBox').innerHTML =
         '<div class="notice blue-note"><b>관리자 큐알링크</b><br>이 QR은 회원이 등록한 해당 장비서류 담당자 화면으로 바로 연결됩니다. 담당자는 코드 입력 없이 다운로드/프린트 화면을 봅니다.</div>' +
         '<div class="qr-box" onclick="openManagerPublicView(\'' + escapeJs(item.code) + '\')">' +
@@ -399,7 +433,7 @@ function normalizePhoneForShare(phone) {
         '<div class="line"><b>담당자 QR·링크 만료</b><span>' + escapeHtml(getManagerExpireText(getManagerExpireAt(item))) + '</span></div>' +
         renderD7DeadlineNotice(item) +
         '<div class="actions"><button class="okBtn" onclick="shareAdminOwnerAlertSmsForCode(\'' + escapeJs(item.code || '') + '\')">장비업자 알림 보내기</button><button class="ghost" onclick="copyManagerCode(\'' + escapeJs(item.code || '') + '\')">링크 복사</button><button class="primary" onclick="openManagerPublicView(\'' + escapeJs(item.code || '') + '\')">담당자 화면 열기</button><button class="secondary" onclick="showScreen(\'listScreen\')">관리자 보관함</button></div>' +
-        '<h3>등록 서류</h3>' + (docHtml || '<div class="empty">표시할 서류가 없습니다.</div>');
+        '<h3>등록 서류 폴더</h3>' + docHtml;
       showScreen('detailScreen');
     }
 
@@ -408,7 +442,8 @@ function normalizePhoneForShare(phone) {
       if (!item) { alert('장비등록 정보를 찾을 수 없습니다.'); showScreen('listScreen'); return; }
       currentDetailLink = makeManagerLink(item.code, getManagerExpireAt(item));
       const qrUrl = makeQrUrl(currentDetailLink, 180);
-      const docHtml = getDisplayDocs(item).map(doc => renderDocDetail(doc)).join('');
+      const detailDocs = getDisplayDocs(item);
+      const docHtml = renderDocFoldersV486(detailDocs, 'memberDetailFoldersV486_' + String(item.code || '').replace(/[^a-zA-Z0-9_-]/g, ''), (doc) => renderDocDetail(doc));
       const renewalHtml = isAdminLoggedIn() ? '<div class="notice blue-note">관리자 상세보기에서는 수정/갱신·결제연장 버튼을 숨깁니다. 장비업자에게 알림만 보내고, 실제 수정/갱신은 회원 보관함에서 처리합니다.</div>' : renderRenewPanel(item);
 
       document.getElementById('detailBox').innerHTML =
@@ -425,7 +460,7 @@ function normalizePhoneForShare(phone) {
           '<img alt="통합 QR" src="' + qrUrl + '">' +
           '<div class="qr-hint">QR 누르면 담당자 다운로드/프린트 화면 바로 열림</div>' +
         '</div>' +
-        '<h3>등록 서류</h3>' + (docHtml || '<div class="empty">표시할 서류가 없습니다.</div>');
+        '<h3>등록 서류 폴더</h3>' + docHtml;
       showScreen('detailScreen');
     }
 
@@ -434,7 +469,12 @@ function normalizePhoneForShare(phone) {
       const badgeClass = doc.fileName ? 'done' : (doc.required ? 'need' : '');
       const badgeText = doc.fileName ? ((doc.status || '첨부됨') + (pages.length ? ' · ' + pages.length + '장' : '')) : (doc.required ? '미첨부' : '선택안함');
       const attachInfo = (!pages.length && !doc.fileName) ? '<div class="selected-file">미첨부</div>' : '';
-      const dateHtml = doc.expiry ? '<div class="line"><b>만료날짜</b><span>' + (doc.expireDate ? escapeHtml(doc.expireDate + ' / ' + getDdayText(doc.expireDate)) : '미입력') + '</span></div>' : '';
+      const effectiveExpireDate = (window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || '';
+      const educationDate = (window.sitePassGetEducationDateV486 && window.sitePassGetEducationDateV486(doc)) || doc.educationDate || '';
+      const isEducation3Years = !!(window.sitePassIsMachinerySafetyDocV486 && window.sitePassIsMachinerySafetyDocV486(doc));
+      const dateHtml = !doc.expiry ? '' : isEducation3Years
+        ? '<div class="line"><b>안전교육 이수일</b><span>' + (educationDate ? escapeHtml(educationDate) : '미입력') + '</span></div><div class="line"><b>다음 교육 예정일</b><span>' + (effectiveExpireDate ? escapeHtml(effectiveExpireDate + ' / ' + getDdayText(effectiveExpireDate)) : '미입력') + '</span></div>'
+        : '<div class="line"><b>만료날짜</b><span>' + (effectiveExpireDate ? escapeHtml(effectiveExpireDate + ' / ' + getDdayText(effectiveExpireDate)) : '미입력') + '</span></div>';
       return '<div class="doc-card"><div class="doc-head"><div class="doc-title">' + escapeHtml((doc.groupTitle ? doc.groupTitle + ' - ' : '') + doc.title) + '</div><span class="badge ' + badgeClass + '">' + escapeHtml(badgeText) + '</span></div>' + attachInfo + renderPreviewHtml(doc) + dateHtml + '</div>';
     }
 
@@ -462,10 +502,13 @@ function normalizePhoneForShare(phone) {
 // ---- merged from app-register-share-payment-11.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (11/15)
 function renderDocExpiryStrip(doc) {
-      if (!doc || !doc.expireDate) return '';
-      const label = getExpiryPeriodLabel(doc);
-      const dday = getDdayTextWithDays(doc.expireDate);
-      return '<div class="doc-expiry-strip"><b>' + escapeHtml(label) + '</b><span>' + escapeHtml(dday + (doc.expireDate ? ' · ' + doc.expireDate : '')) + '</span></div>';
+      const effectiveExpireDate = (window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc?.expireDate || '';
+      if (!doc || !effectiveExpireDate) return '';
+      const label = (window.sitePassIsMachinerySafetyDocV486 && window.sitePassIsMachinerySafetyDocV486(doc)) ? '다음 교육 예정일' : getExpiryPeriodLabel(doc);
+      const dday = getDdayTextWithDays(effectiveExpireDate);
+      const educationDate = (window.sitePassGetEducationDateV486 && window.sitePassGetEducationDateV486(doc)) || '';
+      const educationText = educationDate ? ' · 교육일 ' + educationDate : '';
+      return '<div class="doc-expiry-strip"><b>' + escapeHtml(label) + '</b><span>' + escapeHtml(dday + ' · ' + effectiveExpireDate + educationText) + '</span></div>';
     }
 
     function getEquipmentNoForDocLabel(code) {
@@ -625,7 +668,8 @@ function renderManagerDownloadToolbar(item) {
       const title = (doc.groupTitle ? doc.groupTitle + ' - ' : '') + doc.title;
       const pages = getDocPagesFromDoc(doc);
       const pageText = pages.length ? ' · ' + pages.length + '장' : '';
-      const expiryText = doc.expireDate ? ' / ' + escapeHtml(getExpiryPeriodLabel(doc) + ' ' + getDdayTextWithDays(doc.expireDate)) : '';
+      const effectiveExpireDate = (window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || '';
+      const expiryText = effectiveExpireDate ? ' / ' + escapeHtml(getExpiryPeriodLabel(doc) + ' ' + getDdayTextWithDays(effectiveExpireDate)) : '';
       const statusText = escapeHtml(doc.status || getDocStatus(doc)) + pageText + expiryText;
       const hasPrintablePreview = docHasPrintablePreview(doc);
       const previewHtml = renderPreviewHtmlForPublic(doc, code) || (doc.fileName ? '<div class="preview-wrap show"><div class="preview-title"><span>첨부 파일</span></div><div class="preview-pdf">첨부됨<br><span class="small">이미지 저장본이 없으면 서버 저장 단계에서 원본 파일 보기로 연결합니다.</span></div>' + renderIdExtraStrip(doc) + '</div>' : '');
@@ -689,7 +733,8 @@ function renderManagerDownloadToolbar(item) {
       const title = (doc.groupTitle ? doc.groupTitle + ' - ' : '') + doc.title;
       const pages = getDocPagesFromDoc(doc);
       const pageText = pages.length ? ' · ' + pages.length + '장' : '';
-      const expiryText = doc.expireDate ? ' / ' + escapeHtml(getExpiryPeriodLabel(doc) + ' ' + getDdayTextWithDays(doc.expireDate)) : '';
+      const effectiveExpireDate = (window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || '';
+      const expiryText = effectiveExpireDate ? ' / ' + escapeHtml(getExpiryPeriodLabel(doc) + ' ' + getDdayTextWithDays(effectiveExpireDate)) : '';
       const statusText = escapeHtml(doc.status || getDocStatus(doc)) + pageText + expiryText;
       const hasPrintablePreview = docHasPrintablePreview(doc);
       const disabledNote = (doc.fileName && !hasPrintablePreview) ? '<div class="print-disabled-note">현재 이 첨부는 이미지 저장본이 없어 바로 인쇄는 제한될 수 있습니다. 서버 저장 단계에서 원본 파일 인쇄로 연결합니다.</div>' : '';
