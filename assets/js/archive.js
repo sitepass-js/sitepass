@@ -4,6 +4,59 @@
 (function(){
   'use strict';
 
+let archiveSearchQuery = '';
+let archiveCurrentPage = 1;
+const ARCHIVE_PAGE_SIZE = 10;
+
+function normalizeArchiveSearchText(value) {
+  return String(value || '').toLowerCase().replace(/\s+/g, '').replace(/[-_.]/g, '');
+}
+
+function getArchiveSearchHaystack(item) {
+  if (!item || typeof item !== 'object') return '';
+  const values = [
+    item.code, item.equipmentCode, item.qrCode,
+    item.equipmentNo, item.equipment_no, item.registrationNo, item.registration_no,
+    item.equipmentName, item.equipment_name, item.machineName, item.machine_name,
+    item.ownerName, item.owner_name, item.ownerSignupId, item.owner_signup_id,
+    item.ownerMemberId, item.owner_member_id, item.ownerProviderId, item.owner_provider_id,
+    item.ownerPhone, item.owner_phone,
+    item.driverName, item.driver_name, item.workerName, item.worker_name
+  ];
+  try { values.push(getItemTitle(item)); } catch (e) {}
+  return normalizeArchiveSearchText(values.filter(Boolean).join(' '));
+}
+
+function itemMatchesArchiveSearch(item, query) {
+  const needle = normalizeArchiveSearchText(query);
+  if (!needle) return true;
+  return getArchiveSearchHaystack(item).indexOf(needle) >= 0;
+}
+
+function setArchiveSearchQuery(value) {
+  archiveSearchQuery = String(value || '').trim();
+  archiveCurrentPage = 1;
+  renderList();
+}
+
+function clearArchiveSearch() {
+  archiveSearchQuery = '';
+  archiveCurrentPage = 1;
+  const input = document.getElementById('archiveSearchInput');
+  if (input) input.value = '';
+  renderList();
+}
+
+function goArchivePage(page) {
+  const next = Number(page || 1);
+  archiveCurrentPage = Number.isFinite(next) ? Math.max(1, Math.floor(next)) : 1;
+  renderList();
+  try {
+    const screen = document.getElementById('listScreen');
+    if (screen) screen.scrollIntoView({ behavior:'smooth', block:'start' });
+  } catch (e) {}
+}
+
 
 function getArchiveStorageKeyFallback(name, fallback) {
   try {
@@ -227,11 +280,13 @@ function archiveRequirePasswordReconfirm(label) {
 
 function openAdminListQuickFilter(filterKey) {
   adminListQuickFilter = filterKey || 'all';
+  archiveCurrentPage = 1;
   showScreen('listScreen');
 }
 
 function clearAdminListQuickFilter() {
   adminListQuickFilter = 'all';
+  archiveCurrentPage = 1;
   renderList();
 }
 
@@ -245,21 +300,34 @@ function renderList() {
   }
   const box = document.getElementById('equipmentList');
   const title = document.getElementById('listScreenTitle');
+  const searchInput = document.getElementById('archiveSearchInput');
   const bottomActions = document.getElementById('listScreenBottomActions');
-  if (title) title.textContent = isAdminMode ? '관리자 장비서류 알림 / 보관함' : '장비/기사/인부 보관함';
-  if (bottomActions) {
-    bottomActions.innerHTML = isAdminMode
-      ? ''
-      : '';
+  if (title) title.textContent = isAdminMode ? '관리자 보관함' : '보관함';
+  if (searchInput) {
+    searchInput.placeholder = isAdminMode ? '장비번호·장비명·회원 검색' : '장비번호·장비명 검색';
+    if (searchInput.value !== archiveSearchQuery) searchInput.value = archiveSearchQuery;
   }
+  if (bottomActions) bottomActions.innerHTML = '';
+  if (!box) return;
+
   if (allItems.length === 0) {
-    box.innerHTML = '<div class="empty">' + (isAdminMode ? '아직 등록된 장비서류가 없습니다.<br>회원이 직접 등록한 장비서류가 생기면 여기서 확인할 수 있습니다.' : '아직 저장된 장비등록이 없습니다.<br>장비등록 등록에서 먼저 저장해보세요.') + '</div>';
+    archiveCurrentPage = 1;
+    box.innerHTML = '<div class="empty">' + (isAdminMode ? '아직 등록된 장비서류가 없습니다.<br>회원이 직접 등록한 장비서류가 생기면 여기서 확인할 수 있습니다.' : '아직 저장된 장비등록이 없습니다.<br>장비등록에서 먼저 저장해보세요.') + '</div>';
     return;
   }
-  const items = allItems.filter(item => itemMatchesAdminListQuickFilter(item, adminListQuickFilter));
+
+  const quickFilteredItems = allItems.filter(item => itemMatchesAdminListQuickFilter(item, adminListQuickFilter));
+  const filteredItems = quickFilteredItems.filter(item => itemMatchesArchiveSearch(item, archiveSearchQuery));
+  const totalCount = filteredItems.length;
+  const pageCount = Math.max(1, Math.ceil(totalCount / ARCHIVE_PAGE_SIZE));
+  archiveCurrentPage = Math.min(Math.max(1, archiveCurrentPage), pageCount);
+  const pageStart = (archiveCurrentPage - 1) * ARCHIVE_PAGE_SIZE;
+  const items = filteredItems.slice(pageStart, pageStart + ARCHIVE_PAGE_SIZE);
+
   const filterNotice = adminListQuickFilter !== 'all'
     ? '<div class="notice blue-note admin-filter-note"><div><b>현재 빠른보기:</b> ' + escapeHtml(getAdminListQuickFilterLabel(adminListQuickFilter)) + '</div><button type="button" class="ghost inline-mini-button" onclick="clearAdminListQuickFilter()">전체 보기</button></div>'
     : '';
+  const searchSummary = '<div class="archive-list-summary"><b>' + (archiveSearchQuery ? '검색 결과 ' : '전체 ') + totalCount + '건</b><span>페이지당 ' + ARCHIVE_PAGE_SIZE + '건 · ' + archiveCurrentPage + '/' + pageCount + '페이지</span>' + (archiveSearchQuery ? '<button type="button" class="archive-search-clear" onclick="window.SitePassArchive.clearSearch()">검색 지우기</button>' : '') + '</div>';
   const adminModeNotice = isAdminMode
     ? '<div class="notice blue-note"><b>관리자 모드 창</b><br>여기서는 장비업자에게 알림만 보내고, 장비별로는 상세보기 / 큐알링크 / 삭제만 할 수 있습니다. 큐알링크는 해당 장비 담당자 화면 QR을 바로 보여줍니다.</div>'
     : '';
@@ -267,16 +335,18 @@ function renderList() {
     ? '<div class="list-select-toolbar">' +
         adminModeNotice +
         filterNotice +
+        searchSummary +
         '<div class="small"><b>선택해서 장비업자에게 알림 보내기</b><br>선택한 장비의 소유회원 휴대폰번호로 만료·갱신 알림 문자를 바로 보냅니다.</div>' +
         '<div class="actions">' +
-          '<button class="ghost" onclick="selectAllListItems(true)">전체선택</button>' +
+          '<button class="ghost" onclick="selectAllListItems(true)">현재 페이지 전체선택</button>' +
           '<button class="secondary" onclick="selectAllListItems(false)">선택해제</button>' +
           '<button class="okBtn" onclick="shareSelectedAdminOwnerAlertSms()">선택 장비업자에게 알림 보내기</button>' +
         '</div>' +
       '</div>'
     : '<div class="list-select-toolbar">' +
         filterNotice +
-        '<div class="small"><b>선택해서 바로 보내기</b><br>필요한 장비를 체크한 뒤 카카오톡·문자·이메일 중 하나로 담당자에게 1일 만료 QR·링크를 바로 보냅니다.</div>' +
+        searchSummary +
+        '<div class="small"><b>선택해서 바로 보내기</b><br>현재 페이지에서 필요한 장비를 체크한 뒤 카카오톡·문자·이메일 중 하나로 담당자에게 1일 만료 QR·링크를 바로 보냅니다.</div>' +
         '<div class="list-share-actions">' +
           '<button class="okBtn" onclick="shareSelectedListItemsKakao()">선택 카카오톡으로 보내기</button>' +
           '<button class="ghost" onclick="shareSelectedListItemsSms()">선택 문자로 보내기</button>' +
@@ -285,11 +355,13 @@ function renderList() {
         '<div class="small"><b>서버 기준 보관함</b><br>회원 장비/QR/삭제상태는 서버 자료만 기준으로 표시합니다. PC의 과거 삭제표시로 서버 장비를 숨기지 않아 PC/휴대폰 목록을 맞춥니다.</div>' +
         (typeof sitePassEquipmentSyncMessage !== 'undefined' && sitePassEquipmentSyncMessage ? '<div class="small"><b>서버 상태:</b> ' + escapeHtml(sitePassEquipmentSyncMessage) + '</div>' : '') +
       '</div>';
+
   if (!items.length) {
-    box.innerHTML = toolbar + '<div class="empty">현재 조건에 맞는 장비서류가 없습니다.</div>';
+    box.innerHTML = toolbar + '<div class="empty">검색 조건에 맞는 장비가 없습니다.</div>';
     return;
   }
-  box.innerHTML = toolbar + items.map(item => {
+
+  const cards = items.map(item => {
     const ownerInfo = isAdminMode
       ? '<div class="small">장비업자: ' + escapeHtml(item.ownerName || item.ownerSignupId || '미지정') + (item.ownerPhone ? ' / ' + escapeHtml(item.ownerPhone) : ' / 휴대폰 미등록') + '</div>'
       : '';
@@ -308,6 +380,15 @@ function renderList() {
       actionButtons +
     '</div>';
   }).join('');
+
+  const pagination = pageCount > 1
+    ? '<div class="archive-pagination">' +
+        '<button type="button" class="secondary" ' + (archiveCurrentPage <= 1 ? 'disabled' : '') + ' onclick="window.SitePassArchive.goToPage(' + (archiveCurrentPage - 1) + ')">이전</button>' +
+        '<span><b>' + archiveCurrentPage + '</b> / ' + pageCount + '</span>' +
+        '<button type="button" class="secondary" ' + (archiveCurrentPage >= pageCount ? 'disabled' : '') + ' onclick="window.SitePassArchive.goToPage(' + (archiveCurrentPage + 1) + ')">다음</button>' +
+      '</div>'
+    : '';
+  box.innerHTML = toolbar + cards + pagination;
 }
 
 function selectAllListItems(checked) {
@@ -499,6 +580,11 @@ async function clearAll() {
 }
 
   window.SitePassArchive = {
+    setSearchQuery: setArchiveSearchQuery,
+    clearSearch: clearArchiveSearch,
+    goToPage: goArchivePage,
+    getSearchQuery: function(){ return archiveSearchQuery; },
+    getCurrentPage: function(){ return archiveCurrentPage; },
     openAdminListQuickFilter,
     clearAdminListQuickFilter,
     renderList,

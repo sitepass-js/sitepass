@@ -706,7 +706,7 @@ function resetForm(clearEdit = true) {
       ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       const ownerPrimary = [item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
         .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
-      // v23.7.488: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
+      // v23.7.489: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
       // SB-로그인아이디 형식을 현재 회원 고유키로 함께 계산하여 정상 서버자료를 누락시키지 않습니다.
       if (ownerPrimary.length) {
         if (currentPrimary.length && ownerPrimary.some(function(key) { return currentPrimary.indexOf(key) >= 0; })) return true;
@@ -1839,7 +1839,7 @@ function setItems(items) {
       if (!box || !item) return false;
       const title = document.getElementById('listScreenTitle');
       const bottomActions = document.getElementById('listScreenBottomActions');
-      if (title) title.textContent = '장비/기사/인부 보관함';
+      if (title) title.textContent = '보관함';
       if (bottomActions) {
         bottomActions.innerHTML = '';
       }
@@ -1877,7 +1877,7 @@ function setItems(items) {
         return String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || ''));
       });
       box.innerHTML = '<div class="list-select-toolbar"><div class="small"><b>테스트 등록 완료</b><br>새 등록건을 먼저 표시하고, 기존 보관함 항목은 삭제하지 않고 함께 표시합니다. 서버 동기화는 뒤에서 처리됩니다.</div></div>' +
-        list.slice(0, 50).map(function(x){ return fastCardHtml(x, String(x.code || '') === newCode); }).join('');
+        list.slice(0, 10).map(function(x){ return fastCardHtml(x, String(x.code || '') === newCode); }).join('');
       return true;
     }
     window.sitePassRenderFastListAfterRegistration = renderFastCompletionListItem;

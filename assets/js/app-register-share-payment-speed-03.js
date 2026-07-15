@@ -328,7 +328,7 @@ function normalizePhoneForShare(phone) {
         const prefix = safeItems.length > 1 ? (index + 1) + '. ' : '- ';
         return prefix + getShareItemLabel(item) + ' · ' + makeAlertSummary(item.docs || {});
       }).join('\n');
-      return '[SitePass 관리자 알림]\n아래 장비서류의 만료 상태를 확인해주세요.\n' + rows + '\n\nSitePass 로그인 후 장비/기사/인부 보관함에서 서류를 수정/갱신해주세요.';
+      return '[SitePass 관리자 알림]\n아래 장비서류의 만료 상태를 확인해주세요.\n' + rows + '\n\nSitePass 로그인 후 보관함에서 서류를 수정/갱신해주세요.';
     }
 
     function shareSelectedAdminOwnerAlertSms() {
