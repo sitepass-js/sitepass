@@ -914,9 +914,25 @@ function expireUnpaidPaymentTestData() {
         setupRegistrationDraftAutoSave();
         setupJuminLimitDelegates();
         restorePwaAutoMemberSession();
+        try {
+          if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn() && !(typeof isAdminLoggedIn === 'function' && isAdminLoggedIn())) {
+            window.sitePassMemberEquipmentInitialSyncPendingV491 = true;
+            window.sitePassMemberEquipmentInitialSyncErrorV491 = false;
+          }
+        } catch (e) {}
         refreshAdminUi();
         refreshMemberUi();
-        try { setTimeout(function(){ syncSupabaseEquipmentItems(true); }, 600); } catch (e) {}
+        try {
+          setTimeout(function(){
+            try {
+              if (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn() && !(typeof isAdminLoggedIn === 'function' && isAdminLoggedIn()) && typeof syncSupabaseMyEquipmentItems === 'function') {
+                syncSupabaseMyEquipmentItems(true);
+              } else if (typeof syncSupabaseEquipmentItems === 'function') {
+                syncSupabaseEquipmentItems(true);
+              }
+            } catch (e) {}
+          }, 30);
+        } catch (e) {}
         updateQuickAuthUi();
         // v23.7.248: “로그인 확인 중입니다” 차단 화면을 더 이상 오래 띄우지 않습니다.
         // OAuth 확인은 뒤에서 진행하되, 사용자가 화면에 갇히지 않게 먼저 공개합니다.
@@ -937,9 +953,15 @@ function expireUnpaidPaymentTestData() {
         clearTimeout(sitePassBootWatchdog);
         if (sitePassBootWatchdogFired) return;
         if (!handledOAuth && !checkHash()) {
-          const initialScreen = isAdminLoggedIn()
-            ? 'adminScreen'
-            : (isMemberLoggedIn() ? (isSitePassInstalledAppMode() ? 'listScreen' : 'homeScreen') : 'signupScreen');
+          let initialScreen = 'signupScreen';
+          if (isAdminLoggedIn()) {
+            initialScreen = 'adminScreen';
+          } else if (isMemberLoggedIn()) {
+            const allowedMemberScreens = ['homeScreen','registerScreen','listScreen','contactScreen','pricingScreen','usageGuideScreen'];
+            let rememberedScreen = '';
+            try { rememberedScreen = String((window.history.state && window.history.state.sitepassScreen) || sessionStorage.getItem('sitepass_last_screen_v491') || ''); } catch (e) {}
+            initialScreen = allowedMemberScreens.includes(rememberedScreen) ? rememberedScreen : 'homeScreen';
+          }
           showScreen(initialScreen, { replace:true });
           promptRegistrationDraftIfNeeded('startup');
         }

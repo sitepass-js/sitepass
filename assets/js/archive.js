@@ -39,6 +39,12 @@ function setArchiveSearchQuery(value) {
   renderList();
 }
 
+function searchArchiveFromInput() {
+  const input = document.getElementById('archiveSearchInput');
+  setArchiveSearchQuery(input ? input.value : '');
+}
+
+
 function clearArchiveSearch() {
   archiveSearchQuery = '';
   archiveCurrentPage = 1;
@@ -304,7 +310,7 @@ function renderList() {
   const bottomActions = document.getElementById('listScreenBottomActions');
   if (title) title.textContent = isAdminMode ? '관리자 보관함' : '보관함';
   if (searchInput) {
-    searchInput.placeholder = isAdminMode ? '장비번호·장비명·회원 검색' : '장비번호·장비명 검색';
+    searchInput.placeholder = '검색';
     if (searchInput.value !== archiveSearchQuery) searchInput.value = archiveSearchQuery;
   }
   if (bottomActions) bottomActions.innerHTML = '';
@@ -312,7 +318,15 @@ function renderList() {
 
   if (allItems.length === 0) {
     archiveCurrentPage = 1;
-    box.innerHTML = '<div class="empty">' + (isAdminMode ? '아직 등록된 장비서류가 없습니다.<br>회원이 직접 등록한 장비서류가 생기면 여기서 확인할 수 있습니다.' : '아직 저장된 장비등록이 없습니다.<br>장비등록에서 먼저 저장해보세요.') + '</div>';
+    if (!isAdminMode && window.sitePassMemberEquipmentInitialSyncPendingV491) {
+      box.innerHTML = '<div class="empty sitepass-server-loading-v491"><b>보관함을 불러오는 중입니다.</b><br>서버에 저장된 장비를 확인하고 있습니다.</div>';
+      return;
+    }
+    if (!isAdminMode && window.sitePassMemberEquipmentInitialSyncErrorV491) {
+      box.innerHTML = '<div class="empty"><b>보관함 서버 연결을 확인하고 있습니다.</b><br>잠시 후 다시 열거나 새로고침해주세요.</div>';
+      return;
+    }
+    box.innerHTML = '<div class="empty">' + (isAdminMode ? '아직 등록된 장비서류가 없습니다.<br>회원이 직접 등록한 장비서류가 생기면 여기서 확인할 수 있습니다.' : '아직 저장된 장비등록이 없습니다.<br>등록에서 먼저 장비를 추가해주세요.') + '</div>';
     return;
   }
 
@@ -327,7 +341,7 @@ function renderList() {
   const filterNotice = adminListQuickFilter !== 'all'
     ? '<div class="notice blue-note admin-filter-note"><div><b>현재 빠른보기:</b> ' + escapeHtml(getAdminListQuickFilterLabel(adminListQuickFilter)) + '</div><button type="button" class="ghost inline-mini-button" onclick="clearAdminListQuickFilter()">전체 보기</button></div>'
     : '';
-  const searchSummary = '<div class="archive-list-summary"><b>' + (archiveSearchQuery ? '검색 결과 ' : '전체 ') + totalCount + '건</b><span>페이지당 ' + ARCHIVE_PAGE_SIZE + '건 · ' + archiveCurrentPage + '/' + pageCount + '페이지</span>' + (archiveSearchQuery ? '<button type="button" class="archive-search-clear" onclick="window.SitePassArchive.clearSearch()">검색 지우기</button>' : '') + '</div>';
+  const searchSummary = '<div class="archive-list-summary"><b>' + (archiveSearchQuery ? '검색 결과 ' : '장비등록 ') + totalCount + (archiveSearchQuery ? '대' : '대') + '</b></div>';
   const adminModeNotice = isAdminMode
     ? '<div class="notice blue-note"><b>관리자 모드 창</b><br>여기서는 장비업자에게 알림만 보내고, 장비별로는 상세보기 / 큐알링크 / 삭제만 할 수 있습니다. 큐알링크는 해당 장비 담당자 화면 QR을 바로 보여줍니다.</div>'
     : '';
@@ -346,14 +360,12 @@ function renderList() {
     : '<div class="list-select-toolbar">' +
         filterNotice +
         searchSummary +
-        '<div class="small"><b>선택해서 바로 보내기</b><br>현재 페이지에서 필요한 장비를 체크한 뒤 카카오톡·문자·이메일 중 하나로 담당자에게 1일 만료 QR·링크를 바로 보냅니다.</div>' +
         '<div class="list-share-actions">' +
           '<button class="okBtn" onclick="shareSelectedListItemsKakao()">선택 카카오톡으로 보내기</button>' +
           '<button class="ghost" onclick="shareSelectedListItemsSms()">선택 문자로 보내기</button>' +
           '<button class="ghost" onclick="shareSelectedListItemsEmail()">선택 이메일로 보내기</button>' +
         '</div>' +
-        '<div class="small"><b>서버 기준 보관함</b><br>회원 장비/QR/삭제상태는 서버 자료만 기준으로 표시합니다. PC의 과거 삭제표시로 서버 장비를 숨기지 않아 PC/휴대폰 목록을 맞춥니다.</div>' +
-        (typeof sitePassEquipmentSyncMessage !== 'undefined' && sitePassEquipmentSyncMessage ? '<div class="small"><b>서버 상태:</b> ' + escapeHtml(sitePassEquipmentSyncMessage) + '</div>' : '') +
+        '<div class="archive-share-help-v491">장비 오른쪽의 <b>선택</b>을 체크한 뒤 원하는 전송 버튼을 누르세요. 여러 대를 함께 선택해 보낼 수도 있습니다.</div>' +
       '</div>';
 
   if (!items.length) {
@@ -581,6 +593,7 @@ async function clearAll() {
 
   window.SitePassArchive = {
     setSearchQuery: setArchiveSearchQuery,
+    searchFromInput: searchArchiveFromInput,
     clearSearch: clearArchiveSearch,
     goToPage: goArchivePage,
     getSearchQuery: function(){ return archiveSearchQuery; },

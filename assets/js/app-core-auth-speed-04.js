@@ -279,7 +279,12 @@ function renderAdminContactManager() {
     }
 
     function rememberSitePassScreen(id, options) {
-      if (!id || !window.history || !window.history.replaceState) return;
+      if (!id) return;
+      try {
+        const restorable = ['homeScreen','registerScreen','listScreen','contactScreen','pricingScreen','usageGuideScreen','adminScreen'];
+        if (restorable.includes(id)) sessionStorage.setItem('sitepass_last_screen_v491', id);
+      } catch (e) {}
+      if (!window.history || !window.history.replaceState) return;
       if (sitePassHandlingPopState || (options && options.skipHistory) || isSitePassHashRouteActive()) return;
       const state = { sitepassScreen: id };
       const title = document.title || 'SitePass';
@@ -433,6 +438,7 @@ function adminLogout() {
       removeSessionValue(ADMIN_SESSION_KEY + '_role');
       removeSessionValue(ADMIN_SESSION_KEY + '_id');
       removeSessionValue(ADMIN_SESSION_KEY + '_name');
+      try { sessionStorage.removeItem('sitepass_last_screen_v491'); } catch (e) {}
       clearPwaAutoMemberTest();
       refreshAdminUi();
       alert('로그아웃했습니다.');
