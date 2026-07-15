@@ -1,4 +1,4 @@
-// SitePass v23.7.503 - 담당자 공유 payload 저장·조회 복원 강화
+// SitePass v23.7.504 - 담당자 공유 payload 저장·조회 복원 강화
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
@@ -171,7 +171,7 @@
     return data;
   }
 
-  // v23.7.503: 과거 SQL/RPC와 현재 SQL이 item_data, payload, item, item_json 등
+  // v23.7.504: 과거 SQL/RPC와 현재 SQL이 item_data, payload, item, item_json 등
   // 서로 다른 키로 값을 돌려줘도 실제 장비/서류 객체를 하나로 복원합니다.
   function normalizeLoadedManagerShareItemV503(value, fallbackCode){
     const seen = new WeakSet();

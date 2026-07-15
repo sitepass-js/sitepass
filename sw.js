@@ -1,19 +1,19 @@
-const SITEPASS_SW_VERSION = 'v23.7.503';
-const SITEPASS_CACHE = 'sitepass-fast-v23.7.503';
-const SITEPASS_PREVIOUS_CACHE = 'sitepass-fast-v23.7.502';
-const SITEPASS_OLDER_CACHE = 'sitepass-fast-v23.7.501';
+const SITEPASS_SW_VERSION = 'v23.7.504';
+const SITEPASS_CACHE = 'sitepass-fast-v23.7.504';
+const SITEPASS_PREVIOUS_CACHE = 'sitepass-fast-v23.7.503';
+const SITEPASS_OLDER_CACHE = 'sitepass-fast-v23.7.502';
 const SITEPASS_SHELL = [
   './index.html',
-  './assets/css/style.css?v=23.7.503',
-  './assets/js/config.js?v=23.7.503',
-  './assets/js/pwa-update.js?v=23.7.503',
-  './assets/js/app-core-auth-speed-04.js?v=23.7.500',
-  './assets/js/sitepass-recipient-route-v503.js?v=23.7.503',
+  './assets/css/style.css?v=23.7.504',
+  './assets/js/config.js?v=23.7.504',
+  './assets/js/pwa-update.js?v=23.7.504',
+  './assets/js/app-core-auth-speed-04.js?v=23.7.504',
+  './assets/js/sitepass-recipient-route-v504.js?v=23.7.504',
   './assets/js/app-admin-boot-speed-03.js?v=23.7.500',
   './assets/js/app-register-share-payment-speed-02.js?v=23.7.496',
-  './assets/js/app-register-share-payment-speed-03.js?v=23.7.503',
+  './assets/js/app-register-share-payment-speed-03.js?v=23.7.504',
   './assets/js/app-register-share-payment-speed-04.js?v=23.7.496',
-  './assets/js/qr-share.js?v=23.7.503'
+  './assets/js/qr-share.js?v=23.7.504'
 ];
 
 self.addEventListener('install', event => {
