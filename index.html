@@ -34,37 +34,6 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/sitepass-icon-192.png?v=23.7.493" />
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.493" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
-<script>
-/* v23.7.505 - 담당자 링크는 회원 앱과 완전히 분리된 전용 화면으로 이동합니다. */
-(function(){
-  try {
-    var params = new URLSearchParams(location.search || '');
-    var code = String(params.get('manager') || params.get('m') || '').trim();
-    var sig = String(params.get('sig') || '').trim();
-    var exp = String(params.get('exp') || '').trim();
-    var hash = String(location.hash || '');
-    if (!code && /^#manager=/i.test(hash)) {
-      var parts = hash.replace(/^#manager=/i, '').split('&');
-      code = decodeURIComponent(parts.shift() || '').trim();
-      parts.forEach(function(part){
-        var pair = part.split('=');
-        var key = decodeURIComponent(pair.shift() || '');
-        var value = decodeURIComponent(pair.join('=') || '');
-        if (key === 'sig') sig = value;
-        if (key === 'exp') exp = value;
-      });
-    }
-    if (code) {
-      var target = new URL('./recipient.html', location.href);
-      target.searchParams.set('manager', code);
-      if (sig) target.searchParams.set('sig', sig);
-      if (exp) target.searchParams.set('exp', exp);
-      target.searchParams.set('v', '505');
-      location.replace(target.toString());
-    }
-  } catch (e) {}
-})();
-</script>
 
 
 <style id="sitepassBootGateV500">
@@ -77,8 +46,7 @@
     font-weight:900; font-size:15px; z-index:2147483647;
   }
   html.sitepass-external-share-route-v500 body.sitepass-booting::before,
-  html.sitepass-external-share-route-v502 body.sitepass-booting::before,
-  html.sitepass-external-share-route-v504 body.sitepass-booting::before {
+  html.sitepass-external-share-route-v502 body.sitepass-booting::before {
     content:'담당자 서류를 불러오는 중입니다.' !important;
   }
   html.sitepass-external-share-route-v500 body #signupScreen,
@@ -89,14 +57,15 @@
   html.sitepass-external-share-route-v500 body #pricingScreen,
   html.sitepass-external-share-route-v500 body #usageGuideScreen,
   html.sitepass-external-share-route-v500 body #myAccountScreen,
-  html.sitepass-external-share-route-v500 body #adminScreen {
+  html.sitepass-external-share-route-v500 body #adminScreen,
+  html.sitepass-external-share-route-v500 body #detailScreen {
     display:none !important;
   }
 </style>
 <script>
-/* v23.7.505 - 담당자 링크 전용 화면 분리 및 query 호환 */
+/* v23.7.506 - 담당자 링크 query 고정 및 업데이트 중 코드 보존 */
 (function(){
-  var declaredVersion = '23.7.505';
+  var declaredVersion = '23.7.502';
   var search = String(location.search || '');
   var hash = String(location.hash || '');
   var external = /[?&](manager|public|share)=/i.test(search) || /#(manager|public|share|qr)=?/i.test(hash);
@@ -113,12 +82,10 @@
     } catch (e) {}
   }
   if (external) {
-    window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V504 = true;
-    window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V503 = true;
     window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V502 = true;
     window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 = true;
     window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499 = true;
-    document.documentElement.classList.add('sitepass-external-share-route-v504','sitepass-external-share-route-v502','sitepass-external-share-route-v500');
+    document.documentElement.classList.add('sitepass-external-share-route-v502','sitepass-external-share-route-v500');
   }
   document.documentElement.classList.add('sitepass-version-gate-v500');
   var released = false;
@@ -204,9 +171,9 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.505 standalone recipient viewer -->
+  <!-- SitePass deploy-check: v23.7.506 manager query route preserved -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.505" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.500" />
   <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.493" />
 
   <style>
@@ -2812,6 +2779,21 @@
       margin-right:auto !important;
     }
   </style>
+<script>
+(function(){
+  try {
+    var p=new URLSearchParams(location.search||'');
+    var code=String(p.get('manager')||'').trim();
+    if(code){
+      var u=new URL('./recipient.html',location.href);
+      u.searchParams.set('manager',code);
+      if(p.get('sig'))u.searchParams.set('sig',p.get('sig'));
+      u.searchParams.set('v','506');
+      location.replace(u.toString());
+    }
+  } catch(e) {}
+})();
+</script>
 </head>
 <body class="sitepass-booting">
   <main class="app">
@@ -3726,7 +3708,7 @@
         <p>담당자는 공유 링크나 QR을 누르면 이 화면을 바로 봅니다. 서류 확인, 다운로드, 프린트만 가능하고 수정/갱신은 장비업자 보관함에서만 가능합니다.</p>
         <div id="managerPrintBox"></div>
         <div class="actions">
-          <button class="ghost" onclick="exitManagerRecipientViewV504()">SitePass 홈으로</button>
+          <button class="ghost" onclick="showScreen('homeScreen')">홈으로가기</button>
         </div>
       </div>
     </section>
@@ -4148,7 +4130,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.505" defer></script>
+<script src="./assets/js/config.js?v=23.7.502" defer></script>
 <script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.493" defer></script>
 <script src="./assets/js/supabase-api.js?v=23.7.493" defer></script>
 <script src="./assets/js/storage.js?v=23.7.493" defer></script>
@@ -4156,8 +4138,8 @@
 <script src="./assets/js/admin-members.js?v=23.7.493" defer></script>
 <script src="./assets/js/admin-detail.js?v=23.7.493" defer></script>
 <script src="./assets/js/auth-social.js?v=23.7.493" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.505" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.505" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.502" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.502" defer></script>
 <script src="./assets/js/archive.js?v=23.7.493" defer></script>
 <script src="./assets/js/equipment-register.js?v=23.7.493" defer></script>
 <script src="./assets/js/person-auth.js?v=23.7.493" defer></script>
@@ -4168,14 +4150,14 @@
 <script src="./assets/js/app-core-auth-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-core-auth-speed-02.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-core-auth-speed-03.js?v=23.7.493" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.505" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.500" defer></script>
 <script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.500" defer></script>
 <script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.500" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.496" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.505" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.502" defer></script>
 <script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.496" defer></script>
 <script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.493" defer></script>
 <script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.493" defer></script>

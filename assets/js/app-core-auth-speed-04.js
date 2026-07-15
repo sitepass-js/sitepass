@@ -306,12 +306,11 @@ function renderAdminContactManager() {
       // v23.7.500: 담당자/외부 QR 링크로 들어온 동안에는 로그인·홈 초기화가
       // 수신자 화면을 1초 뒤 덮어쓰지 못하게 외부 화면만 허용합니다.
       const managerOnlyScreens = ['managerAccessScreen', 'managerPrintScreen', 'publicScreen'];
-      let externalShareRouteV500 = !window.__SITEPASS_ALLOW_RECIPIENT_EXIT_V504 && !!(window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V504 || window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V503 || window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 || window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499);
+      let externalShareRouteV500 = !!(window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V500 || window.__SITEPASS_EXTERNAL_SHARE_ROUTE_V499);
       try {
         const routeSearch = String(window.location.search || '');
         const routeHash = String(window.location.hash || '');
-        const actualRecipientRouteV504 = /[?&](manager|public|share)=/i.test(routeSearch) || /#(manager|public|share|qr)=?/i.test(routeHash);
-        externalShareRouteV500 = !window.__SITEPASS_ALLOW_RECIPIENT_EXIT_V504 && (externalShareRouteV500 || actualRecipientRouteV504);
+        externalShareRouteV500 = externalShareRouteV500 || /[?&](manager|public|share)=/i.test(routeSearch) || /#(manager|public|share|qr)=?/i.test(routeHash);
       } catch (e) {}
       if (externalShareRouteV500) {
         const externalTargetV500 = /(?:^|[?&])manager=|#manager=/i.test(String(window.location.search || '') + String(window.location.hash || ''))
@@ -348,9 +347,7 @@ function renderAdminContactManager() {
       document.querySelectorAll('.screen').forEach(screen => screen.classList.add('hidden'));
       const target = document.getElementById(id);
       if (target) target.classList.remove('hidden');
-      if (externalShareRouteV500 && !window.__SITEPASS_ALLOW_RECIPIENT_EXIT_V504 && typeof window.sitePassEnforceRecipientRouteV504 === 'function') {
-        setTimeout(function(){ try { window.sitePassEnforceRecipientRouteV504(); } catch (e) {} }, 0);
-      } else if (externalShareRouteV500 && !window.__SITEPASS_ALLOW_RECIPIENT_EXIT_V504 && typeof window.sitePassEnforceRecipientRouteV500 === 'function') {
+      if (externalShareRouteV500 && typeof window.sitePassEnforceRecipientRouteV500 === 'function') {
         setTimeout(function(){ try { window.sitePassEnforceRecipientRouteV500(); } catch (e) {} }, 0);
       }
       // v23.7.216: 새로고침 때 로그인창이 먼저 보였다가 사라지는 깜빡임 방지.

@@ -1,11 +1,1 @@
-{
-  "version": "23.7.505",
-  "channel": "test",
-  "note": "담당자 링크화면을 회원 앱과 완전히 분리해 상세보기·뒤로가기·홈 이동 충돌을 제거했습니다.",
-  "build": "v23.7.505-test",
-  "stage": "담당자 전용 링크화면 분리",
-  "updatedAt": "2026-07-16",
-  "releaseType": "standalone-recipient-viewer",
-  "purpose": "상세보기 미작동, 링크 간헐적 미표시, 회원 링크화면 이탈 불가 문제 제거",
-  "description": "recipient.html 전용화면, 기존 index 담당자 링크 자동전환, 회원 보관함 복귀, 실제 홈 이동, 서버 RPC·직접조회 재시도, 문서 상세보기 모달"
-}
+{"version":"v23.7.506-test","updatedAt":"2026-07-16T01:40:00+09:00","appUrl":"https://sitepass-js.github.io/sitepass/"}

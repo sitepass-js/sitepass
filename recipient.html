@@ -11,16 +11,13 @@
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#f3f6fb}body{padding:0 0 max(26px,env(safe-area-inset-bottom))}
     button,a{font:inherit}.shell{width:min(780px,100%);margin:0 auto;padding:12px 14px 28px}.top-nav{position:sticky;top:0;z-index:40;display:flex;gap:10px;align-items:center;justify-content:space-between;margin:0 -2px 12px;padding:10px 12px;border:1px solid #dbe5f2;border-radius:14px;background:rgba(255,255,255,.97);box-shadow:0 6px 20px rgba(35,57,94,.11);backdrop-filter:blur(10px)}
     .nav-btn{min-height:44px;padding:10px 14px;border:0;border-radius:12px;background:#173f7a;color:#fff;font-weight:900;cursor:pointer}.nav-label{color:#66738a;font-size:12px;font-weight:800;text-align:right}
-    .brand-card{display:flex;align-items:center;justify-content:center;gap:11px;margin:0 0 14px;padding:18px;border:1px solid #e0e8f3;border-radius:22px;background:#fff;box-shadow:0 12px 30px rgba(35,57,94,.10)}
-    .brand-mark{position:relative;width:48px;height:48px;flex:0 0 48px;border-radius:14px;background:linear-gradient(145deg,#168eea,#0ba2da);box-shadow:0 7px 16px rgba(22,142,234,.22)}.brand-mark:before{content:"";position:absolute;left:13px;top:11px;width:21px;height:26px;border:3px solid #fff;border-radius:3px}.brand-mark:after{content:"✓";position:absolute;right:-5px;bottom:-4px;display:grid;place-items:center;width:22px;height:22px;border:3px solid #fff;border-radius:50%;background:#21bd69;color:#fff;font-size:14px;font-weight:1000}
-    .brand-name{display:flex;align-items:baseline;font-size:34px;line-height:1;font-weight:1000;letter-spacing:-2px}.brand-name span{color:#123f87}.brand-name em{color:#20b968;font-style:normal}.card{margin-bottom:13px;padding:18px;border:1px solid #dfe7f2;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(31,50,84,.08)}
     .hero .eyebrow{color:#168eea;font-size:12px;font-weight:900}.hero h1{margin:7px 0 8px;font-size:25px;line-height:1.3;letter-spacing:-.8px}.hero p{margin:0;color:#64728a;font-size:14px;line-height:1.65}.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}.status-grid span{padding:9px 6px;border-radius:10px;background:#eef5ff;color:#194f96;font-size:12px;font-weight:900;text-align:center}
     .info-row{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid #edf1f6}.info-row:last-child{border-bottom:0}.info-row b{flex:0 0 105px;color:#506079;font-size:13px}.info-row span{min-width:0;text-align:right;font-weight:800;word-break:break-word}.expire{padding:14px;border-radius:13px;background:#fff8e8;color:#79540a;line-height:1.6;font-size:13px}.expire strong{display:block;color:#563b05;font-size:15px}
     .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:20px 2px 10px}.section-title h2{margin:0;font-size:19px}.section-title span{color:#6b7890;font-size:12px;font-weight:800}.docs{display:grid;gap:12px}.doc-card{padding:16px;border:1px solid #dfe7f2;border-radius:17px;background:#fff;box-shadow:0 7px 22px rgba(31,50,84,.07)}.doc-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}.doc-title{min-width:0}.doc-title small{display:block;margin-bottom:3px;color:#6e7b91;font-weight:800}.doc-title strong{display:block;font-size:17px;line-height:1.35;word-break:keep-all}.badge{flex:0 0 auto;padding:6px 9px;border-radius:999px;background:#e9f8ef;color:#17834a;font-size:11px;font-weight:900}.badge.missing{background:#fff0f0;color:#a23838}.doc-meta{margin-top:10px;color:#68758b;font-size:12px;line-height:1.55}.doc-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}.detail-btn,.file-link{display:flex;min-height:46px;align-items:center;justify-content:center;border:0;border-radius:12px;font-weight:900;text-decoration:none;cursor:pointer}.detail-btn{background:#165fc3;color:#fff}.file-link{background:#edf4fd;color:#1553a4}.file-link.disabled{pointer-events:none;background:#f1f3f6;color:#9aa4b3}
     .loading,.error,.empty{min-height:46vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:30px 18px;text-align:center}.spinner{width:42px;height:42px;border:4px solid #dfe7f5;border-top-color:#168eea;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading b,.error b,.empty b{font-size:18px}.loading span,.error span,.empty span{max-width:520px;color:#68758b;font-size:14px;line-height:1.65}.retry{min-width:180px;min-height:46px;border:0;border-radius:12px;background:#165fc3;color:#fff;font-weight:900;cursor:pointer}
     .notice{margin-top:12px;padding:13px;border-radius:12px;background:#f2f6fb;color:#58677e;font-size:12px;line-height:1.6}.sponsor{margin-top:16px;padding:15px;border-radius:14px;background:#fff;border:1px solid #e1e8f1;color:#6b7890;font-size:12px;text-align:center}.sponsor a{color:#1558ad;font-weight:900}
     .modal{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:16px}.backdrop{position:absolute;inset:0;background:rgba(9,18,34,.76)}.sheet{position:relative;z-index:1;display:flex;flex-direction:column;width:min(980px,100%);max-height:96vh;overflow:hidden;border-radius:20px;background:#fff;box-shadow:0 28px 90px rgba(0,0,0,.38)}.modal-head{display:flex;gap:15px;align-items:flex-start;justify-content:space-between;padding:15px 17px;border-bottom:1px solid #e4e9f2}.modal-head small{display:block;color:#6c798f;font-weight:800}.modal-head strong{display:block;margin-top:3px;font-size:18px}.close-x{flex:0 0 42px;width:42px;height:42px;border:0;border-radius:50%;background:#edf1f7;color:#26344b;font-size:29px;line-height:1;cursor:pointer}.modal-body{flex:1 1 auto;overflow:auto;padding:14px;background:#edf2f7}.page{width:min(850px,100%);margin:0 auto 14px;padding:10px;border-radius:13px;background:#fff;box-shadow:0 4px 17px rgba(26,42,72,.10)}.page-title{margin-bottom:9px;color:#42516a;font-size:13px;font-weight:900;word-break:break-all}.page img{display:block;width:100%;height:auto;margin:auto;background:#fff}.page iframe,.page object{display:block;width:100%;height:72vh;min-height:520px;border:0;background:#fff}.page-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.page-actions a,.page-actions button{display:flex;min-height:44px;align-items:center;justify-content:center;border:0;border-radius:10px;background:#edf4fd;color:#1553a4;font-weight:900;text-decoration:none;cursor:pointer}.page-actions button{background:#26344b;color:#fff}.missing-page{padding:35px 16px;border-radius:12px;background:#fff2f2;color:#9a3838;text-align:center;line-height:1.6}.close-bottom{min-height:50px;margin:10px 16px 15px;border:0;border-radius:12px;background:#1f293b;color:#fff;font-weight:900;cursor:pointer}body.modal-open{overflow:hidden}
-    @media(max-width:680px){.shell{padding:8px 9px 22px}.top-nav{border-radius:12px}.nav-btn{width:100%}.nav-label{display:none}.brand-card{padding:14px;border-radius:17px}.brand-mark{width:42px;height:42px;flex-basis:42px}.brand-mark:before{left:11px;top:9px}.brand-name{font-size:30px}.card{padding:15px}.hero h1{font-size:22px}.status-grid{grid-template-columns:1fr}.info-row b{flex-basis:92px}.modal{padding:0}.sheet{width:100%;max-height:100vh;border-radius:0}.modal-body{padding:8px}.page{padding:7px;border-radius:9px}.page iframe,.page object{height:75vh;min-height:420px}}
+    @media(max-width:680px){.shell{padding:8px 9px 22px}.top-nav{border-radius:12px}.nav-btn{width:100%}.nav-label{display:none}.card{padding:15px}.hero h1{font-size:22px}.status-grid{grid-template-columns:1fr}.info-row b{flex-basis:92px}.modal{padding:0}.sheet{width:100%;max-height:100vh;border-radius:0}.modal-body{padding:8px}.page{padding:7px;border-radius:9px}.page iframe,.page object{height:75vh;min-height:420px}}
   </style>
 </head>
 <body>
@@ -28,10 +25,6 @@
     <div class="top-nav">
       <button id="exitButton" class="nav-btn" type="button">← SitePass 홈으로</button>
       <span id="navLabel" class="nav-label">담당자 서류 링크</span>
-    </div>
-    <div class="brand-card" aria-label="SitePass">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <div class="brand-name"><span>Site</span><em>Pass</em></div>
     </div>
     <div id="content" class="card loading" aria-live="polite">
       <span class="spinner" aria-hidden="true"></span>
@@ -42,7 +35,7 @@
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.505';
+  var VERSION='23.7.506';
   var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
   var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
   var STORAGE_BUCKET='sitepass-documents';
@@ -72,7 +65,7 @@
   function exitViewer(){
     closeModal();
     try{sessionStorage.setItem('sitepass_last_screen_v491',state.fromMember?'listScreen':'homeScreen');}catch(e){}
-    var target='./?v=505&spfresh='+Date.now();
+    var target='./?v=506&spfresh='+Date.now();
     location.replace(target);
   }
   exitButton.addEventListener('click',exitViewer);
@@ -99,22 +92,23 @@
     return merged;
   }
   function firstValue(obj,keys){for(var i=0;i<keys.length;i++){var v=obj&&obj[keys[i]];if(v!==undefined&&v!==null&&String(v).trim())return String(v).trim();}return '';}
-  function absoluteStorageUrl(path){
+  function absoluteStorageUrl(path,bucket){
     path=String(path||'').trim();if(!path)return '';
     if(/^(data:|blob:|https?:\/\/)/i.test(path))return path;
     path=path.replace(/^\/+/, '').replace(/^storage\/v1\/object\/(?:public|sign)\//i,'');
-    if(path.indexOf(STORAGE_BUCKET+'/')===0)path=path.slice(STORAGE_BUCKET.length+1);
-    if(path.indexOf('public/'+STORAGE_BUCKET+'/')===0)path=path.slice(('public/'+STORAGE_BUCKET+'/').length);
+    bucket=String(bucket||STORAGE_BUCKET).trim()||STORAGE_BUCKET;
+    if(path.indexOf(bucket+'/')===0)path=path.slice(bucket.length+1);
+    if(path.indexOf('public/'+bucket+'/')===0)path=path.slice(('public/'+bucket+'/').length);
     var encoded=path.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-    return encoded?SUPABASE_URL+'/storage/v1/object/public/'+STORAGE_BUCKET+'/'+encoded:'';
+    return encoded?SUPABASE_URL+'/storage/v1/object/public/'+bucket+'/'+encoded:'';
   }
   function resolveUrl(value){
-    if(typeof value==='string')return absoluteStorageUrl(value);
+    if(typeof value==='string')return absoluteStorageUrl(value,STORAGE_BUCKET);
     if(!value||typeof value!=='object')return '';
     var urlKeys=['previewDataUrl','editDataUrl','correctedDataUrl','originalDataUrl','fileDataUrl','fileUrl','file_url','downloadUrl','download_url','storagePublicUrl','storage_public_url','publicUrl','public_url','previewUrl','preview_url','signedUrl','signed_url','imageUrl','image_url','src','url'];
-    for(var i=0;i<urlKeys.length;i++){var v=value[urlKeys[i]];if(typeof v==='string'&&v.trim())return absoluteStorageUrl(v);}
+    for(var i=0;i<urlKeys.length;i++){var v=value[urlKeys[i]];if(typeof v==='string'&&v.trim())return absoluteStorageUrl(v,firstValue(value,['storageBucket','storage_bucket','bucket'])||STORAGE_BUCKET);}
     var pathKeys=['storagePath','storage_path','filePath','file_path','objectPath','object_path','uploadPath','upload_path','storedPath','stored_path','path'];
-    for(var j=0;j<pathKeys.length;j++){var p=value[pathKeys[j]];if(typeof p==='string'&&p.trim())return absoluteStorageUrl(p);}
+    for(var j=0;j<pathKeys.length;j++){var p=value[pathKeys[j]];if(typeof p==='string'&&p.trim())return absoluteStorageUrl(p,firstValue(value,['storageBucket','storage_bucket','bucket'])||STORAGE_BUCKET);}
     var nestedKeys=['file','blob','asset','upload','storage','original','corrected','preview'];
     for(var k=0;k<nestedKeys.length;k++){var n=value[nestedKeys[k]];if(n&&typeof n==='object'){var found=resolveUrl(n);if(found)return found;}}
     return '';
@@ -172,7 +166,7 @@
     if(!res.ok)throw new Error((data&&data.message)||('서버 직접조회 오류 '+res.status));
     return {root:Array.isArray(data)?data[0]:data};
   }
-  function previewSnapshot(){try{var raw=sessionStorage.getItem('sitepass_recipient_preview_v505_'+state.code);if(!raw)return null;var parsed=JSON.parse(raw);return parsed&&typeof parsed==='object'?parsed:null;}catch(e){return null;}}
+  function previewSnapshot(){try{var raw=sessionStorage.getItem('sitepass_recipient_preview_v506_'+state.code);if(!raw)return null;var parsed=JSON.parse(raw);return parsed&&typeof parsed==='object'?parsed:null;}catch(e){return null;}}
   async function load(){
     if(!state.code){renderError('담당자 링크 정보가 없습니다.','링크 주소를 다시 확인해주세요.',false);return;}
     content.className='card loading';content.innerHTML='<span class="spinner" aria-hidden="true"></span><b>담당자 서류를 불러오는 중입니다.</b><span>서버에서 최신 공유자료를 확인하고 있습니다.</span>';
