@@ -1488,6 +1488,8 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       return String(obj.storageBucket || obj.storage_bucket || obj.bucket || getSitePassStorageBucketName()).trim() || getSitePassStorageBucketName();
     }
 
+    let sitePassStorageUploadStartedAtV517 = 0;
+
     function setSitePassRegistrationUploadBusyV515(busy, text) {
       const button = document.getElementById('saveBundleButton');
       if (button) {
@@ -1498,13 +1500,17 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       }
       let box = document.getElementById('sitePassStorageUploadProgressV515');
       if (busy && !box) {
+        sitePassStorageUploadStartedAtV517 = Date.now();
         box = document.createElement('div');
         box.id = 'sitePassStorageUploadProgressV515';
         box.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:rgba(15,23,42,.52);display:flex;align-items:center;justify-content:center;padding:20px;';
-        box.innerHTML = '<div style="width:min(420px,100%);background:#fff;border-radius:18px;padding:22px;box-shadow:0 24px 70px rgba(15,23,42,.28);text-align:center"><div style="font-size:18px;font-weight:900;color:#0f172a;margin-bottom:8px">서류 저장중</div><div data-progress-text style="font-size:14px;line-height:1.55;color:#475569">잠시만 기다려주세요.</div><div style="height:9px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:14px"><div data-progress-bar style="height:100%;width:3%;background:#f2b705;border-radius:999px;transition:width .2s ease"></div></div><div style="font-size:12px;color:#64748b;margin-top:10px">서류 저장이 끝나면 등록완료됩니다.</div></div>';
+        box.innerHTML = '<div style="width:min(420px,100%);background:#fff;border-radius:18px;padding:22px;box-shadow:0 24px 70px rgba(15,23,42,.28);text-align:center"><div style="font-size:18px;font-weight:900;color:#0f172a;margin-bottom:8px">서류 저장중</div><div data-progress-text style="font-size:14px;line-height:1.55;color:#475569">업로드를 준비하고 있습니다.</div><div style="height:9px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:14px"><div data-progress-bar style="height:100%;width:3%;background:#f2b705;border-radius:999px;transition:width .2s ease"></div></div><div style="font-size:12px;color:#64748b;margin-top:10px">서류 저장이 끝나면 등록완료됩니다.</div></div>';
         document.body.appendChild(box);
       }
-      if (!busy && box) box.remove();
+      if (!busy && box) {
+        box.remove();
+        sitePassStorageUploadStartedAtV517 = 0;
+      }
       if (busy && box && text) {
         const t = box.querySelector('[data-progress-text]');
         if (t) t.textContent = text;
@@ -1519,8 +1525,13 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       const percent = Math.max(3, Math.round((safeCurrent / safeTotal) * 100));
       const bar = box.querySelector('[data-progress-bar]');
       const text = box.querySelector('[data-progress-text]');
+      const elapsedSeconds = sitePassStorageUploadStartedAtV517 ? Math.max(0, (Date.now() - sitePassStorageUploadStartedAtV517) / 1000) : 0;
+      const remainingSeconds = safeCurrent > 0 && safeCurrent < safeTotal
+        ? Math.max(1, Math.ceil((elapsedSeconds / safeCurrent) * (safeTotal - safeCurrent)))
+        : 0;
+      const remainingText = remainingSeconds ? ' · 약 ' + remainingSeconds + '초 남음' : '';
       if (bar) bar.style.width = percent + '%';
-      if (text) text.textContent = (label ? label + ' · ' : '') + safeCurrent + '/' + safeTotal + '개 확인 중';
+      if (text) text.textContent = (label ? label + ' · ' : '') + safeCurrent + '/' + safeTotal + '개' + remainingText;
       const button = document.getElementById('saveBundleButton');
       if (button) button.textContent = '서류 저장중 ' + safeCurrent + '/' + safeTotal;
     }
@@ -1567,6 +1578,40 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       return null;
     }
 
+    function waitSitePassStorageV517(ms) {
+      return new Promise(function(resolve) { setTimeout(resolve, Math.max(0, Number(ms || 0))); });
+    }
+
+    function isTransientStorageErrorV517(error) {
+      const message = String(error && (error.message || error.error_description || error) || '');
+      return /network|fetch|timeout|timed out|connection|502|503|504|temporar|failed to fetch/i.test(message);
+    }
+
+    async function verifyStorageObjectV517(supabaseApi, bucket, path) {
+      if (!supabaseApi || typeof supabaseApi.storageExists !== 'function') return { exists:true, skipped:true };
+      let result = await supabaseApi.storageExists(bucket, path);
+      if (result && result.exists) return result;
+      await waitSitePassStorageV517(450);
+      result = await supabaseApi.storageExists(bucket, path);
+      return result || { exists:false, error:{ message:'Storage 확인 응답 없음' } };
+    }
+
+    async function runStorageTasksV517(tasks, limit, worker) {
+      const queue = Array.isArray(tasks) ? tasks : [];
+      const concurrency = Math.max(1, Math.min(Number(limit || 1), queue.length || 1));
+      let cursor = 0;
+      async function runWorker() {
+        while (true) {
+          const index = cursor++;
+          if (index >= queue.length) return;
+          await worker(queue[index], index);
+        }
+      }
+      const workers = [];
+      for (let i = 0; i < concurrency; i++) workers.push(runWorker());
+      await Promise.all(workers);
+    }
+
     async function uploadSingleDocPageToSupabaseStorage(item, docKey, doc, page, pageIndex) {
       const supabaseApi = window.SitePassSupabaseApi;
       if (!supabaseApi || typeof supabaseApi.storageUpload !== 'function') return { ok:false, error:'Supabase Storage API 없음' };
@@ -1578,13 +1623,12 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       const existingPath = getStoredAttachmentPath(page) || getStoredAttachmentPath(doc);
       const existingBucket = getStoredAttachmentBucket(page && getStoredAttachmentPath(page) ? page : doc);
 
-      // 이미 Storage 경로가 있는 자료는 실제 객체가 존재하는지 먼저 검증합니다.
-      if (!source && existingPath && typeof supabaseApi.storageExists === 'function') {
-        const existsResult = await supabaseApi.storageExists(existingBucket, existingPath);
-        if (existsResult && existsResult.exists) {
-          const existingPublicUrl = typeof supabaseApi.storagePublicUrl === 'function' ? supabaseApi.storagePublicUrl(existingBucket, existingPath) : getStoredAttachmentUrl(page) || getStoredAttachmentUrl(doc);
-          return { ok:true, existing:true, verified:true, bucket:existingBucket, path:existingPath, publicUrl:existingPublicUrl };
-        }
+      // 이미 Storage 경로가 있는 자료도 마지막 일괄 확인 단계에서 같은 방식으로 검증합니다.
+      if (!source && existingPath) {
+        const existingPublicUrl = typeof supabaseApi.storagePublicUrl === 'function'
+          ? supabaseApi.storagePublicUrl(existingBucket, existingPath)
+          : getStoredAttachmentUrl(page) || getStoredAttachmentUrl(doc);
+        return { ok:true, existing:true, needsVerify:true, bucket:existingBucket, path:existingPath, publicUrl:existingPublicUrl };
       }
 
       if (!source) {
@@ -1600,20 +1644,24 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       const pageId = sanitizeStoragePathPart((page && page.id) || ('page_' + (pageIndex + 1)), 'page_' + (pageIndex + 1));
       const uniqueId = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
       const path = owner + '/' + code + '/' + docPart + '/' + pageId + '_' + uniqueId + '.' + ext;
-      // v23.7.516-test: 익명 UPDATE 권한을 열지 않도록 매 저장마다 새 객체를 INSERT합니다.
-      const result = await supabaseApi.storageUpload(bucket, path, blob, { upsert:false, cacheControl:'31536000', contentType: blob.type || undefined });
+      const options = { upsert:false, cacheControl:'31536000', contentType: blob.type || undefined };
+      let result = await supabaseApi.storageUpload(bucket, path, blob, options);
+
+      // 네트워크성 실패만 한 번 재시도합니다. 정책 오류는 즉시 사용자에게 보여줍니다.
+      if (result && result.error && isTransientStorageErrorV517(result.error)) {
+        const firstProbe = await verifyStorageObjectV517(supabaseApi, bucket, path);
+        if (firstProbe && firstProbe.exists) {
+          const recoveredUrl = typeof supabaseApi.storagePublicUrl === 'function' ? supabaseApi.storagePublicUrl(bucket, path) : '';
+          return { ok:true, uploaded:true, needsVerify:false, verified:true, recovered:true, bucket:bucket, path:path, publicUrl:recoveredUrl };
+        }
+        await waitSitePassStorageV517(500);
+        result = await supabaseApi.storageUpload(bucket, path, blob, options);
+      }
       if (result && result.error) return { ok:false, error:result.error };
 
-      // 업로드 응답만 믿지 않고 Public Storage 객체가 실제로 열리는지 재확인합니다.
-      if (typeof supabaseApi.storageExists === 'function') {
-        const verifyResult = await supabaseApi.storageExists(bucket, path);
-        if (!verifyResult || !verifyResult.exists) {
-          return { ok:false, error:(verifyResult && verifyResult.error) || '업로드 응답은 성공했지만 Storage에서 파일을 확인하지 못했습니다.' };
-        }
-      }
       const publicUrl = (typeof supabaseApi.storagePublicUrl === 'function') ? supabaseApi.storagePublicUrl(bucket, path) : '';
       if (!publicUrl) return { ok:false, error:'Storage 파일주소를 만들지 못했습니다.' };
-      return { ok:true, uploaded:true, verified:true, bucket, path, publicUrl };
+      return { ok:true, uploaded:true, needsVerify:true, verified:false, bucket:bucket, path:path, publicUrl:publicUrl };
     }
 
     function applyStorageUploadResultToPage(page, result) {
@@ -1690,18 +1738,10 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       let failCount = 0;
       const failedDocs = [];
       const failureReasons = [];
+      const tasks = [];
       const docEntries = Object.entries(out.docs || {}).filter(function(entry){ return docLooksAttached(entry[1]); });
-      let totalPages = 0;
-      docEntries.forEach(function(entry){
-        const doc = entry[1] && typeof entry[1] === 'object' ? entry[1] : {};
-        const pages = Array.isArray(doc.pages) && doc.pages.length ? doc.pages : (doc.fileName ? [doc] : []);
-        totalPages += pages.length;
-      });
-      if (!totalPages) throw new Error('업로드할 첨부서류가 없습니다. 서류를 다시 첨부해주세요.');
-      let completedPages = 0;
-      if (typeof onProgress === 'function') onProgress(0, totalPages, '저장 준비');
 
-      for (const entry of docEntries) {
+      docEntries.forEach(function(entry) {
         const docKey = entry[0];
         const doc = entry[1] && typeof entry[1] === 'object' ? entry[1] : {};
         const pages = Array.isArray(doc.pages) && doc.pages.length ? doc.pages : (doc.fileName ? [{
@@ -1712,36 +1752,75 @@ let sitePassStorageQuotaNoticeShownV496 = false;
           storageBucket:doc.storageBucket || doc.storage_bucket || '',
           storagePath:doc.storagePath || doc.storage_path || ''
         }] : []);
+        doc.pages = pages;
+        out.docs[docKey] = doc;
         if (!pages.length) {
           failCount++;
           failedDocs.push((doc.groupTitle ? doc.groupTitle + ' - ' : '') + (doc.title || doc.fileName || docKey));
-          continue;
+          return;
         }
-        for (let i = 0; i < pages.length; i++) {
-          const label = (doc.groupTitle ? doc.groupTitle + ' - ' : '') + (doc.title || doc.fileName || docKey);
-          try {
-            const result = await uploadSingleDocPageToSupabaseStorage(out, docKey, doc, pages[i], i);
-            if (result && result.ok && result.publicUrl) {
-              pages[i] = applyStorageUploadResultToPage(pages[i], result);
-              verifiedCount++;
-              if (result.uploaded) uploadCount++;
-            } else {
-              failCount++;
-              failedDocs.push(label + (pages.length > 1 ? ' ' + (i + 1) + '페이지' : ''));
-              const reason = result && result.error ? (result.error.message || result.error.error_description || result.error) : 'Storage 업로드 실패';
-              failureReasons.push(String(reason || 'Storage 업로드 실패'));
-            }
-          } catch (e) {
-            console.warn('서류 Storage 업로드 실패:', docKey, e);
+        pages.forEach(function(page, pageIndex) {
+          const label = (doc.groupTitle ? doc.groupTitle + ' - ' : '') + (doc.title || doc.fileName || docKey) + (pages.length > 1 ? ' ' + (pageIndex + 1) + '페이지' : '');
+          tasks.push({ docKey:docKey, doc:doc, pages:pages, page:page, pageIndex:pageIndex, label:label, result:null });
+        });
+      });
+
+      const totalPages = tasks.length;
+      if (!totalPages) throw new Error('업로드할 첨부서류가 없습니다. 서류를 다시 첨부해주세요.');
+      let completedPages = 0;
+      if (typeof onProgress === 'function') onProgress(0, totalPages, '업로드 준비');
+
+      // 휴대폰 메모리와 속도의 균형을 위해 최대 3개를 동시에 저장합니다.
+      await runStorageTasksV517(tasks, 3, async function(task) {
+        try {
+          const result = await uploadSingleDocPageToSupabaseStorage(out, task.docKey, task.doc, task.page, task.pageIndex);
+          task.result = result;
+          if (result && result.ok && result.publicUrl) {
+            task.pages[task.pageIndex] = applyStorageUploadResultToPage(task.page, result);
+            if (result.uploaded) uploadCount++;
+          } else {
             failCount++;
-            failedDocs.push(label + (pages.length > 1 ? ' ' + (i + 1) + '페이지' : ''));
-            failureReasons.push(String(e && e.message ? e.message : e || 'Storage 업로드 예외'));
-          } finally {
-            completedPages++;
-            if (typeof onProgress === 'function') onProgress(completedPages, totalPages, label);
+            failedDocs.push(task.label);
+            const reason = result && result.error ? (result.error.message || result.error.error_description || result.error) : 'Storage 업로드 실패';
+            failureReasons.push(String(reason || 'Storage 업로드 실패'));
           }
+        } catch (e) {
+          console.warn('서류 Storage 업로드 실패:', task.docKey, e);
+          failCount++;
+          failedDocs.push(task.label);
+          failureReasons.push(String(e && e.message ? e.message : e || 'Storage 업로드 예외'));
+        } finally {
+          completedPages++;
+          if (typeof onProgress === 'function') onProgress(completedPages, totalPages, task.label + ' 저장 완료');
         }
-        doc.pages = pages;
+      });
+
+      // 업로드가 끝난 뒤 실제 객체 확인을 병렬로 한 번만 수행합니다.
+      const verifyTasks = tasks.filter(function(task) { return task.result && task.result.ok && task.result.path; });
+      if (typeof onProgress === 'function') onProgress(totalPages, totalPages, '서버 확인 중');
+      await runStorageTasksV517(verifyTasks, 4, async function(task) {
+        const result = task.result;
+        if (result.verified === true && result.needsVerify === false) {
+          verifiedCount++;
+          return;
+        }
+        const verifyResult = await verifyStorageObjectV517(window.SitePassSupabaseApi, result.bucket, result.path);
+        if (verifyResult && verifyResult.exists) {
+          result.verified = true;
+          verifiedCount++;
+          return;
+        }
+        failCount++;
+        failedDocs.push(task.label);
+        const reason = verifyResult && verifyResult.error ? (verifyResult.error.message || verifyResult.error) : '업로드 후 Storage 파일 확인 실패';
+        failureReasons.push(String(reason || '업로드 후 Storage 파일 확인 실패'));
+      });
+
+      // 각 서류의 대표 미리보기 주소를 첫 번째 정상 저장 페이지로 통일합니다.
+      docEntries.forEach(function(entry) {
+        const docKey = entry[0];
+        const doc = out.docs[docKey] && typeof out.docs[docKey] === 'object' ? out.docs[docKey] : {};
+        const pages = Array.isArray(doc.pages) ? doc.pages : [];
         const firstStoredPage = pages.find(function(page){ return getStoredAttachmentPath(page) && getStoredAttachmentUrl(page); }) || pages.find(function(page){ return getStoredAttachmentUrl(page); }) || null;
         const firstUrl = firstStoredPage ? getStoredAttachmentUrl(firstStoredPage) : '';
         if (firstUrl) {
@@ -1758,8 +1837,9 @@ let sitePassStorageQuotaNoticeShownV496 = false;
           doc.storageMode = 'supabase-storage';
         }
         out.docs[docKey] = doc;
-      }
-      out.storageMode = 'supabase-storage-v516';
+      });
+
+      out.storageMode = 'supabase-storage-v517';
       out.storageUploadedAt = new Date().toISOString();
       out.storageUploadCount = uploadCount;
       out.storageVerifiedCount = verifiedCount;
@@ -1772,13 +1852,8 @@ let sitePassStorageQuotaNoticeShownV496 = false;
           return /row-level security|\brls\b|permission denied|unauthorized|not authorized/i.test(String(reason || ''));
         });
         const errorMessage = policyError
-          ? `서류 저장 권한을 확인하지 못했습니다.
-
-첨부한 서류는 그대로 유지됩니다. Supabase Storage 정책 SQL을 적용한 뒤 등록완료를 다시 눌러주세요.${uniqueReasons.length ? '\n\n서버 응답:\n' + uniqueReasons.join('\n') : ''}`
-          : `서류 ${totalPages}개 중 ${verifiedCount}개만 서버에서 확인되었습니다.
-
-다시 첨부가 필요한 서류:
-${unique.join('\n') || '확인 필요'}${uniqueReasons.length ? '\n\n서버 응답:\n' + uniqueReasons.join('\n') : ''}`;
+          ? `서류 저장 권한을 확인하지 못했습니다.\n\n첨부한 서류는 그대로 유지됩니다. Supabase Storage 정책 SQL을 적용한 뒤 등록완료를 다시 눌러주세요.${uniqueReasons.length ? '\n\n서버 응답:\n' + uniqueReasons.join('\n') : ''}`
+          : `서류 ${totalPages}개 중 ${verifiedCount}개만 서버에서 확인되었습니다.\n\n다시 첨부가 필요한 서류:\n${unique.join('\n') || '확인 필요'}${uniqueReasons.length ? '\n\n서버 응답:\n' + uniqueReasons.join('\n') : ''}`;
         const error = new Error(errorMessage);
         error.failedDocs = unique;
         error.storageItem = out;
@@ -2166,7 +2241,7 @@ ${unique.join('\n') || '확인 필요'}${uniqueReasons.length ? '\n\n서버 응�
       if (sitePassRegistrationCompletionBusy) return false;
       sitePassRegistrationCompletionBusy = true;
       item = (item && typeof item === 'object') ? item : {};
-      setSitePassRegistrationUploadBusyV515(true, '업로드 준비 중...');
+      setSitePassRegistrationUploadBusyV515(true, '서류 저장중');
       try {
         try { saveRegistrationDraftNow(); } catch (e) {}
         const validation = validateRegistrationItemHasDownloadableDocs(item);
@@ -2195,7 +2270,7 @@ ${unique.join('\n') || '확인 필요'}${uniqueReasons.length ? '\n\n서버 응�
 
         const uploaded = await uploadAndPersistEquipmentItemDocsInBackground(
           paidItem,
-          'test_free_completed_storage_verified_v516',
+          'test_free_completed_storage_verified_v517',
           updateSitePassRegistrationUploadProgressV515
         );
         if (!uploaded || !uploaded.ok || !uploaded.item) {
@@ -2227,7 +2302,7 @@ ${unique.join('\n') || '확인 필요'}${uniqueReasons.length ? '\n\n서버 응�
 ${escapePlainTextForAlert(savedItem.equipmentName || '장비')} 서류 ${Number(savedItem.storageVerifiedCount || 0)}개를 Storage에서 확인한 뒤 보관함에 저장했습니다.${note}`);
         return true;
       } catch (e) {
-        console.error('v516 등록 전 Storage 업로드/확인 실패:', e);
+        console.error('v517 등록 전 Storage 업로드/확인 실패:', e);
         try { saveRegistrationDraftNow(); } catch (draftError) {}
         const message = e && e.message ? e.message : String(e || '알 수 없는 오류');
         const isPolicyError = /row-level security|\brls\b|permission denied|unauthorized|not authorized|저장 권한/i.test(message);
