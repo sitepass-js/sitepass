@@ -392,10 +392,17 @@
     var history = loadJson('sitepass_share_history_v445', []);
     if (Array.isArray(history) && history.length) {
       history.slice(-30).reverse().forEach(function(row, index){
+        var lines = [
+          (row.equipment || '서류 링크') + ' · ' + (row.status || '공유 실행'),
+          '받는 곳: ' + (row.receiver || '담당자'),
+          '공유방식: ' + (row.method || '링크')
+        ];
+        if (row.phone) lines.push('전화번호: ' + row.phone);
+        if (row.email) lines.push('이메일: ' + row.email);
         messages.push({
           id: 'share-' + hashText(JSON.stringify(row) + index),
           from: 'SitePass', kind: 'system', time: row.time || row.date || '공유기록',
-          text: (row.equipment || '서류 링크') + '를 ' + (row.receiver || '담당자') + '에게 공유했습니다.\n전화번호: ' + (row.phone || '미입력') + '\n이메일: ' + (row.email || '미입력') + '\n공유방식: ' + (row.method || '링크')
+          text: lines.join('\n')
         });
       });
     } else {
@@ -742,6 +749,15 @@
     setTimeout(function(){ window.sitepassOpenChatRoom460('expiry'); }, 80);
     return false;
   };
+
+  window.sitepassRefreshShareHistoryV520 = function(){
+    try { renderRoomList(); } catch(e) {}
+    try { if (currentRoomId === 'share') renderMessages('share'); } catch(e) {}
+    return true;
+  };
+  window.addEventListener('sitepass-share-history-updated-v520', function(){
+    try { window.sitepassRefreshShareHistoryV520(); } catch(e) {}
+  });
 
   window.sitepassOpenShareFromHome479 = function(){
     try {

@@ -148,7 +148,38 @@ function resetForm(clearEdit = true) {
       }
     }
 
+    const SITEPASS_MEMBER_EQUIPMENT_CACHE_PREFIX_V520 = SERVER_EQUIPMENT_CACHE_KEY + '_member_';
+
+    function getSitePassMemberEquipmentCacheKeyV520() {
+      try {
+        const strong = typeof getCurrentSitePassMemberStrongStorageScopeKeys === 'function'
+          ? getCurrentSitePassMemberStrongStorageScopeKeys()
+          : [];
+        const member = typeof getCurrentSitePassMemberForEquipmentSync === 'function'
+          ? getCurrentSitePassMemberForEquipmentSync()
+          : null;
+        const fallback = member && (member.id || member.authUserId || member.signupId || member.loginId || member.providerId || member.email || member.phone);
+        const identity = normalizeSitePassMemberStorageScopeKey((strong && strong[0]) || fallback || 'anonymous');
+        return SITEPASS_MEMBER_EQUIPMENT_CACHE_PREFIX_V520 + (identity || 'anonymous');
+      } catch (e) {
+        return SITEPASS_MEMBER_EQUIPMENT_CACHE_PREFIX_V520 + 'anonymous';
+      }
+    }
+
     function getServerEquipmentCache() {
+      try {
+        if (isSitePassMemberServerAuthoritativeMode()) {
+          const memberKey = getSitePassMemberEquipmentCacheKeyV520();
+          const memberRows = readLocalJsonArray(memberKey);
+          if (memberRows.length) return filterCurrentMemberEquipmentStorageScope(memberRows);
+          const legacyRows = filterCurrentMemberEquipmentStorageScope(readLocalJsonArray(SERVER_EQUIPMENT_CACHE_KEY));
+          if (legacyRows.length) {
+            try { localStorage.setItem(memberKey, JSON.stringify(legacyRows)); } catch (e) {}
+            return legacyRows;
+          }
+          return [];
+        }
+      } catch (e) {}
       return readLocalJsonArray(SERVER_EQUIPMENT_CACHE_KEY);
     }
 
@@ -195,6 +226,22 @@ function resetForm(clearEdit = true) {
       }
       return [];
     }
+
+    function primeSitePassMemberEquipmentCacheV520() {
+      try {
+        if (!isSitePassMemberServerAuthoritativeMode()) return [];
+        const cached = filterCurrentMemberEquipmentStorageScope(getServerEquipmentCache())
+          .filter(function(item){ return item && !sitePassEquipmentStatusLooksDeleted(item); });
+        if (!cached.length) return [];
+        const visible = mergeEquipmentItemLists(cached, getSitePassUnsyncedEquipmentItemsV476 ? getSitePassUnsyncedEquipmentItemsV476() : []);
+        setSitePassServerAuthoritativeEquipmentItems(visible);
+        try { runtimeEquipmentItems = mergeEquipmentItemLists(visible); } catch (e) {}
+        return visible;
+      } catch (e) {
+        return [];
+      }
+    }
+    try { window.sitePassPrimeMemberEquipmentCacheV520 = primeSitePassMemberEquipmentCacheV520; } catch (e) {}
 
     function removeSitePassServerAuthoritativeEquipmentByCode(code) {
       const target = String(code || '').trim();
@@ -254,21 +301,31 @@ function resetForm(clearEdit = true) {
         }
       } catch (e) {}
       try {
-        localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(safeList));
-        return true;
-      } catch (e) {
-        // v23.7.350: 서버 장비 캐시는 보조 캐시라서, 용량 초과 때 원본 이미지/base64까지
-        // 억지로 저장하지 않고 목록 표시용 축약 캐시로 대체합니다.
+        if (isSitePassMemberServerAuthoritativeMode()) safeList = filterCurrentMemberEquipmentStorageScope(safeList);
+      } catch (e) {}
+
+      const keys = [SERVER_EQUIPMENT_CACHE_KEY];
+      try {
+        if (isSitePassMemberServerAuthoritativeMode()) keys.unshift(getSitePassMemberEquipmentCacheKeyV520());
+      } catch (e) {}
+      const uniqueKeys = Array.from(new Set(keys.filter(Boolean)));
+
+      let wrote = false;
+      uniqueKeys.forEach(function(key) {
         try {
-          const compactList = safeList.map(makeCompactServerEquipmentCacheItem).slice(0, 300);
-          localStorage.setItem(SERVER_EQUIPMENT_CACHE_KEY, JSON.stringify(compactList));
-          return true;
-        } catch (compactError) {
-          try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (removeError) {}
-          console.info('서버 장비 캐시는 용량 제한으로 이번 회차 저장을 생략했습니다. 서버 데이터 원본은 유지됩니다.');
-          return false;
+          localStorage.setItem(key, JSON.stringify(safeList));
+          wrote = true;
+        } catch (e) {
+          try {
+            const compactList = safeList.map(makeCompactServerEquipmentCacheItem).slice(0, 300);
+            localStorage.setItem(key, JSON.stringify(compactList));
+            wrote = true;
+          } catch (compactError) {
+            console.info('서버 장비 캐시는 용량 제한으로 이번 회차 저장을 생략했습니다. 서버 데이터 원본은 유지됩니다.');
+          }
         }
-      }
+      });
+      return wrote;
     }
 
     function mergeEquipmentItemLists() {
@@ -432,7 +489,7 @@ function resetForm(clearEdit = true) {
     }
 
 
-    // v23.7.519-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // v23.7.520-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
     // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
     // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
     function sitePassEquipmentCodeMatchesV519(item, targetCode) {
@@ -1199,6 +1256,17 @@ function resetForm(clearEdit = true) {
       if (!forceRefresh && silent && Number(sitePassMemberEquipmentSyncedAt || 0) > 0 && (Date.now() - Number(sitePassMemberEquipmentSyncedAt || 0)) < 60000) {
         return { skipped:true, reason:'recent_member_sync', cached:true };
       }
+      try {
+        const cachedVisibleV520 = primeSitePassMemberEquipmentCacheV520();
+        if (cachedVisibleV520.length) {
+          try { updateHomeRegistrationButton(); } catch (e) {}
+          try { refreshMemberUi(); } catch (e) {}
+          try {
+            if (sitePassCurrentScreenId === 'listScreen' && !window.sitePassFastCompletingRegistration) renderList();
+            if (sitePassCurrentScreenId === 'homeScreen' && typeof window.renderSitePassAppHome430 === 'function') window.renderSitePassAppHome430();
+          } catch (e) {}
+        }
+      } catch (e) {}
       sitePassMemberEquipmentSyncing = true;
       window.sitePassMemberEquipmentInitialSyncPendingV491 = true;
       window.sitePassMemberEquipmentInitialSyncErrorV491 = false;
@@ -1999,9 +2067,8 @@ let sitePassStorageQuotaNoticeShownV496 = false;
     }
 
     function clearNonEssentialRegistrationStorageForSave() {
-      // v23.7.350: 사진 등록 후 보관함 저장이 localStorage 용량 때문에 실패하지 않도록
-      // 서버 캐시/임시등록/작성중 초안처럼 다시 만들 수 있는 보조자료를 비우고 재시도합니다.
-      try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
+      // v23.7.520: 서버 보관함 캐시는 로그인 직후 전체 장비를 즉시 보여주는 목록 캐시이므로
+      // 등록 저장공간 정리 과정에서 삭제하지 않습니다. 작성중 임시자료만 정리합니다.
       try { localStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
       try { sessionStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
       try { localStorage.removeItem(REGISTRATION_DRAFT_KEY); } catch (e) {}
@@ -2010,7 +2077,7 @@ let sitePassStorageQuotaNoticeShownV496 = false;
     function clearLegacyEquipmentStorageForCompactSave() {
       // 오래된 버전의 사진 포함 저장값이 남아 있으면 현재 등록 1건도 저장하지 못할 수 있습니다.
       // 테스트 단계에서는 장비 원본 사진보다 QR/보관함 목록 저장이 우선이므로 구버전 장비 저장키만 비웁니다.
-      [PREV_STORAGE_KEY, PREV_STORAGE_KEY_2, PREV_STORAGE_KEY_3, PREV_STORAGE_KEY_4, PREV_STORAGE_KEY_5, PREV_STORAGE_KEY_6, PREV_STORAGE_KEY_7, STORAGE_KEY, SERVER_EQUIPMENT_CACHE_KEY].forEach(function(key) {
+      [PREV_STORAGE_KEY, PREV_STORAGE_KEY_2, PREV_STORAGE_KEY_3, PREV_STORAGE_KEY_4, PREV_STORAGE_KEY_5, PREV_STORAGE_KEY_6, PREV_STORAGE_KEY_7, STORAGE_KEY].forEach(function(key) {
         try { if (key) localStorage.removeItem(key); } catch (e) {}
       });
       clearNonEssentialRegistrationStorageForSave();

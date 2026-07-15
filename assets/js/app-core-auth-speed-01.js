@@ -427,7 +427,8 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
       }
       if (!isSitePassAutoLoginEnabled()) clearPwaAutoMemberTest();
       try { if (window.sitePassClearServerAuthoritativeEquipmentItems) window.sitePassClearServerAuthoritativeEquipmentItems(); } catch (e) {}
-      try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
+      // v23.7.520: 같은 회원의 마지막 서버 보관함 캐시는 유지해 로그인 직후 전체 목록을 즉시 표시합니다.
+      try { if (window.sitePassPrimeMemberEquipmentCacheV520) window.sitePassPrimeMemberEquipmentCacheV520(); } catch (e) {}
       refreshMemberUi();
       if (message) alert(message);
       showScreen(isSitePassInstalledAppMode() ? 'listScreen' : 'homeScreen');

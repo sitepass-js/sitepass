@@ -1,4 +1,4 @@
-// SitePass v23.7.519-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.520-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -268,7 +268,7 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.519-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.520-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
@@ -429,7 +429,7 @@ function shareOneListItemEmail(code) {
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.519-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.520-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -996,6 +996,45 @@ function shareOneListItemEmail(code) {
     }
 
 
+    const SITEPASS_SHARE_HISTORY_KEY_V520 = 'sitepass_share_history_v445';
+
+    function recordSitePassShareHistoryV520(items, detail) {
+      const safeItems = (items || []).filter(Boolean);
+      detail = detail && typeof detail === 'object' ? detail : {};
+      if (!safeItems.length) return null;
+      let history = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem(SITEPASS_SHARE_HISTORY_KEY_V520) || '[]');
+        history = Array.isArray(parsed) ? parsed : [];
+      } catch (e) { history = []; }
+      const now = new Date();
+      const labels = safeItems.map(function(item){ return getShareItemLabel(item); }).filter(Boolean);
+      const links = safeItems.map(function(item){
+        const code = ensureManagerShareCodeForItem(item);
+        return makeManagerLink(code, getManagerExpireAt(item));
+      }).filter(Boolean);
+      const row = {
+        id: 'SHARE-' + now.getTime() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase(),
+        createdAt: now.toISOString(),
+        time: now.toLocaleString('ko-KR'),
+        date: now.toLocaleDateString('ko-KR'),
+        equipment: labels.join(', ') || '서류 링크',
+        equipmentCodes: safeItems.map(function(item){ return String(item.code || ''); }).filter(Boolean),
+        method: String(detail.method || '링크 공유'),
+        receiver: String(detail.receiver || '담당자'),
+        phone: String(detail.phone || ''),
+        email: String(detail.email || ''),
+        links: links,
+        status: String(detail.status || '공유 실행')
+      };
+      history.push(row);
+      try { localStorage.setItem(SITEPASS_SHARE_HISTORY_KEY_V520, JSON.stringify(history.slice(-100))); } catch (e) {}
+      try { window.dispatchEvent(new CustomEvent('sitepass-share-history-updated-v520', { detail:row })); } catch (e) {}
+      try { if (typeof window.sitepassRefreshShareHistoryV520 === 'function') window.sitepassRefreshShareHistoryV520(); } catch (e) {}
+      return row;
+    }
+    try { window.sitePassRecordShareHistoryV520 = recordSitePassShareHistoryV520; } catch (e) {}
+
     function shareManagerItems(items) {
       shareManagerItemsByChannel(items, 'kakao');
     }
@@ -1029,24 +1068,32 @@ function shareOneListItemEmail(code) {
       const firstCode = ensureManagerShareCodeForItem(first);
       const firstLink = makeManagerLink(firstCode, getManagerExpireAt(first));
       if (channel === 'sms') {
-        openSmsShare(text);
+        openSmsShare(text, safeItems);
         return;
       }
       if (channel === 'email') {
         openEmailShare(text, safeItems);
         return;
       }
-      openKakaoShare(text, firstLink, safeItems.length);
+      openKakaoShare(text, firstLink, safeItems.length, safeItems);
     }
 
-    function openKakaoShare(text, firstLink, itemCount) {
+    function openKakaoShare(text, firstLink, itemCount, items) {
+      const safeItems = (items || []).filter(Boolean);
       if (navigator.share) {
         const payload = itemCount === 1
           ? { title:'SitePass 담당자 서류', text:'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.', url:firstLink }
           : { title:'SitePass 담당자 서류', text };
-        navigator.share(payload).catch(() => copyTextFallback(text, '담당자 공유문을 복사했습니다.\n카카오톡 대화창에 붙여넣으면 됩니다.'));
+        navigator.share(payload).then(function(){
+          recordSitePassShareHistoryV520(safeItems, { method:'카카오톡 공유', receiver:'카카오톡 선택 상대', status:'공유 완료' });
+        }).catch(function(error){
+          if (error && String(error.name || '').toLowerCase() === 'aborterror') return;
+          copyTextFallback(text, '담당자 공유문을 복사했습니다.\n카카오톡 대화창에 붙여넣으면 됩니다.');
+          recordSitePassShareHistoryV520(safeItems, { method:'카카오톡 공유문 복사', receiver:'담당자', status:'복사 완료' });
+        });
       } else {
         copyTextFallback(text, '담당자 공유문을 복사했습니다.\n카카오톡 대화창에 붙여넣으면 됩니다.');
+        recordSitePassShareHistoryV520(safeItems, { method:'카카오톡 공유문 복사', receiver:'담당자', status:'복사 완료' });
       }
     }
 
@@ -1058,11 +1105,12 @@ function normalizePhoneForShare(phone) {
       return String(phone || '').replace(/[^0-9+]/g, '');
     }
 
-    function openSmsShare(text) {
+    function openSmsShare(text, items) {
       const phoneRaw = prompt('받는 사람 휴대폰번호를 입력해주세요.\n예: 01012345678');
       if (phoneRaw === null) return;
       const phone = normalizePhoneForShare(phoneRaw);
       if (!phone) { alert('휴대폰번호를 입력해야 문자로 보낼 수 있습니다.'); return; }
+      recordSitePassShareHistoryV520(items || [], { method:'문자 공유', receiver:phone, phone:phone, status:'문자 작성창 열기' });
       const body = encodeURIComponent(text);
       window.location.href = 'sms:' + encodeURIComponent(phone) + '?body=' + body;
     }
@@ -1122,6 +1170,7 @@ function normalizePhoneForShare(phone) {
       if (!cleanEmail || !cleanEmail.includes('@')) { alert('받는 사람 이메일을 정확히 입력해주세요.'); return; }
       const subjectBase = getShareTitleForItems(items || []);
       const subject = encodeURIComponent('[SitePass] ' + subjectBase + ' QR·링크');
+      recordSitePassShareHistoryV520(items || [], { method:'이메일 공유', receiver:cleanEmail, email:cleanEmail, status:'이메일 작성창 열기' });
       const body = encodeURIComponent(text);
       window.location.href = 'mailto:' + cleanEmail + '?subject=' + subject + '&body=' + body;
     }
@@ -1441,7 +1490,7 @@ function renderDocExpiryStrip(doc) {
         url.searchParams.set('manager', String(finalCode || ''));
         if (linkSig) url.searchParams.set('sig', String(linkSig));
         url.searchParams.set('from', 'member');
-        url.searchParams.set('v', '23.7.519-test');
+        url.searchParams.set('v', '23.7.520-test');
         window.location.assign(url.toString());
       } finally {
         setTimeout(hideManagerPreviewPreparingV511, 1200);
