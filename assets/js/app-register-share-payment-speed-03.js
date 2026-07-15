@@ -1,4 +1,4 @@
-// SitePass v23.7.509-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.510-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -1236,35 +1236,32 @@ function renderDocExpiryStrip(doc) {
     }
 
 
-    async function openManagerPublicView(code, expireAt, sig) {
+    function openManagerPublicView(code, expireAt, sig) {
       let item = getRuntimeItemByCode(code) || getItemByCode(code);
       if (!item) {
         alert('조회할 수 없는 코드입니다. 서버 동기화 후 다시 시도해주세요.');
         return;
       }
       const originalCode = ensureManagerShareCodeForItem(item) || String(code || '').trim();
-      let preparedItem = item;
+      let previewItem = item;
       try {
-        const prepared = await prepareManagerShareItemsForServerV497([item]);
-        if (prepared && prepared.ok && prepared.items && prepared.items[0]) preparedItem = prepared.items[0];
+        previewItem = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(item));
+        previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem);
+        hydrateManagerShareStorageUrlsV497(previewItem);
       } catch (e) {
-        console.warn('링크화면 서류 준비 실패:', e);
+        console.warn('링크화면 즉시 미리보기 준비 실패:', e);
+        previewItem = item;
       }
-      const finalCode = ensureManagerShareCodeForItem(preparedItem) || originalCode;
-      const exp = expireAt ? Number(expireAt) : getManagerExpireAt(preparedItem);
+      const finalCode = ensureManagerShareCodeForItem(previewItem) || originalCode;
+      const exp = expireAt ? Number(expireAt) : getManagerExpireAt(previewItem);
       const linkSig = sig || getManagerLinkSignature(finalCode, exp);
-      try {
-        const saveResult = await saveManagerShareItemsToSupabase([preparedItem]);
-        if (!saveResult || !saveResult.ok) console.warn('회원 링크화면 서버 저장 실패:', saveResult && saveResult.message);
-      } catch (e) {
-        console.warn('회원 링크화면 서버 저장 예외:', e);
-      }
       const snapshot = {
-        item_data:preparedItem,
-        payload:preparedItem,
+        item_data:previewItem,
+        payload:previewItem,
         expires_at:new Date(exp).toISOString(),
         share_code:String(finalCode || ''),
-        share_sig:String(linkSig || '')
+        share_sig:String(linkSig || ''),
+        preview_saved_at:new Date().toISOString()
       };
       try {
         sessionStorage.setItem('sitepass_recipient_preview_current_' + String(finalCode || ''), JSON.stringify(snapshot));
@@ -1275,7 +1272,9 @@ function renderDocExpiryStrip(doc) {
       url.searchParams.set('manager', String(finalCode || ''));
       if (linkSig) url.searchParams.set('sig', String(linkSig));
       url.searchParams.set('from', 'member');
-      url.searchParams.set('v', '23.7.509-test');
+      url.searchParams.set('v', '23.7.510-test');
+      // v510: 회원용 링크화면은 Storage 복구/서버 저장을 기다리지 않고 즉시 엽니다.
+      // 실제 외부 전송 시에는 shareManagerItemsByChannel()이 기존과 같이 서버 저장 완료 후 전송합니다.
       window.location.assign(url.toString());
     }
 

@@ -1,17 +1,17 @@
-const SITEPASS_SW_VERSION = 'v23.7.509-test';
-const SITEPASS_CACHE = 'sitepass-fast-v23.7.509-test';
+const SITEPASS_SW_VERSION = 'v23.7.510-test';
+const SITEPASS_CACHE = 'sitepass-fast-v23.7.510-test';
 const SITEPASS_SHELL = [
   './index.html',
   './recipient.html',
-  './assets/css/style.css?v=23.7.509-test',
-  './assets/js/config.js?v=23.7.509-test',
-  './assets/js/pwa-update.js?v=23.7.509-test',
-  './assets/js/app-core-auth-speed-04.js?v=23.7.509-test',
-  './assets/js/app-admin-boot-speed-03.js?v=23.7.509-test',
-  './assets/js/app-register-share-payment-speed-02.js?v=23.7.509-test',
-  './assets/js/app-register-share-payment-speed-03.js?v=23.7.509-test',
-  './assets/js/app-register-share-payment-speed-04.js?v=23.7.509-test',
-  './assets/js/qr-share.js?v=23.7.509-test'
+  './assets/css/style.css?v=23.7.510-test',
+  './assets/js/config.js?v=23.7.510-test',
+  './assets/js/pwa-update.js?v=23.7.510-test',
+  './assets/js/app-core-auth-speed-04.js?v=23.7.510-test',
+  './assets/js/app-admin-boot-speed-03.js?v=23.7.510-test',
+  './assets/js/app-register-share-payment-speed-02.js?v=23.7.510-test',
+  './assets/js/app-register-share-payment-speed-03.js?v=23.7.510-test',
+  './assets/js/app-register-share-payment-speed-04.js?v=23.7.510-test',
+  './assets/js/qr-share.js?v=23.7.510-test'
 ];
 
 self.addEventListener('install', event => {
@@ -90,11 +90,29 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       const scopeUrl = new URL(self.registration.scope);
       let cacheKey = req;
+      const isRecipient = url.pathname.endsWith('/recipient.html');
       if (url.pathname === scopeUrl.pathname || url.pathname.endsWith('/index.html')) {
         cacheKey = new Request(new URL('./index.html', self.registration.scope));
-      } else if (url.pathname.endsWith('/recipient.html')) {
+      } else if (isRecipient) {
         cacheKey = new Request(new URL('./recipient.html', self.registration.scope));
       }
+
+      // v510: 담당자 링크화면은 캐시를 즉시 보여주고 최신 파일은 뒤에서 갱신합니다.
+      // 기존 network-first 7초 대기 때문에 링크화면 진입이 느려지는 현상을 막습니다.
+      if (isRecipient) {
+        const cached = await currentCacheMatch(cacheKey);
+        const networkPromise = fetch(req, { cache:'no-store' })
+          .then(fresh => putCurrent(cacheKey, fresh.clone()).then(() => fresh))
+          .catch(() => null);
+        if (cached) {
+          networkPromise.catch(() => null);
+          return cached;
+        }
+        const fresh = await networkPromise;
+        if (fresh) return fresh;
+        return Response.error();
+      }
+
       try {
         const fresh = await withTimeout(fetch(req, { cache:'no-store' }), 7000);
         await putCurrent(cacheKey, fresh.clone());
