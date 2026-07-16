@@ -38,11 +38,11 @@
     </div>
   </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.537-test"></script>
+<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.538-test"></script>
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.537-test';
+  var VERSION='23.7.538-test';
   var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
   var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
   var STORAGE_BUCKET='sitepass-documents';
@@ -386,7 +386,7 @@
       return '<article class="doc-card" data-doc-index="'+index+'"><div class="doc-head"><label class="doc-title"><input class="doc-check" type="checkbox" data-doc-check value="'+index+'" checked><span class="doc-title-text"><small>'+esc(doc.groupTitle||'제출서류')+'</small><strong>'+(index+1)+'. '+esc(doc.title)+'</strong></span></label><span class="badge '+(candidates.length?'':'missing')+'">'+(candidates.length?'첨부됨':'파일확인')+'</span></div><div class="doc-meta">'+esc(meta.join(' · ')||(doc.fileName||'등록된 서류'))+'</div>'+renderPreview(doc,index)+'<div class="doc-actions"><button class="detail-btn" type="button" data-detail-index="'+index+'">상세보기</button></div></article>';
     }).join('');
     content.className='';
-    content.innerHTML='<section class="card hero"><div class="eyebrow">QR·링크로 받은 담당자 화면</div><h1>'+esc(label(item))+' 서류</h1><p>필요한 서류를 선택해 확인하거나 다운로드할 수 있습니다.</p><div class="status-grid"><span>코드입력 없음</span><span>서류 상세보기</span><span>수정·갱신 불가</span></div></section><section class="card info-card"><div class="info-row"><b>장비 등록번호</b><span>'+esc(equipmentNo)+'</span></div><div class="info-row"><b>장비명</b><span>'+esc(equipmentName)+'</span></div><div class="info-row"><b>포함서류</b><span>'+esc(includedText(state.docs))+'</span></div>'+expireHtml+'</section><div class="section-title"><h2>다운로드·확인 서류</h2><span>'+state.docs.length+'개 서류</span></div><section class="toolbar"><div class="help">체크한 서류만 다운로드·인쇄합니다. <span class="selection-state" data-selection-state></span></div><button class="tool-btn light" type="button" data-select-all>전체선택</button><button class="tool-btn soft" type="button" data-select-none>선택해제</button><button class="tool-btn primary" type="button" data-download-selected>선택다운로드</button><button class="tool-btn dark" type="button" data-print-selected>선택인쇄</button></section><div class="docs">'+(docsHtml||'<section class="card empty"><b>공유된 서류가 없습니다.</b><span>장비업자에게 서류가 포함된 링크를 다시 보내달라고 요청해주세요.</span></section>')+'</div><div class="notice"><span>미리보기가 보이지 않으면 최신 서버자료를 다시 확인하세요.</span><button class="retry" type="button" data-retry>다시 불러오기</button></div>';
+    content.innerHTML='<section class="card hero"><div class="eyebrow">QR·링크로 받은 담당자 화면</div><h1>'+esc(label(item))+' 서류</h1><p>필요한 서류를 선택해 확인하거나 다운로드할 수 있습니다.</p><div class="status-grid"><span>코드입력 없음</span><span>서류 상세보기</span><span>수정·갱신 불가</span></div></section><section class="card info-card"><div class="info-row"><b>장비 등록번호</b><span>'+esc(equipmentNo)+'</span></div><div class="info-row"><b>장비명</b><span>'+esc(equipmentName)+'</span></div><div class="info-row"><b>포함서류</b><span>'+esc(includedText(state.docs))+'</span></div>'+expireHtml+'</section><div class="section-title"><h2>다운로드·확인 서류</h2><span>'+state.docs.length+'개 서류</span></div><section class="toolbar"><div class="help">체크한 서류만 다운로드·인쇄합니다. <span class="selection-state" data-selection-state></span></div><button class="tool-btn light" type="button" data-select-all>전체선택</button><button class="tool-btn soft" type="button" data-select-none>선택해제</button><button class="tool-btn primary" type="button" data-download-selected>선택다운로드</button><button class="tool-btn dark" type="button" data-print-selected>선택인쇄</button></section><div class="docs">'+(docsHtml||(serverConfirmed?'<section class="card empty"><b>공유된 서류가 없습니다.</b><span>장비업자에게 서류가 포함된 링크를 다시 보내달라고 요청해주세요.</span></section>':'<section class="card empty"><b>장비정보를 먼저 표시했습니다.</b><span>등록서류와 실제 Storage 파일을 서버에서 확인하고 있습니다.</span></section>'))+'</div><div class="notice"><span>미리보기가 보이지 않으면 최신 서버자료를 다시 확인하세요.</span><button class="retry" type="button" data-retry>다시 불러오기</button></div>';
     activateFallbackImages();
     updateSelectionState();
   }
@@ -430,7 +430,7 @@
     return null;
   }
   function cacheServerRoot(root){try{sessionStorage.setItem('sitepass_recipient_server_cache_v512_'+state.code,JSON.stringify(root));}catch(e){}}
-  function itemFromRoot(root){var item=normalizeItem(root,state.code);return item&&normalizeDocs(item).length?item:null;}
+  function itemFromRoot(root){var item=normalizeItem(root,state.code);if(!item)return null;var docs=normalizeDocs(item);var hasEquipment=!!firstValue(item,['equipmentName','equipment_name','machineName','equipmentNo','equipment_no','registrationNo','vehicleNo','code','share_code']);return (docs.length||hasEquipment)?item:null;}
   function firstServerResult(){
     return new Promise(function(resolve){
       var done=false,pending=2,lastError='';

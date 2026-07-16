@@ -1,4 +1,4 @@
-// SitePass v23.7.537-test - 담당자 링크 보존 + 반복 spfresh 이동 방지
+// SitePass v23.7.538-test - 담당자 링크 보존 + 반복 spfresh 이동 방지
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';

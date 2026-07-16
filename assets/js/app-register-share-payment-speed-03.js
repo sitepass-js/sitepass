@@ -1,4 +1,4 @@
-// SitePass v23.7.537-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.538-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -268,7 +268,7 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.537-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.538-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
@@ -432,7 +432,7 @@ function shareOneListItemEmail(code) {
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.537-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.538-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -1420,7 +1420,7 @@ function normalizePhoneForShare(phone) {
     const sitePassDetailServerRefreshAtV519 = {};
     const sitePassStorageHydrateCacheV523 = new WeakMap();
 
-    // v23.7.537-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
+    // v23.7.538-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
     // 서버자료가 비어 있거나 축약돼도 같은 회원의 기존 브라우저 등록자료를 보조자료로만 합칩니다.
     // 신규 Storage 경로가 있는 자료를 최우선으로 유지하고, 첨부 흔적이 없는 빈 서류카드는 상세보기에서 숨깁니다.
     const sitePassMemberDetailSnapshotV536 = new Map();
@@ -1552,6 +1552,7 @@ function normalizePhoneForShare(phone) {
       try { if (typeof getLocalVisibleEquipmentItemsForServerResync === 'function') (getLocalVisibleEquipmentItemsForServerResync() || []).forEach(add); } catch (e) { console.warn('상세보기 기존 등록자료 검색 실패:', e); }
       try { add(window.sitePassFastCompletionItem); } catch (e) {}
       try { (Array.isArray(window.sitePassFastCompletionItems) ? window.sitePassFastCompletionItems : []).forEach(add); } catch (e) {}
+      try { if (window.sitePassArchiveItemSnapshotV538 instanceof Map) add(window.sitePassArchiveItemSnapshotV538.get(targetCode)); } catch (e) {}
       try { add(sitePassMemberDetailSnapshotV536.get(targetCode)); } catch (e) {}
       return candidates;
     }
@@ -1783,7 +1784,25 @@ function normalizePhoneForShare(phone) {
       const requestedCodeV519 = String(code || '').trim();
       try { window.sitePassCurrentDetailCodeV519 = requestedCodeV519; } catch (e) {}
       let item = sitePassBuildStableDetailItemV536(requestedCodeV519);
-      if (!item) { alert('장비등록 정보를 찾을 수 없습니다. 서버 동기화 후 다시 시도해주세요.'); showScreen('listScreen'); return; }
+      if (!item) {
+        const detailBox = document.getElementById('detailBox');
+        if (detailBox) detailBox.innerHTML = '<div class="empty"><b>장비 정보를 불러오는 중입니다.</b><br>서버 확인이 끝나기 전에는 장비 없음으로 표시하지 않습니다.</div>';
+        showScreen('detailScreen');
+        if (!options.skipMissingRetry && typeof syncSupabaseMyEquipmentItems === 'function') {
+          Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(){
+            if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
+            const retryItem = sitePassBuildStableDetailItemV536(requestedCodeV519);
+            if (retryItem) { renderDetail(requestedCodeV519, { skipServerRefresh:true, skipMissingRetry:true }); return; }
+            const retryBox = document.getElementById('detailBox');
+            if (retryBox) retryBox.innerHTML = '<div class="empty"><b>장비 정보를 최종 확인하지 못했습니다.</b><br>보관함으로 돌아가 다시 열어주세요.</div>';
+          }).catch(function(error){
+            console.warn('상세보기 장비 재확인 실패:', error);
+            const retryBox = document.getElementById('detailBox');
+            if (retryBox) retryBox.innerHTML = '<div class="empty"><b>서버 연결을 확인하지 못했습니다.</b><br>장비 없음으로 처리하지 않았습니다. 네트워크 확인 후 다시 열어주세요.</div>';
+          });
+        }
+        return;
+      }
       sitePassPaintMemberDetailV536(item, requestedCodeV519);
 
       // 비공개 Storage 파일은 상세화면을 먼저 보여준 뒤 기간 제한 주소만 뒤에서 채웁니다.
@@ -1917,80 +1936,74 @@ function renderDocExpiryStrip(doc) {
     }
     function hideManagerPreviewPreparingV511(){ const overlay=document.getElementById('sitepassManagerPreviewPreparingV511'); if(overlay) overlay.remove(); }
 
-    async function openManagerPublicView(code, expireAt, sig) {
-      let item = sitePassBuildStableDetailItemV536(code) || getRuntimeItemByCode(code) || getItemByCode(code);
-      if (!item) {
-        alert('조회할 수 없는 코드입니다. 서버 동기화 후 다시 시도해주세요.');
-        return;
-      }
-      showManagerPreviewPreparingV511();
+    function sitePassSaveManagerPreviewSnapshotV538(previewItem, finalCode, exp, linkSig) {
+      const snapshot = {
+        item_data:previewItem,
+        payload:previewItem,
+        expires_at:new Date(exp).toISOString(),
+        share_code:String(finalCode || ''),
+        share_sig:String(linkSig || ''),
+        preview_saved_at:new Date().toISOString()
+      };
+      const key = 'sitepass_recipient_preview_current_' + String(finalCode || '');
       try {
-        const originalCode = ensureManagerShareCodeForItem(item) || String(code || '').trim();
-        let previewItem = item;
+        sessionStorage.setItem(key, JSON.stringify(snapshot));
+        return true;
+      } catch (e) {
         try {
-          previewItem = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(item));
-          previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem);
-          hydrateManagerShareStorageUrlsV497(previewItem);
-          await validateManagerShareStoredFilesV511(previewItem);
-
-          // v23.7.514: 회원 보관함에서 링크화면을 열 때 휴대폰에 남아 있는
-          // data/blob 원본이 있으면 먼저 Storage에 올려 기존 등록건을 자동 복구합니다.
-          // 기존 코드는 공유 전송 경로에서만 업로드했고, 회원용 링크화면은 업로드를 생략해
-          // 같은 장비라도 원본 없음으로 보이는 경우가 있었습니다.
-          if (typeof managerShareItemNeedsStorageUploadV496 === 'function' &&
-              managerShareItemNeedsStorageUploadV496(previewItem) &&
-              typeof uploadEquipmentItemDocsToSupabaseStorage === 'function') {
-            const uploadedPreviewItem = await uploadEquipmentItemDocsToSupabaseStorage(previewItem);
-            previewItem = hydrateManagerShareStorageUrlsV497(
-              typeof stripItemDataUrlsForServerStorage === 'function'
-                ? stripItemDataUrlsForServerStorage(uploadedPreviewItem)
-                : uploadedPreviewItem
-            );
-            await validateManagerShareStoredFilesV511(previewItem);
-            if (typeof saveEquipmentItemToSupabase === 'function') {
-              try { await saveEquipmentItemToSupabase(previewItem, 'member_link_storage_repair_v514'); }
-              catch (saveError) { console.warn('회원 링크화면 원본 복구 후 서버저장 실패:', saveError); }
-            }
-          }
-
-          if (managerShareHasAttachmentMetadataV496(previewItem) && !countManagerShareStoredUrlsV496(previewItem)) {
-            const recovered = await recoverManagerShareItemFromStorageV498(previewItem);
-            previewItem = recovered && recovered.item ? recovered.item : previewItem;
-            await validateManagerShareStoredFilesV511(previewItem);
-          }
-        } catch (e) {
-          console.warn('링크화면 Storage 파일 준비 실패:', e);
-          previewItem = item;
+          const lightItem = typeof stripItemDataUrlsForServerStorage === 'function'
+            ? stripItemDataUrlsForServerStorage(previewItem)
+            : previewItem;
+          sessionStorage.setItem(key, JSON.stringify(Object.assign({}, snapshot, { item_data:lightItem, payload:lightItem })));
+          return true;
+        } catch (ignore) {
+          console.warn('링크화면 즉시 미리보기 저장 실패:', ignore);
+          return false;
         }
-        try { previewItem = await hydrateItemStorageAccessUrlsV523(previewItem, true); } catch (e) { console.warn('링크화면 기간 제한 주소 준비 실패:', e); }
-        previewItem.shareStorageFiles = collectManagerShareStorageManifestV512(previewItem);
-        const finalCode = ensureManagerShareCodeForItem(previewItem) || originalCode;
-        const exp = expireAt ? Number(expireAt) : getManagerExpireAt(previewItem);
-        const linkSig = sig || getManagerLinkSignature(finalCode, exp);
-        const snapshot = {
-          item_data:previewItem,
-          payload:previewItem,
-          expires_at:new Date(exp).toISOString(),
-          share_code:String(finalCode || ''),
-          share_sig:String(linkSig || ''),
-          preview_saved_at:new Date().toISOString()
-        };
-        try { sessionStorage.setItem('sitepass_recipient_preview_current_' + String(finalCode || ''), JSON.stringify(snapshot)); } catch (e) {}
-        try {
-          const saved = await saveManagerShareItemsToSupabase([previewItem]);
-          if (!saved || !saved.ok) console.warn('회원 링크화면 공유자료 저장 지연:', saved && saved.message);
-        } catch (e) { console.warn('회원 링크화면 공유자료 저장 실패:', e); }
-        const url = new URL('./share.html', window.location.href);
-        url.search = '';url.hash = '';
-        url.searchParams.set('manager', String(finalCode || ''));
-        if (linkSig) url.searchParams.set('sig', String(linkSig));
-        url.searchParams.set('from', 'member');
-        url.searchParams.set('v', '23.7.537-test');
-        window.location.assign(url.toString());
-      } finally {
-        setTimeout(hideManagerPreviewPreparingV511, 1200);
       }
     }
+
+    async function openManagerPublicView(code, expireAt, sig, options) {
+      options = options || {};
+      const targetCode = String(code || '').trim();
+      let item = null;
+      try { if (window.sitePassArchiveItemSnapshotV538 instanceof Map) item = window.sitePassArchiveItemSnapshotV538.get(targetCode) || null; } catch (e) {}
+      item = item || sitePassBuildStableDetailItemV536(targetCode) || getRuntimeItemByCode(targetCode) || getItemByCode(targetCode);
+      if (!item) {
+        if (!options.skipServerRetry && typeof syncSupabaseMyEquipmentItems === 'function') {
+          showManagerPreviewPreparingV511();
+          try {
+            await syncSupabaseMyEquipmentItems(true, true);
+          } catch (e) { console.warn('링크화면 장비 재확인 실패:', e); }
+          hideManagerPreviewPreparingV511();
+          return openManagerPublicView(targetCode, expireAt, sig, { skipServerRetry:true });
+        }
+        alert('장비 정보를 최종 확인하지 못했습니다. 보관함으로 돌아가 다시 열어주세요.');
+        return;
+      }
+
+      // v23.7.538-test: 링크화면은 Storage 검사·복구·서버 재저장을 기다리지 않고 즉시 엽니다.
+      // 보관함 카드에서 확보한 장비 원본을 sessionStorage에 먼저 넘기고 share.html이 화면을
+      // 즉시 그린 뒤 서버 최신자료와 기간 제한 파일주소를 뒤에서 보완합니다.
+      let previewItem = item;
+      try { previewItem = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(item)); } catch (e) {}
+      try { previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem); } catch (e) {}
+      try { previewItem = hydrateManagerShareStorageUrlsV497(previewItem); } catch (e) {}
+      const originalCode = ensureManagerShareCodeForItem(previewItem) || targetCode;
+      const finalCode = ensureManagerShareCodeForItem(previewItem) || originalCode;
+      const exp = expireAt ? Number(expireAt) : getManagerExpireAt(previewItem);
+      const linkSig = sig || getManagerLinkSignature(finalCode, exp);
+      sitePassSaveManagerPreviewSnapshotV538(previewItem, finalCode, exp, linkSig);
+
+      const url = new URL('./share.html', window.location.href);
+      url.search = ''; url.hash = '';
+      url.searchParams.set('manager', String(finalCode || ''));
+      if (linkSig) url.searchParams.set('sig', String(linkSig));
+      url.searchParams.set('from', 'member');
+      url.searchParams.set('v', '23.7.538-test');
+      window.location.assign(url.toString());
+    }
+
 
 
     function copyManagerCode(code) {

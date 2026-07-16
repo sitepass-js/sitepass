@@ -338,6 +338,14 @@ function renderList() {
   const pageStart = (archiveCurrentPage - 1) * ARCHIVE_PAGE_SIZE;
   const items = filteredItems.slice(pageStart, pageStart + ARCHIVE_PAGE_SIZE);
 
+  // v23.7.538-test: 보관함 카드에서 사용한 장비 원본을 즉시 상세보기/링크화면에 전달합니다.
+  // Ctrl+F5 직후 서버 캐시 재구축 중에도 목록에 보인 장비를 다시 찾느라 기다리지 않게 합니다.
+  if (!(window.sitePassArchiveItemSnapshotV538 instanceof Map)) window.sitePassArchiveItemSnapshotV538 = new Map();
+  allItems.forEach(function(item){
+    const snapshotCode = getArchiveShareCode(item);
+    if (snapshotCode) window.sitePassArchiveItemSnapshotV538.set(snapshotCode, item);
+  });
+
   const filterNotice = adminListQuickFilter !== 'all'
     ? '<div class="notice blue-note admin-filter-note"><div><b>현재 빠른보기:</b> ' + escapeHtml(getAdminListQuickFilterLabel(adminListQuickFilter)) + '</div><button type="button" class="ghost inline-mini-button" onclick="clearAdminListQuickFilter()">전체 보기</button></div>'
     : '';

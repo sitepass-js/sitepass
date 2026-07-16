@@ -1,8 +1,8 @@
-// SitePass v23.7.537-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.538-test - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.537-test';
+  var VERSION = '23.7.538-test';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
@@ -105,12 +105,35 @@
     return parts.join('/');
   }
 
+  function readAdminSessionValue(key){
+    var value = '';
+    try { value = sessionStorage.getItem(key) || ''; } catch (e) {}
+    if (!value) { try { value = localStorage.getItem(key) || ''; } catch (e) {} }
+    return value;
+  }
+
+  function normalizeAdminRoleForServer(role){
+    var value = text(role,80).toLowerCase();
+    if (value === '최고관리자' || value === 'superadmin' || value === 'super_admin') return 'super_admin';
+    if (value === '관리자' || value === '운영관리자' || value === '조회관리자' || value === 'admin') return 'admin';
+    return value;
+  }
+
   function getAdminPayload(){
-    var loginId = '';
-    var role = '';
-    try { loginId = sessionStorage.getItem(ADMIN_ID_KEY) || ''; } catch (e) {}
-    try { role = sessionStorage.getItem(ADMIN_ROLE_KEY) || ''; } catch (e) {}
-    return { login_id:text(loginId,180), role:text(role,80) };
+    var loginId = readAdminSessionValue(ADMIN_ID_KEY);
+    var role = readAdminSessionValue(ADMIN_ROLE_KEY);
+    try { if (!loginId && typeof getSessionValue === 'function') loginId = getSessionValue(ADMIN_ID_KEY) || ''; } catch (e) {}
+    try { if (!role && typeof getCurrentAdminRoleName === 'function') role = getCurrentAdminRoleName() || ''; } catch (e) {}
+    var normalizedId = text(loginId,180).toLowerCase();
+    // 이전 비상 관리자 아이디로 로그인했어도 서버 권한 행은 지정 최고관리자 1명으로 확인합니다.
+    if (normalizedId === 'dream9473' || normalizedId === 'sitepassadmin') normalizedId = 'sitepass@kakao.com';
+    return {
+      login_id:normalizedId,
+      signup_id:normalizedId,
+      email:normalizedId.indexOf('@') >= 0 ? normalizedId : '',
+      role:normalizeAdminRoleForServer(role),
+      display_role:text(role,80)
+    };
   }
 
   function getVisibleScreen(){
@@ -539,8 +562,11 @@
       monitorServerState = { ok:false, message:msg };
       if (statusBox) statusBox.textContent = '오류 로그를 불러오지 못했습니다: ' + msg;
       var local = readLocal();
-      if (rowsBox) rowsBox.innerHTML = '<div class="sp-em-empty">v537 SQL 적용 또는 관리자 권한을 확인해주세요.</div>' +
-        (local.length ? '<div class="sp-em-local">이 기기에 임시 저장된 오류 ' + local.length + '건은 SQL 적용 후 자동 전송됩니다.</div>' : '');
+      var roleGuide = /sitepass_members|관리자 서버 권한|role/i.test(msg)
+        ? 'Supabase에서 v538 관리자 권한 보완 SQL을 한 번 실행해주세요. sitepass@kakao.com 행의 role은 super_admin이어야 합니다.'
+        : '오류 모니터링 SQL과 Supabase 연결상태를 확인해주세요.';
+      if (rowsBox) rowsBox.innerHTML = '<div class="sp-em-empty">' + escapeHtml(roleGuide) + '</div>' +
+        (local.length ? '<div class="sp-em-local">이 기기에 임시 저장된 오류 ' + local.length + '건은 서버 연결 후 자동 전송됩니다.</div>' : '');
     } finally {
       adminLoading = false;
     }
