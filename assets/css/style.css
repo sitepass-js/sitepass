@@ -4848,7 +4848,7 @@ body.sitepass-fast-shell-loading::after {
 }
 
 
-/* v23.7.525-test - 달력 6주 고정 (담당자 화면 강제 고정 제거) */
+/* v23.7.526-test - 달력 6주 고정 (담당자 화면 강제 고정 제거) */
 .sitepass-clean-calendar-days475{
   grid-template-rows:repeat(6,minmax(0,1fr));
   height:282px;

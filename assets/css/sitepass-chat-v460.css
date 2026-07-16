@@ -559,3 +559,17 @@
 .sitepass-expiry-test-tools479 button { min-height: 39px; border: 0; border-radius: 10px; background: #2d5bd7; color: white; font-weight: 800; cursor: pointer; }
 .sitepass-expiry-test-tools479 button.secondary { background: #e9eef8; color: #274168; }
 @media (max-width: 560px) { .sitepass-expiry-test-tools479 > div { grid-template-columns: 1fr; } }
+
+/* v23.7.526-test - 알림/채팅 새로고침 빈 화면 방지 */
+#contactScreen:not(.hidden) {
+  min-height: calc(100vh - 84px);
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+#contactScreen:not(.hidden) .sitepass-chat-shell,
+#contactScreen:not(.hidden) .sitepass-chat-card {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  min-height: calc(100vh - 120px);
+}

@@ -1,4 +1,4 @@
-/* SitePass v23.7.525-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
+/* SitePass v23.7.526-test - 알림/채팅 빈 화면·새로고침 스크롤 복원 안정화 */
 (function(){
   'use strict';
 
@@ -39,7 +39,7 @@
     try { return String(sessionStorage.getItem(CHAT_ROOM_SESSION_KEY_V525) || ''); } catch(e) { return ''; }
   }
 
-  /* v23.7.525-test
+  /* v23.7.526-test
      새 알림이 들어오는 순간 서버 재조회와 화면 전환이 겹쳐 첫 클릭이 먹히지 않는 현상을 막습니다.
      알림/채팅 화면과 방 패널은 서버 응답을 기다리지 않고 즉시 열고, 서버자료는 뒤에서 갱신합니다. */
   function forceContactScreenVisibleV522(){
@@ -80,20 +80,67 @@
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
     var openRoom = !!roomId;
-    if (listPanel) listPanel.classList.toggle('sitepass-chat-hidden', openRoom);
-    if (roomPanel) roomPanel.classList.toggle('sitepass-chat-hidden', !openRoom);
+    if (listPanel) {
+      listPanel.classList.toggle('sitepass-chat-hidden', openRoom);
+      listPanel.style.removeProperty('display');
+      listPanel.style.removeProperty('visibility');
+      listPanel.style.removeProperty('opacity');
+      listPanel.style.removeProperty('height');
+      listPanel.style.removeProperty('overflow');
+    }
+    if (roomPanel) {
+      roomPanel.classList.toggle('sitepass-chat-hidden', !openRoom);
+      roomPanel.style.removeProperty('display');
+      roomPanel.style.removeProperty('visibility');
+      roomPanel.style.removeProperty('opacity');
+      roomPanel.style.removeProperty('height');
+      roomPanel.style.removeProperty('overflow');
+    }
+  }
+
+  /* v23.7.526-test
+     긴 공유기록방에서 내려간 스크롤 위치가 새로고침 뒤 그대로 복원되면,
+     짧은 알림/채팅 목록보다 아래쪽 빈 배경만 보여 "빈 화면"처럼 보일 수 있습니다.
+     알림/채팅 진입과 복원 때 문서 스크롤을 확실히 맨 위로 되돌립니다. */
+  function resetChatPageScrollV526(){
+    try { window.scrollTo(0, 0); } catch(e) {}
+    try { document.documentElement.scrollTop = 0; } catch(e) {}
+    try { document.body.scrollTop = 0; } catch(e) {}
+    try {
+      var contact = $('contactScreen');
+      if (contact && typeof contact.scrollIntoView === 'function') contact.scrollIntoView({ block:'start', inline:'nearest' });
+    } catch(e) {}
+  }
+
+  function repairChatPanelsV526(roomId){
+    var listPanel = $('sitepassChatListPanel');
+    var roomPanel = $('sitepassChatRoomPanel');
+    if (!listPanel || !roomPanel) return false;
+    var preferred = roomId && ROOMS[roomId] ? roomId : (currentRoomId && ROOMS[currentRoomId] ? currentRoomId : '');
+    // 현재 방 상태를 기준으로 목록/방 패널을 항상 한쪽만 보이게 맞춥니다.
+    // 이전 화면 복원 코드가 한쪽 패널만 잘못 숨긴 경우도 즉시 정상화됩니다.
+    applyChatPanelStateV522(preferred);
+    if (preferred) {
+      if (!$('sitepassChatMessages') || !$('sitepassChatMessages').children.length) renderMessages(preferred);
+    } else {
+      var roomList = $('sitepassChatRoomList');
+      if (!roomList || !roomList.children.length) renderRoomList();
+    }
+    return true;
   }
 
   function stabilizeChatOpenV522(roomId, sequence){
-    [0, 50, 160].forEach(function(delay){
+    [0, 50, 160, 420, 900].forEach(function(delay){
       setTimeout(function(){
         if (sequence !== chatOpenSequenceV522) return;
         if (roomId && currentRoomId !== roomId) return;
         if (!roomId && currentRoomId) return;
         forceContactScreenVisibleV522();
         applyChatPanelStateV522(roomId || '');
+        repairChatPanelsV526(roomId || '');
         if (roomId) renderMessages(roomId);
         else renderRoomList();
+        resetChatPageScrollV526();
       }, delay);
     });
   }
@@ -937,6 +984,7 @@
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522(roomId);
+    resetChatPageScrollV526();
     if (roomId === 'expiry') markExpiryRoomRead();
     if (roomId === 'admin') markAdminRepliesReadByMember();
     if (roomId === 'share') {
@@ -980,9 +1028,12 @@
     resetDeleteMode();
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
-    if (roomPanel) roomPanel.classList.add('sitepass-chat-hidden');
-    if (listPanel) listPanel.classList.remove('sitepass-chat-hidden');
+    forceContactScreenVisibleV522();
+    applyChatPanelStateV522('');
+    repairChatPanelsV526('');
+    resetChatPageScrollV526();
     renderRoomList();
+    stabilizeChatOpenV522('', chatOpenSequenceV522);
     return false;
   };
 
@@ -993,6 +1044,7 @@
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522('');
+    resetChatPageScrollV526();
     renderRoomList();
     updateBottomUnreadBadge();
     // 서버 알림 조회는 화면을 연 뒤 백그라운드에서 진행합니다.
@@ -1241,9 +1293,11 @@
   window.sitepassRestoreChatRoomV525 = function(){
     var roomId = storedChatRoomV525();
     try { sessionStorage.setItem('sitepass_last_screen_v491', 'contactScreen'); } catch(e) {}
+    resetChatPageScrollV526();
     if (roomId && ROOMS[roomId]) return window.sitepassOpenChatRoom460(roomId);
     return window.sitepassOpenChatInbox460();
   };
+  window.sitepassRestoreChatRoomV526 = window.sitepassRestoreChatRoomV525;
 
   window.sitepassOpenChatRoom445 = window.sitepassOpenChatRoom460;
   window.sitepassBackToChatList445 = window.sitepassBackToChatList460;
@@ -1255,7 +1309,42 @@
     setTimeout(init, 120);
     setTimeout(init, 600);
   });
-  window.addEventListener('pageshow', function(){ setTimeout(init, 100); });
+  window.addEventListener('pageshow', function(){
+    setTimeout(function(){
+      init();
+      try {
+        var contact = $('contactScreen');
+        var remembered = String(sessionStorage.getItem('sitepass_last_screen_v491') || '');
+        if ((contact && !contact.classList.contains('hidden')) || remembered === 'contactScreen') {
+          forceContactScreenVisibleV522();
+          repairChatPanelsV526(currentRoomId || storedChatRoomV525());
+          resetChatPageScrollV526();
+        }
+      } catch(e) {}
+    }, 100);
+    setTimeout(function(){
+      try {
+        var contact = $('contactScreen');
+        if (contact && !contact.classList.contains('hidden')) {
+          repairChatPanelsV526(currentRoomId || storedChatRoomV525());
+          resetChatPageScrollV526();
+        }
+      } catch(e) {}
+    }, 650);
+  });
+  try {
+    var panelObserverV526 = new MutationObserver(function(){
+      var contact = $('contactScreen');
+      if (!contact || contact.classList.contains('hidden')) return;
+      repairChatPanelsV526(currentRoomId || '');
+    });
+    document.addEventListener('DOMContentLoaded', function(){
+      var listPanel = $('sitepassChatListPanel');
+      var roomPanel = $('sitepassChatRoomPanel');
+      if (listPanel) panelObserverV526.observe(listPanel, { attributes:true, attributeFilter:['class','style'] });
+      if (roomPanel) panelObserverV526.observe(roomPanel, { attributes:true, attributeFilter:['class','style'] });
+    }, { once:true });
+  } catch(e) {}
   window.addEventListener('focus', function(){ refreshShareTrackingServerV521(false); });
   document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshShareTrackingServerV521(false); });
   setInterval(function(){
