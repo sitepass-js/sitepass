@@ -560,7 +560,7 @@
 .sitepass-expiry-test-tools479 button.secondary { background: #e9eef8; color: #274168; }
 @media (max-width: 560px) { .sitepass-expiry-test-tools479 > div { grid-template-columns: 1fr; } }
 
-/* v23.7.527-test - 알림/채팅 새로고침 빈 화면 방지 */
+/* v23.7.528-test - 알림/채팅 새로고침 빈 화면 방지 */
 #contactScreen:not(.hidden) {
   min-height: calc(100vh - 84px);
   visibility: visible !important;
@@ -572,4 +572,20 @@
   visibility: visible;
   opacity: 1;
   min-height: calc(100vh - 120px);
+}
+
+
+/* v23.7.528-test - 알림/채팅 새로고침 시 페이지 스크롤 복원으로 빈 화면처럼 보이는 현상 방지 */
+#contactScreen:not(.hidden) > .sitepass-chat-shell {
+  width: 100%;
+  min-height: calc(100vh - 88px);
+  position: relative;
+}
+#contactScreen:not(.hidden) #sitepassChatListPanel:not(.sitepass-chat-hidden),
+#contactScreen:not(.hidden) #sitepassChatRoomPanel:not(.sitepass-chat-hidden) {
+  display: block !important;
+  width: 100%;
+  min-height: 1px;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
