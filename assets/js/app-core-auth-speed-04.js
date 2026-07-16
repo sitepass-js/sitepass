@@ -302,7 +302,7 @@ function renderAdminContactManager() {
       } catch (e) {}
     }
 
-    /* v23.7.528-test - 강력 새로고침 직전 실제로 보이는 화면을 저장합니다.
+    /* v23.7.529-test - 강력 새로고침 직전 실제로 보이는 화면을 저장합니다.
        history.state가 이전 보관함 화면으로 남아 있어도 현재 알림/채팅·내정보 화면이 우선 복원됩니다. */
     function persistVisibleSitePassScreenV525() {
       try {
@@ -327,7 +327,7 @@ function renderAdminContactManager() {
     window.addEventListener('beforeunload', persistVisibleSitePassScreenV525);
 
     function showScreen(id, options) {
-      // v23.7.528-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
+      // v23.7.529-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
       // 담당자 링크는 recipient.html에서 독립 실행되어 showScreen과 충돌하지 않습니다.
       const managerOnlyScreens = ['publicScreen'];
       // v23.7.463: 내정보는 화면을 열기 전에 현재 비밀번호를 다시 확인합니다.
@@ -385,7 +385,14 @@ function renderAdminContactManager() {
       if (id === 'pricingScreen') renderPricingScreen();
       if (id === 'registerScreen') { const docBox = document.getElementById('docCards'); if (docBox && !docBox.innerHTML.trim()) renderDocCards(); renderAlertPreview(); renderBundleSummary(); updateRegisterModeUi(); updateRegistrationDraftNotice(); }
       if (id === 'adminScreen') { renderAdmin(); setTimeout(() => syncSupabaseMembersForAdmin(false), 80); }
-      if (id === 'contactScreen') renderContactHistory();
+      if (id === 'contactScreen') {
+        setTimeout(function(){
+          try {
+            if (typeof window.sitepassOpenNotificationInboxV529 === 'function') window.sitepassOpenNotificationInboxV529({ source:'show-screen' });
+            else if (typeof window.sitepassOpenChatInbox460 === 'function') window.sitepassOpenChatInbox460({ source:'show-screen' });
+          } catch(e) {}
+        }, 0);
+      }
       if (id === 'signupScreen') {
         const box = document.getElementById('sitepassSignupBox');
         if (box) box.classList.add('hidden');
@@ -403,7 +410,7 @@ function renderAdminContactManager() {
       refreshAdminUi();
       rememberSitePassScreen(id, options || {});
       sitePassCurrentScreenId = id;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: id === 'contactScreen' ? 'auto' : 'smooth' });
     }
 
     function isAdminLoggedIn() {

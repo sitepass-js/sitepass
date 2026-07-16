@@ -1,4 +1,4 @@
-/* SitePass v23.7.528-test - 알림/채팅 단일 라우팅·새로고침 안정화
+/* SitePass v23.7.529-test - 알림/채팅 단일 라우팅·새로고침 안정화
    중복 화면 강제 코드 없이 알림/채팅 모듈 한 곳에서 목록·방·스크롤을 관리합니다. */
 (function(){
   'use strict';
@@ -27,22 +27,22 @@
   var shareTrackingLoadingV521 = false;
   var shareTrackingLastFetchAtV521 = 0;
   var chatOpenSequenceV522 = 0;
-  var CHAT_ROOM_SESSION_KEY_V528 = 'sitepass_chat_room_v528';
-  var chatRestoreDoneV528 = false;
-  var chatRestoreTimerV528 = 0;
+  var CHAT_ROOM_SESSION_KEY_V529 = 'sitepass_chat_room_v529';
+  var chatRestoreDoneV529 = false;
+  var chatRestoreTimerV529 = 0;
 
-  function rememberChatRoomV528(roomId){
+  function rememberChatRoomV529(roomId){
     try {
-      if (roomId && ROOMS && ROOMS[roomId]) sessionStorage.setItem(CHAT_ROOM_SESSION_KEY_V528, roomId);
-      else sessionStorage.removeItem(CHAT_ROOM_SESSION_KEY_V528);
+      if (roomId && ROOMS && ROOMS[roomId]) sessionStorage.setItem(CHAT_ROOM_SESSION_KEY_V529, roomId);
+      else sessionStorage.removeItem(CHAT_ROOM_SESSION_KEY_V529);
       sessionStorage.setItem('sitepass_last_screen_v491', 'contactScreen');
     } catch(e) {}
   }
-  function storedChatRoomV528(){
-    try { return String(sessionStorage.getItem(CHAT_ROOM_SESSION_KEY_V528) || ''); } catch(e) { return ''; }
+  function storedChatRoomV529(){
+    try { return String(sessionStorage.getItem(CHAT_ROOM_SESSION_KEY_V529) || ''); } catch(e) { return ''; }
   }
 
-  function contactScreenIsActiveV528(){
+  function contactScreenIsActiveV529(){
     var contact = $('contactScreen');
     if (!contact || contact.classList.contains('hidden')) return false;
     try {
@@ -51,7 +51,7 @@
     } catch(e) { return true; }
   }
 
-  function resetChatPageScrollV528(){
+  function resetChatPageScrollV529(){
     try {
       if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     } catch(e) {}
@@ -70,14 +70,14 @@
     } catch(e) {}
   }
 
-  function scheduleChatViewportResetV528(){
-    resetChatPageScrollV528();
-    try { cancelAnimationFrame(chatRestoreTimerV528); } catch(e) {}
-    chatRestoreTimerV528 = requestAnimationFrame(function(){
-      resetChatPageScrollV528();
-      requestAnimationFrame(resetChatPageScrollV528);
+  function scheduleChatViewportResetV529(){
+    resetChatPageScrollV529();
+    try { cancelAnimationFrame(chatRestoreTimerV529); } catch(e) {}
+    chatRestoreTimerV529 = requestAnimationFrame(function(){
+      resetChatPageScrollV529();
+      requestAnimationFrame(resetChatPageScrollV529);
     });
-    setTimeout(function(){ if (contactScreenIsActiveV528()) resetChatPageScrollV528(); }, 180);
+    setTimeout(function(){ if (contactScreenIsActiveV529()) resetChatPageScrollV529(); }, 180);
   }
 
   try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch(e) {}
@@ -88,9 +88,6 @@
   function forceContactScreenVisibleV522(){
     var contact = $('contactScreen');
     if (!contact) return false;
-    try {
-      if (typeof window.showScreen === 'function') window.showScreen('contactScreen', { skipHistory:true });
-    } catch(e) {}
     try {
       document.querySelectorAll('.screen').forEach(function(screen){
         var active = screen === contact;
@@ -106,6 +103,7 @@
           screen.style.pointerEvents = 'none';
         }
       });
+      document.body.classList.remove('sitepass-booting');
       document.body.classList.add('sitepass-app-nav-active');
       var nav = $('sitepassBottomAppNav');
       if (nav) {
@@ -114,14 +112,17 @@
           button.classList.toggle('active', button.getAttribute('data-target') === 'contactScreen');
         });
       }
+      try { sessionStorage.setItem('sitepass_last_screen_v491','contactScreen'); } catch(ignore) {}
     } catch(e) {}
     return true;
   }
 
   function applyChatPanelStateV522(roomId){
+    var contact = $('contactScreen');
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
     var openRoom = !!roomId;
+    if (contact) contact.setAttribute('data-chat-mode', openRoom ? 'room' : 'list');
     if (listPanel) listPanel.classList.toggle('sitepass-chat-hidden', openRoom);
     if (roomPanel) roomPanel.classList.toggle('sitepass-chat-hidden', !openRoom);
   }
@@ -133,7 +134,7 @@
       if (!roomId && currentRoomId) return;
       forceContactScreenVisibleV522();
       applyChatPanelStateV522(roomId || '');
-      scheduleChatViewportResetV528();
+      scheduleChatViewportResetV529();
     });
   }
 
@@ -972,11 +973,11 @@
     if (!ROOMS[roomId]) roomId = 'admin';
     var openSequence = ++chatOpenSequenceV522;
     currentRoomId = roomId;
-    rememberChatRoomV528(roomId);
+    rememberChatRoomV529(roomId);
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522(roomId);
-    scheduleChatViewportResetV528();
+    scheduleChatViewportResetV529();
     if (roomId === 'expiry') markExpiryRoomRead();
     if (roomId === 'admin') markAdminRepliesReadByMember();
     if (roomId === 'share') {
@@ -1010,32 +1011,31 @@
     renderRoomList();
     updateBottomUnreadBadge();
     stabilizeChatOpenV522(roomId, openSequence);
+    setTimeout(ensureChatPanelVisibleV529, 80);
     return false;
   };
 
   window.sitepassBackToChatList460 = function(){
     ++chatOpenSequenceV522;
     currentRoomId = '';
-    rememberChatRoomV528('');
+    rememberChatRoomV529('');
     resetDeleteMode();
-    var listPanel = $('sitepassChatListPanel');
-    var roomPanel = $('sitepassChatRoomPanel');
-    if (roomPanel) roomPanel.classList.add('sitepass-chat-hidden');
-    if (listPanel) listPanel.classList.remove('sitepass-chat-hidden');
+    forceContactScreenVisibleV522();
+    applyChatPanelStateV522('');
     renderRoomList();
-    scheduleChatViewportResetV528();
+    scheduleChatViewportResetV529();
     return false;
   };
 
   window.sitepassOpenChatInbox460 = function(options){
     var openSequence = ++chatOpenSequenceV522;
     currentRoomId = '';
-    rememberChatRoomV528('');
+    rememberChatRoomV529('');
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522('');
     renderRoomList();
-    scheduleChatViewportResetV528();
+    scheduleChatViewportResetV529();
     updateBottomUnreadBadge();
     // 서버 알림 조회는 화면을 연 뒤 백그라운드에서 진행합니다.
     Promise.resolve(refreshShareTrackingServerV521(false)).then(function(){
@@ -1045,7 +1045,12 @@
       renderRoomList();
     });
     stabilizeChatOpenV522('', openSequence);
+    setTimeout(ensureChatPanelVisibleV529, 80);
     return false;
+  };
+
+  window.sitepassOpenNotificationInboxV529 = function(options){
+    return window.sitepassOpenChatInbox460(options || { source:'notification-nav' });
   };
 
   window.sitepassOpenExpiryFromHome479 = function(){
@@ -1267,6 +1272,9 @@
 
   function init(){
     loadShareTrackingCacheV521();
+    var contact = $('contactScreen');
+    if (contact && !contact.getAttribute('data-chat-mode')) contact.setAttribute('data-chat-mode','list');
+    if (!currentRoomId) applyChatPanelStateV522('');
     renderRoomList();
     wrapBottomNav();
     updateBottomUnreadBadge();
@@ -1274,23 +1282,40 @@
     refreshShareTrackingServerV521(false);
   }
 
-  function restoreChatViewV528(force){
-    if (chatRestoreDoneV528 && !force) return false;
+  function restoreChatViewV529(force){
+    if (chatRestoreDoneV529 && !force) return false;
     var contact = $('contactScreen');
     var rememberedScreen = '';
     try { rememberedScreen = String(sessionStorage.getItem('sitepass_last_screen_v491') || ''); } catch(e) {}
-    var shouldRestore = force === true || contactScreenIsActiveV528() || rememberedScreen === 'contactScreen';
+    var shouldRestore = force === true || contactScreenIsActiveV529() || rememberedScreen === 'contactScreen';
     if (!shouldRestore || !contact) return false;
-    chatRestoreDoneV528 = true;
+    chatRestoreDoneV529 = true;
     forceContactScreenVisibleV522();
-    var roomId = storedChatRoomV528();
+    var roomId = storedChatRoomV529();
     if (roomId && ROOMS[roomId]) window.sitepassOpenChatRoom460(roomId);
     else window.sitepassOpenChatInbox460({ source:'restore' });
-    scheduleChatViewportResetV528();
+    scheduleChatViewportResetV529();
     return true;
   }
 
-  window.sitepassRestoreChatViewV528 = restoreChatViewV528;
+  window.sitepassRestoreChatViewV529 = restoreChatViewV529;
+
+  function ensureChatPanelVisibleV529(){
+    var contact = $('contactScreen');
+    if (!contactScreenIsActiveV529() || !contact) return false;
+    var listPanel = $('sitepassChatListPanel');
+    var roomPanel = $('sitepassChatRoomPanel');
+    var listVisible = !!listPanel && !listPanel.classList.contains('sitepass-chat-hidden');
+    var roomVisible = !!roomPanel && !roomPanel.classList.contains('sitepass-chat-hidden');
+    if (!listVisible && !roomVisible) {
+      if (currentRoomId && ROOMS[currentRoomId]) applyChatPanelStateV522(currentRoomId);
+      else applyChatPanelStateV522('');
+    }
+    if (!currentRoomId) renderRoomList();
+    scheduleChatViewportResetV529();
+    return true;
+  }
+  window.sitepassEnsureChatPanelVisibleV529 = ensureChatPanelVisibleV529;
 
   window.sitepassOpenChatRoom445 = window.sitepassOpenChatRoom460;
   window.sitepassBackToChatList445 = window.sitepassBackToChatList460;
@@ -1299,18 +1324,18 @@
 
   document.addEventListener('DOMContentLoaded', function(){
     init();
-    setTimeout(function(){ restoreChatViewV528(false); }, 180);
+    setTimeout(function(){ restoreChatViewV529(false); ensureChatPanelVisibleV529(); }, 180);
   });
   window.addEventListener('pageshow', function(){
-    chatRestoreDoneV528 = false;
+    chatRestoreDoneV529 = false;
     setTimeout(function(){
       init();
-      restoreChatViewV528(false);
-      if (contactScreenIsActiveV528()) scheduleChatViewportResetV528();
+      restoreChatViewV529(false);
+      ensureChatPanelVisibleV529();
     }, 140);
   });
   window.addEventListener('load', function(){
-    if (contactScreenIsActiveV528()) scheduleChatViewportResetV528();
+    if (contactScreenIsActiveV529()) scheduleChatViewportResetV529();
   }, { once:true });
   window.addEventListener('focus', function(){ refreshShareTrackingServerV521(false); });
   document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshShareTrackingServerV521(false); });
