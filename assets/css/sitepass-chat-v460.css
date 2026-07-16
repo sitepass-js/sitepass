@@ -559,39 +559,3 @@
 .sitepass-expiry-test-tools479 button { min-height: 39px; border: 0; border-radius: 10px; background: #2d5bd7; color: white; font-weight: 800; cursor: pointer; }
 .sitepass-expiry-test-tools479 button.secondary { background: #e9eef8; color: #274168; }
 @media (max-width: 560px) { .sitepass-expiry-test-tools479 > div { grid-template-columns: 1fr; } }
-
-/* v23.7.529-test - 알림/채팅 새로고침 빈 화면 방지 */
-#contactScreen:not(.hidden) {
-  min-height: calc(100vh - 84px);
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-#contactScreen:not(.hidden) .sitepass-chat-shell,
-#contactScreen:not(.hidden) .sitepass-chat-card {
-  display: block;
-  visibility: visible;
-  opacity: 1;
-  min-height: calc(100vh - 120px);
-}
-
-
-/* v23.7.529-test - 알림/채팅 새로고침 시 페이지 스크롤 복원으로 빈 화면처럼 보이는 현상 방지 */
-#contactScreen:not(.hidden) > .sitepass-chat-shell {
-  width: 100%;
-  min-height: calc(100vh - 88px);
-  position: relative;
-}
-#contactScreen:not(.hidden) #sitepassChatListPanel:not(.sitepass-chat-hidden),
-#contactScreen:not(.hidden) #sitepassChatRoomPanel:not(.sitepass-chat-hidden) {
-  display: block !important;
-  width: 100%;
-  min-height: 1px;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* v23.7.529-test - 알림/채팅 패널 상태는 contactScreen의 data-chat-mode 하나로 결정 */
-#contactScreen[data-chat-mode="list"] #sitepassChatListPanel { display:block !important; visibility:visible !important; opacity:1 !important; }
-#contactScreen[data-chat-mode="list"] #sitepassChatRoomPanel { display:none !important; }
-#contactScreen[data-chat-mode="room"] #sitepassChatListPanel { display:none !important; }
-#contactScreen[data-chat-mode="room"] #sitepassChatRoomPanel { display:block !important; visibility:visible !important; opacity:1 !important; }

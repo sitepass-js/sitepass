@@ -829,7 +829,7 @@ function expireUnpaidPaymentTestData() {
           target.hash = '';
           target.searchParams.set('manager', String(parsed.code));
           if (parsed.sig) target.searchParams.set('sig', String(parsed.sig));
-          target.searchParams.set('v', '23.7.529-test');
+          target.searchParams.set('v', '23.7.530-test');
           window.location.replace(target.toString());
         }
         return true;
@@ -912,7 +912,7 @@ function expireUnpaidPaymentTestData() {
         updateSignupTermsUi();
         registerSitePassServiceWorker();
         updateHomeInstallButtonState();
-        // v23.7.529-test: 담당자 링크는 head 단계에서 recipient.html로 이동합니다.
+        // v23.7.530-test: 담당자 링크는 head 단계에서 recipient.html로 이동합니다.
         // 메인 앱 부팅은 더 이상 담당자 화면을 강제로 고정하지 않습니다.
         clearLegacyAutoLoginState();
         const didCleanReset = resetSitePassTestDataOnce();
@@ -974,13 +974,10 @@ function expireUnpaidPaymentTestData() {
           }
           showScreen(initialScreen, { replace:true });
           if (initialScreen === 'contactScreen') {
+            // v23.7.530-test: 새로고침 시 복잡한 방 복원 대신 알림/채팅 목록을 한 번만 안정적으로 엽니다.
             setTimeout(function(){
-              try {
-                if (typeof window.sitepassRestoreChatViewV529 === 'function') window.sitepassRestoreChatViewV529(true);
-                else if (typeof window.sitepassOpenNotificationInboxV529 === 'function') window.sitepassOpenNotificationInboxV529({ source:'boot' });
-                else if (typeof window.sitepassOpenChatInbox460 === 'function') window.sitepassOpenChatInbox460({ source:'boot' });
-              } catch (e) {}
-            }, 160);
+              try { if (typeof window.sitepassOpenChatInbox460 === 'function') window.sitepassOpenChatInbox460(); } catch (e) {}
+            }, 180);
           }
           promptRegistrationDraftIfNeeded('startup');
         }
