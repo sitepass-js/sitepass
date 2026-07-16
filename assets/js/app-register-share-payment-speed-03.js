@@ -1,4 +1,4 @@
-// SitePass v23.7.522-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.523-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -268,7 +268,7 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.522-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.523-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
@@ -325,7 +325,10 @@ function shareOneListItemEmail(code) {
       if (storagePath) {
         try {
           const api = window.SitePassSupabaseApi;
-          if (api && typeof api.storagePublicUrl === 'function') {
+          if (api && typeof api.storageResolveUrl === 'function') {
+            const exactPathUrl = String(await api.storageResolveUrl(getManagerShareStorageBucketV497(obj, parent), storagePath, { preferSigned:true }) || '');
+            if (exactPathUrl) candidates.push(exactPathUrl);
+          } else if (api && typeof api.storagePublicUrl === 'function') {
             const exactPathUrl = String(api.storagePublicUrl(getManagerShareStorageBucketV497(obj, parent), storagePath) || '');
             if (exactPathUrl) candidates.push(exactPathUrl);
           }
@@ -429,7 +432,7 @@ function shareOneListItemEmail(code) {
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.522-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.523-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -1380,8 +1383,8 @@ function normalizePhoneForShare(phone) {
       return '<div id="' + escapeHtml(folderId) + '" class="doc-folders-v486"><div class="doc-folder-tabs-v486" role="tablist">' + tabs + '</div>' + panels + '</div>';
     }
 
-    function openAdminQrLink(code) {
-      const item = getRuntimeItemByCode(code);
+    async function openAdminQrLink(code) {
+      let item = getRuntimeItemByCode(code);
       if (!item) { alert('QR을 열 장비서류를 찾을 수 없습니다.'); return; }
       if (isServiceShareBlocked(item)) {
         const box = document.getElementById('detailBox');
@@ -1391,6 +1394,7 @@ function normalizePhoneForShare(phone) {
         }
         return;
       }
+      try { item = await hydrateItemStorageAccessUrlsV523(item); } catch (e) { console.warn('관리자 상세 서류주소 준비 실패:', e); }
       currentDetailLink = makeManagerLink(item.code, getManagerExpireAt(item));
       const qrUrl = makeQrUrl(currentDetailLink, 240);
       const docs = getDisplayDocs(item);
@@ -1414,6 +1418,84 @@ function normalizePhoneForShare(phone) {
 
 
     const sitePassDetailServerRefreshAtV519 = {};
+    const sitePassStorageHydrateCacheV523 = new WeakMap();
+
+    async function resolveStorageAccessUrlForObjectV523(obj, parent, forceRefresh) {
+      if (!obj || typeof obj !== 'object') return '';
+      const path = getManagerShareStoragePathV497(obj);
+      if (!path) return getManagerShareObjectStoredUrlV496(obj) || '';
+      const api = window.SitePassSupabaseApi;
+      if (!api) return getManagerShareObjectStoredUrlV496(obj) || '';
+      try {
+        if (typeof api.storageResolveUrl === 'function') {
+          return String(await api.storageResolveUrl(getManagerShareStorageBucketV497(obj, parent), path, {
+            preferSigned:true,
+            forceRefresh:!!forceRefresh
+          }) || '');
+        }
+      } catch (e) { console.warn('기간 제한 파일주소 생성 실패:', e); }
+      try {
+        if (typeof api.storagePublicUrl === 'function') return String(api.storagePublicUrl(getManagerShareStorageBucketV497(obj, parent), path) || '');
+      } catch (e) {}
+      return '';
+    }
+
+    function applyStorageAccessUrlV523(obj, url) {
+      if (!obj || typeof obj !== 'object' || !url) return obj;
+      obj.signedUrl = url;
+      obj.storageAccessUrl = url;
+      obj.fileUrl = url;
+      obj.downloadUrl = url;
+      obj.previewDataUrl = url;
+      obj.editDataUrl = url;
+      obj.storagePublicUrl = '';
+      obj.publicUrl = '';
+      obj.storageAccessExpiresAt = Date.now() + Number((window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.storageSignedUrlTtlSeconds) || 900) * 1000;
+      return obj;
+    }
+
+    async function hydrateItemStorageAccessUrlsV523(item, forceRefresh) {
+      if (!item || typeof item !== 'object') return item;
+      if (!forceRefresh && sitePassStorageHydrateCacheV523.has(item)) {
+        try { return await sitePassStorageHydrateCacheV523.get(item); } catch (e) {}
+      }
+      const promise = (async function(){
+        const docs = item.docs && typeof item.docs === 'object' ? item.docs : {};
+        const tasks = [];
+        Object.keys(docs).forEach(function(key){
+          const doc = docs[key] && typeof docs[key] === 'object' ? docs[key] : {};
+          const pages = Array.isArray(doc.pages) ? doc.pages : [];
+          if (getManagerShareStoragePathV497(doc)) tasks.push({ obj:doc, parent:item });
+          pages.forEach(function(page){ if (page && typeof page === 'object' && getManagerShareStoragePathV497(page)) tasks.push({ obj:page, parent:doc }); });
+        });
+        let cursor = 0;
+        async function worker(){
+          while (cursor < tasks.length) {
+            const task = tasks[cursor++];
+            const url = await resolveStorageAccessUrlForObjectV523(task.obj, task.parent, forceRefresh);
+            if (url) applyStorageAccessUrlV523(task.obj, url);
+          }
+        }
+        await Promise.all(Array.from({ length:Math.min(4, Math.max(1, tasks.length)) }, worker));
+        Object.keys(docs).forEach(function(key){
+          const doc = docs[key] && typeof docs[key] === 'object' ? docs[key] : {};
+          const pages = Array.isArray(doc.pages) ? doc.pages : [];
+          if (!getManagerShareObjectStoredUrlV496(doc)) {
+            const firstUrl = pages.map(getManagerShareObjectStoredUrlV496).find(Boolean) || '';
+            if (firstUrl) applyStorageAccessUrlV523(doc, firstUrl);
+          }
+        });
+        item.docs = docs;
+        item.storageAccessHydratedAtV523 = new Date().toISOString();
+        return item;
+      })();
+      sitePassStorageHydrateCacheV523.set(item, promise);
+      try { return await promise; }
+      finally { if (forceRefresh) sitePassStorageHydrateCacheV523.delete(item); }
+    }
+
+
+    window.sitePassHydrateItemStorageAccessUrlsV523 = hydrateItemStorageAccessUrlsV523;
 
     function refreshMemberDetailFromServerV519(code) {
       const targetCode = String(code || '').trim();
@@ -1435,7 +1517,7 @@ function normalizePhoneForShare(phone) {
       });
     }
 
-    function renderDetail(code, options) {
+    async function renderDetail(code, options) {
       options = options || {};
       const requestedCodeV519 = String(code || '').trim();
       try { window.sitePassCurrentDetailCodeV519 = requestedCodeV519; } catch (e) {}
@@ -1443,6 +1525,12 @@ function normalizePhoneForShare(phone) {
       if (!item) { alert('장비등록 정보를 찾을 수 없습니다. 서버 동기화 후 다시 시도해주세요.'); showScreen('listScreen'); return; }
       try { item = mergeLegacyManagerShareDocumentsV498(item); } catch (e) {}
       try { item = hydrateManagerShareStorageUrlsV497(item); } catch (e) {}
+      let detailBox = document.getElementById('detailBox');
+      if (detailBox) {
+        detailBox.innerHTML = '<div class="empty">서류를 불러오는 중입니다.</div>';
+        showScreen('detailScreen');
+      }
+      try { item = await hydrateItemStorageAccessUrlsV523(item); } catch (e) { console.warn('회원 상세 서류주소 준비 실패:', e); }
       const itemCode = ensureManagerShareCodeForItem(item) || String(code || '').trim();
       currentDetailLink = makeManagerLink(itemCode, getManagerExpireAt(item));
       const qrUrl = makeQrUrl(currentDetailLink, 180);
@@ -1452,7 +1540,7 @@ function normalizePhoneForShare(phone) {
       const fileRecoveryNoticeV508 = item.shareFilesPendingRecovery
         ? '<div class="notice blue-note"><b>일부 기존 서류의 서버 파일주소를 복구 중입니다.</b><br>링크화면을 누르면 휴대폰에 남은 등록 원본과 Supabase Storage를 다시 확인합니다.</div>'
         : '';
-      const detailBox = document.getElementById('detailBox');
+      detailBox = detailBox || document.getElementById('detailBox');
       if (!detailBox) { alert('상세보기 화면을 찾지 못했습니다. 새로고침 후 다시 시도해주세요.'); return; }
       detailBox.innerHTML =
         '<div class="line"><b>장비 등록번호</b><span>' + escapeHtml(item.equipmentNo || '-') + '</span></div>' +
@@ -1639,6 +1727,7 @@ function renderDocExpiryStrip(doc) {
           console.warn('링크화면 Storage 파일 준비 실패:', e);
           previewItem = item;
         }
+        try { previewItem = await hydrateItemStorageAccessUrlsV523(previewItem, true); } catch (e) { console.warn('링크화면 기간 제한 주소 준비 실패:', e); }
         previewItem.shareStorageFiles = collectManagerShareStorageManifestV512(previewItem);
         const finalCode = ensureManagerShareCodeForItem(previewItem) || originalCode;
         const exp = expireAt ? Number(expireAt) : getManagerExpireAt(previewItem);
@@ -1661,7 +1750,7 @@ function renderDocExpiryStrip(doc) {
         url.searchParams.set('manager', String(finalCode || ''));
         if (linkSig) url.searchParams.set('sig', String(linkSig));
         url.searchParams.set('from', 'member');
-        url.searchParams.set('v', '23.7.522-test');
+        url.searchParams.set('v', '23.7.523-test');
         window.location.assign(url.toString());
       } finally {
         setTimeout(hideManagerPreviewPreparingV511, 1200);
@@ -1741,13 +1830,14 @@ function renderDocExpiryStrip(doc) {
       return '<div class="preview-wrap show"><div class="preview-title"><span>첨부 ' + pages.length + '장 이미지</span></div>' + renderPagesListHtml(pages, { imageOnly:true, readonly:true, docKey:doc.key, code:code, docLabel:label }) + renderDocExpiryStrip(doc) + extraStrip + '</div>';
     }
 
-    function renderPublic(code) {
-      const item = getItems().find(x => x.code === code);
+    async function renderPublic(code) {
+      let item = getItems().find(x => x.code === code);
       if (!item) {
         document.getElementById('publicBox').innerHTML = '<div class="empty">조회할 수 없는 코드입니다.</div>';
         showScreen('publicScreen');
         return;
       }
+      try { item = await hydrateItemStorageAccessUrlsV523(item); } catch (e) { console.warn('QR 상세 서류주소 준비 실패:', e); }
       currentDetailLink = item.qrLink;
       if (isServiceShareBlocked(item)) {
         document.getElementById('publicBox').innerHTML = renderServiceBlockedBox(item);

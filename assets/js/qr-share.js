@@ -1,4 +1,4 @@
-// SitePass v23.7.522-test - 담당자 링크 query 고정 및 업데이트 경로 보존
+// SitePass v23.7.523-test - 담당자 링크 query 고정 및 업데이트 경로 보존
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';

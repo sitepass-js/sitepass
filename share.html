@@ -37,13 +37,18 @@
       <span>서버에서 최신 공유자료를 확인하고 있습니다.</span>
     </div>
   </main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.522-test';
+  var VERSION='23.7.523-test';
   var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
   var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
   var STORAGE_BUCKET='sitepass-documents';
+  var STORAGE_ACCESS_MODE='signed';
+  var SIGNED_URL_TTL=900;
+  var storageClient=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+  var signedUrlCacheV523={};
   var content=document.getElementById('content');
   var exitButton=document.getElementById('exitButton');
   var navLabel=document.getElementById('navLabel');
@@ -145,16 +150,80 @@
   function normalizeEncodedPath(path){
     return String(path||'').split('/').filter(Boolean).map(function(part){try{return encodeURIComponent(decodeURIComponent(part));}catch(e){return encodeURIComponent(part);}}).join('/');
   }
+  function storageRefFromValueV523(value,defaultBucket){
+    var text=String(value||'').trim();
+    if(!text)return {bucket:String(defaultBucket||STORAGE_BUCKET),path:''};
+    if(!/^https?:\/\//i.test(text))return {bucket:String(defaultBucket||STORAGE_BUCKET),path:text.replace(/^\/+/, '')};
+    try{
+      var u=new URL(text,location.href),m=u.pathname.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+)$/i);
+      if(!m)return {bucket:String(defaultBucket||STORAGE_BUCKET),path:''};
+      return {bucket:decodeURIComponent(m[1]||'')||String(defaultBucket||STORAGE_BUCKET),path:String(m[2]||'').split('/').map(function(part){try{return decodeURIComponent(part);}catch(e){return part;}}).join('/')};
+    }catch(e){return {bucket:String(defaultBucket||STORAGE_BUCKET),path:''};}
+  }
+  function signedCacheKeyV523(bucket,path){return String(bucket||STORAGE_BUCKET)+'|'+String(path||'').replace(/^\/+/, '');}
+  function cachedSignedUrlV523(bucket,path){var row=signedUrlCacheV523[signedCacheKeyV523(bucket,path)];return row&&row.url&&row.expiresAt>Date.now()+30000?row.url:'';}
   function absoluteStorageUrl(path,bucket){
     path=String(path||'').trim();if(!path)return '';
     if(/^blob:/i.test(path))return '';
-    if(/^(data:|https?:\/\/)/i.test(path))return path;
-    path=path.replace(/^\/+/, '').replace(/^storage\/v1\/object\/(?:public|sign|authenticated)\//i,'');
-    bucket=String(bucket||STORAGE_BUCKET).trim()||STORAGE_BUCKET;
-    if(path.indexOf(bucket+'/')===0)path=path.slice(bucket.length+1);
-    if(path.indexOf('public/'+bucket+'/')===0)path=path.slice(('public/'+bucket+'/').length);
-    var encoded=normalizeEncodedPath(path);
-    return encoded?SUPABASE_URL+'/storage/v1/object/public/'+encodeURIComponent(bucket)+'/'+encoded:'';
+    if(/^data:/i.test(path))return path;
+    if(/\/storage\/v1\/object\/sign\//i.test(path)&&/[?&]token=/i.test(path))return path;
+    var ref=storageRefFromValueV523(path,bucket),cached=cachedSignedUrlV523(ref.bucket,ref.path);
+    if(cached)return cached;
+    if(/^https?:\/\//i.test(path))return path;
+    if(STORAGE_ACCESS_MODE==='signed')return '';
+    var encoded=normalizeEncodedPath(ref.path);
+    return encoded?SUPABASE_URL+'/storage/v1/object/public/'+encodeURIComponent(ref.bucket)+'/'+encoded:'';
+  }
+  async function createSignedUrlsV523(bucket,paths,forceRefresh){
+    bucket=String(bucket||STORAGE_BUCKET);paths=unique((paths||[]).map(function(path){return String(path||'').replace(/^\/+/, '');}).filter(Boolean));
+    var resultMap={};var missing=[];
+    paths.forEach(function(path){var cached=!forceRefresh&&cachedSignedUrlV523(bucket,path);if(cached)resultMap[path]=cached;else missing.push(path);});
+    if(!missing.length)return resultMap;
+    if(!storageClient||!storageClient.storage){return resultMap;}
+    try{
+      var result=await storageClient.storage.from(bucket).createSignedUrls(missing,SIGNED_URL_TTL);
+      var rows=result&&Array.isArray(result.data)?result.data:[];
+      rows.forEach(function(row,index){
+        var path=String(row&&row.path||missing[index]||'').replace(/^\/+/, '');
+        var url=String(row&&(row.signedUrl||row.signedURL)||'');
+        if(path&&url){signedUrlCacheV523[signedCacheKeyV523(bucket,path)]={url:url,expiresAt:Date.now()+SIGNED_URL_TTL*1000};resultMap[path]=url;}
+      });
+      if(result&&result.error)console.warn('기간 제한 주소 일괄 생성 실패:',result.error);
+    }catch(e){console.warn('기간 제한 주소 생성 실패:',e);}
+    if(Object.keys(resultMap).length<paths.length){
+      await Promise.all(missing.map(async function(path){
+        if(resultMap[path])return;
+        try{
+          var one=await storageClient.storage.from(bucket).createSignedUrl(path,SIGNED_URL_TTL);
+          var url=String(one&&one.data&&(one.data.signedUrl||one.data.signedURL)||'');
+          if(url){signedUrlCacheV523[signedCacheKeyV523(bucket,path)]={url:url,expiresAt:Date.now()+SIGNED_URL_TTL*1000};resultMap[path]=url;}
+        }catch(e){}
+      }));
+    }
+    return resultMap;
+  }
+  function applySignedUrlToValueV523(value,url){
+    if(!value||typeof value!=='object'||!url)return;
+    value.signedUrl=url;value.storageAccessUrl=url;value.fileUrl=url;value.downloadUrl=url;value.previewDataUrl=url;value.editDataUrl=url;
+    value.storagePublicUrl='';value.publicUrl='';value.storageAccessExpiresAt=Date.now()+SIGNED_URL_TTL*1000;
+  }
+  async function hydrateSignedUrlsForItemV523(item,forceRefresh){
+    if(!item||typeof item!=='object')return item;
+    var docs=item.docs&&typeof item.docs==='object'?item.docs:{};var grouped={};var refs=[];
+    Object.keys(docs).forEach(function(key){
+      var doc=docs[key]&&typeof docs[key]==='object'?docs[key]:{};
+      [doc].concat(Array.isArray(doc.pages)?doc.pages:[]).forEach(function(value){
+        if(!value||typeof value!=='object')return;
+        var bucket=firstValue(value,['storageBucket','storage_bucket','bucket','bucket_id'])||STORAGE_BUCKET;
+        var path=firstValue(value,['storagePath','storage_path','storageKey','storage_key','filePath','file_path','objectPath','object_path','uploadPath','upload_path','storedPath','stored_path','path']).replace(/^\/+/, '');
+        if(!path)return;
+        (grouped[bucket]=grouped[bucket]||[]).push(path);refs.push({value:value,bucket:bucket,path:path});
+      });
+    });
+    var maps={};await Promise.all(Object.keys(grouped).map(async function(bucket){maps[bucket]=await createSignedUrlsV523(bucket,grouped[bucket],forceRefresh);}));
+    refs.forEach(function(ref){var url=maps[ref.bucket]&&maps[ref.bucket][ref.path];if(url)applySignedUrlToValueV523(ref.value,url);});
+    Object.keys(docs).forEach(function(key){var doc=docs[key]||{},pages=Array.isArray(doc.pages)?doc.pages:[];if(!collectUrlCandidates(doc,STORAGE_BUCKET,0).length){var first=pages.map(function(page){return collectUrlCandidates(page,STORAGE_BUCKET,0)[0]||'';}).find(Boolean)||'';if(first)applySignedUrlToValueV523(doc,first);}});
+    item.docs=docs;return item;
   }
   function collectUrlCandidates(value,defaultBucket,depth){
     depth=Number(depth||0);if(depth>3)return [];
@@ -207,13 +276,14 @@
   }
   function storagePagesFromFiles(files){
     return (files||[]).slice().sort(function(a,b){return String(a.storagePath).localeCompare(String(b.storagePath),'ko');}).map(function(file,index){
-      var url=absoluteStorageUrl(file.storagePath,file.storageBucket);
-      return {id:'storage_'+(index+1),fileName:file.fileName,storageBucket:file.storageBucket,storagePath:file.storagePath,storagePublicUrl:url,publicUrl:url,fileUrl:url,downloadUrl:url,previewDataUrl:url,editDataUrl:url,storageObjectVerified:true,storageMatchSource:file.matchSource||''};
+      var cached=cachedSignedUrlV523(file.storageBucket,file.storagePath);
+      return {id:'storage_'+(index+1),fileName:file.fileName,storageBucket:file.storageBucket,storagePath:file.storagePath,signedUrl:cached,storageAccessUrl:cached,fileUrl:cached,downloadUrl:cached,previewDataUrl:cached,editDataUrl:cached,storageObjectVerified:true,storageMatchSource:file.matchSource||''};
     });
   }
   function applyPagesToDoc(doc,pages){
     if(!doc||!pages||!pages.length)return doc;
-    doc.pages=pages;doc.pageCount=pages.length;doc.fileName=doc.fileName||pages[0].fileName;doc.storageBucket=pages[0].storageBucket;doc.storagePath=pages[0].storagePath;doc.storagePublicUrl=pages[0].storagePublicUrl;doc.publicUrl=pages[0].publicUrl;doc.fileUrl=pages[0].fileUrl;doc.downloadUrl=pages[0].downloadUrl;doc.previewDataUrl=pages[0].previewDataUrl;doc.editDataUrl=pages[0].editDataUrl;doc.storageObjectVerified=true;return doc;
+    doc.pages=pages;doc.pageCount=pages.length;doc.fileName=doc.fileName||pages[0].fileName;doc.storageBucket=pages[0].storageBucket;doc.storagePath=pages[0].storagePath;
+    var firstUrl=pages[0].signedUrl||pages[0].storageAccessUrl||pages[0].fileUrl||'';if(firstUrl)applySignedUrlToValueV523(doc,firstUrl);doc.storageObjectVerified=true;return doc;
   }
   function applyServerFiles(item,files){
     if(!item||!files||!files.length)return item;
@@ -377,16 +447,17 @@
     if(!state.code){renderError('담당자 링크 정보가 없습니다.','링크 주소를 다시 확인해주세요.',false);return;}
     if(!state.rendered){content.className='card loading';content.innerHTML='<span class="spinner" aria-hidden="true"></span><b>담당자 서류를 불러오는 중입니다.</b><span>장비정보를 먼저 표시하고 실제 Storage 파일목록을 확인합니다.</span>';}
     var filesPromise=rpcFilesLoad().then(function(files){state.serverFiles=files;state.serverFilesLoaded=true;return files;}).catch(function(){state.serverFilesLoaded=true;return [];});
-    var snapshot=previewSnapshot();if(snapshot){var snapItem=itemFromRoot(snapshot);if(snapItem){renderItem(snapItem,snapshot,false);filesPromise.then(function(files){if(files.length&&state.item){applyServerFiles(state.item,files);renderItem(state.item,snapshot,false);}});}}
+    var snapshot=previewSnapshot();if(snapshot){var snapItem=itemFromRoot(snapshot);if(snapItem){renderItem(snapItem,snapshot,false);hydrateSignedUrlsForItemV523(snapItem,false).then(function(){if(state.item===snapItem||!state.serverConfirmed)renderItem(snapItem,snapshot,false);});filesPromise.then(async function(files){if(files.length&&state.item){applyServerFiles(state.item,files);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,snapshot,false);}});}}
     var serverResult=await firstServerResult();
     if(serverResult.expired){renderError('만료된 담당자 링크입니다.',serverResult.error||'새 링크를 요청해주세요.',false);return;}
     if(serverResult.valid){
       cacheServerRoot(serverResult.valid.root);
       var files=await Promise.race([filesPromise,new Promise(function(resolve){setTimeout(function(){resolve([]);},1300);})]);
       if(files.length)applyServerFiles(serverResult.valid.item,files);
+      await hydrateSignedUrlsForItemV523(serverResult.valid.item,false);
       renderItem(serverResult.valid.item,serverResult.valid.root,true);
       markShareViewedV521();
-      filesPromise.then(function(lateFiles){if(lateFiles.length&&state.item){applyServerFiles(state.item,lateFiles);renderItem(state.item,serverResult.valid.root,true);}});
+      filesPromise.then(async function(lateFiles){if(lateFiles.length&&state.item){applyServerFiles(state.item,lateFiles);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,serverResult.valid.root,true);}});
       return;
     }
     if(state.rendered){showToast('최신 서버 확인이 지연되어 저장된 화면을 표시했습니다.');return;}
@@ -420,6 +491,8 @@
     return '';
   }
   async function openDetail(index){
+    if(state.item)await hydrateSignedUrlsForItemV523(state.item,false);
+    state.docs=state.item?normalizeDocs(state.item):state.docs;
     var doc=state.docs[Number(index)];if(!doc)return;
     closeModal();var modal=document.createElement('div');modal.id='docModal';modal.className='modal';modal.innerHTML='<div class="backdrop" data-close-modal></div><div class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(doc.title)+' 상세보기"><div class="modal-head"><div><small>SitePass 서류 상세보기</small><strong>'+esc(doc.title)+'</strong></div><button class="close-x" type="button" data-close-modal aria-label="닫기">×</button></div><div class="modal-body"><section class="page"><div class="missing-page">실제 Storage 파일을 확인하는 중입니다.</div></section></div><button class="close-bottom" type="button" data-close-modal>닫기</button></div>';document.body.appendChild(modal);document.body.classList.add('modal-open');
     var entries=pageEntriesForDoc(doc);var resolved=await Promise.all(entries.map(async function(entry){entry.workingUrl=await workingUrlForEntry(entry);return entry;}));

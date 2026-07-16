@@ -489,7 +489,7 @@ function resetForm(clearEdit = true) {
     }
 
 
-    // v23.7.522-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // v23.7.523-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
     // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
     // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
     function sitePassEquipmentCodeMatchesV519(item, targetCode) {
@@ -1739,9 +1739,9 @@ let sitePassStorageQuotaNoticeShownV496 = false;
 
       // 이미 Storage 경로가 있는 자료도 마지막 일괄 확인 단계에서 같은 방식으로 검증합니다.
       if (!source && existingPath) {
-        const existingPublicUrl = typeof supabaseApi.storagePublicUrl === 'function'
-          ? supabaseApi.storagePublicUrl(existingBucket, existingPath)
-          : getStoredAttachmentUrl(page) || getStoredAttachmentUrl(doc);
+        const existingPublicUrl = typeof supabaseApi.storageResolveUrl === 'function'
+          ? await supabaseApi.storageResolveUrl(existingBucket, existingPath, { preferSigned:true })
+          : (typeof supabaseApi.storagePublicUrl === 'function' ? supabaseApi.storagePublicUrl(existingBucket, existingPath) : (getStoredAttachmentUrl(page) || getStoredAttachmentUrl(doc)));
         return { ok:true, existing:true, needsVerify:true, bucket:existingBucket, path:existingPath, publicUrl:existingPublicUrl };
       }
 
@@ -1765,7 +1765,9 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       if (result && result.error && isTransientStorageErrorV517(result.error)) {
         const firstProbe = await verifyStorageObjectV517(supabaseApi, bucket, path);
         if (firstProbe && firstProbe.exists) {
-          const recoveredUrl = typeof supabaseApi.storagePublicUrl === 'function' ? supabaseApi.storagePublicUrl(bucket, path) : '';
+          const recoveredUrl = typeof supabaseApi.storageResolveUrl === 'function'
+            ? await supabaseApi.storageResolveUrl(bucket, path, { preferSigned:true, forceRefresh:true })
+            : (typeof supabaseApi.storagePublicUrl === 'function' ? supabaseApi.storagePublicUrl(bucket, path) : '');
           return { ok:true, uploaded:true, needsVerify:false, verified:true, recovered:true, bucket:bucket, path:path, publicUrl:recoveredUrl };
         }
         await waitSitePassStorageV517(500);
@@ -1773,7 +1775,9 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       }
       if (result && result.error) return { ok:false, error:result.error };
 
-      const publicUrl = (typeof supabaseApi.storagePublicUrl === 'function') ? supabaseApi.storagePublicUrl(bucket, path) : '';
+      const publicUrl = (typeof supabaseApi.storageResolveUrl === 'function')
+        ? await supabaseApi.storageResolveUrl(bucket, path, { preferSigned:true, forceRefresh:true })
+        : ((typeof supabaseApi.storagePublicUrl === 'function') ? supabaseApi.storagePublicUrl(bucket, path) : '');
       if (!publicUrl) return { ok:false, error:'Storage 파일주소를 만들지 못했습니다.' };
       return { ok:true, uploaded:true, needsVerify:true, verified:false, bucket:bucket, path:path, publicUrl:publicUrl };
     }
@@ -1782,8 +1786,11 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       if (!page || !result || !result.ok || !result.publicUrl) return page;
       page.storageBucket = result.bucket || page.storageBucket || '';
       page.storagePath = result.path || page.storagePath || '';
-      page.storagePublicUrl = result.publicUrl;
-      page.publicUrl = result.publicUrl;
+      page.storagePublicUrl = '';
+      page.publicUrl = '';
+      page.signedUrl = result.publicUrl;
+      page.storageAccessUrl = result.publicUrl;
+      page.storageAccessExpiresAt = Date.now() + Number((window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.storageSignedUrlTtlSeconds) || 900) * 1000;
       page.fileUrl = result.publicUrl;
       page.downloadUrl = result.publicUrl;
       page.previewDataUrl = result.publicUrl;
@@ -1798,39 +1805,34 @@ let sitePassStorageQuotaNoticeShownV496 = false;
     function stripDocDataUrlsForServerStorage(doc) {
       doc = doc && typeof doc === 'object' ? doc : {};
       const clone = Object.assign({}, doc);
-      const docUrl = getStoredAttachmentUrl(clone);
-      if (docUrl) {
-        clone.previewDataUrl = docUrl;
-        clone.editDataUrl = docUrl;
-        clone.fileUrl = clone.fileUrl || docUrl;
-        clone.downloadUrl = clone.downloadUrl || docUrl;
-      } else {
-        clone.previewDataUrl = '';
-        clone.editDataUrl = '';
-      }
-      clone.originalDataUrl = '';
-      clone.correctedDataUrl = '';
-      clone.pages = (Array.isArray(doc.pages) ? doc.pages : []).map(function(page) {
-        const p = Object.assign({}, page || {});
-        const url = getStoredAttachmentUrl(p) || docUrl;
-        if (url) {
-          p.previewDataUrl = url;
-          p.editDataUrl = url;
-          p.fileUrl = p.fileUrl || url;
-          p.downloadUrl = p.downloadUrl || url;
-          p.storagePublicUrl = p.storagePublicUrl || url;
-          p.publicUrl = p.publicUrl || url;
-        } else {
-          p.previewDataUrl = '';
-          p.editDataUrl = '';
+      const urlKeys = [
+        'previewDataUrl','editDataUrl','originalDataUrl','correctedDataUrl','fileDataUrl','dataUrl','fileObjectUrl','blobUrl',
+        'fileUrl','file_url','downloadUrl','download_url','storagePublicUrl','storage_public_url','publicUrl','public_url',
+        'previewUrl','preview_url','signedUrl','signed_url','storageAccessUrl','url','src','imageUrl','image_url'
+      ];
+      function pathOnly(value) {
+        const out = Object.assign({}, value || {});
+        urlKeys.forEach(function(key){ if (key in out) out[key] = ''; });
+        if (out.storagePath || out.storage_path) {
+          out.storagePath = String(out.storagePath || out.storage_path || '').replace(/^\/+/, '');
+          out.storageBucket = String(out.storageBucket || out.storage_bucket || getSitePassStorageBucketName());
+          out.storageMode = 'supabase-storage-signed-v523';
         }
-        p.originalDataUrl = '';
-        p.correctedDataUrl = '';
-        return p;
-      });
-      if (!clone.fileName && clone.pageCount) clone.fileName = '첨부 ' + clone.pageCount + '장';
-      clone.storageMode = docUrl || clone.pages.some(p => p.fileUrl || p.storagePublicUrl) ? 'supabase-storage' : (clone.storageMode || 'metadata-only');
-      return clone;
+        delete out.storageAccessExpiresAt;
+        return out;
+      }
+      const clean = pathOnly(clone);
+      clean.pages = (Array.isArray(doc.pages) ? doc.pages : []).map(pathOnly);
+      const firstStored = clean.pages.find(function(page){ return !!String(page.storagePath || '').trim(); }) || null;
+      if (firstStored) {
+        clean.storageBucket = firstStored.storageBucket || clean.storageBucket || getSitePassStorageBucketName();
+        clean.storagePath = firstStored.storagePath || clean.storagePath || '';
+      }
+      if (!clean.fileName && clean.pageCount) clean.fileName = '첨부 ' + clean.pageCount + '장';
+      clean.storageMode = (clean.storagePath || clean.pages.some(function(page){ return !!page.storagePath; }))
+        ? 'supabase-storage-signed-v523'
+        : (clean.storageMode || 'metadata-only');
+      return clean;
     }
 
     function stripItemDataUrlsForServerStorage(item) {
@@ -1889,7 +1891,7 @@ let sitePassStorageQuotaNoticeShownV496 = false;
         try {
           const result = await uploadSingleDocPageToSupabaseStorage(out, task.docKey, task.doc, task.page, task.pageIndex);
           task.result = result;
-          if (result && result.ok && result.publicUrl) {
+          if (result && result.ok && result.path) {
             task.pages[task.pageIndex] = applyStorageUploadResultToPage(task.page, result);
             if (result.uploaded) uploadCount++;
           } else {
@@ -1935,15 +1937,17 @@ let sitePassStorageQuotaNoticeShownV496 = false;
         const docKey = entry[0];
         const doc = out.docs[docKey] && typeof out.docs[docKey] === 'object' ? out.docs[docKey] : {};
         const pages = Array.isArray(doc.pages) ? doc.pages : [];
-        const firstStoredPage = pages.find(function(page){ return getStoredAttachmentPath(page) && getStoredAttachmentUrl(page); }) || pages.find(function(page){ return getStoredAttachmentUrl(page); }) || null;
+        const firstStoredPage = pages.find(function(page){ return !!getStoredAttachmentPath(page); }) || null;
         const firstUrl = firstStoredPage ? getStoredAttachmentUrl(firstStoredPage) : '';
-        if (firstUrl) {
+        if (firstStoredPage) {
           doc.previewDataUrl = firstUrl;
           doc.editDataUrl = firstUrl;
           doc.fileUrl = firstUrl;
           doc.downloadUrl = firstUrl;
-          doc.storagePublicUrl = firstUrl;
-          doc.publicUrl = firstUrl;
+          doc.storagePublicUrl = '';
+          doc.publicUrl = '';
+          doc.signedUrl = firstUrl || '';
+          doc.storageAccessUrl = firstUrl || '';
           doc.storageBucket = firstStoredPage.storageBucket || getSitePassStorageBucketName();
           doc.storagePath = firstStoredPage.storagePath || '';
           doc.originalDataUrl = '';
@@ -2017,14 +2021,21 @@ let sitePassStorageQuotaNoticeShownV496 = false;
         if (doc[key] !== undefined && doc[key] !== null && doc[key] !== '') tiny[key] = doc[key];
       });
       tiny.pageCount = count;
-      const storedUrl = getStoredAttachmentUrl(doc) || ((Array.isArray(doc.pages) ? doc.pages : []).map(getStoredAttachmentUrl).find(Boolean) || '');
-      tiny.pages = storedUrl ? [{ fileName: doc.fileName || '첨부파일', previewDataUrl: storedUrl, editDataUrl: storedUrl, fileUrl: storedUrl, downloadUrl: storedUrl, storagePublicUrl: storedUrl }] : [];
-      tiny.previewDataUrl = storedUrl || '';
-      tiny.editDataUrl = storedUrl || '';
+      const sourcePages = Array.isArray(doc.pages) ? doc.pages : [];
+      const firstStoredPage = sourcePages.find(function(page){ return !!getStoredAttachmentPath(page); }) || (getStoredAttachmentPath(doc) ? doc : null);
+      tiny.pages = firstStoredPage ? [{
+        fileName: firstStoredPage.fileName || doc.fileName || '첨부파일',
+        storageBucket: getStoredAttachmentBucket(firstStoredPage),
+        storagePath: getStoredAttachmentPath(firstStoredPage)
+      }] : [];
+      tiny.storageBucket = firstStoredPage ? getStoredAttachmentBucket(firstStoredPage) : '';
+      tiny.storagePath = firstStoredPage ? getStoredAttachmentPath(firstStoredPage) : '';
+      tiny.previewDataUrl = '';
+      tiny.editDataUrl = '';
       tiny.originalDataUrl = '';
       tiny.correctedDataUrl = '';
-      tiny.previewChoice = storedUrl ? 'storage' : '';
-      if (storedUrl) { tiny.fileUrl = storedUrl; tiny.downloadUrl = storedUrl; tiny.storagePublicUrl = storedUrl; tiny.publicUrl = storedUrl; tiny.storageMode = doc.storageMode || 'supabase-storage'; }
+      tiny.previewChoice = firstStoredPage ? 'storage' : '';
+      if (firstStoredPage) tiny.storageMode = doc.storageMode || 'supabase-storage-signed-v523';
       tiny.fileName = tiny.fileName || (count ? ('첨부 ' + count + '장') : '첨부됨');
       tiny.storageNote = '브라우저 저장공간 부족으로 사진 미리보기는 저장하지 않고 서류명/만료일/QR정보만 저장됨';
       return tiny;
