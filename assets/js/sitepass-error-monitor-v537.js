@@ -1,8 +1,8 @@
-// SitePass v23.7.538-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.539-test - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.538-test';
+  var VERSION = '23.7.539-test';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
@@ -310,8 +310,15 @@
     } catch (e) { return null; }
   }
 
-  function resultFailure(result){
+  function resultFailure(result, meta){
     if (!result) return null;
+    // v23.7.539: 정상적인 건너뜀 상태는 오류가 아닙니다.
+    // 화면 이동 중 이미 동기화가 실행 중이거나 Supabase 스크립트가 초기화되는 짧은 순간에
+    // { skipped:true, error:'Supabase API 연결 없음 또는 동기화 중' }가 반환될 수 있습니다.
+    if (result.skipped === true) return null;
+    // 하위 Supabase RPC/SELECT 래퍼가 실제 서버 오류를 이미 기록하는 작업은
+    // 상위 동기화 함수에서 같은 오류를 한 번 더 기록하지 않습니다.
+    if (meta && meta.suppressResultFailure === true) return null;
     if (result.error) return result.error;
     if (result.ok === false) return result.message || result.error || '작업 실패';
     if (result.exists === false && result.error) return result.error;
@@ -328,7 +335,7 @@
         var result = original.apply(this, args);
         if (result && typeof result.then === 'function') {
           return result.then(function(value){
-            var fail = resultFailure(value);
+            var fail = resultFailure(value, meta);
             if (fail) capture(category, fail, Object.assign({}, meta, { args:args, context:{ result:scrub(value,0) } }));
             return value;
           }, function(err){
@@ -336,7 +343,7 @@
             throw err;
           });
         }
-        var fail = resultFailure(result);
+        var fail = resultFailure(result, meta);
         if (fail) capture(category, fail, Object.assign({}, meta, { args:args, context:{ result:scrub(result,0) } }));
         return result;
       } catch (err) {
@@ -402,8 +409,10 @@
     }
 
     wrapGlobal('saveEquipmentItemToSupabase','equipment_save');
-    wrapGlobal('syncSupabaseEquipmentItems','equipment_sync',function(){ return { action:'syncSupabaseEquipmentItems', severity:'warning' }; });
-    wrapGlobal('syncSupabaseMyEquipmentItems','equipment_sync',function(){ return { action:'syncSupabaseMyEquipmentItems', severity:'warning' }; });
+    // v23.7.539: 서버 호출 실패는 하위 RPC/SELECT 훅에서 한 번만 기록합니다.
+    // 상위 동기화 함수의 반환 오류까지 다시 기록하면 같은 Failed to fetch가 중복됩니다.
+    wrapGlobal('syncSupabaseEquipmentItems','equipment_sync',function(){ return { action:'syncSupabaseEquipmentItems', severity:'warning', suppressResultFailure:true }; });
+    wrapGlobal('syncSupabaseMyEquipmentItems','equipment_sync',function(){ return { action:'syncSupabaseMyEquipmentItems', severity:'warning', suppressResultFailure:true }; });
     wrapGlobal('uploadSingleDocPageToSupabaseStorage','storage_upload');
     wrapGlobal('uploadEquipmentItemDocsToSupabaseStorage','storage_upload');
     wrapGlobal('uploadAndPersistEquipmentItemDocsInBackground','equipment_save');

@@ -489,7 +489,7 @@ function resetForm(clearEdit = true) {
     }
 
 
-    // v23.7.538-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // v23.7.539-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
     // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
     // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
     function sitePassEquipmentCodeMatchesV519(item, targetCode) {
