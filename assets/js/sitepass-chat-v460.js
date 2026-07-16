@@ -1,4 +1,4 @@
-/* SitePass v23.7.531-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
+/* SitePass v23.7.532-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
 (function(){
   'use strict';
 
@@ -26,8 +26,24 @@
   var shareTrackingLoadingV521 = false;
   var shareTrackingLastFetchAtV521 = 0;
   var chatOpenSequenceV522 = 0;
+  var CHAT_ROOM_SESSION_KEY_V532 = 'sitepass_chat_room_v532';
 
-  /* v23.7.531-test
+  function rememberChatRoomV532(roomId){
+    try {
+      if (roomId && ROOMS[roomId]) sessionStorage.setItem(CHAT_ROOM_SESSION_KEY_V532, roomId);
+      else sessionStorage.removeItem(CHAT_ROOM_SESSION_KEY_V532);
+      sessionStorage.setItem('sitepass_last_screen_v491', 'contactScreen');
+    } catch(e) {}
+  }
+
+  function rememberedChatRoomV532(){
+    try {
+      var roomId = String(sessionStorage.getItem(CHAT_ROOM_SESSION_KEY_V532) || '');
+      return ROOMS[roomId] ? roomId : '';
+    } catch(e) { return ''; }
+  }
+
+  /* v23.7.532-test
      새 알림이 들어오는 순간 서버 재조회와 화면 전환이 겹쳐 첫 클릭이 먹히지 않는 현상을 막습니다.
      알림/채팅 화면과 방 패널은 서버 응답을 기다리지 않고 즉시 열고, 서버자료는 뒤에서 갱신합니다. */
   function forceContactScreenVisibleV522(){
@@ -921,6 +937,7 @@
     if (!ROOMS[roomId]) roomId = 'admin';
     var openSequence = ++chatOpenSequenceV522;
     currentRoomId = roomId;
+    rememberChatRoomV532(roomId);
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522(roomId);
@@ -963,6 +980,7 @@
   window.sitepassBackToChatList460 = function(){
     ++chatOpenSequenceV522;
     currentRoomId = '';
+    rememberChatRoomV532('');
     resetDeleteMode();
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
@@ -972,9 +990,11 @@
     return false;
   };
 
-  window.sitepassOpenChatInbox460 = function(){
+  window.sitepassOpenChatInbox460 = function(options){
+    options = options || {};
     var openSequence = ++chatOpenSequenceV522;
     currentRoomId = '';
+    if (!options.preserveRememberedRoom) rememberChatRoomV532('');
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522('');
@@ -989,6 +1009,14 @@
     });
     stabilizeChatOpenV522('', openSequence);
     return false;
+  };
+
+  /* v23.7.532-test - 새로고침에서는 목록으로 강제 초기화하지 않고
+     사용자가 보고 있던 만료알림방·공유기록방·관리자채팅방을 정확히 복원합니다. */
+  window.sitepassRestoreChatStateV532 = function(){
+    var roomId = rememberedChatRoomV532();
+    if (roomId) return window.sitepassOpenChatRoom460(roomId);
+    return window.sitepassOpenChatInbox460({ preserveRememberedRoom:true });
   };
 
   window.sitepassOpenExpiryFromHome479 = function(){
@@ -1204,6 +1232,7 @@
   };
 
   function wrapBottomNav(){
+    if (window.sitepassChatRoutingManagedV532) return;
     if (navWrapped || typeof window.sitepassBottomNavGo !== 'function') return;
     navWrapped = true;
     var previous = window.sitepassBottomNavGo;
