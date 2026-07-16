@@ -35,6 +35,21 @@
 <link rel="icon" type="image/png" sizes="512x512" href="./icons/sitepass-icon-512.png?v=23.7.493" />
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
 
+<script>
+/* v23.7.524-test - 강력 새로고침 때 옛날 정적 화면이 먼저 보이는 현상 차단 */
+document.documentElement.classList.add('sitepass-prepaint-v524');
+</script>
+<style id="sitepassPrepaintV524">
+  html.sitepass-prepaint-v524 body { visibility:hidden !important; }
+  html.sitepass-prepaint-v524::before {
+    content:'SitePass를 여는 중입니다.';
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:24px; background:#f3f6fb; color:#26334d;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",Arial,sans-serif;
+    font-weight:900; font-size:15px; z-index:2147483647;
+  }
+  html.sitepass-prepaint-v524 .sitepass-home-brand-wrap { display:none !important; }
+</style>
 
 <style id="sitepassBootGateV509">
   html.sitepass-version-gate-v500 body { visibility:hidden !important; }
@@ -47,7 +62,7 @@
   }
 </style>
 <script>
-/* v23.7.523-test - 담당자 링크는 recipient.html 한 곳에서만 처리 */
+/* v23.7.524-test - 담당자 링크는 recipient.html 한 곳에서만 처리 */
 (function(){
   try {
     var url = new URL(location.href);
@@ -68,7 +83,7 @@
       target.hash = '';
       target.searchParams.set('manager', code);
       if (sig) target.searchParams.set('sig', sig);
-      target.searchParams.set('v', '23.7.523-test');
+      target.searchParams.set('v', '23.7.524-test');
       location.replace(target.toString());
       return;
     }
@@ -137,10 +152,10 @@
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.523-test stable boot without spfresh loop -->
+  <!-- SitePass deploy-check: v23.7.524-test stable boot without spfresh loop -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.523-test" />
-  <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.523-test" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.524-test" />
+  <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.524-test" />
 
   <style>
     /* v23.7.460 first-screen hero cleanup */
@@ -2730,8 +2745,8 @@
     }
     
   </style>
-  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.523-test">
-  <link rel="stylesheet" href="./assets/css/sitepass-my-account-v463.css?v=23.7.523-test">
+  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.524-test">
+  <link rel="stylesheet" href="./assets/css/sitepass-my-account-v463.css?v=23.7.524-test">
 
   <style id="sitepassStableMemberShellV498">
     /* 로그인 여부 판단 전에도 PC 앱 폭을 고정해 넓어졌다가 줄어드는 레이아웃 이동을 없앱니다. */
@@ -3637,7 +3652,7 @@
         <div id="adminBox"></div>
       </div>
     </section>
-    <!-- v23.7.523-test: 담당자 화면은 recipient.html로 완전 분리했습니다.
+    <!-- v23.7.524-test: 담당자 화면은 recipient.html로 완전 분리했습니다.
          아래 숨김 박스는 관리자 내부 만료검사 호환용이며 사용자 화면으로 열리지 않습니다. -->
     <div id="managerPrintBox" hidden aria-hidden="true"></div>
 
@@ -4052,49 +4067,49 @@
     document.querySelectorAll('.screen').forEach(function(el){ el.classList.add('hidden'); });
     target.classList.remove('hidden');
     document.body.classList.add('sitepass-fast-shell-loading');
-    document.body.classList.remove('sitepass-booting');
+    /* v524: 화면 대상만 미리 선택하고, 실제 초기화 전 정적 홈 화면은 노출하지 않습니다. */
     window.__SITEPASS_FAST_SHELL_V494 = screenId;
   } catch(e) {}
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/storage.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/terms.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/archive.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/sitepass-my-account-v463.js?v=23.7.523-test" defer></script>
-<script src="./assets/js/sitepass-registration-wizard-v472.js?v=23.7.523-test" defer></script>
+<script src="./assets/js/config.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/storage.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/terms.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/archive.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/sitepass-my-account-v463.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/sitepass-registration-wizard-v472.js?v=23.7.524-test" defer></script>
 
 <script>
 (function(){
@@ -5386,23 +5401,36 @@
   (function(){
     window.sitepassCollectMemberNameCandidates430 = function(){
       var candidates = [];
-      function pushValue(v){
-        if (v === undefined || v === null) return;
+      var seen = [];
+      function alreadySeen(value){
+        if (!value || typeof value !== 'object') return false;
+        if (seen.indexOf(value) >= 0) return true;
+        seen.push(value);
+        return false;
+      }
+      function pushValue(v, depth){
+        depth = depth || 0;
+        if (v === undefined || v === null || depth > 4) return;
         if (typeof v === 'object') {
+          if (alreadySeen(v)) return;
           try {
             candidates.push(v.name, v.memberName, v.userName, v.nickname, v.fullName, v.adminName, v.signupName);
+            Object.keys(v).slice(0, 30).forEach(function(key){
+              var child = v[key];
+              if (child && typeof child === 'object') pushValue(child, depth + 1);
+            });
           } catch(e) {}
           return;
         }
-        candidates.push(v);
         var raw = String(v || '').trim();
         if (!raw) return;
         if ((raw[0] === '{' && raw[raw.length-1] === '}') || (raw[0] === '[' && raw[raw.length-1] === ']')) {
           try {
             var parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === 'object') pushValue(parsed);
+            if (parsed && typeof parsed === 'object') { pushValue(parsed, depth + 1); return; }
           } catch(e) {}
         }
+        candidates.push(raw);
       }
       try {
         if (typeof getCurrentMemberProfile === 'function') pushValue(getCurrentMemberProfile());
@@ -5433,6 +5461,9 @@
         if (!raw) continue;
         if (/^(관리자|admin)$/i.test(raw)) continue;
         if (/임시 회원/.test(raw)) continue;
+        if (/^[\[{]/.test(raw) || /[\]}]$/.test(raw)) continue;
+        if (/"(?:phone|signupId|password|memberId|name)"\s*:/.test(raw)) continue;
+        if (raw.length > 30) continue;
         return /님$/.test(raw) ? raw : raw + '님';
       }
       return '회원님';
@@ -6049,7 +6080,7 @@
   })();
   </script>
 
-  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.523-test"></script>
+  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.524-test"></script>
 <script>
 /* v23.7.493 - 테스트모드 포함 알림/채팅 하단버튼 최우선 직접 라우팅 */
 (function(){
@@ -6141,5 +6172,70 @@
   setTimeout(ready, 4500);
 })();
 </script>
+
+<script>
+/* v23.7.524-test - CSS/회원정보/현재 화면이 준비된 뒤 한 번에 표시 */
+(function(){
+  var released = false;
+  var domReady = document.readyState !== 'loading';
+  var startedAt = Date.now();
+  function sanitizeGreeting(){
+    try {
+      var el = document.getElementById('sitepassHomeGreetingText');
+      if (!el) return;
+      var text = String(el.textContent || '');
+      if (/[\[{]/.test(text) || /"(?:phone|signupId|password|memberId|name)"\s*:/.test(text)) {
+        var name = '';
+        try {
+          if (typeof window.sitepassPickMemberName430 === 'function') name = window.sitepassPickMemberName430();
+        } catch(e) {}
+        el.textContent = '안녕하세요, ' + (name || '회원님');
+      }
+    } catch(e) {}
+  }
+  function hasVisibleScreen(){
+    try {
+      var screens = document.querySelectorAll('.screen');
+      for (var i = 0; i < screens.length; i++) {
+        var screen = screens[i];
+        if (screen.classList.contains('hidden')) continue;
+        var style = window.getComputedStyle(screen);
+        if (style.display !== 'none' && style.visibility !== 'hidden') return true;
+      }
+    } catch(e) {}
+    return false;
+  }
+  function release(force){
+    if (released) return;
+    sanitizeGreeting();
+    var body = document.body;
+    var ready = !!body && domReady && hasVisibleScreen();
+    if (!force && !ready) return;
+    released = true;
+    document.documentElement.classList.remove('sitepass-prepaint-v524');
+  }
+  function check(){
+    if (released) return;
+    sanitizeGreeting();
+    var body = document.body;
+    if (body && domReady && !body.classList.contains('sitepass-booting')) {
+      setTimeout(function(){ release(false); }, 80);
+      return;
+    }
+    if (Date.now() - startedAt > 5000) release(true);
+  }
+  document.addEventListener('DOMContentLoaded', function(){ domReady = true; setTimeout(check, 100); }, { once:true });
+  window.addEventListener('load', function(){ domReady = true; setTimeout(function(){ release(false); }, 100); }, { once:true });
+  window.addEventListener('pageshow', function(){ setTimeout(check, 60); });
+  try {
+    new MutationObserver(check).observe(document.documentElement, { subtree:true, childList:true, attributes:true, attributeFilter:['class'] });
+  } catch(e) {}
+  var timer = setInterval(function(){
+    check();
+    if (released || Date.now() - startedAt > 5200) clearInterval(timer);
+  }, 120);
+})();
+</script>
+
 </body>
 </html>

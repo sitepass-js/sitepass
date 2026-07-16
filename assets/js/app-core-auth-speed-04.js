@@ -303,7 +303,7 @@ function renderAdminContactManager() {
     }
 
     function showScreen(id, options) {
-      // v23.7.523-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
+      // v23.7.524-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
       // 담당자 링크는 recipient.html에서 독립 실행되어 showScreen과 충돌하지 않습니다.
       const managerOnlyScreens = ['publicScreen'];
       // v23.7.463: 내정보는 화면을 열기 전에 현재 비밀번호를 다시 확인합니다.

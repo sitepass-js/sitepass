@@ -1,4 +1,4 @@
-/* SitePass v23.7.523-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
+/* SitePass v23.7.524-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
 (function(){
   'use strict';
 
@@ -27,7 +27,7 @@
   var shareTrackingLastFetchAtV521 = 0;
   var chatOpenSequenceV522 = 0;
 
-  /* v23.7.523-test
+  /* v23.7.524-test
      새 알림이 들어오는 순간 서버 재조회와 화면 전환이 겹쳐 첫 클릭이 먹히지 않는 현상을 막습니다.
      알림/채팅 화면과 방 패널은 서버 응답을 기다리지 않고 즉시 열고, 서버자료는 뒤에서 갱신합니다. */
   function forceContactScreenVisibleV522(){
