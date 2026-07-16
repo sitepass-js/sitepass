@@ -37,7 +37,7 @@
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
 
 <script>
-/* v23.7.530-test - 강력 새로고침 때 옛날 정적 화면이 먼저 보이는 현상 차단 */
+/* v23.7.531-test - 강력 새로고침 때 옛날 정적 화면이 먼저 보이는 현상 차단 */
 document.documentElement.classList.add('sitepass-prepaint-v524');
 </script>
 <style id="sitepassPrepaintV524">
@@ -63,7 +63,7 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
   }
 </style>
 <script>
-/* v23.7.530-test - 담당자 링크는 recipient.html 한 곳에서만 처리 */
+/* v23.7.531-test - 담당자 링크는 recipient.html 한 곳에서만 처리 */
 (function(){
   try {
     var url = new URL(location.href);
@@ -84,7 +84,7 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
       target.hash = '';
       target.searchParams.set('manager', code);
       if (sig) target.searchParams.set('sig', sig);
-      target.searchParams.set('v', '23.7.530-test');
+      target.searchParams.set('v', '23.7.531-test');
       location.replace(target.toString());
       return;
     }
@@ -153,10 +153,10 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.530-test stable boot without spfresh loop -->
+  <!-- SitePass deploy-check: v23.7.531-test stable boot without spfresh loop -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.530-test" />
-  <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.530-test" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.531-test" />
+  <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.531-test" />
 
   <style>
     /* v23.7.460 first-screen hero cleanup */
@@ -2746,8 +2746,8 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
     }
     
   </style>
-  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.530-test">
-  <link rel="stylesheet" href="./assets/css/sitepass-my-account-v463.css?v=23.7.530-test">
+  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.531-test">
+  <link rel="stylesheet" href="./assets/css/sitepass-my-account-v463.css?v=23.7.531-test">
 
   <style id="sitepassStableMemberShellV498">
     /* 로그인 여부 판단 전에도 PC 앱 폭을 고정해 넓어졌다가 줄어드는 레이아웃 이동을 없앱니다. */
@@ -3653,7 +3653,7 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
         <div id="adminBox"></div>
       </div>
     </section>
-    <!-- v23.7.530-test: 담당자 화면은 recipient.html로 완전 분리했습니다.
+    <!-- v23.7.531-test: 담당자 화면은 recipient.html로 완전 분리했습니다.
          아래 숨김 박스는 관리자 내부 만료검사 호환용이며 사용자 화면으로 열리지 않습니다. -->
     <div id="managerPrintBox" hidden aria-hidden="true"></div>
 
@@ -4075,43 +4075,43 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/storage.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/terms.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/archive.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/sitepass-my-account-v463.js?v=23.7.530-test" defer></script>
-<script src="./assets/js/sitepass-registration-wizard-v472.js?v=23.7.530-test" defer></script>
+<script src="./assets/js/config.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/storage.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/terms.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/archive.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/sitepass-my-account-v463.js?v=23.7.531-test" defer></script>
+<script src="./assets/js/sitepass-registration-wizard-v472.js?v=23.7.531-test" defer></script>
 
 <script>
 (function(){
@@ -4382,8 +4382,16 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
       if (h === 'find-password' || h === 'password-find' || h === 'sitepass-find-password') return 'find-password';
       return '';
     }
+    function hasLoggedInMarkerV531(){
+      var key='sitePass_v23_7_7_update_original_corrected_currentMember';
+      try { if (sessionStorage.getItem(key) || localStorage.getItem(key)) return true; } catch(e) {}
+      try { if (sessionStorage.getItem('sitePass_v23_7_7_update_original_corrected_admin_session') === 'yes') return true; } catch(e) {}
+      return false;
+    }
     function apply(){
       var r = route();
+      // v531: 로그인 회원 화면에서는 로그인 랜딩 보정이 앱 화면을 다시 덮지 않습니다.
+      if (!r && hasLoggedInMarkerV531()) return false;
       var signup = document.getElementById('signupScreen');
       var card = document.querySelector('#signupScreen .sitepass-first-card');
       var landing = document.getElementById('sitepassFirstLanding');
@@ -4509,8 +4517,16 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
       }
     }
 
+    function hasLoggedInMarkerV531(){
+      var key='sitePass_v23_7_7_update_original_corrected_currentMember';
+      try { if (sessionStorage.getItem(key) || localStorage.getItem(key)) return true; } catch(e) {}
+      try { if (sessionStorage.getItem('sitePass_v23_7_7_update_original_corrected_admin_session') === 'yes') return true; } catch(e) {}
+      return false;
+    }
     function applyAuthView(forceMode){
       var mode = forceMode || routeMode();
+      // v531: 명시적인 회원가입/찾기 해시가 없으면 로그인 회원 앱을 건드리지 않습니다.
+      if (mode === 'landing' && hasLoggedInMarkerV531()) return false;
       var root = document.documentElement;
       var signup = document.getElementById('signupScreen');
       var card = document.querySelector('#signupScreen .sitepass-first-card');
@@ -6078,113 +6094,120 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
   })();
   </script>
 
-  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.530-test"></script>
+  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.531-test"></script>
 
 <script>
-/* v23.7.530-test - 알림/채팅 단일 진입점
-   이전 버전의 중복 showScreen 래퍼와 방 복원 타이머를 사용하지 않고,
-   클릭과 새로고침 모두 목록 화면 한 곳으로만 진입합니다. */
+/* v23.7.531-test - 알림/채팅 안정 진입점
+   화면을 직접 display:none으로 만들지 않고 core showScreen만 사용합니다.
+   기존 캡처 클릭 핸들러가 호출하더라도 마지막 sitepassBottomNavGo가 한 경로로 처리합니다. */
 (function(){
-  var opening = false;
-  function isAlertChatButton(target){
-    var button = target && target.closest ? target.closest('#sitepassBottomAppNav button') : null;
-    if (!button) return null;
-    var route = String(button.getAttribute('data-target') || '');
-    var text = String(button.textContent || '');
-    return (route === 'contactScreen' || route === 'usageGuideScreen' || /알림\s*\/\s*(채팅|쪽지함)/.test(text)) ? button : null;
-  }
-  function clearInline(el){
-    if (!el || !el.style) return;
-    ['display','visibility','opacity','pointer-events','height','min-height','max-height','overflow','transform'].forEach(function(name){
-      try { el.style.removeProperty(name); } catch(e) {}
+  var APP_SCREENS = ['homeScreen','registerScreen','listScreen','contactScreen','detailScreen','pricingScreen','usageGuideScreen','myAccountScreen','adminScreen'];
+  var openingChat = false;
+
+  function clearLegacyScreenInlineV531(){
+    document.querySelectorAll('.screen').forEach(function(screen){
+      ['display','visibility','opacity','pointer-events','height','min-height','max-height','overflow','transform','margin','padding'].forEach(function(prop){
+        try { screen.style.removeProperty(prop); } catch(e) {}
+      });
     });
   }
-  function showAlertChatList530(options){
+
+  function updateBottomNavV531(activeId){
+    var nav = document.getElementById('sitepassBottomAppNav');
+    if (!nav) return;
+    var logged = false;
+    try { logged = (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn()) || (typeof isAdminLoggedIn === 'function' && isAdminLoggedIn()); } catch(e) {}
+    var show = logged && APP_SCREENS.indexOf(activeId) >= 0 && activeId !== 'adminScreen';
+    nav.classList.toggle('hidden', !show);
+    nav.querySelectorAll('button[data-target]').forEach(function(button){
+      button.classList.toggle('active', button.getAttribute('data-target') === activeId);
+    });
+    try { document.body.classList.toggle('sitepass-app-nav-active', show); } catch(e) {}
+  }
+
+  function openChatListV531(options){
     options = options || {};
-    if (opening) return false;
-    opening = true;
+    if (openingChat) return false;
+    openingChat = true;
     try {
       try { sessionStorage.setItem('sitepass_last_screen_v491','contactScreen'); } catch(e) {}
+      clearLegacyScreenInlineV531();
+      if (typeof window.showScreen === 'function') {
+        window.showScreen('contactScreen', { skipHistory:!!options.skipHistory, replace:!!options.replace });
+      } else {
+        document.querySelectorAll('.screen').forEach(function(screen){ screen.classList.toggle('hidden', screen.id !== 'contactScreen'); });
+      }
+      clearLegacyScreenInlineV531();
       var contact = document.getElementById('contactScreen');
-      if (!contact) return false;
-      try { if (typeof window.showScreen === 'function') window.showScreen('contactScreen', { skipHistory: !!options.skipHistory, replace: !!options.replace }); } catch(e) {}
-      document.querySelectorAll('.screen').forEach(function(screen){
-        var active = screen === contact;
-        screen.classList.toggle('hidden', !active);
-        if (active) {
-          clearInline(screen);
-        } else {
-          screen.style.display = 'none';
-          screen.style.visibility = 'hidden';
-          screen.style.opacity = '0';
-          screen.style.pointerEvents = 'none';
-        }
-      });
-      clearInline(contact);
-      var shell = contact.querySelector('.sitepass-chat-shell');
-      var card = contact.querySelector('.sitepass-chat-card');
-      clearInline(shell);
-      clearInline(card);
+      if (contact) contact.classList.remove('hidden');
       try {
-        document.body.classList.remove('sitepass-booting');
+        document.body.classList.remove('sitepass-booting','sitepass-first-screen-active');
         document.body.classList.add('sitepass-app-nav-active');
       } catch(e) {}
-      var nav = document.getElementById('sitepassBottomAppNav');
-      if (nav) {
-        nav.classList.remove('hidden');
-        nav.querySelectorAll('button[data-target]').forEach(function(button){
-          button.classList.toggle('active', button.getAttribute('data-target') === 'contactScreen');
-        });
-      }
+      updateBottomNavV531('contactScreen');
       if (typeof window.sitepassOpenChatInbox460 === 'function') window.sitepassOpenChatInbox460();
       else if (typeof window.sitepassBackToChatList460 === 'function') window.sitepassBackToChatList460();
-      try {
-        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-        window.scrollTo(0,0);
-      } catch(e) {}
-      requestAnimationFrame(function(){
-        clearInline(contact);
-        if (shell) clearInline(shell);
-        if (card) clearInline(card);
-        try { window.scrollTo(0,0); } catch(e) {}
-      });
+      try { if ('scrollRestoration' in history) history.scrollRestoration='manual'; window.scrollTo(0,0); } catch(e) {}
       return false;
     } finally {
-      setTimeout(function(){ opening = false; }, 80);
+      setTimeout(function(){ openingChat=false; },100);
     }
   }
-  window.sitepassOpenAlertChatList530 = showAlertChatList530;
-  window.sitepassForceOpenAlertChat481 = showAlertChatList530;
 
-  window.addEventListener('click', function(event){
-    var button = isAlertChatButton(event.target);
-    if (!button) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-    showAlertChatList530({ skipHistory:false });
-  }, true);
+  function goV531(target){
+    target = String(target || 'homeScreen');
+    if (target === 'usageGuideScreen') target = 'contactScreen';
+    if (target === 'contactScreen') return openChatListV531({skipHistory:false});
+    clearLegacyScreenInlineV531();
+    try {
+      if (target === 'registerScreen' && typeof window.startNewRegistration === 'function') window.startNewRegistration();
+      else if (target === 'myAccountScreen' && typeof window.openMyAccountScreen === 'function') window.openMyAccountScreen();
+      else if (typeof window.showScreen === 'function') window.showScreen(target);
+    } catch(e) {
+      try { if (typeof window.showScreen === 'function') window.showScreen(target); } catch(ignore) {}
+    }
+    clearLegacyScreenInlineV531();
+    updateBottomNavV531(target);
+    return false;
+  }
 
-  function bind(){
-    document.querySelectorAll('#sitepassBottomAppNav button').forEach(function(button){
-      var route = String(button.getAttribute('data-target') || '');
-      var text = String(button.textContent || '');
-      if (route === 'usageGuideScreen' || route === 'contactScreen' || /알림\s*\/\s*(채팅|쪽지함)/.test(text)) {
-        button.setAttribute('data-target','contactScreen');
-        button.setAttribute('onclick','return sitepassOpenAlertChatList530({skipHistory:false});');
-        var label = button.querySelector('b');
-        if (label) label.textContent = '알림/채팅';
-      }
+  window.sitepassOpenAlertChatList531 = openChatListV531;
+  window.sitepassOpenAlertChatList530 = openChatListV531;
+  window.sitepassForceOpenAlertChat481 = openChatListV531;
+  window.sitepassBottomNavGo = goV531;
+
+  function bindV531(){
+    document.querySelectorAll('#sitepassBottomAppNav button[data-target]').forEach(function(button){
+      var target=String(button.getAttribute('data-target')||'');
+      if (target==='usageGuideScreen'||/알림\s*\/\s*(채팅|쪽지함)/.test(String(button.textContent||''))) target='contactScreen';
+      button.setAttribute('data-target',target);
+      button.setAttribute('onclick',"return sitepassBottomNavGo('"+target+"')");
+      if (target==='contactScreen') { var b=button.querySelector('b'); if(b)b.textContent='알림/채팅'; }
     });
   }
-  function restoreAfterReload(){
-    var remembered = '';
-    try { remembered = String(sessionStorage.getItem('sitepass_last_screen_v491') || ''); } catch(e) {}
-    if (remembered !== 'contactScreen') return;
-    setTimeout(function(){ showAlertChatList530({ skipHistory:true, replace:true }); }, 260);
+
+  // 부팅 완료 후 현재 기억 화면이 알림/채팅일 때 한 번만 복원합니다.
+  // DOMContentLoaded 직후 260ms 고정 실행을 없애 로그인 초기화와의 경쟁을 막습니다.
+  function restoreV531(){
+    var remembered='';
+    try { remembered=String(sessionStorage.getItem('sitepass_last_screen_v491')||''); } catch(e) {}
+    if (remembered!=='contactScreen') return;
+    var tries=0;
+    var timer=setInterval(function(){
+      tries+=1;
+      var logged=false;
+      try { logged=(typeof isMemberLoggedIn==='function'&&isMemberLoggedIn())||(typeof isAdminLoggedIn==='function'&&isAdminLoggedIn()); } catch(e) {}
+      if (logged && document.body && !document.body.classList.contains('sitepass-booting')) {
+        clearInterval(timer);
+        openChatListV531({skipHistory:true,replace:true});
+      } else if (tries>=30) {
+        clearInterval(timer);
+      }
+    },100);
   }
-  document.addEventListener('DOMContentLoaded', function(){ bind(); restoreAfterReload(); }, { once:true });
-  window.addEventListener('pageshow', function(){ bind(); restoreAfterReload(); });
+
+  document.addEventListener('DOMContentLoaded',function(){ bindV531(); restoreV531(); },{once:true});
+  window.addEventListener('pageshow',function(){ bindV531(); });
 })();
 </script>
 
@@ -6200,66 +6223,54 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
 </script>
 
 <script>
-/* v23.7.530-test - CSS/회원정보/현재 화면이 준비된 뒤 한 번에 표시 */
+/* v23.7.531-test - 빈 화면을 절대 공개하지 않는 마지막 부팅 안전장치 */
 (function(){
-  var released = false;
-  var domReady = document.readyState !== 'loading';
-  var startedAt = Date.now();
-  function sanitizeGreeting(){
-    try {
-      var el = document.getElementById('sitepassHomeGreetingText');
-      if (!el) return;
-      var text = String(el.textContent || '');
-      if (/[\[{]/.test(text) || /"(?:phone|signupId|password|memberId|name)"\s*:/.test(text)) {
-        var name = '';
-        try {
-          if (typeof window.sitepassPickMemberName430 === 'function') name = window.sitepassPickMemberName430();
-        } catch(e) {}
-        el.textContent = '안녕하세요, ' + (name || '회원님');
-      }
-    } catch(e) {}
-  }
-  function hasVisibleScreen(){
-    try {
-      var screens = document.querySelectorAll('.screen');
-      for (var i = 0; i < screens.length; i++) {
-        var screen = screens[i];
-        if (screen.classList.contains('hidden')) continue;
-        var style = window.getComputedStyle(screen);
-        if (style.display !== 'none' && style.visibility !== 'hidden') return true;
-      }
-    } catch(e) {}
-    return false;
-  }
-  function release(force){
-    if (released) return;
-    sanitizeGreeting();
-    var body = document.body;
-    var ready = !!body && domReady && hasVisibleScreen();
-    if (!force && !ready) return;
-    released = true;
-    document.documentElement.classList.remove('sitepass-prepaint-v524');
-  }
-  function check(){
-    if (released) return;
-    sanitizeGreeting();
-    var body = document.body;
-    if (body && domReady && !body.classList.contains('sitepass-booting')) {
-      setTimeout(function(){ release(false); }, 80);
-      return;
+  var released=false;
+  var startedAt=Date.now();
+  function visibleScreen(){
+    var screens=document.querySelectorAll('.screen');
+    for(var i=0;i<screens.length;i++){
+      var el=screens[i], st=getComputedStyle(el);
+      if(!el.classList.contains('hidden')&&st.display!=='none'&&st.visibility!=='hidden'&&st.opacity!=='0'&&el.getBoundingClientRect().height>0) return el;
     }
-    if (Date.now() - startedAt > 5000) release(true);
+    return null;
   }
-  document.addEventListener('DOMContentLoaded', function(){ domReady = true; setTimeout(check, 100); }, { once:true });
-  window.addEventListener('load', function(){ domReady = true; setTimeout(function(){ release(false); }, 100); }, { once:true });
-  window.addEventListener('pageshow', function(){ setTimeout(check, 60); });
-  try {
-    new MutationObserver(check).observe(document.documentElement, { subtree:true, childList:true, attributes:true, attributeFilter:['class'] });
-  } catch(e) {}
-  var timer = setInterval(function(){
-    check();
-    if (released || Date.now() - startedAt > 5200) clearInterval(timer);
-  }, 120);
+  function chooseFallback(){
+    var logged=false, admin=false;
+    try { logged=typeof isMemberLoggedIn==='function'&&isMemberLoggedIn(); } catch(e) {}
+    try { admin=typeof isAdminLoggedIn==='function'&&isAdminLoggedIn(); } catch(e) {}
+    var remembered='';
+    try { remembered=String(sessionStorage.getItem('sitepass_last_screen_v491')||''); } catch(e) {}
+    var allowed=['homeScreen','registerScreen','listScreen','contactScreen','pricingScreen','usageGuideScreen','myAccountScreen'];
+    var id=admin?'adminScreen':(logged?(allowed.indexOf(remembered)>=0?remembered:'homeScreen'):'signupScreen');
+    try {
+      if(id==='contactScreen'&&typeof window.sitepassOpenAlertChatList531==='function') window.sitepassOpenAlertChatList531({skipHistory:true,replace:true});
+      else if(typeof window.showScreen==='function') window.showScreen(id,{skipHistory:true,replace:true});
+      else {
+        document.querySelectorAll('.screen').forEach(function(screen){
+          ['display','visibility','opacity','pointer-events','height','min-height','max-height','overflow','transform','margin','padding'].forEach(function(prop){try{screen.style.removeProperty(prop);}catch(e){}});
+          screen.classList.toggle('hidden',screen.id!==id);
+        });
+      }
+    } catch(e) {}
+    return visibleScreen();
+  }
+  function release(){
+    if(released) return;
+    var active=visibleScreen();
+    if(!active && Date.now()-startedAt>900) active=chooseFallback();
+    if(!active) return;
+    released=true;
+    document.documentElement.classList.remove('sitepass-prepaint-v524','sitepass-version-gate-v500');
+  }
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(release,120);},{once:true});
+  window.addEventListener('load',function(){setTimeout(release,100);},{once:true});
+  window.addEventListener('pageshow',function(){setTimeout(release,80);});
+  var timer=setInterval(function(){
+    release();
+    if(released) clearInterval(timer);
+    else if(Date.now()-startedAt>8000){ chooseFallback(); release(); }
+  },120);
 })();
 </script>
 

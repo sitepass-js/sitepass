@@ -1,4 +1,4 @@
-// SitePass v23.7.530-test - 담당자 링크 보존 + 반복 spfresh 이동 방지
+// SitePass v23.7.531-test - 담당자 링크 보존 + 반복 spfresh 이동 방지
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';
@@ -123,15 +123,20 @@
     catch (e) { location.href = targetUrl; }
   }
 
+  function normalizeVersionV531(value){
+    return String(value || '').trim().replace(/^v/i, '');
+  }
+
   async function checkAutoUpdate(){
     const appVersion = getAppVersion();
+    const normalizedAppVersion = normalizeVersionV531(appVersion);
     normalizeFixedUrl();
     let storedVersion = '';
     try { storedVersion = localStorage.getItem(VERSION_KEY) || ''; } catch (e) {}
 
     // v23.7.277: 브라우저 저장 버전과 현재 실행 버전이 다른 것만으로 자동 새로고침하지 않습니다.
     // 이전 방식은 config/app-version 캐시가 한 박자 어긋날 때 "새 버전" 알림이 반복될 수 있었습니다.
-    if (storedVersion !== appVersion) {
+    if (normalizeVersionV531(storedVersion) !== normalizedAppVersion) {
       try { localStorage.setItem(VERSION_KEY, appVersion); } catch (e) {}
     }
 
@@ -140,7 +145,10 @@
       if (!res.ok) return;
       const info = await res.json();
       const latestVersion = String(info.version || '').trim();
-      if (!latestVersion || latestVersion === appVersion) return;
+      if (!latestVersion || normalizeVersionV531(latestVersion) === normalizedAppVersion) {
+        try { document.documentElement.classList.remove('sitepass-version-gate-v500'); } catch (e) {}
+        return;
+      }
       const externalRouteV502 = getExternalShareRouteV502();
       if (externalRouteV502.external) {
         try { localStorage.setItem(VERSION_KEY, latestVersion); } catch (e) {}

@@ -302,7 +302,7 @@ function renderAdminContactManager() {
       } catch (e) {}
     }
 
-    /* v23.7.530-test - 강력 새로고침 직전 실제로 보이는 화면을 저장합니다.
+    /* v23.7.531-test - 강력 새로고침 직전 실제로 보이는 화면을 저장합니다.
        history.state가 이전 보관함 화면으로 남아 있어도 현재 알림/채팅·내정보 화면이 우선 복원됩니다. */
     function persistVisibleSitePassScreenV525() {
       try {
@@ -327,7 +327,7 @@ function renderAdminContactManager() {
     window.addEventListener('beforeunload', persistVisibleSitePassScreenV525);
 
     function showScreen(id, options) {
-      // v23.7.530-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
+      // v23.7.531-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
       // 담당자 링크는 recipient.html에서 독립 실행되어 showScreen과 충돌하지 않습니다.
       const managerOnlyScreens = ['publicScreen'];
       // v23.7.463: 내정보는 화면을 열기 전에 현재 비밀번호를 다시 확인합니다.
@@ -356,12 +356,29 @@ function renderAdminContactManager() {
         id = 'signupScreen';
       }
       document.body.classList.toggle('manager-view-mode', managerOnlyScreens.includes(id));
-      document.querySelectorAll('.screen').forEach(screen => screen.classList.add('hidden'));
+      // v23.7.531-test: 화면 표시 상태는 hidden 클래스 하나로만 관리합니다.
+      // 예전 하단탭/알림 보정 코드가 남긴 display:none·opacity:0 인라인 값을
+      // 모든 화면 전환 때 제거해 새로고침 후 전체 화면이 빈 상태가 되는 것을 막습니다.
+      document.querySelectorAll('.screen').forEach(function(screen){
+        ['display','visibility','opacity','pointer-events','height','min-height','max-height','overflow','transform','margin','padding'].forEach(function(prop){
+          try { screen.style.removeProperty(prop); } catch (e) {}
+        });
+        screen.classList.toggle('hidden', screen.id !== id);
+      });
       const target = document.getElementById(id);
-      if (target) target.classList.remove('hidden');
+      if (target) {
+        target.classList.remove('hidden');
+        try { target.removeAttribute('aria-hidden'); } catch (e) {}
+      }
       // v23.7.216: 새로고침 때 로그인창이 먼저 보였다가 사라지는 깜빡임 방지.
       // 세션/소셜 콜백 확인이 끝난 뒤 최종 화면을 정한 다음에만 화면을 공개합니다.
       document.body.classList.remove('sitepass-booting');
+      try {
+        const memberAppScreen = ['homeScreen','registerScreen','listScreen','contactScreen','detailScreen','pricingScreen','usageGuideScreen','myAccountScreen'].includes(id)
+          && (isMemberLoggedIn() || isAdminLoggedIn());
+        document.body.classList.toggle('sitepass-first-screen-active', id === 'signupScreen');
+        document.body.classList.toggle('sitepass-app-nav-active', memberAppScreen);
+      } catch (e) {}
       if (id === 'homeScreen') {
         updateHomeRegistrationButton();
         // v23.7.350: 서버 100% 기준 전환.
@@ -386,7 +403,7 @@ function renderAdminContactManager() {
       if (id === 'registerScreen') { const docBox = document.getElementById('docCards'); if (docBox && !docBox.innerHTML.trim()) renderDocCards(); renderAlertPreview(); renderBundleSummary(); updateRegisterModeUi(); updateRegistrationDraftNotice(); }
       if (id === 'adminScreen') { renderAdmin(); setTimeout(() => syncSupabaseMembersForAdmin(false), 80); }
       if (id === 'contactScreen') {
-        // v23.7.530-test: 화면 전환 함수는 contactScreen 표시만 담당합니다.
+        // v23.7.531-test: 화면 전환 함수는 contactScreen 표시만 담당합니다.
         // 알림/채팅 목록 렌더링은 sitepass-chat-v460.js 한 곳에서만 실행해 순환 호출을 막습니다.
         try { if (typeof renderContactHistory === 'function') renderContactHistory(); } catch(e) {}
       }
