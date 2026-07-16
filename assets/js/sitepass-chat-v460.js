@@ -1,4 +1,4 @@
-/* SitePass v23.7.524-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
+/* SitePass v23.7.525-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
 (function(){
   'use strict';
 
@@ -26,8 +26,20 @@
   var shareTrackingLoadingV521 = false;
   var shareTrackingLastFetchAtV521 = 0;
   var chatOpenSequenceV522 = 0;
+  var CHAT_ROOM_SESSION_KEY_V525 = 'sitepass_chat_room_v525';
 
-  /* v23.7.524-test
+  function rememberChatRoomV525(roomId){
+    try {
+      if (roomId && ROOMS && ROOMS[roomId]) sessionStorage.setItem(CHAT_ROOM_SESSION_KEY_V525, roomId);
+      else sessionStorage.removeItem(CHAT_ROOM_SESSION_KEY_V525);
+      sessionStorage.setItem('sitepass_last_screen_v491', 'contactScreen');
+    } catch(e) {}
+  }
+  function storedChatRoomV525(){
+    try { return String(sessionStorage.getItem(CHAT_ROOM_SESSION_KEY_V525) || ''); } catch(e) { return ''; }
+  }
+
+  /* v23.7.525-test
      새 알림이 들어오는 순간 서버 재조회와 화면 전환이 겹쳐 첫 클릭이 먹히지 않는 현상을 막습니다.
      알림/채팅 화면과 방 패널은 서버 응답을 기다리지 않고 즉시 열고, 서버자료는 뒤에서 갱신합니다. */
   function forceContactScreenVisibleV522(){
@@ -921,6 +933,7 @@
     if (!ROOMS[roomId]) roomId = 'admin';
     var openSequence = ++chatOpenSequenceV522;
     currentRoomId = roomId;
+    rememberChatRoomV525(roomId);
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522(roomId);
@@ -963,6 +976,7 @@
   window.sitepassBackToChatList460 = function(){
     ++chatOpenSequenceV522;
     currentRoomId = '';
+    rememberChatRoomV525('');
     resetDeleteMode();
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
@@ -975,6 +989,7 @@
   window.sitepassOpenChatInbox460 = function(){
     var openSequence = ++chatOpenSequenceV522;
     currentRoomId = '';
+    rememberChatRoomV525('');
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522('');
@@ -1222,6 +1237,13 @@
     updateHomeExpiryUnread479(true);
     refreshShareTrackingServerV521(false);
   }
+
+  window.sitepassRestoreChatRoomV525 = function(){
+    var roomId = storedChatRoomV525();
+    try { sessionStorage.setItem('sitepass_last_screen_v491', 'contactScreen'); } catch(e) {}
+    if (roomId && ROOMS[roomId]) return window.sitepassOpenChatRoom460(roomId);
+    return window.sitepassOpenChatInbox460();
+  };
 
   window.sitepassOpenChatRoom445 = window.sitepassOpenChatRoom460;
   window.sitepassBackToChatList445 = window.sitepassBackToChatList460;

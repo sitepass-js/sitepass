@@ -36,7 +36,7 @@
   <title>현장서류패스 - 건설현장 서류 QR 공유</title>
 
 <script>
-/* v23.7.524-test - 강력 새로고침 때 옛날 정적 화면이 먼저 보이는 현상 차단 */
+/* v23.7.525-test - 강력 새로고침 때 옛날 정적 화면이 먼저 보이는 현상 차단 */
 document.documentElement.classList.add('sitepass-prepaint-v524');
 </script>
 <style id="sitepassPrepaintV524">
@@ -62,7 +62,7 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
   }
 </style>
 <script>
-/* v23.7.524-test - 담당자 링크는 recipient.html 한 곳에서만 처리 */
+/* v23.7.525-test - 담당자 링크는 recipient.html 한 곳에서만 처리 */
 (function(){
   try {
     var url = new URL(location.href);
@@ -83,7 +83,7 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
       target.hash = '';
       target.searchParams.set('manager', code);
       if (sig) target.searchParams.set('sig', sig);
-      target.searchParams.set('v', '23.7.524-test');
+      target.searchParams.set('v', '23.7.525-test');
       location.replace(target.toString());
       return;
     }
@@ -152,10 +152,10 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
 })();
 </script>
 
-  <!-- SitePass deploy-check: v23.7.524-test stable boot without spfresh loop -->
+  <!-- SitePass deploy-check: v23.7.525-test stable boot without spfresh loop -->
   <!-- SitePass split-fix: app.bundle split continue with loader list fix -->
-  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.524-test" />
-  <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.524-test" />
+  <link rel="stylesheet" href="./assets/css/style.css?v=23.7.525-test" />
+  <link rel="stylesheet" href="./assets/css/sitepass-registration-wizard-v472.css?v=23.7.525-test" />
 
   <style>
     /* v23.7.460 first-screen hero cleanup */
@@ -2745,8 +2745,8 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
     }
     
   </style>
-  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.524-test">
-  <link rel="stylesheet" href="./assets/css/sitepass-my-account-v463.css?v=23.7.524-test">
+  <link rel="stylesheet" href="./assets/css/sitepass-chat-v460.css?v=23.7.525-test">
+  <link rel="stylesheet" href="./assets/css/sitepass-my-account-v463.css?v=23.7.525-test">
 
   <style id="sitepassStableMemberShellV498">
     /* 로그인 여부 판단 전에도 PC 앱 폭을 고정해 넓어졌다가 줄어드는 레이아웃 이동을 없앱니다. */
@@ -3652,7 +3652,7 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
         <div id="adminBox"></div>
       </div>
     </section>
-    <!-- v23.7.524-test: 담당자 화면은 recipient.html로 완전 분리했습니다.
+    <!-- v23.7.525-test: 담당자 화면은 recipient.html로 완전 분리했습니다.
          아래 숨김 박스는 관리자 내부 만료검사 호환용이며 사용자 화면으로 열리지 않습니다. -->
     <div id="managerPrintBox" hidden aria-hidden="true"></div>
 
@@ -4059,7 +4059,7 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
     } else if (hasMember()) {
       var remembered = '';
       try { remembered = sessionStorage.getItem('sitepass_last_screen_v491') || ''; } catch(e) {}
-      var allowed = ['homeScreen','registerScreen','listScreen','contactScreen','pricingScreen','usageGuideScreen'];
+      var allowed = ['homeScreen','registerScreen','listScreen','contactScreen','myAccountScreen','pricingScreen','usageGuideScreen'];
       screenId = allowed.indexOf(remembered) >= 0 ? remembered : 'homeScreen';
     }
     var target = document.getElementById(screenId);
@@ -4072,44 +4072,68 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
   } catch(e) {}
 })();
 </script>
+<script>
+/* v23.7.525-test - 새로고침 시 알림/채팅·내정보 현재 화면 보존 */
+(function(){
+  function saveVisibleScreen(){
+    try {
+      var allowed=['homeScreen','registerScreen','listScreen','contactScreen','myAccountScreen','pricingScreen','usageGuideScreen','adminScreen'];
+      var id='';
+      document.querySelectorAll('.screen').forEach(function(screen){
+        if(id || screen.classList.contains('hidden')) return;
+        var style=window.getComputedStyle(screen);
+        if(style.display!=='none' && style.visibility!=='hidden' && style.opacity!=='0') id=screen.id||'';
+      });
+      if(!allowed.includes(id)) return;
+      sessionStorage.setItem('sitepass_last_screen_v491',id);
+      if(history && history.replaceState){
+        var state=Object.assign({},history.state||{},{sitepassScreen:id});
+        history.replaceState(state,document.title||'SitePass',location.pathname+location.search);
+      }
+    }catch(e){}
+  }
+  window.addEventListener('pagehide',saveVisibleScreen);
+  window.addEventListener('beforeunload',saveVisibleScreen);
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-<script src="./assets/js/config.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/supabase-api.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/storage.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/terms.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/admin-members.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/admin-detail.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/auth-social.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/pwa-update.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/qr-share.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/archive.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/equipment-register.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/person-auth.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/camera-scan.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/admin-payments.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/recipient-view.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/document-output.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/push-notify.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/sitepass-my-account-v463.js?v=23.7.524-test" defer></script>
-<script src="./assets/js/sitepass-registration-wizard-v472.js?v=23.7.524-test" defer></script>
+<script src="./assets/js/config.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/sitepass-doc-date-v486.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/supabase-api.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/storage.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/terms.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/admin-members.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/admin-detail.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/auth-social.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/pwa-update.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/qr-share.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/archive.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/equipment-register.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/person-auth.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/camera-scan.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/admin-payments.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/recipient-view.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/document-output.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-01.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-02.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-03.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-core-auth-speed-04.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-01.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-02.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-03.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-camera-docs-speed-04.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-01.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-02.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-03.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-register-share-payment-speed-04.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-admin-boot-speed-01.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-admin-boot-speed-02.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/app-admin-boot-speed-03.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/push-notify.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/sitepass-v23-7-351-sens-integration.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/sitepass-server-member-guard-v463.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/sitepass-my-account-v463.js?v=23.7.525-test" defer></script>
+<script src="./assets/js/sitepass-registration-wizard-v472.js?v=23.7.525-test" defer></script>
 
 <script>
 (function(){
@@ -6080,7 +6104,7 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
   })();
   </script>
 
-  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.524-test"></script>
+  <script src="./assets/js/sitepass-chat-v460.js?v=23.7.525-test"></script>
 <script>
 /* v23.7.493 - 테스트모드 포함 알림/채팅 하단버튼 최우선 직접 라우팅 */
 (function(){
@@ -6174,7 +6198,7 @@ document.documentElement.classList.add('sitepass-prepaint-v524');
 </script>
 
 <script>
-/* v23.7.524-test - CSS/회원정보/현재 화면이 준비된 뒤 한 번에 표시 */
+/* v23.7.525-test - CSS/회원정보/현재 화면이 준비된 뒤 한 번에 표시 */
 (function(){
   var released = false;
   var domReady = document.readyState !== 'loading';

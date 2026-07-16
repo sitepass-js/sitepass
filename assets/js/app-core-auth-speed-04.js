@@ -281,7 +281,7 @@ function renderAdminContactManager() {
     function rememberSitePassScreen(id, options) {
       if (!id) return;
       try {
-        const restorable = ['homeScreen','registerScreen','listScreen','contactScreen','pricingScreen','usageGuideScreen','adminScreen'];
+        const restorable = ['homeScreen','registerScreen','listScreen','contactScreen','myAccountScreen','pricingScreen','usageGuideScreen','adminScreen'];
         if (restorable.includes(id)) sessionStorage.setItem('sitepass_last_screen_v491', id);
       } catch (e) {}
       if (!window.history || !window.history.replaceState) return;
@@ -302,8 +302,32 @@ function renderAdminContactManager() {
       } catch (e) {}
     }
 
+    /* v23.7.525-test - 강력 새로고침 직전 실제로 보이는 화면을 저장합니다.
+       history.state가 이전 보관함 화면으로 남아 있어도 현재 알림/채팅·내정보 화면이 우선 복원됩니다. */
+    function persistVisibleSitePassScreenV525() {
+      try {
+        const allowed = ['homeScreen','registerScreen','listScreen','contactScreen','myAccountScreen','pricingScreen','usageGuideScreen','adminScreen'];
+        let visibleId = '';
+        document.querySelectorAll('.screen').forEach(function(screen){
+          if (visibleId || !screen || screen.classList.contains('hidden')) return;
+          const style = window.getComputedStyle(screen);
+          if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') visibleId = screen.id || '';
+        });
+        if (!allowed.includes(visibleId)) visibleId = allowed.includes(sitePassCurrentScreenId) ? sitePassCurrentScreenId : '';
+        if (!visibleId) return;
+        sessionStorage.setItem('sitepass_last_screen_v491', visibleId);
+        if (window.history && window.history.replaceState && !isSitePassHashRouteActive()) {
+          const current = Object.assign({}, window.history.state || {}, { sitepassScreen: visibleId });
+          window.history.replaceState(current, document.title || 'SitePass', window.location.pathname + window.location.search);
+        }
+      } catch (e) {}
+    }
+    window.sitepassPersistVisibleScreenV525 = persistVisibleSitePassScreenV525;
+    window.addEventListener('pagehide', persistVisibleSitePassScreenV525);
+    window.addEventListener('beforeunload', persistVisibleSitePassScreenV525);
+
     function showScreen(id, options) {
-      // v23.7.524-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
+      // v23.7.525-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
       // 담당자 링크는 recipient.html에서 독립 실행되어 showScreen과 충돌하지 않습니다.
       const managerOnlyScreens = ['publicScreen'];
       // v23.7.463: 내정보는 화면을 열기 전에 현재 비밀번호를 다시 확인합니다.
