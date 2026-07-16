@@ -1,4 +1,4 @@
-// SitePass v23.7.534-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.536-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -268,7 +268,7 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.534-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.536-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
@@ -432,7 +432,7 @@ function shareOneListItemEmail(code) {
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.534-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.536-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -1420,168 +1420,232 @@ function normalizePhoneForShare(phone) {
     const sitePassDetailServerRefreshAtV519 = {};
     const sitePassStorageHydrateCacheV523 = new WeakMap();
 
-    // v23.7.534-test: 상세보기 안정 기준
-    // 서버 최신자료가 늦게 도착해도 이미 확인된 서류정보를 빈 자료로 덮지 않습니다.
-    // 실제 Storage 원본이 있는 신규자료와, 원본 경로가 없는 구등록 필수서류를 구분해 표시합니다.
-    const sitePassMemberDetailSnapshotV534 = new Map();
+    // v23.7.536-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
+    // 서버자료가 비어 있거나 축약돼도 같은 회원의 기존 브라우저 등록자료를 보조자료로만 합칩니다.
+    // 신규 Storage 경로가 있는 자료를 최우선으로 유지하고, 첨부 흔적이 없는 빈 서류카드는 상세보기에서 숨깁니다.
+    const sitePassMemberDetailSnapshotV536 = new Map();
 
-    function sitePassDetailPlaceholderV534(value) {
-      const text = String(value || '').trim();
-      return !text || /^(첨부됨|미첨부|선택안함|null|undefined|-)$/i.test(text);
+    function sitePassDetailTextV536(value) {
+      return String(value == null ? '' : value).trim();
     }
 
-    function sitePassDetailValueV534(obj, keys) {
+    function sitePassDetailPlaceholderV536(value) {
+      const text = sitePassDetailTextV536(value).toLowerCase();
+      return !text || text === '미첨부' || text === '선택안함' || text === '-' || text === 'null' || text === 'undefined';
+    }
+
+    function sitePassDetailMeaningfulValueV536(value) {
+      const text = sitePassDetailTextV536(value);
+      return text && !sitePassDetailPlaceholderV536(text) ? text : '';
+    }
+
+    function sitePassDetailObjectFileScoreV536(obj) {
       obj = obj && typeof obj === 'object' ? obj : {};
-      for (const key of keys) {
-        const value = String(obj[key] || '').trim();
-        if (value && !sitePassDetailPlaceholderV534(value)) return value;
-      }
-      return '';
-    }
-
-    function sitePassHasStorageFileV534(obj) {
-      obj = obj && typeof obj === 'object' ? obj : {};
-      if (sitePassDetailValueV534(obj, [
-        'storagePath','storage_path','storageKey','storage_key','filePath','file_path',
-        'objectPath','object_path','uploadPath','upload_path','path'
-      ])) return true;
-      const url = sitePassDetailValueV534(obj, [
-        'signedUrl','signed_url','storageAccessUrl','storage_access_url','fileUrl','file_url',
-        'downloadUrl','download_url','previewDataUrl','preview_data_url','editDataUrl','edit_data_url',
-        'correctedDataUrl','corrected_data_url','originalDataUrl','original_data_url','fileDataUrl','file_data_url',
-        'storagePublicUrl','storage_public_url','publicUrl','public_url','previewUrl','preview_url',
-        'dataUrl','data_url','url','src','imageUrl','image_url'
-      ]);
-      return /^(data:|blob:|https?:\/\/)/i.test(url);
-    }
-
-    function sitePassDocHasStorageFileV534(doc) {
-      if (!doc || typeof doc !== 'object') return false;
-      if (sitePassHasStorageFileV534(doc)) return true;
-      const pages = Array.isArray(doc.pages) ? doc.pages : [];
-      return pages.some(sitePassHasStorageFileV534);
-    }
-
-    function sitePassDocMetadataAttachedV534(doc) {
-      if (!doc || typeof doc !== 'object') return false;
-      const fileName = String(doc.fileName || doc.file_name || '').trim();
-      if (fileName && !sitePassDetailPlaceholderV534(fileName)) return true;
-      const status = String(doc.status || doc.attachStatus || doc.attachmentStatus || '').trim();
-      const pages = Array.isArray(doc.pages) ? doc.pages : [];
-      const pageCount = Number(doc.pageCount || doc.page_count || pages.length || 0);
-      return /첨부|등록|완료|저장/i.test(status) || pageCount > 0 || pages.length > 0;
-    }
-
-    function sitePassDocGroupIncludedV534(item, doc) {
-      const group = String((doc && (doc.groupKey || doc.group_key)) || 'equipment').trim() || 'equipment';
-      if (group === 'equipment') return true;
-      const included = item && item.bundleMeta && Array.isArray(item.bundleMeta.includedGroups)
-        ? item.bundleMeta.includedGroups.map(String)
-        : [];
-      if (included.includes(group)) return true;
-      return sitePassDocHasStorageFileV534(doc) || sitePassDocMetadataAttachedV534(doc);
-    }
-
-    function sitePassShouldShowDetailDocV534(item, doc) {
-      if (!doc || typeof doc !== 'object') return false;
-      if (!sitePassDocGroupIncludedV534(item, doc)) return false;
-      if (sitePassDocHasStorageFileV534(doc)) return true;
-      const fileName = String(doc.fileName || doc.file_name || '').trim();
-      if (fileName && !sitePassDetailPlaceholderV534(fileName)) return true;
-      // 구등록 필수서류는 파일경로가 유실됐더라도 카드 자체는 남겨 재첨부 안내를 보여줍니다.
-      return !!doc.required && sitePassDocMetadataAttachedV534(doc);
-    }
-
-    function sitePassDetailDocScoreV534(doc) {
-      if (!doc || typeof doc !== 'object') return 0;
       let score = 0;
-      const pages = Array.isArray(doc.pages) ? doc.pages : [];
-      if (sitePassHasStorageFileV534(doc)) score += 1200;
-      score += pages.filter(sitePassHasStorageFileV534).length * 1000;
-      const fileName = String(doc.fileName || doc.file_name || '').trim();
-      if (fileName && !sitePassDetailPlaceholderV534(fileName)) score += 180;
-      if (sitePassDocMetadataAttachedV534(doc)) score += 80;
-      if (doc.required) score += 10;
+      const pathKeys = ['storagePath','storage_path','storageKey','storage_key','filePath','file_path','objectPath','object_path','uploadPath','upload_path','path'];
+      const urlKeys = ['signedUrl','signed_url','storageAccessUrl','storage_access_url','fileUrl','file_url','downloadUrl','download_url','previewDataUrl','preview_data_url','editDataUrl','edit_data_url','correctedDataUrl','corrected_data_url','originalDataUrl','original_data_url','fileDataUrl','file_data_url','storagePublicUrl','storage_public_url','publicUrl','public_url','previewUrl','preview_url','dataUrl','data_url','url','src','imageUrl','image_url'];
+      if (pathKeys.some(function(key){ return !!sitePassDetailMeaningfulValueV536(obj[key]); })) score += 5000;
+      urlKeys.forEach(function(key){
+        const value = sitePassDetailMeaningfulValueV536(obj[key]);
+        if (!value) return;
+        if (/^data:/i.test(value)) score += 4500;
+        else if (/^blob:/i.test(value)) score += 4000;
+        else if (/^https?:\/\//i.test(value)) score += 3500;
+        else score += 1200;
+      });
       return score;
     }
 
-    function sitePassDetailItemScoreV534(item) {
-      if (!item || typeof item !== 'object') return 0;
-      const docs = item.docs && typeof item.docs === 'object' ? Object.values(item.docs) : [];
-      return docs.reduce(function(sum, doc){ return sum + sitePassDetailDocScoreV534(doc); }, 0) + docs.length;
+    function sitePassDetailDocScoreV536(doc) {
+      doc = doc && typeof doc === 'object' ? doc : {};
+      let score = sitePassDetailObjectFileScoreV536(doc);
+      const pages = Array.isArray(doc.pages) ? doc.pages : [];
+      score += pages.reduce(function(sum, page){ return sum + sitePassDetailObjectFileScoreV536(page); }, 0);
+      if (pages.length) score += 900 + pages.length * 50;
+      const pageCount = Number(doc.pageCount || doc.page_count || 0);
+      if (pageCount > 0) score += 600 + pageCount * 20;
+      const fileName = sitePassDetailMeaningfulValueV536(doc.fileName || doc.file_name);
+      if (fileName) score += /^첨부됨$/i.test(fileName) ? 500 : 800;
+      const status = sitePassDetailTextV536(doc.status || doc.attachStatus || doc.attachmentStatus);
+      if (status && /첨부|등록|완료|저장/i.test(status) && !/미첨부|선택안함/i.test(status)) score += 450;
+      if (doc.previewChoice || doc.storageMode) score += 100;
+      return score;
     }
 
-    function sitePassCloneDocV534(doc) {
+    function sitePassDetailDocHasFileV536(doc) {
+      if (!doc || typeof doc !== 'object') return false;
+      if (sitePassDetailObjectFileScoreV536(doc) >= 1200) return true;
+      return (Array.isArray(doc.pages) ? doc.pages : []).some(function(page){ return sitePassDetailObjectFileScoreV536(page) >= 1200; });
+    }
+
+    function sitePassDetailDocWasRegisteredV536(doc) {
+      if (!doc || typeof doc !== 'object') return false;
+      if (sitePassDetailDocHasFileV536(doc)) return true;
+      const score = sitePassDetailDocScoreV536(doc);
+      // 구등록 필수서류는 원본주소가 유실돼도 등록 흔적을 유지합니다.
+      if (doc.required && score >= 450) return true;
+      // 선택서류는 단순 '첨부됨' 껍데기로 표시하지 않고 실제 파일명 흔적이 있을 때만 남깁니다.
+      const fileName = sitePassDetailMeaningfulValueV536(doc.fileName || doc.file_name);
+      return !!fileName && !/^첨부됨$/i.test(fileName) && score >= 800;
+    }
+
+    function sitePassDetailCodeValuesV536(item) {
+      item = item && typeof item === 'object' ? item : {};
+      const rows = [item];
+      ['item_json','item_data','payload','data'].forEach(function(key){
+        const value = item[key];
+        if (value && typeof value === 'object') rows.push(value);
+      });
+      const values = [];
+      rows.forEach(function(row){
+        ['code','share_code','shareCode','publicShareCode','managerShareCode','qrCode','qr_code','equipmentCode','equipment_code','id','originalEquipmentCode','original_equipment_code'].forEach(function(key){
+          const value = sitePassDetailTextV536(row[key]);
+          if (value) values.push(value);
+        });
+      });
+      return Array.from(new Set(values));
+    }
+
+    function sitePassDetailEquipmentNoV536(item) {
+      item = item && typeof item === 'object' ? item : {};
+      const direct = item.equipmentNo || item.equipment_no || item.vehicleNo || item.vehicle_no || item.registrationNo || item.registration_no;
+      const text = sitePassDetailTextV536(direct);
+      return text.replace(/\s+/g, '').toLowerCase();
+    }
+
+    function sitePassDetailItemMatchesV536(item, code, equipmentNo) {
+      if (!item || typeof item !== 'object') return false;
+      const targetCode = sitePassDetailTextV536(code);
+      if (targetCode && sitePassDetailCodeValuesV536(item).indexOf(targetCode) >= 0) return true;
+      const targetNo = sitePassDetailTextV536(equipmentNo).replace(/\s+/g, '').toLowerCase();
+      return !!targetNo && sitePassDetailEquipmentNoV536(item) === targetNo;
+    }
+
+    function sitePassDetailUnwrapV536(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const nested = [raw.item_json, raw.item_data, raw.payload, raw.data].find(function(value){ return value && typeof value === 'object' && (value.docs || value.code || value.equipmentNo || value.equipment_no); });
+      if (!nested) return raw;
+      const out = Object.assign({}, raw, nested);
+      if (nested.docs) out.docs = nested.docs;
+      return out;
+    }
+
+    function sitePassCollectDetailCandidatesV536(code, seed) {
+      const targetCode = sitePassDetailTextV536(code);
+      const targetNo = sitePassDetailEquipmentNoV536(seed);
+      const candidates = [];
+      const seen = new WeakSet();
+      function add(raw) {
+        const item = sitePassDetailUnwrapV536(raw);
+        if (!item || !sitePassDetailItemMatchesV536(item, targetCode, targetNo)) return;
+        if (seen.has(item)) return;
+        seen.add(item);
+        candidates.push(item);
+      }
+      add(seed);
+      try { add(getRuntimeItemByCode(targetCode)); } catch (e) {}
+      try { add(getItemByCode(targetCode)); } catch (e) {}
+      try { if (typeof getSitePassCanonicalEquipmentItemV519 === 'function') add(getSitePassCanonicalEquipmentItemV519(targetCode)); } catch (e) {}
+      try { (getSitePassServerAuthoritativeEquipmentItems() || []).forEach(add); } catch (e) {}
+      try { (getServerEquipmentCache() || []).forEach(add); } catch (e) {}
+      try { (getSitePassUnsyncedEquipmentItemsV476() || []).forEach(add); } catch (e) {}
+      try { if (typeof getLocalVisibleEquipmentItemsForServerResync === 'function') (getLocalVisibleEquipmentItemsForServerResync() || []).forEach(add); } catch (e) { console.warn('상세보기 기존 등록자료 검색 실패:', e); }
+      try { add(window.sitePassFastCompletionItem); } catch (e) {}
+      try { (Array.isArray(window.sitePassFastCompletionItems) ? window.sitePassFastCompletionItems : []).forEach(add); } catch (e) {}
+      try { add(sitePassMemberDetailSnapshotV536.get(targetCode)); } catch (e) {}
+      return candidates;
+    }
+
+    function sitePassCloneDetailDocV536(doc) {
       doc = doc && typeof doc === 'object' ? doc : {};
       const out = Object.assign({}, doc);
       if (Array.isArray(doc.pages)) out.pages = doc.pages.map(function(page){ return page && typeof page === 'object' ? Object.assign({}, page) : page; });
       return out;
     }
 
-    function sitePassDetailMatchesCodeV534(item, code) {
-      try {
-        if (typeof sitePassEquipmentCodeMatchesV519 === 'function') return sitePassEquipmentCodeMatchesV519(item, code);
-      } catch (e) {}
-      const target = String(code || '').trim();
-      return !!item && [item.code,item.shareCode,item.share_code,item.equipmentCode,item.equipment_code,item.id]
-        .some(function(value){ return String(value || '').trim() === target; });
-    }
-
-    function sitePassCollectDetailCandidatesV534(code) {
-      const target = String(code || '').trim();
-      const list = [];
-      function add(item) {
-        if (!item || typeof item !== 'object' || !sitePassDetailMatchesCodeV534(item, target)) return;
-        if (!list.includes(item)) list.push(item);
+    function sitePassMergeDetailPagesV536(aPages, bPages) {
+      const a = Array.isArray(aPages) ? aPages : [];
+      const b = Array.isArray(bPages) ? bPages : [];
+      const length = Math.max(a.length, b.length);
+      const out = [];
+      for (let i = 0; i < length; i++) {
+        const left = a[i] && typeof a[i] === 'object' ? a[i] : null;
+        const right = b[i] && typeof b[i] === 'object' ? b[i] : null;
+        if (!left) { if (right) out.push(Object.assign({}, right)); continue; }
+        if (!right) { out.push(Object.assign({}, left)); continue; }
+        const better = sitePassDetailObjectFileScoreV536(right) > sitePassDetailObjectFileScoreV536(left) ? right : left;
+        const other = better === right ? left : right;
+        out.push(Object.assign({}, other, better));
       }
-      try { add(getRuntimeItemByCode(target)); } catch (e) {}
-      try { add(getItemByCode(target)); } catch (e) {}
-      try { (getSitePassServerAuthoritativeEquipmentItems() || []).forEach(add); } catch (e) {}
-      try { (getServerEquipmentCache() || []).forEach(add); } catch (e) {}
-      try { (getSitePassUnsyncedEquipmentItemsV476() || []).forEach(add); } catch (e) {}
-      try { add(window.sitePassFastCompletionItem); } catch (e) {}
-      try { (Array.isArray(window.sitePassFastCompletionItems) ? window.sitePassFastCompletionItems : []).forEach(add); } catch (e) {}
-      try { add(sitePassMemberDetailSnapshotV534.get(target)); } catch (e) {}
-      return list;
+      return out;
     }
 
-    function sitePassGetStableDetailItemV534(code, extraItem) {
-      const target = String(code || '').trim();
-      const candidates = sitePassCollectDetailCandidatesV534(target);
-      if (extraItem && sitePassDetailMatchesCodeV534(extraItem, target)) candidates.push(extraItem);
-      if (!candidates.length) return null;
-      candidates.sort(function(a, b){ return sitePassDetailItemScoreV534(b) - sitePassDetailItemScoreV534(a); });
-      const base = Object.assign({}, candidates[0]);
-      const mergedDocs = {};
-      candidates.forEach(function(item){
-        const docs = item && item.docs && typeof item.docs === 'object' ? item.docs : {};
-        Object.keys(docs).forEach(function(key){
-          const incoming = docs[key];
-          if (!incoming || typeof incoming !== 'object') return;
-          if (!mergedDocs[key] || sitePassDetailDocScoreV534(incoming) > sitePassDetailDocScoreV534(mergedDocs[key])) {
-            mergedDocs[key] = sitePassCloneDocV534(incoming);
-          }
-        });
+    function sitePassMergeDetailDocV536(current, incoming) {
+      if (!current) return sitePassCloneDetailDocV536(incoming);
+      if (!incoming) return sitePassCloneDetailDocV536(current);
+      const currentScore = sitePassDetailDocScoreV536(current);
+      const incomingScore = sitePassDetailDocScoreV536(incoming);
+      const better = incomingScore > currentScore ? incoming : current;
+      const other = better === incoming ? current : incoming;
+      const out = Object.assign({}, other, better);
+      out.pages = sitePassMergeDetailPagesV536(current.pages, incoming.pages);
+      const fillKeys = ['title','groupTitle','groupKey','key','docKind','required','expiry','expireDate','educationDate','fileName','pageCount','status'];
+      fillKeys.forEach(function(key){
+        if ((out[key] === undefined || out[key] === null || out[key] === '') && other[key] !== undefined) out[key] = other[key];
       });
-      base.docs = mergedDocs;
-      if (!base.code) base.code = target;
-      sitePassMemberDetailSnapshotV534.set(target || String(base.code || ''), base);
-      return base;
+      if (!out.pageCount && out.pages.length) out.pageCount = out.pages.length;
+      return out;
     }
 
-    function sitePassGetDetailDocsV534(item) {
-      return getDisplayDocs(item).filter(function(doc){ return sitePassShouldShowDetailDocV534(item, doc); });
+    function sitePassDetailItemScoreV536(item) {
+      if (!item || typeof item !== 'object') return 0;
+      return Object.values(item.docs || {}).reduce(function(sum, doc){ return sum + sitePassDetailDocScoreV536(doc); }, 0);
     }
 
-    function sitePassRenderMissingOriginalDocV534(doc) {
+    function sitePassBuildStableDetailItemV536(code) {
+      const targetCode = sitePassDetailTextV536(code);
+      let seed = null;
+      try { seed = getRuntimeItemByCode(targetCode) || getItemByCode(targetCode); } catch (e) {}
+      const candidates = sitePassCollectDetailCandidatesV536(targetCode, seed);
+      if (!candidates.length) return seed;
+      candidates.sort(function(a, b){ return sitePassDetailItemScoreV536(b) - sitePassDetailItemScoreV536(a); });
+      const best = candidates[0];
+      // 장비명·결제·서비스상태 같은 현재 서버값은 유지하고 서류만 과거자료에서 보완합니다.
+      const out = Object.assign({}, best || {}, seed || {});
+      const docs = {};
+      candidates.forEach(function(item){
+        Object.keys((item && item.docs) || {}).forEach(function(key){ docs[key] = sitePassMergeDetailDocV536(docs[key], item.docs[key]); });
+      });
+      out.docs = docs;
+      if (!out.code) out.code = targetCode;
+      if (!out.equipmentNo) out.equipmentNo = candidates.map(function(item){ return item.equipmentNo || item.equipment_no || ''; }).find(Boolean) || '';
+      if (!out.equipmentName) out.equipmentName = candidates.map(function(item){ return item.equipmentName || item.equipment_name || ''; }).find(Boolean) || '';
+      const includedGroups = [];
+      candidates.forEach(function(item){
+        const groups = item && item.bundleMeta && Array.isArray(item.bundleMeta.includedGroups) ? item.bundleMeta.includedGroups : [];
+        groups.forEach(function(group){ if (includedGroups.indexOf(group) < 0) includedGroups.push(group); });
+      });
+      if (includedGroups.length) {
+        out.bundleMeta = Object.assign({}, out.bundleMeta || {});
+        out.bundleMeta.includedGroups = includedGroups;
+      }
+      sitePassMemberDetailSnapshotV536.set(targetCode || sitePassDetailCodeValuesV536(out)[0] || '', out);
+      return out;
+    }
+
+    function sitePassGetRegisteredDetailDocsV536(item) {
+      return getDisplayDocs(item).filter(sitePassDetailDocWasRegisteredV536);
+    }
+
+    function sitePassRenderMissingOriginalDocV536(doc) {
       const effectiveExpireDate = (window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(doc)) || doc.expireDate || '';
       const dateHtml = !doc.expiry ? '' : '<div class="line"><b>만료날짜</b><span>' + (effectiveExpireDate ? escapeHtml(effectiveExpireDate + ' / ' + getDdayText(effectiveExpireDate)) : '미입력') + '</span></div>';
-      return '<div class="doc-card"><div class="doc-head"><div class="doc-title">' + escapeHtml((doc.groupTitle ? doc.groupTitle + ' - ' : '') + (doc.title || '서류')) + '</div><span class="badge need">재첨부 필요</span></div>' +
-        '<div class="selected-file"><b>등록정보는 남아 있지만 원본 파일 연결이 없습니다.</b><br>수정/갱신에서 이 서류 원본만 다시 첨부해주세요.</div>' + dateHtml + '</div>';
+      return '<div class="doc-card"><div class="doc-head"><div class="doc-title">' + escapeHtml((doc.groupTitle ? doc.groupTitle + ' - ' : '') + (doc.title || '서류')) + '</div><span class="badge need">원본 확인 필요</span></div>' +
+        '<div class="selected-file">등록된 서류정보는 남아 있습니다.<br>사진이 보이지 않을 때만 수정/갱신에서 원본을 다시 첨부해주세요.</div>' + dateHtml + '</div>';
     }
 
-    function sitePassRenderMemberDetailDocV534(doc) {
-      return sitePassDocHasStorageFileV534(doc) ? renderDocDetail(doc) : sitePassRenderMissingOriginalDocV534(doc);
+    function sitePassRenderMemberDetailDocV536(doc) {
+      return sitePassDetailDocHasFileV536(doc) ? renderDocDetail(doc) : sitePassRenderMissingOriginalDocV536(doc);
     }
 
     async function resolveStorageAccessUrlForObjectV523(obj, parent, forceRefresh) {
@@ -1671,7 +1735,8 @@ function normalizePhoneForShare(phone) {
       const last = Number(sitePassDetailServerRefreshAtV519[targetCode] || 0);
       if (Date.now() - last < 12000) return;
       sitePassDetailServerRefreshAtV519[targetCode] = Date.now();
-      Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(){
+      Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(result){
+        if (!result || result.ok !== true) return;
         if (String(window.sitePassCurrentDetailCodeV519 || '') !== targetCode) return;
         if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
         renderDetail(targetCode, { skipServerRefresh:true, preserveVisible:true });
@@ -1680,39 +1745,24 @@ function normalizePhoneForShare(phone) {
       });
     }
 
-    async function renderDetail(code, options) {
-      options = options || {};
-      const requestedCodeV519 = String(code || '').trim();
-      try { window.sitePassCurrentDetailCodeV519 = requestedCodeV519; } catch (e) {}
-      let item = sitePassGetStableDetailItemV534(requestedCodeV519) || getRuntimeItemByCode(code) || getItemByCode(code);
-      if (!item) { alert('장비등록 정보를 찾을 수 없습니다. 서버 동기화 후 다시 시도해주세요.'); showScreen('listScreen'); return; }
+    function sitePassPaintMemberDetailV536(item, requestedCodeV519) {
+      if (!item) return false;
       try { item = mergeLegacyManagerShareDocumentsV498(item); } catch (e) {}
       try { item = hydrateManagerShareStorageUrlsV497(item); } catch (e) {}
-      let detailBox = document.getElementById('detailBox');
-      if (detailBox && !options.preserveVisible) {
-        detailBox.innerHTML = '<div class="empty">서류를 불러오는 중입니다.</div>';
-        showScreen('detailScreen');
-      }
-      try { item = await hydrateItemStorageAccessUrlsV523(item, true); } catch (e) { console.warn('회원 상세 서류주소 준비 실패:', e); }
-      item = sitePassGetStableDetailItemV534(requestedCodeV519, item) || item;
-      const itemCode = ensureManagerShareCodeForItem(item) || String(code || '').trim();
+      const itemCode = ensureManagerShareCodeForItem(item) || String(requestedCodeV519 || '').trim();
       currentDetailLink = makeManagerLink(itemCode, getManagerExpireAt(item));
       const qrUrl = makeQrUrl(currentDetailLink, 180);
-      const detailDocs = sitePassGetDetailDocsV534(item);
+      const detailDocs = sitePassGetRegisteredDetailDocsV536(item);
       const docHtml = detailDocs.length
-        ? renderDocFoldersV486(detailDocs, 'memberDetailFoldersV534_' + String(itemCode || '').replace(/[^a-zA-Z0-9_-]/g, ''), function(doc){ return sitePassRenderMemberDetailDocV534(doc); })
-        : '<div class="empty"><b>등록된 서류정보를 찾지 못했습니다.</b><br>보관함을 새로고침한 뒤 다시 열어주세요. 계속 같으면 수정/갱신에서 등록서류를 확인해주세요.</div>';
+        ? renderDocFoldersV486(detailDocs, 'memberDetailFoldersV536_' + String(itemCode || '').replace(/[^a-zA-Z0-9_-]/g, ''), function(doc){ return sitePassRenderMemberDetailDocV536(doc); })
+        : '<div class="empty"><b>등록된 서류정보를 찾지 못했습니다.</b><br>수정/갱신 화면에서 등록서류가 남아 있는지 확인해주세요.</div>';
       const renewalHtml = isAdminLoggedIn() ? '<div class="notice blue-note">관리자 상세보기에서는 수정/갱신·결제연장 버튼을 숨깁니다. 장비업자에게 알림만 보내고, 실제 수정/갱신은 회원 보관함에서 처리합니다.</div>' : renderRenewPanel(item);
-      const fileRecoveryNoticeV508 = item.shareFilesPendingRecovery
-        ? '<div class="notice blue-note"><b>일부 기존 서류의 원본 연결을 확인 중입니다.</b><br>원본이 없는 서류만 수정/갱신에서 다시 첨부하면 됩니다.</div>'
-        : '';
-      detailBox = detailBox || document.getElementById('detailBox');
-      if (!detailBox) { alert('상세보기 화면을 찾지 못했습니다. 새로고침 후 다시 시도해주세요.'); return; }
+      const detailBox = document.getElementById('detailBox');
+      if (!detailBox) return false;
       detailBox.innerHTML =
         '<div class="line"><b>장비 등록번호</b><span>' + escapeHtml(item.equipmentNo || '-') + '</span></div>' +
         '<div class="line"><b>장비명</b><span>' + escapeHtml(item.equipmentName || '-') + '</span></div>' +
         '<div class="line"><b>포함서류</b><span>' + escapeHtml(getIncludedGroupText(item)) + '</span></div>' +
-        fileRecoveryNoticeV508 +
         renderD7DeadlineNotice(item) +
         '<div class="line"><b>결제단위</b><span>' + escapeHtml(item?.bundleMeta?.paymentText || '장비 및 인력 통합 1세트 결제') + '</span></div>' +
         '<div class="line"><b>서비스상태</b><span>' + escapeHtml(getServiceStatusText(item)) + '</span></div>' +
@@ -1725,7 +1775,26 @@ function normalizePhoneForShare(phone) {
         '</div>' +
         '<h3>등록 서류 폴더</h3>' + docHtml;
       showScreen('detailScreen');
-      if (!options.skipServerRefresh) refreshMemberDetailFromServerV519(requestedCodeV519 || itemCode);
+      return true;
+    }
+
+    function renderDetail(code, options) {
+      options = options || {};
+      const requestedCodeV519 = String(code || '').trim();
+      try { window.sitePassCurrentDetailCodeV519 = requestedCodeV519; } catch (e) {}
+      let item = sitePassBuildStableDetailItemV536(requestedCodeV519);
+      if (!item) { alert('장비등록 정보를 찾을 수 없습니다. 서버 동기화 후 다시 시도해주세요.'); showScreen('listScreen'); return; }
+      sitePassPaintMemberDetailV536(item, requestedCodeV519);
+
+      // 비공개 Storage 파일은 상세화면을 먼저 보여준 뒤 기간 제한 주소만 뒤에서 채웁니다.
+      Promise.resolve(hydrateItemStorageAccessUrlsV523(item, true)).then(function(hydrated){
+        if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
+        if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
+        const stable = sitePassBuildStableDetailItemV536(requestedCodeV519) || hydrated || item;
+        sitePassPaintMemberDetailV536(stable, requestedCodeV519);
+      }).catch(function(error){ console.warn('회원 상세 서류주소 준비 실패:', error); });
+
+      if (!options.skipServerRefresh) refreshMemberDetailFromServerV519(requestedCodeV519 || item.code);
     }
 
     function renderDocDetail(doc) {
@@ -1849,7 +1918,7 @@ function renderDocExpiryStrip(doc) {
     function hideManagerPreviewPreparingV511(){ const overlay=document.getElementById('sitepassManagerPreviewPreparingV511'); if(overlay) overlay.remove(); }
 
     async function openManagerPublicView(code, expireAt, sig) {
-      let item = getRuntimeItemByCode(code) || getItemByCode(code);
+      let item = sitePassBuildStableDetailItemV536(code) || getRuntimeItemByCode(code) || getItemByCode(code);
       if (!item) {
         alert('조회할 수 없는 코드입니다. 서버 동기화 후 다시 시도해주세요.');
         return;
@@ -1916,7 +1985,7 @@ function renderDocExpiryStrip(doc) {
         url.searchParams.set('manager', String(finalCode || ''));
         if (linkSig) url.searchParams.set('sig', String(linkSig));
         url.searchParams.set('from', 'member');
-        url.searchParams.set('v', '23.7.534-test');
+        url.searchParams.set('v', '23.7.536-test');
         window.location.assign(url.toString());
       } finally {
         setTimeout(hideManagerPreviewPreparingV511, 1200);
