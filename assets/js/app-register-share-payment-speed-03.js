@@ -1,4 +1,4 @@
-// SitePass v23.7.532-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.533-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -268,7 +268,7 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.532-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.533-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
@@ -432,7 +432,7 @@ function shareOneListItemEmail(code) {
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.532-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.533-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -1420,6 +1420,210 @@ function normalizePhoneForShare(phone) {
     const sitePassDetailServerRefreshAtV519 = {};
     const sitePassStorageHydrateCacheV523 = new WeakMap();
 
+    // v23.7.533-test: 회원 상세보기 전용 안정화
+    // 상세보기에서는 실제 Storage 원본이 있는 서류만 표시하고,
+    // 수정/갱신 화면은 기존 DOCS 전체 카드를 그대로 유지합니다.
+    const sitePassMemberDetailSnapshotV533 = new Map();
+
+    function isPlaceholderDetailValueV533(value) {
+      const text = String(value || '').trim();
+      if (!text) return true;
+      return /^(첨부됨|미첨부|선택안함|null|undefined|-)$/i.test(text);
+    }
+
+    function getDetailStoredValueV533(obj, keys) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      for (const key of keys) {
+        const value = String(obj[key] || '').trim();
+        if (value && !isPlaceholderDetailValueV533(value)) return value;
+      }
+      return '';
+    }
+
+    function hasDetailStoredFileV533(obj) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      const path = getDetailStoredValueV533(obj, [
+        'storagePath','storage_path','storageKey','storage_key','filePath','file_path',
+        'objectPath','object_path','uploadPath','upload_path','path'
+      ]);
+      if (path) return true;
+      const url = getDetailStoredValueV533(obj, [
+        'signedUrl','signed_url','storageAccessUrl','storage_access_url',
+        'fileUrl','file_url','downloadUrl','download_url','previewDataUrl','preview_data_url',
+        'editDataUrl','edit_data_url','correctedDataUrl','corrected_data_url',
+        'originalDataUrl','original_data_url','fileDataUrl','file_data_url',
+        'storagePublicUrl','storage_public_url','publicUrl','public_url','previewUrl','preview_url',
+        'dataUrl','data_url','url','src','imageUrl','image_url'
+      ]);
+      return /^(data:|blob:|https?:\/\/)/i.test(url);
+    }
+
+    function getDetailRealPagesV533(doc) {
+      const pages = Array.isArray(doc && doc.pages) ? doc.pages : [];
+      return pages.filter(function(page){ return page && typeof page === 'object' && hasDetailStoredFileV533(page); });
+    }
+
+    function hasDetailDocFileV533(doc) {
+      if (!doc || typeof doc !== 'object') return false;
+      return hasDetailStoredFileV533(doc) || getDetailRealPagesV533(doc).length > 0;
+    }
+
+    function cloneDetailValueV533(value) {
+      if (!value || typeof value !== 'object') return value;
+      try { return JSON.parse(JSON.stringify(value)); } catch (e) { return Array.isArray(value) ? value.slice() : Object.assign({}, value); }
+    }
+
+    function detailPageKeyV533(page, index) {
+      const path = getDetailStoredValueV533(page, ['storagePath','storage_path','storageKey','storage_key','filePath','file_path','objectPath','object_path','path']);
+      if (path) return 'path:' + path;
+      const id = String(page && (page.id || page.pageId || page.page_id) || '').trim();
+      if (id) return 'id:' + id;
+      const name = String(page && (page.fileName || page.file_name || page.name) || '').trim();
+      return 'idx:' + index + ':' + name;
+    }
+
+    function attachmentFieldScoreV533(obj) {
+      obj = obj && typeof obj === 'object' ? obj : {};
+      let score = 0;
+      if (getDetailStoredValueV533(obj, ['storagePath','storage_path','storageKey','storage_key','filePath','file_path','objectPath','object_path','path'])) score += 500;
+      if (getDetailStoredValueV533(obj, ['signedUrl','signed_url','storageAccessUrl','storage_access_url'])) score += 350;
+      if (getDetailStoredValueV533(obj, ['fileUrl','file_url','downloadUrl','download_url','previewDataUrl','preview_data_url','editDataUrl','edit_data_url','publicUrl','public_url'])) score += 250;
+      if (String(obj.fileName || obj.file_name || '').trim()) score += 20;
+      return score;
+    }
+
+    function mergeDetailObjectV533(left, right) {
+      left = left && typeof left === 'object' ? left : {};
+      right = right && typeof right === 'object' ? right : {};
+      const leftScore = attachmentFieldScoreV533(left);
+      const rightScore = attachmentFieldScoreV533(right);
+      const weak = leftScore <= rightScore ? left : right;
+      const strong = leftScore <= rightScore ? right : left;
+      const out = Object.assign({}, weak, strong);
+      const attachmentKeys = [
+        'storageBucket','storage_bucket','bucket','storagePath','storage_path','storageKey','storage_key',
+        'filePath','file_path','objectPath','object_path','uploadPath','upload_path','path',
+        'signedUrl','signed_url','storageAccessUrl','storage_access_url','fileUrl','file_url',
+        'downloadUrl','download_url','previewDataUrl','preview_data_url','editDataUrl','edit_data_url',
+        'correctedDataUrl','corrected_data_url','originalDataUrl','original_data_url',
+        'fileDataUrl','file_data_url','storagePublicUrl','storage_public_url','publicUrl','public_url',
+        'previewUrl','preview_url','dataUrl','data_url','url','src','imageUrl','image_url'
+      ];
+      attachmentKeys.forEach(function(key){
+        const strongValue = String(strong[key] || '').trim();
+        const weakValue = String(weak[key] || '').trim();
+        if ((!strongValue || isPlaceholderDetailValueV533(strongValue)) && weakValue && !isPlaceholderDetailValueV533(weakValue)) out[key] = weak[key];
+      });
+      return out;
+    }
+
+    function mergeDetailPagesV533(leftPages, rightPages) {
+      const map = new Map();
+      [leftPages, rightPages].forEach(function(list){
+        (Array.isArray(list) ? list : []).forEach(function(page, index){
+          if (!page || typeof page !== 'object') return;
+          const key = detailPageKeyV533(page, index);
+          map.set(key, map.has(key) ? mergeDetailObjectV533(map.get(key), page) : cloneDetailValueV533(page));
+        });
+      });
+      return Array.from(map.values()).filter(hasDetailStoredFileV533);
+    }
+
+    function mergeDetailDocV533(left, right) {
+      const out = mergeDetailObjectV533(left, right);
+      out.pages = mergeDetailPagesV533(left && left.pages, right && right.pages);
+      if (out.pages.length) {
+        const first = out.pages[0] || {};
+        out.fileName = out.fileName || first.fileName || first.file_name || ('첨부 ' + out.pages.length + '장');
+        out.pageCount = out.pages.length;
+      }
+      return out;
+    }
+
+    function detailItemTimeV533(item) {
+      const value = item && (item.updatedAt || item.updated_at || item.createdAt || item.created_at) || '';
+      const time = Date.parse(value);
+      return Number.isFinite(time) ? time : 0;
+    }
+
+    function mergeMemberDetailItemsV533(items, targetCode) {
+      const candidates = (Array.isArray(items) ? items : []).filter(function(item){ return item && typeof item === 'object'; });
+      if (!candidates.length) return null;
+      candidates.sort(function(a, b){ return detailItemTimeV533(a) - detailItemTimeV533(b); });
+      const out = {};
+      const docs = {};
+      candidates.forEach(function(item){
+        Object.keys(item).forEach(function(key){ if (key !== 'docs' && item[key] !== undefined) out[key] = item[key]; });
+        const sourceDocs = item.docs && typeof item.docs === 'object' ? item.docs : {};
+        Object.keys(sourceDocs).forEach(function(key){
+          const doc = sourceDocs[key];
+          if (!doc || typeof doc !== 'object') return;
+          docs[key] = docs[key] ? mergeDetailDocV533(docs[key], doc) : mergeDetailDocV533({}, doc);
+        });
+      });
+      out.docs = docs;
+      if (!out.code) out.code = String(targetCode || '').trim();
+      return out;
+    }
+
+    function collectMemberDetailCandidatesV533(code) {
+      const target = String(code || '').trim();
+      const out = [];
+      function add(item) {
+        if (!item || typeof item !== 'object') return;
+        try {
+          if (typeof sitePassEquipmentCodeMatchesV519 === 'function' && !sitePassEquipmentCodeMatchesV519(item, target)) return;
+        } catch (e) {}
+        if (!out.includes(item)) out.push(item);
+      }
+      try { add(getRuntimeItemByCode(target)); } catch (e) {}
+      try { add(getItemByCode(target)); } catch (e) {}
+      try { (getSitePassServerAuthoritativeEquipmentItems() || []).forEach(add); } catch (e) {}
+      try { (getServerEquipmentCache() || []).forEach(add); } catch (e) {}
+      try { (getSitePassUnsyncedEquipmentItemsV476() || []).forEach(add); } catch (e) {}
+      try { add(window.sitePassFastCompletionItem); } catch (e) {}
+      try { (Array.isArray(window.sitePassFastCompletionItems) ? window.sitePassFastCompletionItems : []).forEach(add); } catch (e) {}
+      try { add(sitePassMemberDetailSnapshotV533.get(target)); } catch (e) {}
+      return out;
+    }
+
+    function getBestMemberDetailItemV533(code, extraItem) {
+      const target = String(code || '').trim();
+      const candidates = collectMemberDetailCandidatesV533(target);
+      if (extraItem) candidates.push(extraItem);
+      const merged = mergeMemberDetailItemsV533(candidates, target);
+      if (merged) sitePassMemberDetailSnapshotV533.set(target || String(merged.code || ''), merged);
+      return merged;
+    }
+
+    function normalizeMemberDetailDocV533(doc) {
+      const clean = mergeDetailDocV533({}, doc || {});
+      clean.pages = getDetailRealPagesV533(clean);
+      if (clean.pages.length) {
+        clean.pageCount = clean.pages.length;
+        clean.fileName = clean.fileName || clean.pages[0].fileName || ('첨부 ' + clean.pages.length + '장');
+      }
+      return clean;
+    }
+
+    function getMemberDetailDocsV533(item) {
+      return getDisplayDocs(item).map(normalizeMemberDetailDocV533).filter(hasDetailDocFileV533);
+    }
+
+    function renderMemberDocDetailV533(doc) {
+      const clean = normalizeMemberDetailDocV533(doc);
+      const pages = getDocPagesFromDoc(clean).filter(function(page){ return hasDetailStoredFileV533(page); });
+      clean.pages = pages;
+      const count = Math.max(pages.length, hasDetailStoredFileV533(clean) ? 1 : 0);
+      const effectiveExpireDate = (window.sitePassGetEffectiveDocExpireDateV486 && window.sitePassGetEffectiveDocExpireDateV486(clean)) || clean.expireDate || '';
+      const educationDate = (window.sitePassGetEducationDateV486 && window.sitePassGetEducationDateV486(clean)) || clean.educationDate || '';
+      const isEducation3Years = !!(window.sitePassIsMachinerySafetyDocV486 && window.sitePassIsMachinerySafetyDocV486(clean));
+      const dateHtml = !clean.expiry ? '' : isEducation3Years
+        ? '<div class="line"><b>안전교육 이수일</b><span>' + (educationDate ? escapeHtml(educationDate) : '미입력') + '</span></div><div class="line"><b>다음 교육 예정일</b><span>' + (effectiveExpireDate ? escapeHtml(effectiveExpireDate + ' / ' + getDdayText(effectiveExpireDate)) : '미입력') + '</span></div>'
+        : '<div class="line"><b>만료날짜</b><span>' + (effectiveExpireDate ? escapeHtml(effectiveExpireDate + ' / ' + getDdayText(effectiveExpireDate)) : '미입력') + '</span></div>';
+      return '<div class="doc-card"><div class="doc-head"><div class="doc-title">' + escapeHtml((clean.groupTitle ? clean.groupTitle + ' - ' : '') + clean.title) + '</div><span class="badge done">첨부됨' + (count ? ' · ' + count + '장' : '') + '</span></div>' + renderPreviewHtml(clean) + dateHtml + '</div>';
+    }
+
     async function resolveStorageAccessUrlForObjectV523(obj, parent, forceRefresh) {
       if (!obj || typeof obj !== 'object') return '';
       const path = getManagerShareStoragePathV497(obj);
@@ -1508,12 +1712,26 @@ function normalizePhoneForShare(phone) {
       if (Date.now() - last < 12000) return;
       sitePassDetailServerRefreshAtV519[targetCode] = Date.now();
       Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(result){
-        if (!result || result.ok !== true) return;
         if (String(window.sitePassCurrentDetailCodeV519 || '') !== targetCode) return;
         if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
-        renderDetail(targetCode, { skipServerRefresh:true });
+        // 이미 다른 화면에서 동기화 중이었더라도 현재 가진 가장 풍부한 서버/등록 직후 자료로 다시 그립니다.
+        renderDetail(targetCode, { skipServerRefresh:true, preserveVisible:true });
       }).catch(function(error){
         console.warn('상세보기 서버 최신자료 확인 실패:', error);
+      });
+    }
+
+    if (!window.__sitePassMemberDetailSyncListenerV533) {
+      window.__sitePassMemberDetailSyncListenerV533 = true;
+      window.addEventListener('sitepass-member-equipment-sync-v491', function(){
+        const code = String(window.sitePassCurrentDetailCodeV519 || '').trim();
+        if (!code) return;
+        try {
+          if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
+        } catch (e) {}
+        setTimeout(function(){
+          try { renderDetail(code, { skipServerRefresh:true, preserveVisible:true }); } catch (e) { console.warn('상세보기 동기화 후 갱신 실패:', e); }
+        }, 40);
       });
     }
 
@@ -1521,24 +1739,31 @@ function normalizePhoneForShare(phone) {
       options = options || {};
       const requestedCodeV519 = String(code || '').trim();
       try { window.sitePassCurrentDetailCodeV519 = requestedCodeV519; } catch (e) {}
-      let item = getRuntimeItemByCode(code) || getItemByCode(code);
+      let item = getBestMemberDetailItemV533(requestedCodeV519) || getRuntimeItemByCode(code) || getItemByCode(code);
       if (!item) { alert('장비등록 정보를 찾을 수 없습니다. 서버 동기화 후 다시 시도해주세요.'); showScreen('listScreen'); return; }
       try { item = mergeLegacyManagerShareDocumentsV498(item); } catch (e) {}
       try { item = hydrateManagerShareStorageUrlsV497(item); } catch (e) {}
       let detailBox = document.getElementById('detailBox');
-      if (detailBox) {
+      if (detailBox && !options.preserveVisible) {
         detailBox.innerHTML = '<div class="empty">서류를 불러오는 중입니다.</div>';
         showScreen('detailScreen');
       }
-      try { item = await hydrateItemStorageAccessUrlsV523(item); } catch (e) { console.warn('회원 상세 서류주소 준비 실패:', e); }
+      try {
+        // 비공개 Storage의 signed URL은 상세화면을 열 때마다 새로 준비합니다.
+        // 첫 시도 실패가 WeakMap에 남아 계속 안 보이던 현상을 막기 위해 강제 갱신합니다.
+        item = await hydrateItemStorageAccessUrlsV523(item, true);
+      } catch (e) { console.warn('회원 상세 서류주소 준비 실패:', e); }
+      item = getBestMemberDetailItemV533(requestedCodeV519, item) || item;
       const itemCode = ensureManagerShareCodeForItem(item) || String(code || '').trim();
       currentDetailLink = makeManagerLink(itemCode, getManagerExpireAt(item));
       const qrUrl = makeQrUrl(currentDetailLink, 180);
-      const detailDocs = getDisplayDocs(item);
-      const docHtml = renderDocFoldersV486(detailDocs, 'memberDetailFoldersV508_' + String(itemCode || '').replace(/[^a-zA-Z0-9_-]/g, ''), (doc) => renderDocDetail(doc));
+      const detailDocs = getMemberDetailDocsV533(item);
+      const docHtml = detailDocs.length
+        ? renderDocFoldersV486(detailDocs, 'memberDetailFoldersV533_' + String(itemCode || '').replace(/[^a-zA-Z0-9_-]/g, ''), function(doc){ return renderMemberDocDetailV533(doc); })
+        : '<div class="empty"><b>서버에 저장된 첨부서류가 없습니다.</b><br>수정/갱신 화면에서 필요한 서류 원본을 다시 첨부해주세요.</div>';
       const renewalHtml = isAdminLoggedIn() ? '<div class="notice blue-note">관리자 상세보기에서는 수정/갱신·결제연장 버튼을 숨깁니다. 장비업자에게 알림만 보내고, 실제 수정/갱신은 회원 보관함에서 처리합니다.</div>' : renderRenewPanel(item);
       const fileRecoveryNoticeV508 = item.shareFilesPendingRecovery
-        ? '<div class="notice blue-note"><b>일부 기존 서류의 서버 파일주소를 복구 중입니다.</b><br>링크화면을 누르면 휴대폰에 남은 등록 원본과 Supabase Storage를 다시 확인합니다.</div>'
+        ? '<div class="notice blue-note"><b>일부 기존 서류의 서버 파일주소를 복구 중입니다.</b><br>수정/갱신 화면에서 원본을 다시 첨부하면 정상적으로 표시됩니다.</div>'
         : '';
       detailBox = detailBox || document.getElementById('detailBox');
       if (!detailBox) { alert('상세보기 화면을 찾지 못했습니다. 새로고침 후 다시 시도해주세요.'); return; }
@@ -1750,7 +1975,7 @@ function renderDocExpiryStrip(doc) {
         url.searchParams.set('manager', String(finalCode || ''));
         if (linkSig) url.searchParams.set('sig', String(linkSig));
         url.searchParams.set('from', 'member');
-        url.searchParams.set('v', '23.7.532-test');
+        url.searchParams.set('v', '23.7.533-test');
         window.location.assign(url.toString());
       } finally {
         setTimeout(hideManagerPreviewPreparingV511, 1200);
