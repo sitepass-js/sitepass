@@ -560,7 +560,7 @@
 .sitepass-expiry-test-tools479 button.secondary { background: #e9eef8; color: #274168; }
 @media (max-width: 560px) { .sitepass-expiry-test-tools479 > div { grid-template-columns: 1fr; } }
 
-/* v23.7.526-test - 알림/채팅 새로고침 빈 화면 방지 */
+/* v23.7.527-test - 알림/채팅 새로고침 빈 화면 방지 */
 #contactScreen:not(.hidden) {
   min-height: calc(100vh - 84px);
   visibility: visible !important;

@@ -1,4 +1,6 @@
-/* SitePass v23.7.526-test - 알림/채팅 빈 화면·새로고침 스크롤 복원 안정화 */
+/* SitePass v23.7.527-test - 알림/채팅 안정 기준 복원
+   v526의 패널 MutationObserver·반복 강제복구를 제거하고,
+   v522의 첫 클릭 안정 로직에 현재 방 기억만 최소 추가합니다. */
 (function(){
   'use strict';
 
@@ -26,20 +28,21 @@
   var shareTrackingLoadingV521 = false;
   var shareTrackingLastFetchAtV521 = 0;
   var chatOpenSequenceV522 = 0;
-  var CHAT_ROOM_SESSION_KEY_V525 = 'sitepass_chat_room_v525';
+  var CHAT_ROOM_SESSION_KEY_V527 = 'sitepass_chat_room_v527';
+  var chatRestoreDoneV527 = false;
 
-  function rememberChatRoomV525(roomId){
+  function rememberChatRoomV527(roomId){
     try {
-      if (roomId && ROOMS && ROOMS[roomId]) sessionStorage.setItem(CHAT_ROOM_SESSION_KEY_V525, roomId);
-      else sessionStorage.removeItem(CHAT_ROOM_SESSION_KEY_V525);
+      if (roomId && ROOMS && ROOMS[roomId]) sessionStorage.setItem(CHAT_ROOM_SESSION_KEY_V527, roomId);
+      else sessionStorage.removeItem(CHAT_ROOM_SESSION_KEY_V527);
       sessionStorage.setItem('sitepass_last_screen_v491', 'contactScreen');
     } catch(e) {}
   }
-  function storedChatRoomV525(){
-    try { return String(sessionStorage.getItem(CHAT_ROOM_SESSION_KEY_V525) || ''); } catch(e) { return ''; }
+  function storedChatRoomV527(){
+    try { return String(sessionStorage.getItem(CHAT_ROOM_SESSION_KEY_V527) || ''); } catch(e) { return ''; }
   }
 
-  /* v23.7.526-test
+  /* v23.7.522-test
      새 알림이 들어오는 순간 서버 재조회와 화면 전환이 겹쳐 첫 클릭이 먹히지 않는 현상을 막습니다.
      알림/채팅 화면과 방 패널은 서버 응답을 기다리지 않고 즉시 열고, 서버자료는 뒤에서 갱신합니다. */
   function forceContactScreenVisibleV522(){
@@ -80,67 +83,20 @@
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
     var openRoom = !!roomId;
-    if (listPanel) {
-      listPanel.classList.toggle('sitepass-chat-hidden', openRoom);
-      listPanel.style.removeProperty('display');
-      listPanel.style.removeProperty('visibility');
-      listPanel.style.removeProperty('opacity');
-      listPanel.style.removeProperty('height');
-      listPanel.style.removeProperty('overflow');
-    }
-    if (roomPanel) {
-      roomPanel.classList.toggle('sitepass-chat-hidden', !openRoom);
-      roomPanel.style.removeProperty('display');
-      roomPanel.style.removeProperty('visibility');
-      roomPanel.style.removeProperty('opacity');
-      roomPanel.style.removeProperty('height');
-      roomPanel.style.removeProperty('overflow');
-    }
-  }
-
-  /* v23.7.526-test
-     긴 공유기록방에서 내려간 스크롤 위치가 새로고침 뒤 그대로 복원되면,
-     짧은 알림/채팅 목록보다 아래쪽 빈 배경만 보여 "빈 화면"처럼 보일 수 있습니다.
-     알림/채팅 진입과 복원 때 문서 스크롤을 확실히 맨 위로 되돌립니다. */
-  function resetChatPageScrollV526(){
-    try { window.scrollTo(0, 0); } catch(e) {}
-    try { document.documentElement.scrollTop = 0; } catch(e) {}
-    try { document.body.scrollTop = 0; } catch(e) {}
-    try {
-      var contact = $('contactScreen');
-      if (contact && typeof contact.scrollIntoView === 'function') contact.scrollIntoView({ block:'start', inline:'nearest' });
-    } catch(e) {}
-  }
-
-  function repairChatPanelsV526(roomId){
-    var listPanel = $('sitepassChatListPanel');
-    var roomPanel = $('sitepassChatRoomPanel');
-    if (!listPanel || !roomPanel) return false;
-    var preferred = roomId && ROOMS[roomId] ? roomId : (currentRoomId && ROOMS[currentRoomId] ? currentRoomId : '');
-    // 현재 방 상태를 기준으로 목록/방 패널을 항상 한쪽만 보이게 맞춥니다.
-    // 이전 화면 복원 코드가 한쪽 패널만 잘못 숨긴 경우도 즉시 정상화됩니다.
-    applyChatPanelStateV522(preferred);
-    if (preferred) {
-      if (!$('sitepassChatMessages') || !$('sitepassChatMessages').children.length) renderMessages(preferred);
-    } else {
-      var roomList = $('sitepassChatRoomList');
-      if (!roomList || !roomList.children.length) renderRoomList();
-    }
-    return true;
+    if (listPanel) listPanel.classList.toggle('sitepass-chat-hidden', openRoom);
+    if (roomPanel) roomPanel.classList.toggle('sitepass-chat-hidden', !openRoom);
   }
 
   function stabilizeChatOpenV522(roomId, sequence){
-    [0, 50, 160, 420, 900].forEach(function(delay){
+    [0, 50, 160].forEach(function(delay){
       setTimeout(function(){
         if (sequence !== chatOpenSequenceV522) return;
         if (roomId && currentRoomId !== roomId) return;
         if (!roomId && currentRoomId) return;
         forceContactScreenVisibleV522();
         applyChatPanelStateV522(roomId || '');
-        repairChatPanelsV526(roomId || '');
         if (roomId) renderMessages(roomId);
         else renderRoomList();
-        resetChatPageScrollV526();
       }, delay);
     });
   }
@@ -980,11 +936,10 @@
     if (!ROOMS[roomId]) roomId = 'admin';
     var openSequence = ++chatOpenSequenceV522;
     currentRoomId = roomId;
-    rememberChatRoomV525(roomId);
+    rememberChatRoomV527(roomId);
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522(roomId);
-    resetChatPageScrollV526();
     if (roomId === 'expiry') markExpiryRoomRead();
     if (roomId === 'admin') markAdminRepliesReadByMember();
     if (roomId === 'share') {
@@ -1024,27 +979,23 @@
   window.sitepassBackToChatList460 = function(){
     ++chatOpenSequenceV522;
     currentRoomId = '';
-    rememberChatRoomV525('');
+    rememberChatRoomV527('');
     resetDeleteMode();
     var listPanel = $('sitepassChatListPanel');
     var roomPanel = $('sitepassChatRoomPanel');
-    forceContactScreenVisibleV522();
-    applyChatPanelStateV522('');
-    repairChatPanelsV526('');
-    resetChatPageScrollV526();
+    if (roomPanel) roomPanel.classList.add('sitepass-chat-hidden');
+    if (listPanel) listPanel.classList.remove('sitepass-chat-hidden');
     renderRoomList();
-    stabilizeChatOpenV522('', chatOpenSequenceV522);
     return false;
   };
 
   window.sitepassOpenChatInbox460 = function(){
     var openSequence = ++chatOpenSequenceV522;
     currentRoomId = '';
-    rememberChatRoomV525('');
+    rememberChatRoomV527('');
     resetDeleteMode();
     forceContactScreenVisibleV522();
     applyChatPanelStateV522('');
-    resetChatPageScrollV526();
     renderRoomList();
     updateBottomUnreadBadge();
     // 서버 알림 조회는 화면을 연 뒤 백그라운드에서 진행합니다.
@@ -1290,14 +1241,20 @@
     refreshShareTrackingServerV521(false);
   }
 
-  window.sitepassRestoreChatRoomV525 = function(){
-    var roomId = storedChatRoomV525();
-    try { sessionStorage.setItem('sitepass_last_screen_v491', 'contactScreen'); } catch(e) {}
-    resetChatPageScrollV526();
-    if (roomId && ROOMS[roomId]) return window.sitepassOpenChatRoom460(roomId);
-    return window.sitepassOpenChatInbox460();
-  };
-  window.sitepassRestoreChatRoomV526 = window.sitepassRestoreChatRoomV525;
+  function restoreChatViewV527(){
+    if (chatRestoreDoneV527) return;
+    var contact = $('contactScreen');
+    var rememberedScreen = '';
+    try { rememberedScreen = String(sessionStorage.getItem('sitepass_last_screen_v491') || ''); } catch(e) {}
+    var contactVisible = !!contact && !contact.classList.contains('hidden');
+    if (!contactVisible && rememberedScreen !== 'contactScreen') return;
+    chatRestoreDoneV527 = true;
+    var roomId = storedChatRoomV527();
+    if (roomId && ROOMS[roomId]) window.sitepassOpenChatRoom460(roomId);
+    else window.sitepassOpenChatInbox460();
+  }
+
+  window.sitepassRestoreChatViewV527 = restoreChatViewV527;
 
   window.sitepassOpenChatRoom445 = window.sitepassOpenChatRoom460;
   window.sitepassBackToChatList445 = window.sitepassBackToChatList460;
@@ -1306,45 +1263,13 @@
 
   document.addEventListener('DOMContentLoaded', function(){
     init();
-    setTimeout(init, 120);
+    setTimeout(function(){ init(); restoreChatViewV527(); }, 120);
     setTimeout(init, 600);
   });
   window.addEventListener('pageshow', function(){
-    setTimeout(function(){
-      init();
-      try {
-        var contact = $('contactScreen');
-        var remembered = String(sessionStorage.getItem('sitepass_last_screen_v491') || '');
-        if ((contact && !contact.classList.contains('hidden')) || remembered === 'contactScreen') {
-          forceContactScreenVisibleV522();
-          repairChatPanelsV526(currentRoomId || storedChatRoomV525());
-          resetChatPageScrollV526();
-        }
-      } catch(e) {}
-    }, 100);
-    setTimeout(function(){
-      try {
-        var contact = $('contactScreen');
-        if (contact && !contact.classList.contains('hidden')) {
-          repairChatPanelsV526(currentRoomId || storedChatRoomV525());
-          resetChatPageScrollV526();
-        }
-      } catch(e) {}
-    }, 650);
+    chatRestoreDoneV527 = false;
+    setTimeout(function(){ init(); restoreChatViewV527(); }, 100);
   });
-  try {
-    var panelObserverV526 = new MutationObserver(function(){
-      var contact = $('contactScreen');
-      if (!contact || contact.classList.contains('hidden')) return;
-      repairChatPanelsV526(currentRoomId || '');
-    });
-    document.addEventListener('DOMContentLoaded', function(){
-      var listPanel = $('sitepassChatListPanel');
-      var roomPanel = $('sitepassChatRoomPanel');
-      if (listPanel) panelObserverV526.observe(listPanel, { attributes:true, attributeFilter:['class','style'] });
-      if (roomPanel) panelObserverV526.observe(roomPanel, { attributes:true, attributeFilter:['class','style'] });
-    }, { once:true });
-  } catch(e) {}
   window.addEventListener('focus', function(){ refreshShareTrackingServerV521(false); });
   document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshShareTrackingServerV521(false); });
   setInterval(function(){
