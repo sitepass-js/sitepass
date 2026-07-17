@@ -1,8 +1,8 @@
-// SitePass v23.7.547-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.548-test - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.547-test';
+  var VERSION = '23.7.548-test';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
@@ -520,6 +520,18 @@
     if (/Failed to fetch/i.test(message) && olderThanMinutes(row.last_seen_at, 30) &&
         (category === 'equipment_sync' || category === 'server_rpc' || category === 'server_select')) {
       return VERSION + ' 자동 확인: 현재 서버 연결이 정상이고 마지막 발생 후 30분 이상 재발하지 않아 일시 통신 오류를 해결완료로 전환했습니다.';
+    }
+
+    if (olderThanMinutes(row.last_seen_at, 30) &&
+        (/permission denied for table sitepass_equipment_items/i.test(message) || action === 'sitepass_equipment_items')) {
+      return VERSION + ' 자동 확인: 회원 장비 조회를 테이블 직접조회에서 회원 전용 RPC로 변경해 anon 테이블 권한 없이 정상 조회되도록 수정했습니다.';
+    }
+
+    if (olderThanMinutes(row.last_seen_at, 30) &&
+        (action.indexOf('member_preview_file_address_missing_v547') >= 0 ||
+         action.indexOf('share_file_address_missing_v547') >= 0 ||
+         /실제 Storage 파일주소를 (?:찾지|복구하지) 못했습니다/.test(message))) {
+      return VERSION + ' 자동 확인: 회원 전용 RPC와 실제 업로드 경로 후보 복구를 적용했고 수신자 만료 RPC를 회원 미리보기에서 분리했습니다.';
     }
 
     return '';

@@ -1,4 +1,4 @@
-// SitePass v23.7.547-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.548-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -268,7 +268,7 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.547-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.548-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
@@ -391,7 +391,7 @@ function shareOneListItemEmail(code) {
       });
     }
 
-    // v23.7.547-test: 장비 전체에 파일주소가 하나라도 있다는 이유로 나머지 서류의
+    // v23.7.548-test: 장비 전체에 파일주소가 하나라도 있다는 이유로 나머지 서류의
     // 누락 주소 복구를 건너뛰지 않습니다. 서류별로 첨부 흔적과 실제 Storage 참조를 확인합니다.
     function managerShareDocHasAttachmentMetadataV547(doc) {
       if (!doc || typeof doc !== 'object') return false;
@@ -466,7 +466,7 @@ function shareOneListItemEmail(code) {
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.547-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.548-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -740,7 +740,7 @@ function shareOneListItemEmail(code) {
           });
         });
         // 가장 가능성 높은 후보 4개를 병렬 확인해 공유 대기시간을 2초 안쪽으로 제한합니다.
-        const limitedCandidates = candidates.slice(0, 4);
+        const limitedCandidates = candidates.slice(0, 8);
         const probeResults = await Promise.all(limitedCandidates.map(function(candidate){ return probeManagerSharePublicUrlV498(candidate.url); }));
         const foundIndex = probeResults.findIndex(Boolean);
         if (foundIndex >= 0) found = limitedCandidates[foundIndex];
@@ -766,7 +766,7 @@ function shareOneListItemEmail(code) {
       const owners = getManagerShareStorageOwnerCandidatesV498(item);
       const codes = getManagerShareStorageCodeCandidatesV498(item);
       const docs = item.docs && typeof item.docs === 'object' ? item.docs : {};
-      // v23.7.547-test: 일부 서류만 정상이어도 나머지 누락 서류를 계속 복구합니다.
+      // v23.7.548-test: 일부 서류만 정상이어도 나머지 누락 서류를 계속 복구합니다.
       // 기존에는 장비 전체에서 URL 1개만 발견돼도 즉시 종료되어 부분 누락이 반복됐습니다.
       const docKeys = getManagerShareMissingFileDocKeysV547(item);
       if (!docKeys.length) return { ok:true, item:item, recovered:0, missing:[] };
@@ -1461,7 +1461,7 @@ function normalizePhoneForShare(phone) {
     const sitePassDetailServerRefreshAtV519 = {};
     const sitePassStorageHydrateCacheV523 = new WeakMap();
 
-    // v23.7.547-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
+    // v23.7.548-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
     // 서버자료가 비어 있거나 축약돼도 같은 회원의 기존 브라우저 등록자료를 보조자료로만 합칩니다.
     // 신규 Storage 경로가 있는 자료를 최우선으로 유지하고, 첨부 흔적이 없는 빈 서류카드는 상세보기에서 숨깁니다.
     const sitePassMemberDetailSnapshotV536 = new Map();
@@ -2117,13 +2117,18 @@ function renderDocExpiryStrip(doc) {
       // 서버 장비 한 건을 다시 합쳐 item_json에 남아 있는 Storage 경로를 우선 복구합니다.
       try {
         if (typeof window.sitePassLoadMemberEquipmentItemByCodeV541 === 'function') {
-          const direct = await withManagerShareTimeoutV498(window.sitePassLoadMemberEquipmentItemByCodeV541(targetCode), 2400);
-          const directItem = (direct && direct.item) || sitePassBuildStableDetailItemV536(targetCode);
-          if (directItem) item = mergeManagerShareCandidatesV497([item, directItem], item);
-          hydrateManagerShareStorageUrlsV497(item);
-          result.stages.push('member_item');
+          const direct = await withManagerShareTimeoutV498(window.sitePassLoadMemberEquipmentItemByCodeV541(targetCode), 6200);
+          const directItem = direct && direct.ok === true ? direct.item : null;
+          if (directItem) {
+            item = mergeManagerShareCandidatesV497([item, directItem], item);
+            hydrateManagerShareStorageUrlsV497(item);
+            result.stages.push('member_rpc');
+          } else {
+            result.stages.push('member_rpc_empty');
+            if (direct && direct.error) result.memberRpcError = String(direct.error.message || direct.error.details || direct.error);
+          }
         }
-      } catch (e) { result.stages.push('member_item_failed'); }
+      } catch (e) { result.stages.push('member_rpc_failed'); result.memberRpcError = String(e && e.message || e || ''); }
 
       missing = getManagerShareMissingFileDocKeysV547(item);
       if (missing.length) {
@@ -2151,7 +2156,7 @@ function renderDocExpiryStrip(doc) {
       if (result.missingBefore.length && result.missingAfter.length < result.missingBefore.length) {
         try {
           const serverItem = stripItemDataUrlsForServerStorage(item);
-          Promise.resolve(saveEquipmentItemToSupabase(serverItem, 'member_preview_file_recovery_v547')).catch(function(e){
+          Promise.resolve(saveEquipmentItemToSupabase(serverItem, 'member_preview_file_recovery_v548')).catch(function(e){
             console.warn('회원 링크화면 파일주소 복구 저장 실패:', e);
           });
         } catch (e) {}
@@ -2182,7 +2187,7 @@ function renderDocExpiryStrip(doc) {
         return;
       }
 
-      // v23.7.547-test: 로그인 직후 캐시에 서류목록이 아직 없으면 진행 중인 첫 서버동기화를
+      // v23.7.548-test: 로그인 직후 캐시에 서류목록이 아직 없으면 진행 중인 첫 서버동기화를
       // 최대 2.2초만 함께 기다립니다. 30~40초짜리 중복 재조회는 만들지 않습니다.
       if (!options.skipDocsWarmup && !sitePassGetRegisteredDetailDocsV536(item).length && typeof syncSupabaseMyEquipmentItems === 'function') {
         try {
@@ -2215,7 +2220,7 @@ function renderDocExpiryStrip(doc) {
       try { previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem); } catch (e) {}
       try { previewItem = hydrateManagerShareStorageUrlsV497(previewItem); } catch (e) {}
 
-      // v23.7.547-test: 첨부 메타정보만 있고 Storage 경로가 빠진 서류는 링크화면을 열기 전에
+      // v23.7.548-test: 첨부 메타정보만 있고 Storage 경로가 빠진 서류는 링크화면을 열기 전에
       // 장비 한 건 조회 → 이전 공유자료 → 실제 Storage 폴더 순서로 최대 약 5초 안에서 복구합니다.
       // 복구된 경로는 장비 서버자료에도 다시 저장해 다음 열기부터 즉시 표시합니다.
       let previewRepairV547 = null;
@@ -2232,7 +2237,7 @@ function renderDocExpiryStrip(doc) {
           hideManagerPreviewPreparingV511();
         }
       }
-      // v23.7.547-test: 회원 링크화면은 수신자용 공개 공유코드가 아니라
+      // v23.7.548-test: 회원 링크화면은 수신자용 공개 공유코드가 아니라
       // 보관함 카드에서 전달된 실제 장비코드를 그대로 사용합니다.
       // 과거 publicShareCode가 다른 장비에서 재사용되거나 빈 서버행을 가리켜
       // '장비 / 0개 서류'로 열리는 문제를 막습니다.
@@ -2259,12 +2264,13 @@ function renderDocExpiryStrip(doc) {
       const missingFileDocsV547 = getManagerShareMissingFileDocKeysV547(previewItem);
       if (missingFileDocsV547.length) {
         sitePassReportMemberPreviewIssueV546('첨부 정보는 있으나 실제 Storage 파일주소를 복구하지 못했습니다.', targetCode, {
-          stage:'file_address_repair_exhausted_v547',
+          stage:'file_address_repair_exhausted_v548',
           missing_doc_keys:missingFileDocsV547.slice(0,20),
           missing_count:missingFileDocsV547.length,
           repair_stages:previewRepairV547 && previewRepairV547.stages || [],
           recovered_count:Number(previewRepairV547 && previewRepairV547.recovered || 0),
-          monitor_action:'member_preview_file_address_missing_v547'
+          member_rpc_error:String(previewRepairV547 && previewRepairV547.memberRpcError || ''),
+          monitor_action:'member_preview_file_address_missing_v548'
         });
       }
 
@@ -2274,7 +2280,7 @@ function renderDocExpiryStrip(doc) {
       if (linkSig) url.searchParams.set('sig', String(linkSig));
       url.searchParams.set('from', 'member');
       url.searchParams.set('preview_token', String(memberPreviewToken || ''));
-      url.searchParams.set('v', '23.7.547-test');
+      url.searchParams.set('v', '23.7.548-test');
       window.location.assign(url.toString());
     }
 

@@ -539,7 +539,7 @@ function resetForm(clearEdit = true) {
     }
 
 
-    // v23.7.547-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // v23.7.548-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
     // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
     // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
     function sitePassEquipmentCodeMatchesV519(item, targetCode) {
@@ -1323,25 +1323,28 @@ function resetForm(clearEdit = true) {
     async function loadSitePassMemberEquipmentItemByCodeV541(code) {
       const targetCode = String(code || '').trim();
       const api = window.SitePassSupabaseApi;
-      if (!targetCode || !api || typeof api.select !== 'function') return { ok:false, skipped:true };
+      // v23.7.548: 회원 장비 한 건 조회에서 sitepass_equipment_items 테이블을 직접 SELECT하지 않습니다.
+      // anon 테이블 권한을 열지 않고, 기존 회원 범위 RPC 결과에서 대상 장비만 찾습니다.
+      if (!targetCode || !api || typeof api.rpc !== 'function') return { ok:false, skipped:true };
       try {
-        const result = await api.select('sitepass_equipment_items', '*', function(query){
-          return query.eq('code', targetCode).eq('is_deleted', false).limit(1);
-        });
-        if (result && result.error) return { ok:false, error:result.error };
-        const row = Array.isArray(result && result.data) ? result.data[0] : null;
-        const item = normalizeSupabaseEquipmentRow(row);
-        if (!item) return { ok:false, notFound:true };
-        const scoped = filterCurrentMemberEquipmentStorageScope([item]);
-        if (!scoped.length) return { ok:false, forbidden:true };
+        const rpcParams = getSitePassMemberEquipmentRpcParamsV485();
+        const hasMemberKey = rpcParams.p_owner_member_ids.length || rpcParams.p_owner_signup_ids.length || rpcParams.p_owner_provider_ids.length;
+        if (!hasMemberKey) return { ok:false, error:{ code:'SITEPASS_MEMBER_SCOPE_EMPTY', message:'현재 로그인 회원 식별값을 확인할 수 없습니다.' } };
+        const result = await api.rpc('sitepass_list_member_equipment_items_v485', rpcParams);
+        if (result && result.error) return { ok:false, error:result.error, source:'member_rpc' };
+        const rows = parseSupabaseEquipmentRows(result && result.data);
+        const normalized = rows.map(normalizeSupabaseEquipmentRow).filter(Boolean);
+        const scoped = filterCurrentMemberEquipmentStorageScope(normalized);
+        const item = scoped.find(function(row){ return String(row && row.code || '').trim() === targetCode; }) || null;
+        if (!item) return { ok:false, notFound:true, source:'member_rpc', rows:scoped.length };
         const merged = mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems(), getServerEquipmentCache(), scoped);
         setSitePassServerAuthoritativeEquipmentItems(merged);
         try { runtimeEquipmentItems = mergeEquipmentItemLists(merged); } catch (e) {}
         try { setServerEquipmentCache(merged); } catch (e) {}
         try { if (window.sitePassArchiveItemSnapshotV538 instanceof Map) window.sitePassArchiveItemSnapshotV538.set(targetCode, item); } catch (e) {}
-        return { ok:true, item:item };
+        return { ok:true, item:item, source:'member_rpc' };
       } catch (e) {
-        return { ok:false, error:e };
+        return { ok:false, error:e, source:'member_rpc' };
       }
     }
     window.sitePassLoadMemberEquipmentItemByCodeV541 = loadSitePassMemberEquipmentItemByCodeV541;
