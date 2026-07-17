@@ -271,25 +271,75 @@ function resetForm(clearEdit = true) {
     }
 
     function makeCompactServerEquipmentCacheItem(item) {
+      // v23.7.541: localStorage 용량이 부족해도 장비명만 남기고 docs를 버리지 않습니다.
+      // data/blob/signed URL은 저장하지 않고, 서류 메타정보와 Storage 경로만 보존해
+      // 로그인 직후 상세보기·링크화면이 서버 전체 동기화를 기다리지 않게 합니다.
       if (!item || typeof item !== 'object') return item;
       const compact = {};
       [
         'id','code','type','kind','category','equipmentNo','equipmentName','name','title',
-        'ownerName','ownerPhone','memberId','memberName','memberPhone','createdAt','updatedAt',
-        'expiresAt','expireDate','shareExpiresAt','status','isDeleted','deletedAt'
+        'ownerName','ownerPhone','ownerMemberId','ownerSignupId','ownerProviderId',
+        'memberId','memberName','memberPhone','createdAt','updatedAt',
+        'expiresAt','expireDate','shareExpiresAt','managerExpireAt','managerShareExpiresAt',
+        'status','serviceStatus','paymentStatus','basicPlan','alertPlan','forwardPolicy',
+        'storageMode','storageUploadedAt','storageUploadCount','storageVerifiedCount','storageExpectedCount',
+        'isDeleted','deletedAt'
       ].forEach(function(key) {
         if (item[key] !== undefined && item[key] !== null && item[key] !== '') compact[key] = item[key];
       });
-      if (Array.isArray(item.documents)) {
-        compact.documents = item.documents.map(function(doc) {
-          if (!doc || typeof doc !== 'object') return doc;
-          const d = {};
-          ['id','type','name','title','label','expireDate','expiresAt','status','uploadedAt','updatedAt','required'].forEach(function(key) {
-            if (doc[key] !== undefined && doc[key] !== null && doc[key] !== '') d[key] = doc[key];
-          });
-          return d;
-        }).slice(0, 20);
+
+      if (item.bundleMeta && typeof item.bundleMeta === 'object') {
+        compact.bundleMeta = {};
+        ['paymentText','unit','equipmentDocCount','driverDocCount','workerDocCount','totalDocCount'].forEach(function(key){
+          if (item.bundleMeta[key] !== undefined && item.bundleMeta[key] !== null && item.bundleMeta[key] !== '') compact.bundleMeta[key] = item.bundleMeta[key];
+        });
+        if (Array.isArray(item.bundleMeta.includedGroups)) compact.bundleMeta.includedGroups = item.bundleMeta.includedGroups.slice(0, 3);
       }
+
+      function compactStoredPage(page) {
+        page = page && typeof page === 'object' ? page : {};
+        const out = {};
+        [
+          'id','fileName','fileType','mimeType','type','pageIndex','width','height','size','uploadedAt',
+          'storageBucket','storage_bucket','storagePath','storage_path','filePath','file_path',
+          'objectPath','object_path','path','storageMode'
+        ].forEach(function(key){
+          if (page[key] !== undefined && page[key] !== null && page[key] !== '') out[key] = page[key];
+        });
+        return out;
+      }
+
+      function compactStoredDoc(doc, fallbackKey) {
+        doc = doc && typeof doc === 'object' ? doc : {};
+        const out = {};
+        [
+          'id','key','docKey','docKind','type','name','title','label','groupKey','groupTitle',
+          'required','expiry','expireDate','expiresAt','educationDate','status','uploadedAt','updatedAt',
+          'fileName','fileType','mimeType','pageCount','storageBucket','storage_bucket',
+          'storagePath','storage_path','filePath','file_path','objectPath','object_path','path','storageMode'
+        ].forEach(function(key){
+          if (doc[key] !== undefined && doc[key] !== null && doc[key] !== '') out[key] = doc[key];
+        });
+        if (!out.key && fallbackKey) out.key = fallbackKey;
+        out.pages = (Array.isArray(doc.pages) ? doc.pages : []).map(compactStoredPage).filter(function(page){
+          return Object.keys(page).length > 0;
+        }).slice(0, 20);
+        if (!out.pageCount && out.pages.length) out.pageCount = out.pages.length;
+        if (!out.fileName && out.pages.length) out.fileName = out.pages[0].fileName || ('첨부 ' + out.pages.length + '장');
+        return out;
+      }
+
+      if (item.docs && typeof item.docs === 'object') {
+        compact.docs = {};
+        Object.keys(item.docs).forEach(function(key){
+          const doc = compactStoredDoc(item.docs[key], key);
+          if (Object.keys(doc).length > 1 || (doc.pages && doc.pages.length)) compact.docs[key] = doc;
+        });
+      }
+      if (Array.isArray(item.documents)) {
+        compact.documents = item.documents.map(function(doc, index){ return compactStoredDoc(doc, String(doc && (doc.key || doc.type) || ('document' + (index + 1)))); }).slice(0, 20);
+      }
+      compact.sitePassCompactDocsCacheV541 = true;
       return compact;
     }
 
@@ -489,7 +539,7 @@ function resetForm(clearEdit = true) {
     }
 
 
-    // v23.7.540-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // v23.7.541-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
     // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
     // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
     function sitePassEquipmentCodeMatchesV519(item, targetCode) {
@@ -715,6 +765,29 @@ function resetForm(clearEdit = true) {
 
     let sitePassMemberEquipmentSyncing = false;
     let sitePassMemberEquipmentSyncedAt = 0;
+    let sitePassMemberEquipmentSyncWaitersV541 = [];
+
+    function waitForSitePassMemberEquipmentSyncV541(timeoutMs) {
+      if (!sitePassMemberEquipmentSyncing) return Promise.resolve({ ok:true, waited:false, alreadyIdle:true });
+      return new Promise(function(resolve){
+        let done = false;
+        const waiter = function(result){
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve(result || { ok:true, waited:true });
+        };
+        const timer = setTimeout(function(){
+          if (done) return;
+          done = true;
+          const index = sitePassMemberEquipmentSyncWaitersV541.indexOf(waiter);
+          if (index >= 0) sitePassMemberEquipmentSyncWaitersV541.splice(index, 1);
+          resolve({ ok:false, waited:true, timeout:true, error:'보관함 서버 동기화 대기시간 초과' });
+        }, Math.max(1500, Number(timeoutMs || 10000)));
+        sitePassMemberEquipmentSyncWaitersV541.push(waiter);
+      });
+    }
+    window.sitePassWaitForMemberEquipmentSyncV541 = waitForSitePassMemberEquipmentSyncV541;
 
     function shouldSyncSupabaseMyEquipmentItemsForCurrentContext() {
       try {
@@ -1247,9 +1320,38 @@ function resetForm(clearEdit = true) {
       return code === 'PGRST202' || message.indexOf('could not find the function') >= 0 || message.indexOf('schema cache') >= 0;
     }
 
+    async function loadSitePassMemberEquipmentItemByCodeV541(code) {
+      const targetCode = String(code || '').trim();
+      const api = window.SitePassSupabaseApi;
+      if (!targetCode || !api || typeof api.select !== 'function') return { ok:false, skipped:true };
+      try {
+        const result = await api.select('sitepass_equipment_items', '*', function(query){
+          return query.eq('code', targetCode).eq('is_deleted', false).limit(1);
+        });
+        if (result && result.error) return { ok:false, error:result.error };
+        const row = Array.isArray(result && result.data) ? result.data[0] : null;
+        const item = normalizeSupabaseEquipmentRow(row);
+        if (!item) return { ok:false, notFound:true };
+        const scoped = filterCurrentMemberEquipmentStorageScope([item]);
+        if (!scoped.length) return { ok:false, forbidden:true };
+        const merged = mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems(), getServerEquipmentCache(), scoped);
+        setSitePassServerAuthoritativeEquipmentItems(merged);
+        try { runtimeEquipmentItems = mergeEquipmentItemLists(merged); } catch (e) {}
+        try { setServerEquipmentCache(merged); } catch (e) {}
+        try { if (window.sitePassArchiveItemSnapshotV538 instanceof Map) window.sitePassArchiveItemSnapshotV538.set(targetCode, item); } catch (e) {}
+        return { ok:true, item:item };
+      } catch (e) {
+        return { ok:false, error:e };
+      }
+    }
+    window.sitePassLoadMemberEquipmentItemByCodeV541 = loadSitePassMemberEquipmentItemByCodeV541;
+
     async function syncSupabaseMyEquipmentItems(silent, forceRefresh) {
       const supabaseApi = window.SitePassSupabaseApi;
-      if (!supabaseApi || sitePassMemberEquipmentSyncing) return { skipped:true, error:'Supabase API 연결 없음 또는 동기화 중' };
+      if (!supabaseApi) return { skipped:true, error:'Supabase API 연결 없음' };
+      // v23.7.541: 로그인 직후 이미 시작된 첫 동기화를 상세보기에서 다시 호출하면
+      // '동기화 중'으로 건너뛰지 않고 같은 작업이 끝날 때까지 함께 기다립니다.
+      if (sitePassMemberEquipmentSyncing) return await waitForSitePassMemberEquipmentSyncV541(12000);
       if (!shouldSyncSupabaseMyEquipmentItemsForCurrentContext()) return { skipped:true, reason:'not_member_context' };
       // v23.7.495: 방금 성공한 서버 조회를 화면 이동 때마다 다시 실행하지 않습니다.
       // 캐시 화면은 즉시 표시하고, 최신 조회는 최대 1분에 한 번만 수행합니다.
@@ -1337,6 +1439,11 @@ function resetForm(clearEdit = true) {
       } finally {
         sitePassMemberEquipmentSyncing = false;
         window.sitePassMemberEquipmentInitialSyncPendingV491 = false;
+        const syncWaitersV541 = sitePassMemberEquipmentSyncWaitersV541.slice();
+        sitePassMemberEquipmentSyncWaitersV541.length = 0;
+        syncWaitersV541.forEach(function(resolveWaiter){
+          try { resolveWaiter({ ok:!window.sitePassMemberEquipmentInitialSyncErrorV491, waited:true, syncedAt:Date.now() }); } catch (e) {}
+        });
         try { window.dispatchEvent(new CustomEvent('sitepass-member-equipment-sync-v491')); } catch (e) {}
         try {
           const visible = Array.from(document.querySelectorAll('.screen')).find(function(screen){ return !screen.classList.contains('hidden'); });

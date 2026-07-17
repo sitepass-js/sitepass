@@ -1,4 +1,4 @@
-// SitePass v23.7.540-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.541-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -268,7 +268,7 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.540-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.541-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
@@ -432,7 +432,7 @@ function shareOneListItemEmail(code) {
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.540-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.541-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -1420,7 +1420,7 @@ function normalizePhoneForShare(phone) {
     const sitePassDetailServerRefreshAtV519 = {};
     const sitePassStorageHydrateCacheV523 = new WeakMap();
 
-    // v23.7.540-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
+    // v23.7.541-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
     // 서버자료가 비어 있거나 축약돼도 같은 회원의 기존 브라우저 등록자료를 보조자료로만 합칩니다.
     // 신규 Storage 경로가 있는 자료를 최우선으로 유지하고, 첨부 흔적이 없는 빈 서류카드는 상세보기에서 숨깁니다.
     const sitePassMemberDetailSnapshotV536 = new Map();
@@ -1746,8 +1746,9 @@ function normalizePhoneForShare(phone) {
       });
     }
 
-    function sitePassPaintMemberDetailV536(item, requestedCodeV519) {
+    function sitePassPaintMemberDetailV536(item, requestedCodeV519, paintOptionsV541) {
       if (!item) return false;
+      paintOptionsV541 = paintOptionsV541 || {};
       try { item = mergeLegacyManagerShareDocumentsV498(item); } catch (e) {}
       try { item = hydrateManagerShareStorageUrlsV497(item); } catch (e) {}
       const itemCode = ensureManagerShareCodeForItem(item) || String(requestedCodeV519 || '').trim();
@@ -1756,7 +1757,9 @@ function normalizePhoneForShare(phone) {
       const detailDocs = sitePassGetRegisteredDetailDocsV536(item);
       const docHtml = detailDocs.length
         ? renderDocFoldersV486(detailDocs, 'memberDetailFoldersV536_' + String(itemCode || '').replace(/[^a-zA-Z0-9_-]/g, ''), function(doc){ return sitePassRenderMemberDetailDocV536(doc); })
-        : '<div class="empty"><b>등록된 서류정보를 찾지 못했습니다.</b><br>수정/갱신 화면에서 등록서류가 남아 있는지 확인해주세요.</div>';
+        : (paintOptionsV541.docsPending
+          ? '<div class="empty sitepass-detail-doc-loading-v541"><b>등록 서류를 불러오는 중입니다.</b><br>로그인 직후 서버 서류목록을 확인하고 있습니다. 확인 전에는 서류 없음으로 표시하지 않습니다.</div>'
+          : '<div class="empty"><b>서버에서 등록된 서류정보를 확인하지 못했습니다.</b><br>수정/갱신 화면에서 등록서류가 남아 있는지 확인해주세요.</div>');
       const renewalHtml = isAdminLoggedIn() ? '<div class="notice blue-note">관리자 상세보기에서는 수정/갱신·결제연장 버튼을 숨깁니다. 장비업자에게 알림만 보내고, 실제 수정/갱신은 회원 보관함에서 처리합니다.</div>' : renderRenewPanel(item);
       const detailBox = document.getElementById('detailBox');
       if (!detailBox) return false;
@@ -1803,17 +1806,44 @@ function normalizePhoneForShare(phone) {
         }
         return;
       }
-      sitePassPaintMemberDetailV536(item, requestedCodeV519);
+      const detailDocsBeforeV541 = sitePassGetRegisteredDetailDocsV536(item);
+      const shouldWaitForDocsV541 = !detailDocsBeforeV541.length && !options.skipEmptyDocsRetry;
+      sitePassPaintMemberDetailV536(item, requestedCodeV519, { docsPending:shouldWaitForDocsV541 });
 
       // 비공개 Storage 파일은 상세화면을 먼저 보여준 뒤 기간 제한 주소만 뒤에서 채웁니다.
       Promise.resolve(hydrateItemStorageAccessUrlsV523(item, true)).then(function(hydrated){
         if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
         if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
         const stable = sitePassBuildStableDetailItemV536(requestedCodeV519) || hydrated || item;
-        sitePassPaintMemberDetailV536(stable, requestedCodeV519);
+        const stableDocs = sitePassGetRegisteredDetailDocsV536(stable);
+        sitePassPaintMemberDetailV536(stable, requestedCodeV519, { docsPending:shouldWaitForDocsV541 && !stableDocs.length });
       }).catch(function(error){ console.warn('회원 상세 서류주소 준비 실패:', error); });
 
-      if (!options.skipServerRefresh) refreshMemberDetailFromServerV519(requestedCodeV519 || item.code);
+      if (shouldWaitForDocsV541 && typeof syncSupabaseMyEquipmentItems === 'function') {
+        // 장비 한 건 직접조회는 전체 보관함 동기화와 병렬로 실행합니다.
+        // RLS가 허용하는 환경에서는 해당 장비 서류가 먼저 도착하는 즉시 화면을 다시 그립니다.
+        if (typeof window.sitePassLoadMemberEquipmentItemByCodeV541 === 'function') {
+          Promise.resolve(window.sitePassLoadMemberEquipmentItemByCodeV541(requestedCodeV519)).then(function(result){
+            if (!result || result.ok !== true) return;
+            if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
+            if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
+            const directItem = sitePassBuildStableDetailItemV536(requestedCodeV519) || result.item;
+            if (directItem && sitePassGetRegisteredDetailDocsV536(directItem).length) renderDetail(requestedCodeV519, { skipServerRefresh:true, skipEmptyDocsRetry:true });
+          }).catch(function(){});
+        }
+        Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(){
+          if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
+          if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
+          const refreshed = sitePassBuildStableDetailItemV536(requestedCodeV519);
+          if (refreshed && sitePassGetRegisteredDetailDocsV536(refreshed).length) {
+            renderDetail(requestedCodeV519, { skipServerRefresh:true, skipEmptyDocsRetry:true });
+            return;
+          }
+          if (refreshed) sitePassPaintMemberDetailV536(refreshed, requestedCodeV519, { docsPending:false });
+        }).catch(function(error){ console.warn('상세보기 서류목록 빠른 확인 실패:', error); });
+      } else if (!options.skipServerRefresh) {
+        refreshMemberDetailFromServerV519(requestedCodeV519 || item.code);
+      }
     }
 
     function renderDocDetail(doc) {
@@ -1982,9 +2012,34 @@ function renderDocExpiryStrip(doc) {
         return;
       }
 
-      // v23.7.540-test: 링크화면은 Storage 검사·복구·서버 재저장을 기다리지 않고 즉시 엽니다.
-      // 보관함 카드에서 확보한 장비 원본을 sessionStorage에 먼저 넘기고 share.html이 화면을
-      // 즉시 그린 뒤 서버 최신자료와 기간 제한 파일주소를 뒤에서 보완합니다.
+      // v23.7.541-test: 로그인 직후 캐시에 서류목록이 아직 없으면 진행 중인 첫 서버동기화를
+      // 최대 2.2초만 함께 기다립니다. 30~40초짜리 중복 재조회는 만들지 않습니다.
+      if (!options.skipDocsWarmup && !sitePassGetRegisteredDetailDocsV536(item).length && typeof syncSupabaseMyEquipmentItems === 'function') {
+        try {
+          const warmupsV541 = [Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(){
+            const syncedItem = sitePassBuildStableDetailItemV536(targetCode);
+            if (syncedItem && sitePassGetRegisteredDetailDocsV536(syncedItem).length) return syncedItem;
+            throw new Error('전체 동기화에 서류목록 없음');
+          })];
+          if (typeof window.sitePassLoadMemberEquipmentItemByCodeV541 === 'function') {
+            warmupsV541.push(Promise.resolve(window.sitePassLoadMemberEquipmentItemByCodeV541(targetCode)).then(function(result){
+              const directItem = sitePassBuildStableDetailItemV536(targetCode) || (result && result.item);
+              if (result && result.ok === true && directItem && sitePassGetRegisteredDetailDocsV536(directItem).length) return directItem;
+              throw new Error('장비 한 건 조회에 서류목록 없음');
+            }));
+          }
+          const readyV541 = Promise.any ? Promise.any(warmupsV541) : Promise.race(warmupsV541);
+          await Promise.race([
+            readyV541.catch(function(){ return null; }),
+            new Promise(function(resolve){ setTimeout(resolve, 2200); })
+          ]);
+          item = sitePassBuildStableDetailItemV536(targetCode) || item;
+        } catch (e) { console.warn('링크화면 서류목록 빠른 준비 실패:', e); }
+      }
+
+      // 링크화면은 Storage 전체검사·복구를 기다리지 않고 캐시된 서류 메타정보와 경로로 먼저 엽니다.
+      // 보관함 카드에서 확보한 장비 원본을 sessionStorage에 넘기고 share.html이 즉시 그린 뒤
+      // 서버 최신자료와 기간 제한 파일주소를 뒤에서 보완합니다.
       let previewItem = item;
       try { previewItem = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(item)); } catch (e) {}
       try { previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem); } catch (e) {}
@@ -1995,12 +2050,23 @@ function renderDocExpiryStrip(doc) {
       const linkSig = sig || getManagerLinkSignature(finalCode, exp);
       sitePassSaveManagerPreviewSnapshotV538(previewItem, finalCode, exp, linkSig);
 
+      // 서류목록이 확보된 경우 공개링크 payload도 가볍게 최신화합니다.
+      // 전체 Storage 검사는 하지 않고 경로 메타정보만 저장하며, 최대 1.8초 뒤에는 화면을 엽니다.
+      if (sitePassGetRegisteredDetailDocsV536(previewItem).length && typeof saveManagerShareItemsToSupabase === 'function') {
+        try {
+          await Promise.race([
+            Promise.resolve(saveManagerShareItemsToSupabase([previewItem])),
+            new Promise(function(resolve){ setTimeout(resolve, 1800); })
+          ]);
+        } catch (e) { console.warn('링크화면 최신 서류목록 서버저장 지연:', e); }
+      }
+
       const url = new URL('./share.html', window.location.href);
       url.search = ''; url.hash = '';
       url.searchParams.set('manager', String(finalCode || ''));
       if (linkSig) url.searchParams.set('sig', String(linkSig));
       url.searchParams.set('from', 'member');
-      url.searchParams.set('v', '23.7.540-test');
+      url.searchParams.set('v', '23.7.541-test');
       window.location.assign(url.toString());
     }
 
