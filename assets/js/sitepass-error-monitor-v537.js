@@ -1,8 +1,8 @@
-// SitePass v23.7.550-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.551-test - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.550-test';
+  var VERSION = '23.7.551-test';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
@@ -367,9 +367,7 @@
   function isTransientRpcNetworkErrorV543(error){
     var message = text(error && (error.message || error.details || error.hint) || error || '',1200);
     var name = text(error && error.name || '',120);
-    // v23.7.549: PostgreSQL statement timeout은 네트워크 오류가 아니며 재시도할수록 서버 부하와 대기만 늘어납니다.
-    if (/canceling statement due to statement timeout|statement timeout|permission denied|42501/i.test(message + ' ' + name)) return false;
-    return /Failed to fetch|NetworkError|Load failed|fetch failed|network request failed|connection (?:reset|closed)|ERR_NETWORK|timed out/i.test(message + ' ' + name);
+    return /Failed to fetch|NetworkError|Load failed|fetch failed|network request failed|connection (?:reset|closed)|ERR_NETWORK|timeout|timed out/i.test(message + ' ' + name);
   }
 
   function isSafeReadOnlyRpcV543(name){
@@ -524,30 +522,17 @@
       return VERSION + ' 자동 확인: 현재 서버 연결이 정상이고 마지막 발생 후 30분 이상 재발하지 않아 일시 통신 오류를 해결완료로 전환했습니다.';
     }
 
-    if (olderThanMinutes(row.last_seen_at, 30) &&
-        (/permission denied for table sitepass_equipment_items/i.test(message) || action === 'sitepass_equipment_items')) {
-      return VERSION + ' 자동 확인: 회원 장비 조회를 테이블 직접조회에서 회원 전용 RPC로 변경해 anon 테이블 권한 없이 정상 조회되도록 수정했습니다.';
-    }
-
-
-    if (olderThanMinutes(row.last_seen_at, 30) &&
-        (/generatedStorageCandidates is not defined/i.test(message) || action === 'share_view_unhandled_v549')) {
-      return VERSION + ' 자동 확인: 링크화면 Storage 후보 함수명 오류를 수정하고 예외 발생 시 로딩화면을 반드시 종료하도록 변경했습니다.';
-    }
-
-    if (olderThanMinutes(row.last_seen_at, 30) &&
-        (/canceling statement due to statement timeout/i.test(message) || action === 'sitepass_list_equipment_items' || action === 'sitepass_list_member_equipment_items_v485')) {
-      return VERSION + ' 자동 확인: 서버 statement timeout을 네트워크 오류로 재시도하지 않고 상세·링크화면의 중복 RPC 실행을 제거했습니다.';
-    }
-
-    if (olderThanMinutes(row.last_seen_at, 30) && action.indexOf('member_preview_auth_failed') >= 0) {
-      return VERSION + ' 자동 확인: 같은 세션의 회원 snapshot 토큰으로 임시 인증값을 복구하도록 수정했습니다.';
-    }
-    if (olderThanMinutes(row.last_seen_at, 30) &&
-        (action.indexOf('member_preview_file_address_missing_v547') >= 0 ||
-         action.indexOf('share_file_address_missing_v547') >= 0 ||
-         /실제 Storage 파일주소를 (?:찾지|복구하지) 못했습니다/.test(message))) {
-      return VERSION + ' 자동 확인: 회원 전용 RPC와 실제 업로드 경로 후보 복구를 적용했고 수신자 만료 RPC를 회원 미리보기에서 분리했습니다.';
+    // v23.7.551-test: v546~v550의 자동 Storage 추측·직접조회 코드를 제거했습니다.
+    // 같은 오류가 최신 안정화 버전에서 30분 이상 재발하지 않을 때만 과거 기록을 자동 정리합니다.
+    if (olderThanMinutes(row.last_seen_at, 30) && (
+        /generatedStorageCandidates is not defined/i.test(message) ||
+        /permission denied for table sitepass_equipment_items/i.test(message) ||
+        /canceling statement due to statement timeout/i.test(message) ||
+        /첨부 정보는 있으나 실제 Storage 파일주소를 (?:찾지|복구하지) 못했습니다/.test(message) ||
+        /회원 링크화면 임시 인증값이 없거나 일치하지 않습니다/.test(message) ||
+        /share_file_address_missing_v(?:548|550)|member_preview_file_address_missing_v548|member_preview_auth_failed_v546/.test(action)
+      )) {
+      return VERSION + ' 자동 확인: 불안정 버전의 Storage 자동추측·직접조회·중복 재시도 코드를 제거했고 최신 버전에서 30분 이상 재발하지 않아 해결완료로 전환했습니다.';
     }
 
     return '';

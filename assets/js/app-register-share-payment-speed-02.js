@@ -539,7 +539,7 @@ function resetForm(clearEdit = true) {
     }
 
 
-    // v23.7.550-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // v23.7.551-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
     // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
     // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
     function sitePassEquipmentCodeMatchesV519(item, targetCode) {
@@ -707,10 +707,6 @@ function resetForm(clearEdit = true) {
     async function syncSupabaseEquipmentItems(silent) {
       const supabaseApi = window.SitePassSupabaseApi;
       if (!supabaseApi || sitePassEquipmentSyncing) return { skipped:true, error:'Supabase API 연결 없음' };
-      // v23.7.549: 관리자 렌더마다 무거운 전체목록 RPC를 반복하지 않습니다.
-      const adminAttemptAtV549 = Number(window.sitePassAdminEquipmentSyncAttemptAtV549 || 0);
-      if (silent && adminAttemptAtV549 && Date.now() - adminAttemptAtV549 < 120000) return { skipped:true, reason:'recent_admin_sync_attempt_v549' };
-      window.sitePassAdminEquipmentSyncAttemptAtV549 = Date.now();
       if (!shouldSyncSupabaseEquipmentItemsForCurrentContext()) {
         sitePassEquipmentSyncMessage = '일반회원 화면에서는 전체 장비 서버목록 동기화를 생략했습니다.';
         return { skipped:true, reason:'member_scope' };
@@ -719,8 +715,7 @@ function resetForm(clearEdit = true) {
       try {
         let data = null;
         let error = null;
-        // v23.7.549: 관리자 전체목록도 RPC만 사용합니다.
-        // RPC 실패 뒤 anon 직접 SELECT를 실행하면 401 permission denied만 추가되므로 절대 fallback하지 않습니다.
+        // v23.7.281: 서버 RPC 목록 조회를 우선 사용하고, 실패 시 직접 SELECT로 재시도합니다.
         if (supabaseApi.rpc) {
           const rpcResult = await supabaseApi.rpc('sitepass_list_equipment_items', {});
           error = rpcResult && rpcResult.error ? rpcResult.error : null;
@@ -729,8 +724,14 @@ function resetForm(clearEdit = true) {
             try { data = JSON.parse(data); } catch (e) {}
           }
           if (data && !Array.isArray(data) && Array.isArray(data.items)) data = data.items;
-        } else {
-          error = { message:'관리자 장비목록 RPC 연결 없음' };
+          if (error) console.warn('Supabase 장비 RPC 목록 실패, 직접 SELECT 재시도:', error);
+        }
+        if ((error || !Array.isArray(data)) && supabaseApi.select) {
+          const selectResult = await supabaseApi.select('sitepass_equipment_items', '*', function(query){
+            return query.eq('is_deleted', false).order('updated_at', { ascending:false }).limit(1000);
+          });
+          data = selectResult && selectResult.data ? selectResult.data : [];
+          error = selectResult && selectResult.error ? selectResult.error : null;
         }
         if (error) {
           sitePassEquipmentSyncMessage = '장비 서버목록 불러오기 실패: ' + (error.message || JSON.stringify(error));
@@ -1322,28 +1323,25 @@ function resetForm(clearEdit = true) {
     async function loadSitePassMemberEquipmentItemByCodeV541(code) {
       const targetCode = String(code || '').trim();
       const api = window.SitePassSupabaseApi;
-      // v23.7.548: 회원 장비 한 건 조회에서 sitepass_equipment_items 테이블을 직접 SELECT하지 않습니다.
-      // anon 테이블 권한을 열지 않고, 기존 회원 범위 RPC 결과에서 대상 장비만 찾습니다.
-      if (!targetCode || !api || typeof api.rpc !== 'function') return { ok:false, skipped:true };
+      if (!targetCode || !api || typeof api.select !== 'function') return { ok:false, skipped:true };
       try {
-        const rpcParams = getSitePassMemberEquipmentRpcParamsV485();
-        const hasMemberKey = rpcParams.p_owner_member_ids.length || rpcParams.p_owner_signup_ids.length || rpcParams.p_owner_provider_ids.length;
-        if (!hasMemberKey) return { ok:false, error:{ code:'SITEPASS_MEMBER_SCOPE_EMPTY', message:'현재 로그인 회원 식별값을 확인할 수 없습니다.' } };
-        const result = await api.rpc('sitepass_list_member_equipment_items_v485', rpcParams);
-        if (result && result.error) return { ok:false, error:result.error, source:'member_rpc' };
-        const rows = parseSupabaseEquipmentRows(result && result.data);
-        const normalized = rows.map(normalizeSupabaseEquipmentRow).filter(Boolean);
-        const scoped = filterCurrentMemberEquipmentStorageScope(normalized);
-        const item = scoped.find(function(row){ return String(row && row.code || '').trim() === targetCode; }) || null;
-        if (!item) return { ok:false, notFound:true, source:'member_rpc', rows:scoped.length };
+        const result = await api.select('sitepass_equipment_items', '*', function(query){
+          return query.eq('code', targetCode).eq('is_deleted', false).limit(1);
+        });
+        if (result && result.error) return { ok:false, error:result.error };
+        const row = Array.isArray(result && result.data) ? result.data[0] : null;
+        const item = normalizeSupabaseEquipmentRow(row);
+        if (!item) return { ok:false, notFound:true };
+        const scoped = filterCurrentMemberEquipmentStorageScope([item]);
+        if (!scoped.length) return { ok:false, forbidden:true };
         const merged = mergeEquipmentItemLists(getSitePassServerAuthoritativeEquipmentItems(), getServerEquipmentCache(), scoped);
         setSitePassServerAuthoritativeEquipmentItems(merged);
         try { runtimeEquipmentItems = mergeEquipmentItemLists(merged); } catch (e) {}
         try { setServerEquipmentCache(merged); } catch (e) {}
         try { if (window.sitePassArchiveItemSnapshotV538 instanceof Map) window.sitePassArchiveItemSnapshotV538.set(targetCode, item); } catch (e) {}
-        return { ok:true, item:item, source:'member_rpc' };
+        return { ok:true, item:item };
       } catch (e) {
-        return { ok:false, error:e, source:'member_rpc' };
+        return { ok:false, error:e };
       }
     }
     window.sitePassLoadMemberEquipmentItemByCodeV541 = loadSitePassMemberEquipmentItemByCodeV541;

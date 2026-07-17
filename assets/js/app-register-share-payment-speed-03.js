@@ -1,4 +1,4 @@
-// SitePass v23.7.550-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.551-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -268,7 +268,7 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.550-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.551-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
@@ -391,40 +391,6 @@ function shareOneListItemEmail(code) {
       });
     }
 
-    // v23.7.550-test: 장비 전체에 파일주소가 하나라도 있다는 이유로 나머지 서류의
-    // 누락 주소 복구를 건너뛰지 않습니다. 서류별로 첨부 흔적과 실제 Storage 참조를 확인합니다.
-    function managerShareDocHasAttachmentMetadataV547(doc) {
-      if (!doc || typeof doc !== 'object') return false;
-      const fileName = String(doc.fileName || doc.file_name || '').trim();
-      const status = String(doc.status || doc.attachStatus || doc.attachmentStatus || '').trim();
-      return (!!fileName && !/^(첨부됨|미첨부|선택안함|-|null|undefined)$/i.test(fileName.replace(/\s+/g,''))) ||
-        Number(doc.pageCount || doc.page_count || 0) > 0 ||
-        (Array.isArray(doc.pages) && doc.pages.length > 0) ||
-        (/첨부|등록|완료|저장/i.test(status) && !/미첨부|선택안함/i.test(status));
-    }
-
-    function managerShareObjectHasFileReferenceV547(obj, parent) {
-      if (!obj || typeof obj !== 'object') return false;
-      if (getManagerShareStoragePathV497(obj)) return true;
-      if (getManagerShareObjectStoredUrlV496(obj)) return true;
-      const embedded = [obj.previewDataUrl,obj.editDataUrl,obj.originalDataUrl,obj.correctedDataUrl,obj.dataUrl,obj.fileDataUrl]
-        .some(isManagerShareEmbeddedUrlV496);
-      if (embedded) return true;
-      return false;
-    }
-
-    function getManagerShareMissingFileDocKeysV547(item) {
-      const docs = item && item.docs && typeof item.docs === 'object' ? item.docs : {};
-      return Object.keys(docs).filter(function(key){
-        const doc = docs[key] && typeof docs[key] === 'object' ? docs[key] : {};
-        if (!managerShareDocHasAttachmentMetadataV547(doc)) return false;
-        if (managerShareObjectHasFileReferenceV547(doc, item)) return false;
-        return !(Array.isArray(doc.pages) ? doc.pages : []).some(function(page){
-          return managerShareObjectHasFileReferenceV547(page, doc);
-        });
-      });
-    }
-
     function managerShareItemNeedsStorageUploadV496(item) {
       let needsUpload = false;
       Object.values((item && item.docs) || {}).forEach(function(doc) {
@@ -466,7 +432,7 @@ function shareOneListItemEmail(code) {
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.550-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.551-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -740,7 +706,7 @@ function shareOneListItemEmail(code) {
           });
         });
         // 가장 가능성 높은 후보 4개를 병렬 확인해 공유 대기시간을 2초 안쪽으로 제한합니다.
-        const limitedCandidates = candidates.slice(0, 8);
+        const limitedCandidates = candidates.slice(0, 4);
         const probeResults = await Promise.all(limitedCandidates.map(function(candidate){ return probeManagerSharePublicUrlV498(candidate.url); }));
         const foundIndex = probeResults.findIndex(Boolean);
         if (foundIndex >= 0) found = limitedCandidates[foundIndex];
@@ -762,15 +728,16 @@ function shareOneListItemEmail(code) {
     async function recoverManagerShareItemFromStorageV498(item) {
       item = mergeLegacyManagerShareDocumentsV498(item);
       hydrateManagerShareStorageUrlsV497(item);
+      if (countManagerShareStoredUrlsV496(item)) return { ok:true, item:item, recovered:0 };
       const bucket = getSitePassStorageBucketName();
       const owners = getManagerShareStorageOwnerCandidatesV498(item);
       const codes = getManagerShareStorageCodeCandidatesV498(item);
       const docs = item.docs && typeof item.docs === 'object' ? item.docs : {};
-      // v23.7.550-test: 일부 서류만 정상이어도 나머지 누락 서류를 계속 복구합니다.
-      // 기존에는 장비 전체에서 URL 1개만 발견돼도 즉시 종료되어 부분 누락이 반복됐습니다.
-      const docKeys = getManagerShareMissingFileDocKeysV547(item);
-      if (!docKeys.length) return { ok:true, item:item, recovered:0, missing:[] };
-      if (!owners.length || !codes.length) return { ok:false, item:item, recovered:0, missing:docKeys };
+      const docKeys = Object.keys(docs).filter(function(key){
+        const doc = docs[key];
+        return doc && typeof doc === 'object' && !getManagerShareObjectStoredUrlV496(doc);
+      });
+      if (!owners.length || !codes.length) return { ok:false, item:item, recovered:0 };
 
       // 먼저 Storage 목록 조회로 실제 파일명을 찾습니다. 목록 권한이 없으면 아래의 경로 추정 방식으로 보완합니다.
       const listPairs = [];
@@ -792,37 +759,29 @@ function shareOneListItemEmail(code) {
       if (listedRecoveredCount > 0) {
         hydrateManagerShareStorageUrlsV497(item);
         item.storageRecoveredAt = new Date().toISOString();
-        item.storageRecoveryMode = 'folder-list-v547';
-        if (!getManagerShareMissingFileDocKeysV547(item).length) {
-          return { ok:true, item:item, recovered:listedRecoveredCount, missing:[] };
-        }
+        item.storageRecoveryMode = 'folder-list-v498';
+        return { ok:true, item:item, recovered:listedRecoveredCount };
       }
 
-      // Storage 목록 조회로 일부만 복구됐거나 목록 조회가 막힌 환경에서는
-      // 남은 서류만 기존 업로드 규칙으로 직접 계산해 확인합니다.
+      // Storage 목록 조회가 막힌 환경에서는 기존 업로드 규칙으로 경로를 직접 계산해 확인합니다.
       const directOwners = uniqueManagerShareValuesV498([owners[0], owners[owners.length - 1]]);
-      let directRecoveredTotal = 0;
       for (const owner of directOwners) {
         for (const codePart of codes.slice(0, 2)) {
           const probeCounts = await Promise.all(docKeys.map(async function(docKey){
             const doc = docs[docKey];
-            if (!getManagerShareMissingFileDocKeysV547(item).includes(docKey)) return 0;
+            if (getManagerShareObjectStoredUrlV496(doc)) return 0;
             return await probeManagerShareStorageDocV498(item, owner, codePart, docKey, doc);
           }));
           const recoveredCount = probeCounts.reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
           if (recoveredCount > 0) {
-            directRecoveredTotal += recoveredCount;
             hydrateManagerShareStorageUrlsV497(item);
             item.storageRecoveredAt = new Date().toISOString();
-            item.storageRecoveryMode = 'predictable-path-v547';
-            if (!getManagerShareMissingFileDocKeysV547(item).length) {
-              return { ok:true, item:item, recovered:listedRecoveredCount + directRecoveredTotal, missing:[] };
-            }
+            item.storageRecoveryMode = 'predictable-path-v498';
+            return { ok:true, item:item, recovered:recoveredCount };
           }
         }
       }
-      const remainingV547 = getManagerShareMissingFileDocKeysV547(item);
-      return { ok:!remainingV547.length, item:item, recovered:listedRecoveredCount + directRecoveredTotal, missing:remainingV547 };
+      return { ok:false, item:item, recovered:0 };
     }
 
 
@@ -1461,7 +1420,7 @@ function normalizePhoneForShare(phone) {
     const sitePassDetailServerRefreshAtV519 = {};
     const sitePassStorageHydrateCacheV523 = new WeakMap();
 
-    // v23.7.550-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
+    // v23.7.551-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
     // 서버자료가 비어 있거나 축약돼도 같은 회원의 기존 브라우저 등록자료를 보조자료로만 합칩니다.
     // 신규 Storage 경로가 있는 자료를 최우선으로 유지하고, 첨부 흔적이 없는 빈 서류카드는 상세보기에서 숨깁니다.
     const sitePassMemberDetailSnapshotV536 = new Map();
@@ -1861,22 +1820,27 @@ function normalizePhoneForShare(phone) {
       }).catch(function(error){ console.warn('회원 상세 서류주소 준비 실패:', error); });
 
       if (shouldWaitForDocsV541 && typeof syncSupabaseMyEquipmentItems === 'function') {
-        // v23.7.549: 상세보기에서 같은 대형 회원목록 RPC를 두 번 병렬 실행하지 않습니다.
-        // 현재 캐시를 먼저 표시하고 기존/단일 동기화 결과가 도착할 때만 한 번 다시 그립니다.
-        Promise.resolve(syncSupabaseMyEquipmentItems(true, false)).then(function(){
+        // 장비 한 건 직접조회는 전체 보관함 동기화와 병렬로 실행합니다.
+        // RLS가 허용하는 환경에서는 해당 장비 서류가 먼저 도착하는 즉시 화면을 다시 그립니다.
+        if (typeof window.sitePassLoadMemberEquipmentItemByCodeV541 === 'function') {
+          Promise.resolve(window.sitePassLoadMemberEquipmentItemByCodeV541(requestedCodeV519)).then(function(result){
+            if (!result || result.ok !== true) return;
+            if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
+            if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
+            const directItem = sitePassBuildStableDetailItemV536(requestedCodeV519) || result.item;
+            if (directItem && sitePassGetRegisteredDetailDocsV536(directItem).length) renderDetail(requestedCodeV519, { skipServerRefresh:true, skipEmptyDocsRetry:true });
+          }).catch(function(){});
+        }
+        Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(){
           if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
           if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
           const refreshed = sitePassBuildStableDetailItemV536(requestedCodeV519);
           if (refreshed && sitePassGetRegisteredDetailDocsV536(refreshed).length) {
             renderDetail(requestedCodeV519, { skipServerRefresh:true, skipEmptyDocsRetry:true });
+            return;
           }
-        }).catch(function(error){ console.warn('상세보기 서류목록 확인 실패:', error); });
-        setTimeout(function(){
-          if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
-          if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
-          const current = sitePassBuildStableDetailItemV536(requestedCodeV519) || item;
-          if (!sitePassGetRegisteredDetailDocsV536(current).length) sitePassPaintMemberDetailV536(current, requestedCodeV519, { docsPending:false });
-        }, 6500);
+          if (refreshed) sitePassPaintMemberDetailV536(refreshed, requestedCodeV519, { docsPending:false });
+        }).catch(function(error){ console.warn('상세보기 서류목록 빠른 확인 실패:', error); });
       } else if (!options.skipServerRefresh) {
         refreshMemberDetailFromServerV519(requestedCodeV519 || item.code);
       }
@@ -2020,195 +1984,33 @@ function renderDocExpiryStrip(doc) {
       return record.token;
     }
 
-    function sitePassReportMemberPreviewIssueV546(message, targetCode, extra) {
-      try {
-        const error = message instanceof Error ? message : new Error(String(message || '회원 링크화면 오류'));
-        const context = Object.assign({ logical_error:true, member_preview:true }, extra || {});
-        const monitorAction = String(context.monitor_action || 'member_preview_open_v547');
-        if (typeof window.sitepassCaptureErrorV537 === 'function') {
-          window.sitepassCaptureErrorV537('share_open', error, {
-            action:monitorAction,
-            severity:context.severity || 'warning',
-            equipment_code:String(targetCode || ''),
-            context:context
-          });
-          try { if (window.SitePassErrorMonitor && window.SitePassErrorMonitor.flush) window.SitePassErrorMonitor.flush(); } catch (e) {}
-        }
-      } catch (ignore) {}
-    }
-
-    function sitePassCleanupMemberPreviewStorageV546(finalCode) {
-      const keepCode = String(finalCode || '');
-      const prefixes = [
-        'sitepass_recipient_preview_current_',
-        'sitepass_member_preview_auth_v542_',
-        'sitepass_recipient_server_cache_v512_'
-      ];
-      try {
-        const remove = [];
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const key = String(sessionStorage.key(i) || '');
-          if (!prefixes.some(prefix => key.indexOf(prefix) === 0)) continue;
-          if (keepCode && key.endsWith(keepCode)) continue;
-          remove.push(key);
-        }
-        remove.forEach(key => { try { sessionStorage.removeItem(key); } catch (e) {} });
-      } catch (e) {}
-    }
-
-    function sitePassCompactMemberPreviewItemV546(previewItem, tiny) {
-      let item = previewItem;
-      try {
-        if (tiny && typeof makeStorageTinyItem === 'function') item = makeStorageTinyItem(previewItem || {});
-        else if (typeof stripItemDataUrlsForServerStorage === 'function') item = stripItemDataUrlsForServerStorage(previewItem || {});
-        else item = JSON.parse(JSON.stringify(previewItem || {}));
-      } catch (e) {
-        try { item = typeof makeStorageTinyItem === 'function' ? makeStorageTinyItem(previewItem || {}) : previewItem; }
-        catch (ignore) { item = previewItem; }
-      }
-      return item || {};
-    }
-
-    function sitePassSaveManagerPreviewSnapshotV538(previewItem, finalCode, linkSig, memberPreviewToken, sourceEquipmentCode) {
-      const key = 'sitepass_recipient_preview_current_' + String(finalCode || '');
-      sitePassCleanupMemberPreviewStorageV546(finalCode);
-      const base = {
+    function sitePassSaveManagerPreviewSnapshotV538(previewItem, finalCode, linkSig, memberPreviewToken) {
+      const snapshot = {
+        item_data:previewItem,
+        payload:previewItem,
         expires_at:null,
         share_code:String(finalCode || ''),
         share_sig:String(linkSig || ''),
         member_preview:true,
         member_preview_token:String(memberPreviewToken || ''),
-        member_preview_equipment_code:String(sourceEquipmentCode || finalCode || ''),
         preview_saved_at:new Date().toISOString()
       };
-      const lightItem = sitePassCompactMemberPreviewItemV546(previewItem, false);
+      const key = 'sitepass_recipient_preview_current_' + String(finalCode || '');
       try {
-        sessionStorage.setItem(key, JSON.stringify(Object.assign({}, base, { item_data:lightItem, payload:lightItem })));
+        sessionStorage.setItem(key, JSON.stringify(snapshot));
         return true;
       } catch (e) {
         try {
-          sitePassCleanupMemberPreviewStorageV546(finalCode);
-          const tinyItem = sitePassCompactMemberPreviewItemV546(previewItem, true);
-          sessionStorage.setItem(key, JSON.stringify(Object.assign({}, base, { item_data:tinyItem, payload:tinyItem, compact_preview:true })));
+          const lightItem = typeof stripItemDataUrlsForServerStorage === 'function'
+            ? stripItemDataUrlsForServerStorage(previewItem)
+            : previewItem;
+          sessionStorage.setItem(key, JSON.stringify(Object.assign({}, snapshot, { item_data:lightItem, payload:lightItem })));
           return true;
         } catch (ignore) {
           console.warn('링크화면 즉시 미리보기 저장 실패:', ignore);
-          sitePassReportMemberPreviewIssueV546(ignore || '회원 링크화면 미리보기 저장 실패', sourceEquipmentCode || finalCode, {
-            stage:'snapshot_save',
-            storage:'sessionStorage'
-          });
           return false;
         }
       }
-    }
-
-    async function sitePassRepairMemberPreviewFilesV547(previewItem, targetCode) {
-      let item = mergeLegacyManagerShareDocumentsV498(previewItem || {});
-      hydrateManagerShareStorageUrlsV497(item);
-      let missing = getManagerShareMissingFileDocKeysV547(item);
-      const result = { item:item, missingBefore:missing.slice(), missingAfter:missing.slice(), recovered:0, stages:[] };
-      if (!missing.length) return result;
-
-      // 서버 장비 한 건을 다시 합쳐 item_json에 남아 있는 Storage 경로를 우선 복구합니다.
-      try {
-        if (typeof window.sitePassLoadMemberEquipmentItemByCodeV541 === 'function') {
-          const direct = await withManagerShareTimeoutV498(window.sitePassLoadMemberEquipmentItemByCodeV541(targetCode), 6200);
-          const directItem = direct && direct.ok === true ? direct.item : null;
-          if (directItem) {
-            item = mergeManagerShareCandidatesV497([item, directItem], item);
-            hydrateManagerShareStorageUrlsV497(item);
-            result.stages.push('member_rpc');
-          } else {
-            result.stages.push('member_rpc_empty');
-            if (direct && direct.error) result.memberRpcError = String(direct.error.message || direct.error.details || direct.error);
-          }
-        }
-      } catch (e) { result.stages.push('member_rpc_failed'); result.memberRpcError = String(e && e.message || e || ''); }
-
-      missing = getManagerShareMissingFileDocKeysV547(item);
-      if (missing.length) {
-        try {
-          const previous = await recoverManagerShareItemFromPreviousPublicShareV499(item);
-          if (previous && previous.item) item = previous.item;
-          hydrateManagerShareStorageUrlsV497(item);
-          result.stages.push('previous_share');
-        } catch (e) { result.stages.push('previous_share_failed'); }
-      }
-
-      missing = getManagerShareMissingFileDocKeysV547(item);
-      if (missing.length) {
-        try {
-          const recovered = await withManagerShareTimeoutV498(recoverManagerShareItemFromStorageV498(item), 4800);
-          if (recovered && recovered.item) item = recovered.item;
-          result.recovered += Number(recovered && recovered.recovered || 0);
-          result.stages.push('storage_scan');
-        } catch (e) { result.stages.push('storage_scan_failed'); }
-      }
-
-      hydrateManagerShareStorageUrlsV497(item);
-      result.item = item;
-      result.missingAfter = getManagerShareMissingFileDocKeysV547(item);
-      if (result.missingBefore.length && result.missingAfter.length < result.missingBefore.length) {
-        try {
-          const serverItem = stripItemDataUrlsForServerStorage(item);
-          Promise.resolve(saveEquipmentItemToSupabase(serverItem, 'member_preview_file_recovery_v548')).catch(function(e){
-            console.warn('회원 링크화면 파일주소 복구 저장 실패:', e);
-          });
-        } catch (e) {}
-      }
-      return result;
-    }
-
-
-
-    async function sitePassFocusedMemberStorageRepairV550(previewItem, targetCode) {
-      let item = mergeLegacyManagerShareDocumentsV498(previewItem || {});
-      hydrateManagerShareStorageUrlsV497(item);
-      const missingBefore = getManagerShareMissingFileDocKeysV547(item);
-      const result = { item:item, missingBefore:missingBefore.slice(), missingAfter:missingBefore.slice(), recovered:0, stages:[] };
-      if (!missingBefore.length) return result;
-
-      const ownerCandidates = getManagerShareStorageOwnerCandidatesV498(item)
-        .filter(function(value){ return value && value !== 'anonymous'; })
-        .slice(0, 2);
-      const codePart = normalizeManagerShareStoragePartV498(targetCode || item.code || item.equipmentCode || item.equipmentNo, 'code');
-      if (!ownerCandidates.length || !codePart) {
-        result.stages.push('focused_storage_identity_missing');
-        return result;
-      }
-
-      try {
-        const jobs = [];
-        ownerCandidates.forEach(function(owner){
-          missingBefore.forEach(function(docKey){
-            const folder = normalizeManagerShareStoragePartV498(docKey, 'document');
-            jobs.push((async function(){
-              const listed = await listManagerShareStorageFolderV498(getSitePassStorageBucketName(), [owner, codePart, folder].join('/'));
-              if (!listed || !listed.ok || !listed.data || !listed.data.length) return 0;
-              return applyManagerShareStorageFilesV498(item, owner, codePart, folder, listed.data);
-            })());
-          });
-        });
-        const counts = await withManagerShareTimeoutV498(Promise.all(jobs), 2600);
-        result.recovered = (counts || []).reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
-        result.stages.push(result.recovered ? 'focused_storage_recovered' : 'focused_storage_empty');
-      } catch (e) {
-        result.stages.push('focused_storage_timeout');
-        result.error = String(e && e.message || e || '');
-      }
-
-      hydrateManagerShareStorageUrlsV497(item);
-      result.item = item;
-      result.missingAfter = getManagerShareMissingFileDocKeysV547(item);
-      if (result.missingAfter.length < result.missingBefore.length) {
-        try {
-          const serverItem = stripItemDataUrlsForServerStorage(item);
-          Promise.resolve(saveEquipmentItemToSupabase(serverItem, 'member_preview_focused_storage_v550')).catch(function(e){
-            console.warn('회원 링크화면 집중 파일복구 저장 실패:', e);
-          });
-        } catch (e) {}
-      }
-      return result;
     }
 
     async function openManagerPublicView(code, expireAt, sig, options) {
@@ -2226,24 +2028,33 @@ function renderDocExpiryStrip(doc) {
           hideManagerPreviewPreparingV511();
           return openManagerPublicView(targetCode, expireAt, sig, { skipServerRetry:true });
         }
-        sitePassReportMemberPreviewIssueV546('회원 링크화면 장비 원본을 찾지 못했습니다.', targetCode, {
-          stage:'item_lookup',
-          retry_finished:!!options.skipServerRetry
-        });
         alert('장비 정보를 최종 확인하지 못했습니다. 보관함으로 돌아가 다시 열어주세요.');
         return;
       }
 
-      // v23.7.549: 로그인 직후에는 이미 시작된 회원 동기화를 최대 0.9초만 함께 기다립니다.
-      // 장비 한 건 RPC와 전체 RPC를 동시에 새로 실행하지 않아 statement timeout과 화면 지연을 막습니다.
+      // v23.7.551-test: 로그인 직후 캐시에 서류목록이 아직 없으면 진행 중인 첫 서버동기화를
+      // 최대 2.2초만 함께 기다립니다. 30~40초짜리 중복 재조회는 만들지 않습니다.
       if (!options.skipDocsWarmup && !sitePassGetRegisteredDetailDocsV536(item).length && typeof syncSupabaseMyEquipmentItems === 'function') {
         try {
+          const warmupsV541 = [Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(){
+            const syncedItem = sitePassBuildStableDetailItemV536(targetCode);
+            if (syncedItem && sitePassGetRegisteredDetailDocsV536(syncedItem).length) return syncedItem;
+            throw new Error('전체 동기화에 서류목록 없음');
+          })];
+          if (typeof window.sitePassLoadMemberEquipmentItemByCodeV541 === 'function') {
+            warmupsV541.push(Promise.resolve(window.sitePassLoadMemberEquipmentItemByCodeV541(targetCode)).then(function(result){
+              const directItem = sitePassBuildStableDetailItemV536(targetCode) || (result && result.item);
+              if (result && result.ok === true && directItem && sitePassGetRegisteredDetailDocsV536(directItem).length) return directItem;
+              throw new Error('장비 한 건 조회에 서류목록 없음');
+            }));
+          }
+          const readyV541 = Promise.any ? Promise.any(warmupsV541) : Promise.race(warmupsV541);
           await Promise.race([
-            Promise.resolve(syncSupabaseMyEquipmentItems(true, false)).catch(function(){ return null; }),
-            new Promise(function(resolve){ setTimeout(resolve, 900); })
+            readyV541.catch(function(){ return null; }),
+            new Promise(function(resolve){ setTimeout(resolve, 2200); })
           ]);
           item = sitePassBuildStableDetailItemV536(targetCode) || item;
-        } catch (e) { console.warn('링크화면 서류목록 짧은 확인 실패:', e); }
+        } catch (e) { console.warn('링크화면 서류목록 빠른 준비 실패:', e); }
       }
 
       // 링크화면은 Storage 전체검사·복구를 기다리지 않고 캐시된 서류 메타정보와 경로로 먼저 엽니다.
@@ -2253,55 +2064,23 @@ function renderDocExpiryStrip(doc) {
       try { previewItem = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(item)); } catch (e) {}
       try { previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem); } catch (e) {}
       try { previewItem = hydrateManagerShareStorageUrlsV497(previewItem); } catch (e) {}
-
-      // v23.7.550: 난수 파일명이 포함된 실제 Storage 경로는 주소 추정만으로 찾을 수 없습니다.
-      // 전체 장비나 여러 코드를 훑지 않고, 선택한 장비의 누락 문서 폴더만 최대 2.6초 집중 조회합니다.
-      // 조회가 끝나지 않아도 링크화면 이동은 계속하고 share.html에서 같은 좁은 범위를 한 번 더 보완합니다.
-      if (getManagerShareMissingFileDocKeysV547(previewItem).length) {
-        showManagerPreviewPreparingV511();
-        try {
-          const focusedV550 = await sitePassFocusedMemberStorageRepairV550(previewItem, targetCode);
-          if (focusedV550 && focusedV550.item) previewItem = focusedV550.item;
-        } catch (e) { console.warn('회원 링크화면 집중 Storage 복구 실패:', e); }
-        hideManagerPreviewPreparingV511();
-      }
-
-      // v23.7.549: 링크화면 이동 전에 회원 RPC·이전 공유·Storage 스캔을 순차 대기하지 않습니다.
-      // snapshot을 즉시 넘기고 share.html이 저장된 경로와 업로드 규칙 후보를 사용해 화면을 먼저 표시합니다.
-      // 실제 파일 후보가 모두 실패한 경우에만 share.html에서 관리자 오류로그를 남깁니다.
-      let previewRepairV547 = { item:previewItem, missingBefore:getManagerShareMissingFileDocKeysV547(previewItem), missingAfter:[], recovered:0, stages:['deferred_to_share_v549'] };
-
-      // v23.7.550-test: 회원 링크화면은 수신자용 공개 공유코드가 아니라
-      // 보관함 카드에서 전달된 실제 장비코드를 그대로 사용합니다.
-      // 과거 publicShareCode가 다른 장비에서 재사용되거나 빈 서버행을 가리켜
-      // '장비 / 0개 서류'로 열리는 문제를 막습니다.
-      const finalCode = targetCode || ensureManagerShareCodeForItem(previewItem);
+      const originalCode = ensureManagerShareCodeForItem(previewItem) || targetCode;
+      const finalCode = ensureManagerShareCodeForItem(previewItem) || originalCode;
+      // v23.7.551-test: 회원이 보관함에서 여는 링크화면은 수신자 공유링크와 분리합니다.
+      // 회원 미리보기에는 만료시간을 적용하거나 공개 공유행의 만료시간을 갱신하지 않습니다.
+      // 카카오톡·문자 등 실제 전송 기능에서 만든 링크만 기존 1일 만료 규칙을 사용합니다.
       const recipientExpireAt = expireAt ? Number(expireAt) : getManagerExpireAt(previewItem);
       const linkSig = sig || getManagerLinkSignature(finalCode, recipientExpireAt);
       const memberPreviewToken = sitePassCreateMemberPreviewTokenV542(finalCode);
-      const previewSaved = sitePassSaveManagerPreviewSnapshotV538(previewItem, finalCode, linkSig, memberPreviewToken, targetCode);
-      if (!previewSaved) {
-        alert('회원 링크화면 자료를 준비하지 못했습니다. 보관함에서 다시 눌러주세요.');
-        return;
-      }
+      sitePassSaveManagerPreviewSnapshotV538(previewItem, finalCode, linkSig, memberPreviewToken);
 
-      const previewDocsV546 = sitePassGetRegisteredDetailDocsV536(previewItem);
-      const previewEquipmentNoV546 = String(previewItem && (previewItem.equipmentNo || previewItem.equipment_no || previewItem.registrationNo || previewItem.vehicleNo) || '').trim();
-      const previewEquipmentNameV546 = String(previewItem && (previewItem.equipmentName || previewItem.equipment_name || previewItem.machineName || previewItem.title) || '').trim();
-      if (!previewDocsV546.length || (!previewEquipmentNoV546 && !previewEquipmentNameV546)) {
-        sitePassReportMemberPreviewIssueV546('회원 링크화면 장비정보 또는 서류목록 누락', targetCode, {
-          stage:'before_navigation',
-          docs_count:previewDocsV546.length,
-          has_equipment_identity:!!(previewEquipmentNoV546 || previewEquipmentNameV546)
-        });
-      }
       const url = new URL('./share.html', window.location.href);
       url.search = ''; url.hash = '';
       url.searchParams.set('manager', String(finalCode || ''));
       if (linkSig) url.searchParams.set('sig', String(linkSig));
       url.searchParams.set('from', 'member');
       url.searchParams.set('preview_token', String(memberPreviewToken || ''));
-      url.searchParams.set('v', '23.7.550-test');
+      url.searchParams.set('v', '23.7.551-test');
       window.location.assign(url.toString());
     }
 

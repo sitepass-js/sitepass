@@ -45,11 +45,11 @@
     <button type="button" data-member-target="myAccountScreen"><span>👤</span><b>내정보</b></button>
   </nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.550-test"></script>
+<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.551-test"></script>
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.550-test';
+  var VERSION='23.7.551-test';
   var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
   var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
   var STORAGE_BUCKET='sitepass-documents';
@@ -62,25 +62,12 @@
   var content=document.getElementById('content');
   var exitButton=document.getElementById('exitButton');
   var navLabel=document.getElementById('navLabel');
-  var state={code:'',sig:'',trackingToken:'',fromMember:false,memberPreviewToken:'',item:null,docs:[],expiresAt:0,serverConfirmed:false,rendered:false,serverFiles:[],serverFilesLoaded:false,fileAddressRepairing:false,fileAddressErrorReported:false,memberFocusedRepairing:false};
+  var state={code:'',sig:'',trackingToken:'',fromMember:false,memberPreviewToken:'',item:null,docs:[],expiresAt:0,serverConfirmed:false,rendered:false,serverFiles:[],serverFilesLoaded:false};
   var DOC_TITLES={businessLicense:'사업자등록증',equipmentRegistration:'장비등록증',equipmentInspection:'장비검사증',insurancePolicy:'장비보험증권',specSheet:'장비제원표',ndtInspection:'장비비파괴검사증',equipmentLedger:'장비갑원부',otherEquipment:'기타 장비서류',driverIdCard:'기사 신분증',driverLicense:'기사 면허증',driverBasicSafetyTraining:'기사 건설기초안전보건교육 이수증',driverMachinerySafetyTraining:'기사 건설기계조종사 안전교육 이수증',driverSpecialHealthCheck:'기사 특수건강검진',otherDriverDoc:'기타 기사서류',workerIdCard:'인부 신분증',workerBasicSafetyTraining:'인부 건설기초안전보건교육 이수증',otherWorkerDoc:'기타 인부서류'};
   var DOC_ORDER=['businessLicense','equipmentRegistration','equipmentInspection','insurancePolicy','specSheet','ndtInspection','equipmentLedger','otherEquipment','driverIdCard','driverLicense','driverBasicSafetyTraining','driverMachinerySafetyTraining','driverSpecialHealthCheck','otherDriverDoc','workerIdCard','workerBasicSafetyTraining','otherWorkerDoc'];
   var DOC_GROUPS={equipment:'장비서류',driver:'기사서류',worker:'인부서류'};
 
   function esc(value){return String(value==null?'':value).replace(/[&<>'"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch];});}
-  function reportShareLogicalErrorV546(message,action,extra,severity){
-    try{
-      var error=message instanceof Error?message:new Error(String(message||'링크화면 오류'));
-      if(typeof window.sitepassCaptureErrorV537==='function'){
-        window.sitepassCaptureErrorV537('share_open',error,{
-          action:String(action||'share_view_logical_error_v546'),
-          severity:severity||'warning',
-          equipment_code:String(state&&state.code||''),
-          context:Object.assign({logical_error:true,member_preview:!!(state&&state.fromMember)},extra||{})
-        });
-      }
-    }catch(ignore){}
-  }
   function parseRoute(){
     var p=new URLSearchParams(location.search||'');
     var code=String(p.get('manager')||p.get('m')||'').trim();
@@ -98,16 +85,9 @@
     if(!route||!route.requestedMember||!route.code||!route.previewToken)return false;
     try{
       var raw=sessionStorage.getItem('sitepass_member_preview_auth_v542_'+String(route.code||''));
-      if(raw){
-        var saved=JSON.parse(raw);
-        if(saved&&String(saved.code||'')===String(route.code||'')&&String(saved.token||'')===String(route.previewToken||'')&&Number(saved.expiresAt||0)>Date.now())return true;
-      }
-      // v23.7.549: 화면 이동 중 인증 레코드만 지워져도 같은 세션의 회원 snapshot 토큰이
-      // 정확히 일치하면 회원 미리보기로 복구합니다. 다른 브라우저에는 sessionStorage가 없어 우회되지 않습니다.
-      var snapshotRaw=sessionStorage.getItem('sitepass_recipient_preview_current_'+String(route.code||''));
-      if(!snapshotRaw)return false;
-      var snapshot=JSON.parse(snapshotRaw);
-      return !!(snapshot&&snapshot.member_preview===true&&String(snapshot.share_code||snapshot.member_preview_equipment_code||'')===String(route.code||'')&&String(snapshot.member_preview_token||'')===String(route.previewToken||''));
+      if(!raw)return false;
+      var saved=JSON.parse(raw);
+      return !!(saved&&String(saved.code||'')===String(route.code||'')&&String(saved.token||'')===String(route.previewToken||'')&&Number(saved.expiresAt||0)>Date.now());
     }catch(e){return false;}
   }
   function setExitMode(){
@@ -359,87 +339,6 @@
     item.shareStorageFiles=files.map(function(file){return {storageBucket:file.storageBucket,storagePath:file.storagePath,docKey:file.docKey,fileName:file.fileName,matchSource:file.matchSource||''};});
     return item;
   }
-
-  function currentMemberForStorageV550(){
-    try{
-      var raw=localStorage.getItem('sitePass_v23_7_7_update_original_corrected_currentMember');
-      var member=raw?JSON.parse(raw):null;
-      return member&&typeof member==='object'?member:{};
-    }catch(e){return {};}
-  }
-  function memberStorageOwnerCandidatesV550(item){
-    item=item&&typeof item==='object'?item:{};
-    var member=currentMemberForStorageV550();
-    return unique([
-      firstValue(item,['ownerSignupId','owner_signup_id']),
-      firstValue(item,['ownerProviderId','owner_provider_id']),
-      firstValue(item,['ownerMemberId','owner_member_id']),
-      firstValue(member,['signupId','signup_id','loginId','login_id']),
-      firstValue(member,['providerId','provider_id']),
-      firstValue(member,['id','memberId','member_id'])
-    ]).map(function(value){return safePart(value,'owner');}).filter(function(value){return value&&value!=='anonymous';}).slice(0,2);
-  }
-  function memberStorageCodeCandidateV550(item){
-    return safePart(firstValue(item||{},['originalEquipmentCode','equipmentCode','equipment_code','code'])||state.code,'code');
-  }
-  async function listMemberStorageFolderV550(path){
-    if(!storageClient||!storageClient.storage)return [];
-    try{
-      var task=storageClient.storage.from(STORAGE_BUCKET).list(path,{limit:100,sortBy:{column:'name',order:'asc'}});
-      var result=await Promise.race([task,new Promise(function(_,reject){setTimeout(function(){reject(new Error('focused storage list timeout'));},2600);})]);
-      if(!result||result.error||!Array.isArray(result.data))return [];
-      return result.data.filter(function(row){return row&&row.name&&row.name!=='.emptyFolderPlaceholder';});
-    }catch(e){return [];}
-  }
-  function persistMemberSnapshotPathsV550(item){
-    try{
-      var key='sitepass_recipient_preview_current_'+String(state.code||'');
-      var raw=sessionStorage.getItem(key),snapshot=raw?JSON.parse(raw):{};
-      snapshot=snapshot&&typeof snapshot==='object'?snapshot:{};
-      snapshot.item_data=item;snapshot.payload=item;snapshot.focused_storage_recovered_at=new Date().toISOString();
-      sessionStorage.setItem(key,JSON.stringify(snapshot));
-    }catch(e){}
-  }
-  async function repairMemberSnapshotStorageV550(root){
-    if(!state.fromMember||state.memberFocusedRepairing)return false;
-    var missing=missingFileAddressDocsV547();
-    if(!missing.length)return true;
-    state.memberFocusedRepairing=true;
-    try{
-      var item=state.item||itemFromRoot(root)||{};
-      var owners=memberStorageOwnerCandidatesV550(item),codePart=memberStorageCodeCandidateV550(item);
-      if(!owners.length||!codePart){
-        reportMissingFileAddressesV547('member_focused_identity_missing_v550',{member_preview:true,owner_candidates:owners.length,code_present:!!codePart});
-        return false;
-      }
-      var jobs=[];
-      owners.forEach(function(owner){
-        missing.forEach(function(doc){
-          var folder=safePart(doc.key,'document');
-          jobs.push((async function(){
-            var rows=await listMemberStorageFolderV550([owner,codePart,folder].join('/'));
-            return rows.map(function(row){return {storageBucket:STORAGE_BUCKET,storagePath:[owner,codePart,folder,row.name].join('/'),docKey:doc.key,fileName:String(row.name||'첨부파일'),matchSource:'focused-folder-v550'};});
-          })());
-        });
-      });
-      var groups=await Promise.all(jobs),files=[];
-      groups.forEach(function(group){files=files.concat(group||[]);});
-      files=uniqueServerFilesV547(files);
-      if(files.length){
-        state.serverFiles=uniqueServerFilesV547((state.serverFiles||[]).concat(files));
-        state.serverFilesLoaded=true;
-        applyServerFiles(item,state.serverFiles);
-        await hydrateSignedUrlsForItemV523(item,false);
-        renderItem(item,root||item,false);
-        persistMemberSnapshotPathsV550(item);
-      }
-      var remaining=missingFileAddressDocsV547();
-      if(!remaining.length)return true;
-      reportMissingFileAddressesV547('member_focused_storage_exhausted_v550',{member_preview:true,owners_checked:owners.length,folders_checked:owners.length*missing.length,recovered_files:files.length});
-      return false;
-    }finally{state.memberFocusedRepairing=false;}
-  }
-
   function safePart(value,fallback){var text=String(value||fallback||'file').trim();return text.replace(/[^0-9a-zA-Z가-힣._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||String(fallback||'file');}
   function extensionOf(page,doc){var name=firstValue(page,['fileName','filename','name'])||firstValue(doc,['fileName','filename','name']);var m=String(name||'').toLowerCase().match(/\.([a-z0-9]{2,5})$/);if(m)return m[1];var type=firstValue(page,['fileType','mimeType','mime_type','type'])||firstValue(doc,['fileType','mimeType','mime_type','type']);if(/pdf/i.test(type))return 'pdf';if(/png/i.test(type))return 'png';if(/webp/i.test(type))return 'webp';return 'jpg';}
   function deriveStorageCandidates(page,doc,docKey,index){
@@ -459,11 +358,8 @@
     var exact=unique(collectUrlCandidates(page,STORAGE_BUCKET).concat(collectUrlCandidates(doc,STORAGE_BUCKET)));
     var embedded=exact.filter(function(url){return /^data:/i.test(url);});
     if(embedded.length)return embedded;
-    // v23.7.548: 회원 미리보기는 수신자 공개링크 RPC/만료시간에 의존하지 않습니다.
-    // 정확한 path가 없는 구버전 장비는 실제 업로드 규칙(owner/code/doc/page)에 따른 후보를
-    // 회원 화면에서만 보완해 이미지 fallback이 실제 파일을 찾도록 합니다.
-    if(exact.length)return exact;
-    if(state.fromMember)return deriveStorageCandidates(page,doc,docKey,index);
+    // v514: RPC 응답이 늦거나 구버전 공유자료인 경우에도 저장된 정확한 URL/path를
+    // 실제 Storage 주소 후보를 미리보기와 상세보기에 공통으로 사용합니다.
     return exact;
   }
   function pageList(doc){
@@ -491,58 +387,6 @@
     result.sort(function(a,b){return a.groupOrder-b.groupOrder||a.sortOrder-b.sortOrder||String(a.title).localeCompare(String(b.title),'ko');});
     return result;
   }
-  function missingFileAddressDocsV547(){
-    return (state.docs||[]).filter(function(doc){
-      var pages=doc.pages&&doc.pages.length?doc.pages:[doc.raw];
-      return !pages.some(function(page,index){return resolveDocCandidates(page,doc.raw,doc.key,index).length>0;});
-    });
-  }
-  function reportMissingFileAddressesV547(stage,extra){
-    var missing=missingFileAddressDocsV547();
-    if(!missing.length)return;
-    var key='sitepass_share_missing_paths_v550_'+String(state.code||'')+'_'+missing.map(function(doc){return doc.key;}).join('_');
-    try{if(sessionStorage.getItem(key)==='1'&&stage!=='image_candidates_exhausted')return;sessionStorage.setItem(key,'1');}catch(e){}
-    state.fileAddressErrorReported=true;
-    reportShareLogicalErrorV546('첨부 정보는 있으나 실제 Storage 파일주소를 찾지 못했습니다.','share_file_address_missing_v550',Object.assign({
-      stage:stage||'render',
-      missing_count:missing.length,
-      missing_doc_keys:missing.map(function(doc){return doc.key;}).slice(0,20),
-      missing_doc_titles:missing.map(function(doc){return doc.title;}).slice(0,20),
-      docs_count:(state.docs||[]).length,
-      server_files_count:(state.serverFiles||[]).length,
-      server_files_loaded:!!state.serverFilesLoaded
-    },extra||{}),'error');
-    try{if(window.SitePassErrorMonitor&&window.SitePassErrorMonitor.flush)window.SitePassErrorMonitor.flush();}catch(e){}
-  }
-  async function repairMissingFileAddressesV547(root){
-    if(state.fileAddressRepairing)return false;
-    var missing=missingFileAddressDocsV547();if(!missing.length)return true;
-    state.fileAddressRepairing=true;
-    var lastError='';
-    try{
-      // 스냅샷에 shareStorageFiles가 남아 있으면 서버 호출 전에 즉시 적용합니다.
-      var localFiles=normalizeServerFiles((state.item&&state.item.shareStorageFiles)||[]);
-      if(localFiles.length&&state.item){state.serverFiles=uniqueServerFilesV547((state.serverFiles||[]).concat(localFiles));applyServerFiles(state.item,state.serverFiles);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,root||state.item,!!state.serverConfirmed);}
-      if(!missingFileAddressDocsV547().length)return true;
-      // v23.7.549: 회원 미리보기는 만료되는 수신자 공개파일 RPC에 의존하지 않습니다.
-      // 정확한 경로/업로드 규칙 후보는 화면에서 바로 사용하고, 최종 실패만 기록합니다.
-      if(state.fromMember){
-        reportMissingFileAddressesV547('member_local_candidates_exhausted_v549',{member_preview:true,recipient_rpc_skipped:true});
-        return false;
-      }
-      for(var attempt=0;attempt<3;attempt++){
-        if(attempt)await new Promise(function(resolve){setTimeout(resolve,attempt===1?450:1000);});
-        try{
-          var files=await rpcFilesLoad();
-          if(files&&files.length&&state.item){state.serverFiles=uniqueServerFilesV547((state.serverFiles||[]).concat(files));state.serverFilesLoaded=true;applyServerFiles(state.item,state.serverFiles);await hydrateSignedUrlsForItemV523(state.item,attempt>0);renderItem(state.item,root||state.item,true);}
-        }catch(e){lastError=e&&e.message?e.message:String(e||'');}
-        if(!missingFileAddressDocsV547().length)return true;
-      }
-      reportMissingFileAddressesV547('repair_exhausted',{last_error:lastError,attempts:3});
-      return false;
-    }finally{state.fileAddressRepairing=false;}
-  }
-  function uniqueServerFilesV547(files){var seen={};return (files||[]).filter(function(file){var key=String(file&&file.storageBucket||STORAGE_BUCKET)+'|'+String(file&&file.storagePath||'');if(!file||!file.storagePath||seen[key])return false;seen[key]=true;return true;});}
   function isPdf(page,doc,candidates){var url=(candidates&&candidates[0])||'',name=firstValue(page,['fileName','filename','name'])||doc.fileName,type=firstValue(page,['fileType','mimeType','mime_type','type'])||firstValue(doc.raw,['fileType','mimeType','mime_type']);return /pdf/i.test(type)||/\.pdf(?:$|[?#])/i.test(url)||/\.pdf$/i.test(name);}
   function formatDate(value){if(!value)return '';var d=new Date(value);if(isNaN(d.getTime()))return String(value);return d.getFullYear()+'. '+String(d.getMonth()+1).padStart(2,'0')+'. '+String(d.getDate()).padStart(2,'0')+'.';}
   function getExpiry(root){var c=collectCandidates(root);for(var i=0;i<c.length;i++){var v=c[i].expiresAt||c[i].expires_at||c[i].managerExpireAt||c[i].manager_expire_at;if(v){var ms=typeof v==='number'?v:new Date(v).getTime();if(ms)return ms;}}return 0;}
@@ -551,7 +395,7 @@
   function encodeCandidates(list){return encodeURIComponent(JSON.stringify(list||[]));}
   function renderPreview(doc,index){
     var first=doc.pages[0]||doc.raw,candidates=resolveDocCandidates(first,doc.raw,doc.key,0),pdf=isPdf(first,doc,candidates),count=Math.max(1,doc.pages.length||1);
-    if(!candidates.length)return '<div class="doc-preview"><div class="preview-placeholder">서류 파일주소를 확인하고 있습니다.<br>화면은 열린 상태이며 확인이 끝나면 자동으로 표시됩니다.</div></div>';
+    if(!candidates.length)return '<div class="doc-preview"><div class="preview-placeholder">첨부 정보는 있으나 파일주소를 찾지 못했습니다.<br>다시 불러오기를 눌러주세요.</div></div>';
     if(pdf)return '<div class="doc-preview" data-open-detail="'+index+'"><div class="pdf-mark"><b>PDF</b><span>눌러서 미리보기</span></div><span class="page-count">'+count+'장</span></div>';
     return '<div class="doc-preview" data-open-detail="'+index+'"><img data-fallback-img data-candidates="'+esc(encodeCandidates(candidates))+'" data-candidate-index="0" src="'+esc(candidates[0])+'" alt="'+esc(doc.title)+' 미리보기"><span class="page-count">'+count+'장</span></div>';
   }
@@ -571,12 +415,6 @@
     content.innerHTML='<section class="card hero"><div class="eyebrow">'+(state.fromMember?'회원 보관함 링크화면':'QR·링크로 받은 담당자 화면')+'</div><h1>'+esc(label(item))+' 서류</h1><p>필요한 서류를 선택해 확인하거나 다운로드할 수 있습니다.</p><div class="status-grid"><span>코드입력 없음</span><span>서류 상세보기</span><span>수정·갱신 불가</span></div></section><section class="card info-card"><div class="info-row"><b>장비 등록번호</b><span>'+esc(equipmentNo)+'</span></div><div class="info-row"><b>장비명</b><span>'+esc(equipmentName)+'</span></div><div class="info-row"><b>포함서류</b><span>'+esc(includedText(state.docs))+'</span></div>'+expireHtml+'</section><div class="section-title"><h2>다운로드·확인 서류</h2><span>'+state.docs.length+'개 서류</span></div><section class="toolbar" aria-label="선택 서류 작업"><button class="tool-btn light" type="button" data-select-all>전체선택</button><button class="tool-btn soft" type="button" data-clear-selection>선택해제</button><button class="tool-btn primary" type="button" data-download-selected>선택다운로드</button><button class="tool-btn dark" type="button" data-print-selected>선택인쇄</button></section><div class="docs">'+(docsHtml||'<section class="card empty"><b>등록 서류를 불러오는 중입니다.</b><span>서버 서류목록과 실제 Storage 파일을 확인하고 있습니다. 확인 전에는 서류 없음으로 표시하지 않습니다.</span></section>')+'</div><div class="notice"><span>미리보기가 보이지 않으면 최신 서버자료를 다시 확인하세요.</span><button class="retry" type="button" data-retry>다시 불러오기</button></div>';
     activateFallbackImages();
     updateSelectionState();
-    if(missingFileAddressDocsV547().length){
-      setTimeout(function(){
-        if(state.fromMember)repairMemberSnapshotStorageV550(sourceRoot||item);
-        else repairMissingFileAddressesV547(sourceRoot||item);
-      },80);
-    }
   }
   function renderError(title,message,retry){content.className='card error';content.innerHTML='<b>'+esc(title)+'</b><span>'+esc(message||'')+'</span>'+(retry?'<button class="retry" type="button" data-retry>다시 불러오기</button>':'');}
   function timeoutFetch(url,options,ms){var ctl=new AbortController(),timer=setTimeout(function(){ctl.abort();},ms||5000);options=Object.assign({},options||{},{signal:ctl.signal,cache:'no-store'});return fetch(url,options).finally(function(){clearTimeout(timer);});}
@@ -619,15 +457,7 @@
     return null;
   }
   function cacheServerRoot(root){try{sessionStorage.setItem('sitepass_recipient_server_cache_v512_'+state.code,JSON.stringify(root));}catch(e){}}
-  function itemFromRoot(root){
-    var item=normalizeItem(root,state.code);if(!item)return null;
-    var docs=normalizeDocs(item);
-    // v23.7.550-test: share_code/code만 있는 빈 서버행은 유효한 장비자료가 아닙니다.
-    var equipmentNo=firstValue(item,['equipmentNo','equipment_no','registrationNo','registration_no','vehicleNo','vehicle_no']);
-    var equipmentName=firstValue(item,['equipmentName','equipment_name','machineName','machine_name','title']);
-    var hasEquipmentIdentity=!!(equipmentNo||equipmentName);
-    return (docs.length||hasEquipmentIdentity)?item:null;
-  }
+  function itemFromRoot(root){var item=normalizeItem(root,state.code);if(!item)return null;var docs=normalizeDocs(item);var hasEquipment=!!firstValue(item,['equipmentName','equipment_name','machineName','equipmentNo','equipment_no','registrationNo','vehicleNo','code','share_code']);return (docs.length||hasEquipment)?item:null;}
   function firstServerResult(){
     return new Promise(function(resolve){
       var done=false,pending=2,lastError='';
@@ -644,7 +474,6 @@
     });
   }
   async function retryMissingDocsV541(root){
-    var lastError='';
     for(var attempt=0;attempt<8;attempt++){
       if(state.docs&&state.docs.length)return true;
       await new Promise(function(resolve){setTimeout(resolve,attempt<2?900:1800);});
@@ -657,7 +486,7 @@
           renderItem(state.item,root||state.item,true);
           if(state.docs&&state.docs.length)return true;
         }
-      }catch(e){lastError=e&&e.message?e.message:String(e||'');}
+      }catch(e){}
       try{
         var loaded=await rpcLoad();
         if(loaded&&loaded.root){
@@ -668,33 +497,17 @@
             renderItem(newer,loaded.root,true);
             root=loaded.root;
             if(state.docs&&state.docs.length)return true;
-          }else lastError=loaded.error||'서버 공유행에 실제 장비정보와 서류목록이 없습니다.';
+          }
         }
-      }catch(e){lastError=e&&e.message?e.message:String(e||'');}
+      }catch(e){}
     }
-    reportShareLogicalErrorV546('링크화면 서류목록을 최종 확인하지 못했습니다.','share_view_empty_docs_v546',{stage:'retry_exhausted',attempts:8,last_error:lastError||'',server_files_count:(state.serverFiles||[]).length},'warning');
     return false;
   }
   async function load(){
-    if(!state.code){reportShareLogicalErrorV546('담당자 링크 코드가 없습니다.','share_view_missing_code_v546',{stage:'route_parse'},'error');renderError('담당자 링크 정보가 없습니다.','링크 주소를 다시 확인해주세요.',false);return;}
+    if(!state.code){renderError('담당자 링크 정보가 없습니다.','링크 주소를 다시 확인해주세요.',false);return;}
     if(!state.rendered){content.className='card loading';content.innerHTML='<span class="spinner" aria-hidden="true"></span><b>담당자 서류를 불러오는 중입니다.</b><span>장비정보를 먼저 표시하고 실제 Storage 파일목록을 확인합니다.</span>';}
-    var filesPromise=state.fromMember?Promise.resolve([]):rpcFilesLoad().then(function(files){state.serverFiles=files;state.serverFilesLoaded=true;state.filesLoadError='';return files;}).catch(function(error){state.serverFilesLoaded=true;state.filesLoadError=error&&error.message?error.message:String(error||'서류파일 목록 조회 실패');return [];});
-    var snapshot=previewSnapshot();
-    if(snapshot){
-      var snapItem=itemFromRoot(snapshot);
-      if(snapItem){
-        renderItem(snapItem,snapshot,false);
-        await hydrateSignedUrlsForItemV523(snapItem,false);
-        if(state.item===snapItem||!state.serverConfirmed)renderItem(snapItem,snapshot,false);
-        // v23.7.548: 회원 보관함 링크화면은 직전에 회원 전용 RPC로 준비한 snapshot이 원본입니다.
-        // 수신자용 공개 공유 RPC를 다시 호출하면 만료된 담당자 링크로 오인되므로 호출하지 않습니다.
-        if(state.fromMember){
-          if(missingFileAddressDocsV547().length)repairMemberSnapshotStorageV550(snapshot);
-          return;
-        }
-        filesPromise.then(async function(files){if(files.length&&state.item){applyServerFiles(state.item,files);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,snapshot,false);}});
-      }
-    }
+    var filesPromise=rpcFilesLoad().then(function(files){state.serverFiles=files;state.serverFilesLoaded=true;return files;}).catch(function(){state.serverFilesLoaded=true;return [];});
+    var snapshot=previewSnapshot();if(snapshot){var snapItem=itemFromRoot(snapshot);if(snapItem){renderItem(snapItem,snapshot,false);hydrateSignedUrlsForItemV523(snapItem,false).then(function(){if(state.item===snapItem||!state.serverConfirmed)renderItem(snapItem,snapshot,false);});filesPromise.then(async function(files){if(files.length&&state.item){applyServerFiles(state.item,files);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,snapshot,false);}});}}
     var serverResult=await firstServerResult();
     if(serverResult.expired){if(state.fromMember&&state.rendered){showToast('회원 미리보기는 수신자 링크 만료와 관계없이 표시됩니다.');return;}renderError('만료된 담당자 링크입니다.',serverResult.error||'새 링크를 요청해주세요.',false);return;}
     if(serverResult.valid){
@@ -704,22 +517,11 @@
       await hydrateSignedUrlsForItemV523(serverResult.valid.item,false);
       renderItem(serverResult.valid.item,serverResult.valid.root,true);
       markShareViewedV521();
-      filesPromise.then(async function(lateFiles){if(lateFiles.length&&state.item){state.serverFiles=uniqueServerFilesV547((state.serverFiles||[]).concat(lateFiles));applyServerFiles(state.item,state.serverFiles);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,serverResult.valid.root,true);}});
+      filesPromise.then(async function(lateFiles){if(lateFiles.length&&state.item){applyServerFiles(state.item,lateFiles);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,serverResult.valid.root,true);}});
       if(!state.docs.length)retryMissingDocsV541(serverResult.valid.root).then(function(ok){if(!ok&&state.item&&!state.docs.length)showToast('서버 서류목록 확인이 지연되고 있습니다. 다시 불러오기를 눌러주세요.');});
-      else if(missingFileAddressDocsV547().length)repairMissingFileAddressesV547(serverResult.valid.root);
       return;
     }
-    if(state.rendered){
-      var currentNo=firstValue(state.item||{},['equipmentNo','equipment_no','registrationNo','registration_no','vehicleNo','vehicle_no']);
-      var currentName=firstValue(state.item||{},['equipmentName','equipment_name','machineName','machine_name','title']);
-      var completeMemberSnapshot=!!(state.fromMember&&state.docs&&state.docs.length&&(currentNo||currentName));
-      if(!completeMemberSnapshot){
-        reportShareLogicalErrorV546(serverResult.error||state.filesLoadError||'최신 서버 장비자료 확인 실패','share_view_snapshot_only_v546',{stage:'server_result',snapshot_rendered:true,docs_count:(state.docs||[]).length,has_equipment_identity:!!(currentNo||currentName)},'warning');
-        showToast('최신 서버 확인이 지연되어 저장된 화면을 표시했습니다.');
-      }
-      return;
-    }
-    reportShareLogicalErrorV546(serverResult.error||state.filesLoadError||'장비정보와 서류목록을 불러오지 못했습니다.','share_view_load_failed_v546',{stage:'server_result',snapshot_rendered:false},'error');
+    if(state.rendered){showToast('최신 서버 확인이 지연되어 저장된 화면을 표시했습니다.');return;}
     renderError('서류를 불러오지 못했습니다.',serverResult.error||'장비업자에게 새 링크를 다시 보내달라고 요청해주세요.',true);
   }
   function closeModal(){var modal=document.getElementById('docModal');if(modal)modal.remove();document.body.classList.remove('modal-open');}
@@ -730,11 +532,7 @@
         var list=[];try{list=JSON.parse(decodeURIComponent(img.getAttribute('data-candidates')||''))||[];}catch(e){}
         var next=Number(img.getAttribute('data-candidate-index')||0)+1;
         if(next<list.length){img.setAttribute('data-candidate-index',String(next));img.src=list[next];return;}
-        var wrap=img.closest('.doc-preview')||img.parentElement;if(wrap)wrap.innerHTML='<div class="preview-placeholder">미리보기 주소가 열리지 않아 서버 원본을 다시 확인하고 있습니다.</div>';
-        var card=img.closest('[data-doc-index]');var docIndex=Number(card&&card.getAttribute('data-doc-index')||-1);var failedDoc=state.docs&&state.docs[docIndex];
-        reportShareLogicalErrorV546('Storage 파일주소가 있으나 실제 파일을 열지 못했습니다.','share_file_url_unreachable_v548',{stage:'image_candidates_exhausted',candidate_count:list.length,doc_index:docIndex,doc_key:failedDoc&&failedDoc.key||'',doc_title:failedDoc&&failedDoc.title||''},'error');
-        try{if(window.SitePassErrorMonitor&&window.SitePassErrorMonitor.flush)window.SitePassErrorMonitor.flush();}catch(e){}
-        repairMissingFileAddressesV547(state.item||{});
+        var wrap=img.closest('.doc-preview')||img.parentElement;if(wrap)wrap.innerHTML='<div class="preview-placeholder">미리보기를 불러오지 못했습니다.<br>상세보기 또는 다시 불러오기를 눌러주세요.</div>';
       });
     });
   }
@@ -760,10 +558,8 @@
     closeModal();var modal=document.createElement('div');modal.id='docModal';modal.className='modal';modal.innerHTML='<div class="backdrop" data-close-modal></div><div class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(doc.title)+' 상세보기"><div class="modal-head"><div><small>SitePass 서류 상세보기</small><strong>'+esc(doc.title)+'</strong></div><button class="close-x" type="button" data-close-modal aria-label="닫기">×</button></div><div class="modal-body"><section class="page"><div class="missing-page">실제 Storage 파일을 확인하는 중입니다.</div></section></div><button class="close-bottom" type="button" data-close-modal>닫기</button></div>';document.body.appendChild(modal);document.body.classList.add('modal-open');
     var entries=pageEntriesForDoc(doc);var resolved=await Promise.all(entries.map(async function(entry){entry.workingUrl=await workingUrlForEntry(entry);return entry;}));
     if(!document.body.contains(modal))return;
-    var missingResolved=resolved.filter(function(entry){return !entry.workingUrl;});
-    if(missingResolved.length){reportShareLogicalErrorV546('상세보기에서 Storage 파일을 열지 못했습니다.','share_detail_file_unreachable_v548',{stage:'detail_url_unreachable',doc_key:doc.key,doc_title:doc.title,failed_pages:missingResolved.length,total_pages:resolved.length},'error');try{if(window.SitePassErrorMonitor&&window.SitePassErrorMonitor.flush)window.SitePassErrorMonitor.flush();}catch(e){}repairMissingFileAddressesV547(state.item||{});}
     var html=resolved.map(function(entry){
-      if(!entry.workingUrl)return '<section class="page"><div class="page-title">'+(entry.index+1)+'. '+esc(entry.name)+'</div><div class="missing-page">실제 Storage 파일주소를 다시 확인하고 있습니다.<br>잠시 후 다시 열어주세요.</div></section>';
+      if(!entry.workingUrl)return '<section class="page"><div class="page-title">'+(entry.index+1)+'. '+esc(entry.name)+'</div><div class="missing-page">서버에 연결된 실제 파일이 없습니다.<br>회원 보관함에서 원본 서류를 다시 저장한 뒤 링크를 열어주세요.</div></section>';
       var first=entry.workingUrl,body=entry.pdf?'<iframe src="'+esc(first)+'" title="'+esc(entry.name)+'"></iframe>':'<img src="'+esc(first)+'" alt="'+esc(entry.name)+'">';
       return '<section class="page"><div class="page-title">'+(entry.index+1)+'. '+esc(entry.name)+'</div>'+body+'</section>';
     }).join('');
@@ -826,12 +622,7 @@
     if(event.target.closest&&event.target.closest('[data-print-selected]')){event.preventDefault();printSelected(selectedIndexes(false));return;}
   });
   document.addEventListener('keydown',function(event){if(event.key==='Escape')closeModal();});
-  var route=parseRoute();state.code=route.code;state.sig=route.sig;state.trackingToken=route.trackingToken;state.memberPreviewToken=route.previewToken||'';state.fromMember=verifyMemberPreviewV542(route);setExitMode();
-  if(route.requestedMember&&!state.fromMember){reportShareLogicalErrorV546('회원 링크화면 임시 인증값이 없거나 일치하지 않습니다.','member_preview_auth_failed_v546',{stage:'member_preview_auth',requested_member:true,has_preview_token:!!route.previewToken},'warning');}
-  load().catch(function(error){
-    reportShareLogicalErrorV546(error||'링크화면 처리 중 오류가 발생했습니다.','share_view_unhandled_v549',{stage:'load_catch'},'error');
-    renderError('서류화면을 열지 못했습니다.',error&&error.message?error.message:'다시 불러오기를 눌러주세요.',true);
-  });
+  var route=parseRoute();state.code=route.code;state.sig=route.sig;state.trackingToken=route.trackingToken;state.memberPreviewToken=route.previewToken||'';state.fromMember=verifyMemberPreviewV542(route);setExitMode();load();
 })();
 </script>
 </body>
