@@ -1,8 +1,8 @@
-// SitePass v23.7.545-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.546-test - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.545-test';
+  var VERSION = '23.7.546-test';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
