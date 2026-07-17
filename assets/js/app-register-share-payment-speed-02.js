@@ -539,7 +539,7 @@ function resetForm(clearEdit = true) {
     }
 
 
-    // v23.7.542-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // v23.7.543-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
     // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
     // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
     function sitePassEquipmentCodeMatchesV519(item, targetCode) {
@@ -1381,6 +1381,8 @@ function resetForm(clearEdit = true) {
           if (!hasMemberKey) {
             error = { code:'SITEPASS_MEMBER_SCOPE_EMPTY', message:'현재 로그인 회원 식별값을 확인할 수 없습니다.' };
           } else {
+            // v23.7.543: 읽기 전용 회원 보관함 RPC는 공통 오류 모니터에서
+            // 일시적 Failed to fetch를 최대 2회 자동 재시도한 최종 결과만 전달합니다.
             const rpcResult = await supabaseApi.rpc('sitepass_list_member_equipment_items_v485', rpcParams);
             error = rpcResult && rpcResult.error ? rpcResult.error : null;
             data = rpcResult ? rpcResult.data : null;

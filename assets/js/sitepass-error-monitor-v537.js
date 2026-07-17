@@ -1,8 +1,8 @@
-// SitePass v23.7.542-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.543-test - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.542-test';
+  var VERSION = '23.7.543-test';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
@@ -364,28 +364,65 @@
     wrapAsyncObjectMethod(window, name, category, metaFactory || function(){ return { action:name }; });
   }
 
+  function isTransientRpcNetworkErrorV543(error){
+    var message = text(error && (error.message || error.details || error.hint) || error || '',1200);
+    var name = text(error && error.name || '',120);
+    return /Failed to fetch|NetworkError|Load failed|fetch failed|network request failed|connection (?:reset|closed)|ERR_NETWORK|timeout|timed out/i.test(message + ' ' + name);
+  }
+
+  function isSafeReadOnlyRpcV543(name){
+    var value = text(name,180).toLowerCase();
+    if (value === 'sitepass_list_member_equipment_items_v485') return true;
+    return /(?:^|_)(?:list|get|load|read|lookup|find|search|preview|count)(?:_|$)/i.test(value);
+  }
+
+  function waitRpcRetryV543(ms){
+    return new Promise(function(resolve){ setTimeout(resolve, Math.max(0, Number(ms || 0))); });
+  }
+
   function installDirectSupabaseHook(){
     var client = window.sitepassSupabase;
     if (!client || typeof client.rpc !== 'function' || client.rpc.__sitepassErrorWrappedV537) return;
     var originalRpc = client.rpc.bind(client);
     function wrappedRpc(name, params, options){
       if (isMonitorRpc(name)) return originalRpc(name, params, options);
-      try {
-        var result = originalRpc(name, params, options);
-        return Promise.resolve(result).then(function(value){
-          if (value && value.error) capture('server_rpc', value.error, { action:text(name,160), context:{ rpc:text(name,160) } });
+      var rpcName = text(name,160);
+      var retryable = isSafeReadOnlyRpcV543(rpcName);
+      var maxAttempts = retryable ? 3 : 1;
+
+      async function runAttempt(attempt){
+        try {
+          var value = await originalRpc(name, params, options);
+          var transientResultError = value && value.error && isTransientRpcNetworkErrorV543(value.error);
+          if (transientResultError && attempt < maxAttempts) {
+            try { console.warn('[SitePass RPC 재시도]', rpcName, attempt + '/' + maxAttempts); } catch (e) {}
+            await waitRpcRetryV543(attempt === 1 ? 450 : 1200);
+            return runAttempt(attempt + 1);
+          }
+          if (value && value.error) capture('server_rpc', value.error, { action:rpcName, context:{ rpc:rpcName, attempts:attempt } });
+          else if (attempt > 1) {
+            try {
+              window.sitePassLastRecoveredRpcV543 = { rpc:rpcName, attempts:attempt, recovered_at:new Date().toISOString() };
+              window.dispatchEvent(new CustomEvent('sitepass-rpc-recovered-v543', { detail:window.sitePassLastRecoveredRpcV543 }));
+            } catch (e) {}
+          }
           return value;
-        }, function(err){
-          capture('server_rpc', err, { action:text(name,160), context:{ rpc:text(name,160) } });
+        } catch (err) {
+          if (retryable && isTransientRpcNetworkErrorV543(err) && attempt < maxAttempts) {
+            try { console.warn('[SitePass RPC 재시도]', rpcName, attempt + '/' + maxAttempts); } catch (e) {}
+            await waitRpcRetryV543(attempt === 1 ? 450 : 1200);
+            return runAttempt(attempt + 1);
+          }
+          capture('server_rpc', err, { action:rpcName, context:{ rpc:rpcName, attempts:attempt } });
           throw err;
-        });
-      } catch (err) {
-        capture('server_rpc', err, { action:text(name,160), context:{ rpc:text(name,160) } });
-        throw err;
+        }
       }
+
+      return runAttempt(1);
     }
     wrappedRpc.__sitepassErrorWrappedV537 = true;
     wrappedRpc.__sitepassErrorOriginalV537 = originalRpc;
+    wrappedRpc.__sitepassReadRetryV543 = true;
     client.rpc = wrappedRpc;
   }
 
