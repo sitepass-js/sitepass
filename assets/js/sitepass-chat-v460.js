@@ -1,4 +1,4 @@
-/* SitePass v23.7.549-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
+/* SitePass v23.7.550-test - 전송·열람 알림 서버연동 + 기존 만료/관리자 채팅 유지 */
 (function(){
   'use strict';
 
@@ -43,7 +43,7 @@
     } catch(e) { return ''; }
   }
 
-  /* v23.7.549-test
+  /* v23.7.550-test
      새 알림이 들어오는 순간 서버 재조회와 화면 전환이 겹쳐 첫 클릭이 먹히지 않는 현상을 막습니다.
      알림/채팅 화면과 방 패널은 서버 응답을 기다리지 않고 즉시 열고, 서버자료는 뒤에서 갱신합니다. */
   function forceContactScreenVisibleV522(){
@@ -1011,7 +1011,7 @@
     return false;
   };
 
-  /* v23.7.549-test - 새로고침에서는 목록으로 강제 초기화하지 않고
+  /* v23.7.550-test - 새로고침에서는 목록으로 강제 초기화하지 않고
      사용자가 보고 있던 만료알림방·공유기록방·관리자채팅방을 정확히 복원합니다. */
   window.sitepassRestoreChatStateV532 = function(){
     var roomId = rememberedChatRoomV532();
