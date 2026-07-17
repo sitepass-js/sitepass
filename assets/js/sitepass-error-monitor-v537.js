@@ -1,8 +1,8 @@
-// SitePass v23.7.548-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.549-test - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.548-test';
+  var VERSION = '23.7.549-test';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
@@ -367,7 +367,9 @@
   function isTransientRpcNetworkErrorV543(error){
     var message = text(error && (error.message || error.details || error.hint) || error || '',1200);
     var name = text(error && error.name || '',120);
-    return /Failed to fetch|NetworkError|Load failed|fetch failed|network request failed|connection (?:reset|closed)|ERR_NETWORK|timeout|timed out/i.test(message + ' ' + name);
+    // v23.7.549: PostgreSQL statement timeout은 네트워크 오류가 아니며 재시도할수록 서버 부하와 대기만 늘어납니다.
+    if (/canceling statement due to statement timeout|statement timeout|permission denied|42501/i.test(message + ' ' + name)) return false;
+    return /Failed to fetch|NetworkError|Load failed|fetch failed|network request failed|connection (?:reset|closed)|ERR_NETWORK|timed out/i.test(message + ' ' + name);
   }
 
   function isSafeReadOnlyRpcV543(name){
@@ -527,6 +529,20 @@
       return VERSION + ' 자동 확인: 회원 장비 조회를 테이블 직접조회에서 회원 전용 RPC로 변경해 anon 테이블 권한 없이 정상 조회되도록 수정했습니다.';
     }
 
+
+    if (olderThanMinutes(row.last_seen_at, 30) &&
+        (/generatedStorageCandidates is not defined/i.test(message) || action === 'share_view_unhandled_v549')) {
+      return VERSION + ' 자동 확인: 링크화면 Storage 후보 함수명 오류를 수정하고 예외 발생 시 로딩화면을 반드시 종료하도록 변경했습니다.';
+    }
+
+    if (olderThanMinutes(row.last_seen_at, 30) &&
+        (/canceling statement due to statement timeout/i.test(message) || action === 'sitepass_list_equipment_items' || action === 'sitepass_list_member_equipment_items_v485')) {
+      return VERSION + ' 자동 확인: 서버 statement timeout을 네트워크 오류로 재시도하지 않고 상세·링크화면의 중복 RPC 실행을 제거했습니다.';
+    }
+
+    if (olderThanMinutes(row.last_seen_at, 30) && action.indexOf('member_preview_auth_failed') >= 0) {
+      return VERSION + ' 자동 확인: 같은 세션의 회원 snapshot 토큰으로 임시 인증값을 복구하도록 수정했습니다.';
+    }
     if (olderThanMinutes(row.last_seen_at, 30) &&
         (action.indexOf('member_preview_file_address_missing_v547') >= 0 ||
          action.indexOf('share_file_address_missing_v547') >= 0 ||

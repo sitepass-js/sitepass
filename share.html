@@ -45,11 +45,11 @@
     <button type="button" data-member-target="myAccountScreen"><span>👤</span><b>내정보</b></button>
   </nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.548-test"></script>
+<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.549-test"></script>
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.548-test';
+  var VERSION='23.7.549-test';
   var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
   var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
   var STORAGE_BUCKET='sitepass-documents';
@@ -98,9 +98,16 @@
     if(!route||!route.requestedMember||!route.code||!route.previewToken)return false;
     try{
       var raw=sessionStorage.getItem('sitepass_member_preview_auth_v542_'+String(route.code||''));
-      if(!raw)return false;
-      var saved=JSON.parse(raw);
-      return !!(saved&&String(saved.code||'')===String(route.code||'')&&String(saved.token||'')===String(route.previewToken||'')&&Number(saved.expiresAt||0)>Date.now());
+      if(raw){
+        var saved=JSON.parse(raw);
+        if(saved&&String(saved.code||'')===String(route.code||'')&&String(saved.token||'')===String(route.previewToken||'')&&Number(saved.expiresAt||0)>Date.now())return true;
+      }
+      // v23.7.549: 화면 이동 중 인증 레코드만 지워져도 같은 세션의 회원 snapshot 토큰이
+      // 정확히 일치하면 회원 미리보기로 복구합니다. 다른 브라우저에는 sessionStorage가 없어 우회되지 않습니다.
+      var snapshotRaw=sessionStorage.getItem('sitepass_recipient_preview_current_'+String(route.code||''));
+      if(!snapshotRaw)return false;
+      var snapshot=JSON.parse(snapshotRaw);
+      return !!(snapshot&&snapshot.member_preview===true&&String(snapshot.share_code||snapshot.member_preview_equipment_code||'')===String(route.code||'')&&String(snapshot.member_preview_token||'')===String(route.previewToken||''));
     }catch(e){return false;}
   }
   function setExitMode(){
@@ -375,7 +382,7 @@
     // 정확한 path가 없는 구버전 장비는 실제 업로드 규칙(owner/code/doc/page)에 따른 후보를
     // 회원 화면에서만 보완해 이미지 fallback이 실제 파일을 찾도록 합니다.
     if(exact.length)return exact;
-    if(state.fromMember)return generatedStorageCandidates(page,doc,docKey,index);
+    if(state.fromMember)return deriveStorageCandidates(page,doc,docKey,index);
     return exact;
   }
   function pageList(doc){
@@ -436,6 +443,12 @@
       var localFiles=normalizeServerFiles((state.item&&state.item.shareStorageFiles)||[]);
       if(localFiles.length&&state.item){state.serverFiles=uniqueServerFilesV547((state.serverFiles||[]).concat(localFiles));applyServerFiles(state.item,state.serverFiles);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,root||state.item,!!state.serverConfirmed);}
       if(!missingFileAddressDocsV547().length)return true;
+      // v23.7.549: 회원 미리보기는 만료되는 수신자 공개파일 RPC에 의존하지 않습니다.
+      // 정확한 경로/업로드 규칙 후보는 화면에서 바로 사용하고, 최종 실패만 기록합니다.
+      if(state.fromMember){
+        reportMissingFileAddressesV547('member_local_candidates_exhausted_v549',{member_preview:true,recipient_rpc_skipped:true});
+        return false;
+      }
       for(var attempt=0;attempt<3;attempt++){
         if(attempt)await new Promise(function(resolve){setTimeout(resolve,attempt===1?450:1000);});
         try{
@@ -525,7 +538,7 @@
   function itemFromRoot(root){
     var item=normalizeItem(root,state.code);if(!item)return null;
     var docs=normalizeDocs(item);
-    // v23.7.548-test: share_code/code만 있는 빈 서버행은 유효한 장비자료가 아닙니다.
+    // v23.7.549-test: share_code/code만 있는 빈 서버행은 유효한 장비자료가 아닙니다.
     var equipmentNo=firstValue(item,['equipmentNo','equipment_no','registrationNo','registration_no','vehicleNo','vehicle_no']);
     var equipmentName=firstValue(item,['equipmentName','equipment_name','machineName','machine_name','title']);
     var hasEquipmentIdentity=!!(equipmentNo||equipmentName);
@@ -731,7 +744,10 @@
   document.addEventListener('keydown',function(event){if(event.key==='Escape')closeModal();});
   var route=parseRoute();state.code=route.code;state.sig=route.sig;state.trackingToken=route.trackingToken;state.memberPreviewToken=route.previewToken||'';state.fromMember=verifyMemberPreviewV542(route);setExitMode();
   if(route.requestedMember&&!state.fromMember){reportShareLogicalErrorV546('회원 링크화면 임시 인증값이 없거나 일치하지 않습니다.','member_preview_auth_failed_v546',{stage:'member_preview_auth',requested_member:true,has_preview_token:!!route.previewToken},'warning');}
-  load();
+  load().catch(function(error){
+    reportShareLogicalErrorV546(error||'링크화면 처리 중 오류가 발생했습니다.','share_view_unhandled_v549',{stage:'load_catch'},'error');
+    renderError('서류화면을 열지 못했습니다.',error&&error.message?error.message:'다시 불러오기를 눌러주세요.',true);
+  });
 })();
 </script>
 </body>

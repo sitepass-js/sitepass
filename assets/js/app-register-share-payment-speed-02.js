@@ -539,7 +539,7 @@ function resetForm(clearEdit = true) {
     }
 
 
-    // v23.7.548-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // v23.7.549-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
     // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
     // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
     function sitePassEquipmentCodeMatchesV519(item, targetCode) {
@@ -707,6 +707,10 @@ function resetForm(clearEdit = true) {
     async function syncSupabaseEquipmentItems(silent) {
       const supabaseApi = window.SitePassSupabaseApi;
       if (!supabaseApi || sitePassEquipmentSyncing) return { skipped:true, error:'Supabase API 연결 없음' };
+      // v23.7.549: 관리자 렌더마다 무거운 전체목록 RPC를 반복하지 않습니다.
+      const adminAttemptAtV549 = Number(window.sitePassAdminEquipmentSyncAttemptAtV549 || 0);
+      if (silent && adminAttemptAtV549 && Date.now() - adminAttemptAtV549 < 120000) return { skipped:true, reason:'recent_admin_sync_attempt_v549' };
+      window.sitePassAdminEquipmentSyncAttemptAtV549 = Date.now();
       if (!shouldSyncSupabaseEquipmentItemsForCurrentContext()) {
         sitePassEquipmentSyncMessage = '일반회원 화면에서는 전체 장비 서버목록 동기화를 생략했습니다.';
         return { skipped:true, reason:'member_scope' };
@@ -715,7 +719,8 @@ function resetForm(clearEdit = true) {
       try {
         let data = null;
         let error = null;
-        // v23.7.281: 서버 RPC 목록 조회를 우선 사용하고, 실패 시 직접 SELECT로 재시도합니다.
+        // v23.7.549: 관리자 전체목록도 RPC만 사용합니다.
+        // RPC 실패 뒤 anon 직접 SELECT를 실행하면 401 permission denied만 추가되므로 절대 fallback하지 않습니다.
         if (supabaseApi.rpc) {
           const rpcResult = await supabaseApi.rpc('sitepass_list_equipment_items', {});
           error = rpcResult && rpcResult.error ? rpcResult.error : null;
@@ -724,14 +729,8 @@ function resetForm(clearEdit = true) {
             try { data = JSON.parse(data); } catch (e) {}
           }
           if (data && !Array.isArray(data) && Array.isArray(data.items)) data = data.items;
-          if (error) console.warn('Supabase 장비 RPC 목록 실패, 직접 SELECT 재시도:', error);
-        }
-        if ((error || !Array.isArray(data)) && supabaseApi.select) {
-          const selectResult = await supabaseApi.select('sitepass_equipment_items', '*', function(query){
-            return query.eq('is_deleted', false).order('updated_at', { ascending:false }).limit(1000);
-          });
-          data = selectResult && selectResult.data ? selectResult.data : [];
-          error = selectResult && selectResult.error ? selectResult.error : null;
+        } else {
+          error = { message:'관리자 장비목록 RPC 연결 없음' };
         }
         if (error) {
           sitePassEquipmentSyncMessage = '장비 서버목록 불러오기 실패: ' + (error.message || JSON.stringify(error));
