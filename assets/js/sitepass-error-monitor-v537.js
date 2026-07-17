@@ -1,8 +1,8 @@
-// SitePass v23.7.552-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.553-test - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.552-test';
+  var VERSION = '23.7.553-test';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
@@ -522,7 +522,7 @@
       return VERSION + ' 자동 확인: 현재 서버 연결이 정상이고 마지막 발생 후 30분 이상 재발하지 않아 일시 통신 오류를 해결완료로 전환했습니다.';
     }
 
-    // v23.7.552-test: v546~v550의 자동 Storage 추측·직접조회 코드를 제거했습니다.
+    // v23.7.553-test: v546~v550의 자동 Storage 추측·직접조회 코드를 제거했습니다.
     // 같은 오류가 최신 안정화 버전에서 30분 이상 재발하지 않을 때만 과거 기록을 자동 정리합니다.
     if (olderThanMinutes(row.last_seen_at, 30) && (
         /generatedStorageCandidates is not defined/i.test(message) ||

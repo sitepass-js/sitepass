@@ -45,11 +45,11 @@
     <button type="button" data-member-target="myAccountScreen"><span>👤</span><b>내정보</b></button>
   </nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.552-test"></script>
+<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.553-test"></script>
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.552-test';
+  var VERSION='23.7.553-test';
   var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
   var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
   var STORAGE_BUCKET='sitepass-documents';
@@ -600,10 +600,50 @@
   }
   function printSelected(indexes){
     if(!indexes.length){showToast('인쇄할 서류를 선택해주세요.');return;}
-    var pages=[];indexes.forEach(function(index){var doc=state.docs[index];if(!doc)return;pageEntriesForDoc(doc).forEach(function(entry){if(entry.candidates.length)pages.push({title:doc.title,url:entry.candidates[0],pdf:entry.pdf});});});
+    var pages=[],included=[];
+    indexes.forEach(function(index){
+      var doc=state.docs[index];if(!doc)return;
+      var added=false;
+      pageEntriesForDoc(doc).forEach(function(entry){
+        if(!entry.candidates.length)return;
+        pages.push({title:doc.title,url:entry.candidates[0],pdf:entry.pdf,pageNo:entry.index+1,totalPages:pageEntriesForDoc(doc).length});
+        added=true;
+      });
+      if(added)included.push(doc.title);
+    });
     if(!pages.length){showToast('선택한 서류의 서버 원본이 없어 인쇄할 수 없습니다.');return;}
     var win=window.open('','_blank');if(!win){showToast('팝업 차단을 해제해주세요.');return;}
-    var html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>SitePass 서류 인쇄</title><style>body{font-family:Arial,sans-serif;margin:0;padding:16px;background:#eee}.p{page-break-after:always;background:#fff;margin:0 auto 16px;padding:10px}.p h3{font-size:14px}.p img{display:block;max-width:100%;margin:auto}.p iframe{width:100%;height:90vh;border:0}@media print{body{background:#fff;padding:0}.p{box-shadow:none;margin:0;padding:0}}</style></head><body>'+pages.map(function(p){return '<section class="p"><h3>'+esc(p.title)+'</h3>'+(p.pdf?'<iframe src="'+esc(p.url)+'"></iframe>':'<img src="'+esc(p.url)+'">')+'</section>';}).join('')+'<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},700)});<\/script></body></html>';
+    var equipmentNo=firstValue(state.item,['equipmentNo','equipment_no','registrationNo','registration_no'])||'-';
+    var equipmentName=firstValue(state.item,['equipmentName','equipment_name','name','title'])||'-';
+    var includedHtml=included.map(function(title){return '<li>'+esc(title)+'</li>';}).join('');
+    var documentHtml=pages.map(function(p,index){
+      var pageLabel=p.totalPages>1?' <span>'+(p.pageNo)+' / '+p.totalPages+'페이지</span>':'';
+      var media=p.pdf
+        ? '<iframe src="'+esc(p.url)+'" title="'+esc(p.title)+'"></iframe>'
+        : '<img src="'+esc(p.url)+'" alt="'+esc(p.title)+'">';
+      return '<section class="print-page"><header><strong>'+(index+1)+'. '+esc(p.title)+'</strong>'+pageLabel+'</header><div class="media">'+media+'</div></section>';
+    }).join('');
+    var html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SitePass 서류 인쇄</title><style>'+
+      '*{box-sizing:border-box}html,body{margin:0;padding:0;font-family:Arial,"Noto Sans KR",sans-serif;color:#111;background:#e9edf3}'+
+      '.cover-page,.print-page{width:190mm;height:277mm;margin:10mm auto;background:#fff;overflow:hidden;break-after:page;page-break-after:always}'+
+      '.cover-page{display:flex;flex-direction:column;justify-content:center;padding:22mm 18mm;border:1px solid #d7dce5}'+
+      '.cover-page h1{font-size:28px;margin:0 0 18mm;text-align:center}.cover-info{border-top:2px solid #111;border-bottom:2px solid #111}'+
+      '.cover-row{display:grid;grid-template-columns:42mm 1fr;border-bottom:1px solid #d9dde5;min-height:16mm;align-items:center}.cover-row:last-child{border-bottom:0}'+
+      '.cover-row b{padding:4mm;font-size:15px}.cover-row div{padding:4mm;font-size:16px;border-left:1px solid #d9dde5;word-break:break-word}'+
+      '.cover-row ul{margin:0;padding-left:6mm;line-height:1.7}.cover-count{margin-top:8mm;text-align:right;font-size:13px;color:#555}'+
+      '.print-page{display:flex;flex-direction:column;padding:0}'+
+      '.print-page header{height:14mm;flex:0 0 14mm;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #cfd5df;padding:0 3mm;font-size:15px}'+
+      '.print-page header span{font-size:11px;color:#667085}.media{height:263mm;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:3mm 0 0}'+
+      '.media img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}'+
+      '.media iframe{display:block;width:100%;height:100%;border:0}'+
+      '.print-page:last-of-type{break-after:auto;page-break-after:auto}'+
+      '@page{size:A4 portrait;margin:10mm}@media print{html,body{background:#fff}.cover-page,.print-page{width:190mm;height:277mm;margin:0;box-shadow:none}.cover-page{border:0}}'+
+      '</style></head><body><section class="cover-page"><h1>SitePass 장비서류</h1><div class="cover-info">'+
+      '<div class="cover-row"><b>장비 등록번호</b><div>'+esc(equipmentNo)+'</div></div>'+
+      '<div class="cover-row"><b>장비명</b><div>'+esc(equipmentName)+'</div></div>'+
+      '<div class="cover-row"><b>포함서류</b><div><ul>'+includedHtml+'</ul></div></div></div>'+
+      '<div class="cover-count">표지 1장 + 첨부서류 '+pages.length+'장 = 총 '+(pages.length+1)+'장</div></section>'+documentHtml+
+      '<script>(function(){var done=false;function printNow(){if(done)return;done=true;setTimeout(function(){window.focus();window.print();},250)}window.addEventListener("load",function(){var media=Array.prototype.slice.call(document.querySelectorAll("img,iframe"));if(!media.length){printNow();return;}var remain=media.length;function one(){remain-=1;if(remain<=0)printNow()}media.forEach(function(el){if(el.tagName==="IMG"&&el.complete){one();return;}el.addEventListener("load",one,{once:true});el.addEventListener("error",one,{once:true});});setTimeout(printNow,5000);});})();<\/script></body></html>';
     win.document.open();win.document.write(html);win.document.close();
   }
   async function copyLink(){var text=makeExternalLink();try{await navigator.clipboard.writeText(text);showToast('담당자 링크를 복사했습니다.');}catch(e){var area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();try{document.execCommand('copy');showToast('담당자 링크를 복사했습니다.');}catch(ignore){prompt('아래 링크를 복사해주세요.',text);}area.remove();}}

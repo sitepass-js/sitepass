@@ -1050,7 +1050,7 @@ Storage 확인: ${Number(savedEditItem.storageVerifiedCount || 0)}개
         // 이전 v317~v320에서는 completePendingRegistrationPayment() 안쪽에서 남은 처리 때문에
         // 등록완료 버튼 이후 대기가 길어질 수 있었습니다.
         pendingRegistrationItemMemory = pending;
-        // v23.7.552-test: Storage 업로드와 실제 파일 확인이 끝나기 전에는
+        // v23.7.553-test: Storage 업로드와 실제 파일 확인이 끝나기 전에는
         // 초안·서류 데이터를 지우거나 보관함 완료화면으로 이동하지 않습니다.
         console.info('SitePass 테스트 모드: Storage 선업로드/검증 후 등록완료 처리 시작');
         try {
