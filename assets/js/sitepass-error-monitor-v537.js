@@ -1,8 +1,8 @@
-// SitePass v23.7.539-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.540-test - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.539-test';
+  var VERSION = '23.7.540-test';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
@@ -18,6 +18,9 @@
   var adminLastLoadedAt = 0;
   var adminLoading = false;
   var monitorServerState = { ok:null, message:'' };
+  var autoResolveRunning = false;
+  var autoResolveLastRunAt = 0;
+  var autoResolveNotice = '';
 
   function text(value, max){
     var out = String(value == null ? '' : value).replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
@@ -445,6 +448,83 @@
     catch (e) { return text(value,40); }
   }
 
+  function versionNumber(value){
+    var match = String(value || '').match(/(?:^|v)(\d+)\.(\d+)\.(\d+)/i);
+    if (!match) return 0;
+    return Number(match[1] || 0) * 1000000 + Number(match[2] || 0) * 1000 + Number(match[3] || 0);
+  }
+
+  function rowVersion(row){
+    return text(row && (row.last_app_version || row.first_app_version) || '',80);
+  }
+
+  function olderThanMinutes(value, minutes){
+    var time = new Date(value || 0).getTime();
+    return !!time && Date.now() - time >= Number(minutes || 0) * 60000;
+  }
+
+  function autoResolveReason(row){
+    if (!row || row.resolved_at) return '';
+    var category = text(row.category,100).toLowerCase();
+    var action = text(row.action,160).toLowerCase();
+    var message = text(row.message,1800);
+    var lastVersion = versionNumber(rowVersion(row));
+    var currentVersion = versionNumber(VERSION);
+    if (!lastVersion || lastVersion >= currentVersion) return '';
+
+    if (category === 'test' || action === 'admin_test' || /관리자 오류 로그 연결 테스트/.test(message)) {
+      return VERSION + ' 자동 확인: 관리자 오류 로그 서버 연결이 정상이라 테스트 기록을 해결완료로 전환했습니다.';
+    }
+
+    if (category === 'equipment_sync' && /Supabase API 연결 없음(?: 또는 동기화 중)?/.test(message)) {
+      return VERSION + ' 자동 확인: 동기화 대기·중복 실행 상태를 오류로 기록하지 않도록 수정했고 현재 서버 연결도 정상입니다.';
+    }
+
+    if (/Failed to fetch/i.test(message) && olderThanMinutes(row.last_seen_at, 30) &&
+        (category === 'equipment_sync' || category === 'server_rpc' || category === 'server_select')) {
+      return VERSION + ' 자동 확인: 현재 서버 연결이 정상이고 마지막 발생 후 30분 이상 재발하지 않아 일시 통신 오류를 해결완료로 전환했습니다.';
+    }
+
+    return '';
+  }
+
+  async function autoResolveKnownRows(rows){
+    if (autoResolveRunning || Date.now() - autoResolveLastRunAt < 20000) return 0;
+    var targets = (Array.isArray(rows) ? rows : []).map(function(row){
+      return { row:row, note:autoResolveReason(row) };
+    }).filter(function(item){ return item.note && Number(item.row && item.row.id || 0); });
+    if (!targets.length) return 0;
+
+    var client = window.sitepassSupabase;
+    if (!client || typeof client.rpc !== 'function') return 0;
+    autoResolveRunning = true;
+    autoResolveLastRunAt = Date.now();
+    var resolvedCount = 0;
+    try {
+      for (var i=0;i<targets.length;i++) {
+        var item = targets[i];
+        try {
+          var result = await client.rpc(STATUS_RPC, {
+            p_admin:getAdminPayload(),
+            p_id:Number(item.row.id || 0),
+            p_resolved:true,
+            p_note:text(item.note,500)
+          });
+          if (result && result.error) continue;
+          var payload = normalizeRpcData(result && result.data);
+          if (payload.ok === false) continue;
+          resolvedCount += 1;
+        } catch (e) {}
+      }
+    } finally {
+      autoResolveRunning = false;
+    }
+    if (resolvedCount) {
+      autoResolveNotice = '수정·정상 동작이 확인된 오류 ' + resolvedCount + '건을 자동으로 해결완료 처리했습니다.';
+    }
+    return resolvedCount;
+  }
+
   function injectStyles(){
     if (document.getElementById('sitepassErrorMonitorStyleV537')) return;
     var style = document.createElement('style');
@@ -485,7 +565,7 @@
     injectStyles();
     panel.className = 'sp-error-monitor';
     panel.innerHTML = '<h3>오류 로그 · 관리자 모니터링</h3>' +
-      '<div class="sp-em-sub">서류 원본이나 개인정보는 저장하지 않고, 오류 종류·화면·기기·발생시간·장비코드만 기록합니다. 같은 오류는 발생 횟수로 묶입니다.</div>' +
+      '<div class="sp-em-sub">서류 원본이나 개인정보는 저장하지 않고, 오류 종류·화면·기기·발생시간·장비코드만 기록합니다. 같은 오류는 발생 횟수로 묶입니다.<br><b>수정된 오류는 최신 버전에서 재발하지 않고 서버 정상 동작이 확인되면 자동으로 해결완료 처리됩니다. 다시 발생하면 미해결로 다시 표시됩니다.</b></div>' +
       '<div class="sp-em-toolbar">' +
         '<button type="button" class="primary" onclick="sitepassLoadErrorLogsV537(\'open\')">미해결</button>' +
         '<button type="button" class="ghost" onclick="sitepassLoadErrorLogsV537(\'resolved\')">해결완료</button>' +
@@ -515,7 +595,7 @@
     if (!rowsBox || !summaryBox || !statusBox) return;
     var summary = payload.summary || {};
     summaryBox.innerHTML = '<div><b>' + Number(summary.open || 0) + '</b>미해결</div><div><b>' + Number(summary.resolved || 0) + '</b>해결</div><div><b>' + Number(summary.occurrences || 0) + '</b>총 발생</div>';
-    statusBox.textContent = '서버 연결 정상 · 마지막 확인 ' + formatDate(new Date().toISOString()) + ' · 현재 보기: ' + (adminFilter === 'open' ? '미해결' : adminFilter === 'resolved' ? '해결완료' : '전체');
+    statusBox.textContent = (autoResolveNotice ? autoResolveNotice + ' · ' : '') + '서버 연결 정상 · 마지막 확인 ' + formatDate(new Date().toISOString()) + ' · 현재 보기: ' + (adminFilter === 'open' ? '미해결' : adminFilter === 'resolved' ? '해결완료' : '전체');
     var rows = Array.isArray(payload.rows) ? payload.rows : [];
     if (!rows.length) {
       var local = readLocal();
@@ -524,6 +604,7 @@
     }
     rowsBox.innerHTML = rows.map(function(row){
       var resolved = !!row.resolved_at;
+      var resolvedAutomatically = resolved && /자동 확인|자동으로 해결완료/.test(String(row.admin_note || ''));
       var contextText = '';
       try { contextText = JSON.stringify(row.sample_context || {}, null, 2); } catch (e) { contextText = ''; }
       return '<div class="sp-em-row">' +
@@ -531,7 +612,7 @@
           '<span class="sp-em-badge ' + escapeHtml(row.severity || 'error') + '">' + escapeHtml(severityLabel(row.severity)) + '</span>' +
           '<span class="sp-em-badge">' + escapeHtml(categoryLabel(row.category)) + '</span>' +
           '<span class="sp-em-badge">' + Number(row.occurrence_count || 1) + '회</span>' +
-          (resolved ? '<span class="sp-em-badge resolved">해결완료</span>' : '') +
+          (resolved ? '<span class="sp-em-badge resolved">' + (resolvedAutomatically ? '자동 해결완료' : '해결완료') + '</span>' : '') +
         '</div><span class="sp-em-meta">최근 ' + escapeHtml(formatDate(row.last_seen_at)) + '</span></div>' +
         '<div class="sp-em-message">' + escapeHtml(row.message || '오류 메시지 없음') + '</div>' +
         '<div class="sp-em-meta">화면: ' + escapeHtml(row.page || '-') + ' · 작업: ' + escapeHtml(row.action || '-') + '<br>' +
@@ -564,6 +645,18 @@
       var payload = normalizeRpcData(result && result.data);
       if (payload.ok === false) throw new Error(payload.message || '관리자 오류 로그 권한을 확인하지 못했습니다.');
       monitorServerState = { ok:true, message:'오류 로그 서버 연결 정상' };
+
+      // v23.7.540: 수정본 배포 후 서버 정상과 무재발이 확인된 과거 오류는
+      // 관리자가 일일이 누르지 않아도 자동으로 해결완료 처리합니다.
+      var autoResolved = await autoResolveKnownRows(payload.rows);
+      if (autoResolved > 0) {
+        var refreshed = await client.rpc(LIST_RPC, { p_admin:getAdminPayload(), p_status:adminFilter, p_limit:100 });
+        if (refreshed && !refreshed.error) {
+          var refreshedPayload = normalizeRpcData(refreshed.data);
+          if (refreshedPayload && refreshedPayload.ok !== false) payload = refreshedPayload;
+        }
+      }
+
       adminLastLoadedAt = Date.now();
       renderAdminRows(payload);
     } catch (e) {

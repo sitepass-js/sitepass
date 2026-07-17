@@ -1,4 +1,4 @@
-// SitePass v23.7.539-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass v23.7.540-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -268,7 +268,7 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.539-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.540-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
@@ -432,7 +432,7 @@ function shareOneListItemEmail(code) {
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.539-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.540-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -1420,7 +1420,7 @@ function normalizePhoneForShare(phone) {
     const sitePassDetailServerRefreshAtV519 = {};
     const sitePassStorageHydrateCacheV523 = new WeakMap();
 
-    // v23.7.539-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
+    // v23.7.540-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
     // 서버자료가 비어 있거나 축약돼도 같은 회원의 기존 브라우저 등록자료를 보조자료로만 합칩니다.
     // 신규 Storage 경로가 있는 자료를 최우선으로 유지하고, 첨부 흔적이 없는 빈 서류카드는 상세보기에서 숨깁니다.
     const sitePassMemberDetailSnapshotV536 = new Map();
@@ -1982,7 +1982,7 @@ function renderDocExpiryStrip(doc) {
         return;
       }
 
-      // v23.7.539-test: 링크화면은 Storage 검사·복구·서버 재저장을 기다리지 않고 즉시 엽니다.
+      // v23.7.540-test: 링크화면은 Storage 검사·복구·서버 재저장을 기다리지 않고 즉시 엽니다.
       // 보관함 카드에서 확보한 장비 원본을 sessionStorage에 먼저 넘기고 share.html이 화면을
       // 즉시 그린 뒤 서버 최신자료와 기간 제한 파일주소를 뒤에서 보완합니다.
       let previewItem = item;
@@ -2000,7 +2000,7 @@ function renderDocExpiryStrip(doc) {
       url.searchParams.set('manager', String(finalCode || ''));
       if (linkSig) url.searchParams.set('sig', String(linkSig));
       url.searchParams.set('from', 'member');
-      url.searchParams.set('v', '23.7.539-test');
+      url.searchParams.set('v', '23.7.540-test');
       window.location.assign(url.toString());
     }
 
