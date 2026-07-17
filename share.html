@@ -45,11 +45,11 @@
     <button type="button" data-member-target="myAccountScreen"><span>👤</span><b>내정보</b></button>
   </nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.546-test"></script>
+<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.547-test"></script>
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.546-test';
+  var VERSION='23.7.547-test';
   var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
   var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
   var STORAGE_BUCKET='sitepass-documents';
@@ -62,7 +62,7 @@
   var content=document.getElementById('content');
   var exitButton=document.getElementById('exitButton');
   var navLabel=document.getElementById('navLabel');
-  var state={code:'',sig:'',trackingToken:'',fromMember:false,memberPreviewToken:'',item:null,docs:[],expiresAt:0,serverConfirmed:false,rendered:false,serverFiles:[],serverFilesLoaded:false};
+  var state={code:'',sig:'',trackingToken:'',fromMember:false,memberPreviewToken:'',item:null,docs:[],expiresAt:0,serverConfirmed:false,rendered:false,serverFiles:[],serverFilesLoaded:false,fileAddressRepairing:false,fileAddressErrorReported:false};
   var DOC_TITLES={businessLicense:'사업자등록증',equipmentRegistration:'장비등록증',equipmentInspection:'장비검사증',insurancePolicy:'장비보험증권',specSheet:'장비제원표',ndtInspection:'장비비파괴검사증',equipmentLedger:'장비갑원부',otherEquipment:'기타 장비서류',driverIdCard:'기사 신분증',driverLicense:'기사 면허증',driverBasicSafetyTraining:'기사 건설기초안전보건교육 이수증',driverMachinerySafetyTraining:'기사 건설기계조종사 안전교육 이수증',driverSpecialHealthCheck:'기사 특수건강검진',otherDriverDoc:'기타 기사서류',workerIdCard:'인부 신분증',workerBasicSafetyTraining:'인부 건설기초안전보건교육 이수증',otherWorkerDoc:'기타 인부서류'};
   var DOC_ORDER=['businessLicense','equipmentRegistration','equipmentInspection','insurancePolicy','specSheet','ndtInspection','equipmentLedger','otherEquipment','driverIdCard','driverLicense','driverBasicSafetyTraining','driverMachinerySafetyTraining','driverSpecialHealthCheck','otherDriverDoc','workerIdCard','workerBasicSafetyTraining','otherWorkerDoc'];
   var DOC_GROUPS={equipment:'장비서류',driver:'기사서류',worker:'인부서류'};
@@ -400,6 +400,52 @@
     result.sort(function(a,b){return a.groupOrder-b.groupOrder||a.sortOrder-b.sortOrder||String(a.title).localeCompare(String(b.title),'ko');});
     return result;
   }
+  function missingFileAddressDocsV547(){
+    return (state.docs||[]).filter(function(doc){
+      var pages=doc.pages&&doc.pages.length?doc.pages:[doc.raw];
+      return !pages.some(function(page,index){return resolveDocCandidates(page,doc.raw,doc.key,index).length>0;});
+    });
+  }
+  function reportMissingFileAddressesV547(stage,extra){
+    var missing=missingFileAddressDocsV547();
+    if(!missing.length)return;
+    var key='sitepass_share_missing_paths_v547_'+String(state.code||'')+'_'+missing.map(function(doc){return doc.key;}).join('_');
+    try{if(sessionStorage.getItem(key)==='1'&&stage!=='image_candidates_exhausted')return;sessionStorage.setItem(key,'1');}catch(e){}
+    state.fileAddressErrorReported=true;
+    reportShareLogicalErrorV546('첨부 정보는 있으나 실제 Storage 파일주소를 찾지 못했습니다.','share_file_address_missing_v547',Object.assign({
+      stage:stage||'render',
+      missing_count:missing.length,
+      missing_doc_keys:missing.map(function(doc){return doc.key;}).slice(0,20),
+      missing_doc_titles:missing.map(function(doc){return doc.title;}).slice(0,20),
+      docs_count:(state.docs||[]).length,
+      server_files_count:(state.serverFiles||[]).length,
+      server_files_loaded:!!state.serverFilesLoaded
+    },extra||{}),'error');
+    try{if(window.SitePassErrorMonitor&&window.SitePassErrorMonitor.flush)window.SitePassErrorMonitor.flush();}catch(e){}
+  }
+  async function repairMissingFileAddressesV547(root){
+    if(state.fileAddressRepairing)return false;
+    var missing=missingFileAddressDocsV547();if(!missing.length)return true;
+    state.fileAddressRepairing=true;
+    var lastError='';
+    try{
+      // 스냅샷에 shareStorageFiles가 남아 있으면 서버 호출 전에 즉시 적용합니다.
+      var localFiles=normalizeServerFiles((state.item&&state.item.shareStorageFiles)||[]);
+      if(localFiles.length&&state.item){state.serverFiles=uniqueServerFilesV547((state.serverFiles||[]).concat(localFiles));applyServerFiles(state.item,state.serverFiles);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,root||state.item,!!state.serverConfirmed);}
+      if(!missingFileAddressDocsV547().length)return true;
+      for(var attempt=0;attempt<3;attempt++){
+        if(attempt)await new Promise(function(resolve){setTimeout(resolve,attempt===1?450:1000);});
+        try{
+          var files=await rpcFilesLoad();
+          if(files&&files.length&&state.item){state.serverFiles=uniqueServerFilesV547((state.serverFiles||[]).concat(files));state.serverFilesLoaded=true;applyServerFiles(state.item,state.serverFiles);await hydrateSignedUrlsForItemV523(state.item,attempt>0);renderItem(state.item,root||state.item,true);}
+        }catch(e){lastError=e&&e.message?e.message:String(e||'');}
+        if(!missingFileAddressDocsV547().length)return true;
+      }
+      reportMissingFileAddressesV547('repair_exhausted',{last_error:lastError,attempts:3});
+      return false;
+    }finally{state.fileAddressRepairing=false;}
+  }
+  function uniqueServerFilesV547(files){var seen={};return (files||[]).filter(function(file){var key=String(file&&file.storageBucket||STORAGE_BUCKET)+'|'+String(file&&file.storagePath||'');if(!file||!file.storagePath||seen[key])return false;seen[key]=true;return true;});}
   function isPdf(page,doc,candidates){var url=(candidates&&candidates[0])||'',name=firstValue(page,['fileName','filename','name'])||doc.fileName,type=firstValue(page,['fileType','mimeType','mime_type','type'])||firstValue(doc.raw,['fileType','mimeType','mime_type']);return /pdf/i.test(type)||/\.pdf(?:$|[?#])/i.test(url)||/\.pdf$/i.test(name);}
   function formatDate(value){if(!value)return '';var d=new Date(value);if(isNaN(d.getTime()))return String(value);return d.getFullYear()+'. '+String(d.getMonth()+1).padStart(2,'0')+'. '+String(d.getDate()).padStart(2,'0')+'.';}
   function getExpiry(root){var c=collectCandidates(root);for(var i=0;i<c.length;i++){var v=c[i].expiresAt||c[i].expires_at||c[i].managerExpireAt||c[i].manager_expire_at;if(v){var ms=typeof v==='number'?v:new Date(v).getTime();if(ms)return ms;}}return 0;}
@@ -408,7 +454,7 @@
   function encodeCandidates(list){return encodeURIComponent(JSON.stringify(list||[]));}
   function renderPreview(doc,index){
     var first=doc.pages[0]||doc.raw,candidates=resolveDocCandidates(first,doc.raw,doc.key,0),pdf=isPdf(first,doc,candidates),count=Math.max(1,doc.pages.length||1);
-    if(!candidates.length)return '<div class="doc-preview"><div class="preview-placeholder">첨부 정보는 있으나 파일주소를 찾지 못했습니다.<br>다시 불러오기를 눌러주세요.</div></div>';
+    if(!candidates.length)return '<div class="doc-preview"><div class="preview-placeholder">실제 Storage 파일주소를 자동으로 복구하고 있습니다.<br>잠시만 기다려주세요.</div></div>';
     if(pdf)return '<div class="doc-preview" data-open-detail="'+index+'"><div class="pdf-mark"><b>PDF</b><span>눌러서 미리보기</span></div><span class="page-count">'+count+'장</span></div>';
     return '<div class="doc-preview" data-open-detail="'+index+'"><img data-fallback-img data-candidates="'+esc(encodeCandidates(candidates))+'" data-candidate-index="0" src="'+esc(candidates[0])+'" alt="'+esc(doc.title)+' 미리보기"><span class="page-count">'+count+'장</span></div>';
   }
@@ -428,6 +474,9 @@
     content.innerHTML='<section class="card hero"><div class="eyebrow">'+(state.fromMember?'회원 보관함 링크화면':'QR·링크로 받은 담당자 화면')+'</div><h1>'+esc(label(item))+' 서류</h1><p>필요한 서류를 선택해 확인하거나 다운로드할 수 있습니다.</p><div class="status-grid"><span>코드입력 없음</span><span>서류 상세보기</span><span>수정·갱신 불가</span></div></section><section class="card info-card"><div class="info-row"><b>장비 등록번호</b><span>'+esc(equipmentNo)+'</span></div><div class="info-row"><b>장비명</b><span>'+esc(equipmentName)+'</span></div><div class="info-row"><b>포함서류</b><span>'+esc(includedText(state.docs))+'</span></div>'+expireHtml+'</section><div class="section-title"><h2>다운로드·확인 서류</h2><span>'+state.docs.length+'개 서류</span></div><section class="toolbar" aria-label="선택 서류 작업"><button class="tool-btn light" type="button" data-select-all>전체선택</button><button class="tool-btn soft" type="button" data-clear-selection>선택해제</button><button class="tool-btn primary" type="button" data-download-selected>선택다운로드</button><button class="tool-btn dark" type="button" data-print-selected>선택인쇄</button></section><div class="docs">'+(docsHtml||'<section class="card empty"><b>등록 서류를 불러오는 중입니다.</b><span>서버 서류목록과 실제 Storage 파일을 확인하고 있습니다. 확인 전에는 서류 없음으로 표시하지 않습니다.</span></section>')+'</div><div class="notice"><span>미리보기가 보이지 않으면 최신 서버자료를 다시 확인하세요.</span><button class="retry" type="button" data-retry>다시 불러오기</button></div>';
     activateFallbackImages();
     updateSelectionState();
+    if(missingFileAddressDocsV547().length){
+      setTimeout(function(){repairMissingFileAddressesV547(sourceRoot||item);},80);
+    }
   }
   function renderError(title,message,retry){content.className='card error';content.innerHTML='<b>'+esc(title)+'</b><span>'+esc(message||'')+'</span>'+(retry?'<button class="retry" type="button" data-retry>다시 불러오기</button>':'');}
   function timeoutFetch(url,options,ms){var ctl=new AbortController(),timer=setTimeout(function(){ctl.abort();},ms||5000);options=Object.assign({},options||{},{signal:ctl.signal,cache:'no-store'});return fetch(url,options).finally(function(){clearTimeout(timer);});}
@@ -473,7 +522,7 @@
   function itemFromRoot(root){
     var item=normalizeItem(root,state.code);if(!item)return null;
     var docs=normalizeDocs(item);
-    // v23.7.546-test: share_code/code만 있는 빈 서버행은 유효한 장비자료가 아닙니다.
+    // v23.7.547-test: share_code/code만 있는 빈 서버행은 유효한 장비자료가 아닙니다.
     var equipmentNo=firstValue(item,['equipmentNo','equipment_no','registrationNo','registration_no','vehicleNo','vehicle_no']);
     var equipmentName=firstValue(item,['equipmentName','equipment_name','machineName','machine_name','title']);
     var hasEquipmentIdentity=!!(equipmentNo||equipmentName);
@@ -540,8 +589,9 @@
       await hydrateSignedUrlsForItemV523(serverResult.valid.item,false);
       renderItem(serverResult.valid.item,serverResult.valid.root,true);
       markShareViewedV521();
-      filesPromise.then(async function(lateFiles){if(lateFiles.length&&state.item){applyServerFiles(state.item,lateFiles);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,serverResult.valid.root,true);}});
+      filesPromise.then(async function(lateFiles){if(lateFiles.length&&state.item){state.serverFiles=uniqueServerFilesV547((state.serverFiles||[]).concat(lateFiles));applyServerFiles(state.item,state.serverFiles);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,serverResult.valid.root,true);}});
       if(!state.docs.length)retryMissingDocsV541(serverResult.valid.root).then(function(ok){if(!ok&&state.item&&!state.docs.length)showToast('서버 서류목록 확인이 지연되고 있습니다. 다시 불러오기를 눌러주세요.');});
+      else if(missingFileAddressDocsV547().length)repairMissingFileAddressesV547(serverResult.valid.root);
       return;
     }
     if(state.rendered){
@@ -565,7 +615,11 @@
         var list=[];try{list=JSON.parse(decodeURIComponent(img.getAttribute('data-candidates')||''))||[];}catch(e){}
         var next=Number(img.getAttribute('data-candidate-index')||0)+1;
         if(next<list.length){img.setAttribute('data-candidate-index',String(next));img.src=list[next];return;}
-        var wrap=img.closest('.doc-preview')||img.parentElement;if(wrap)wrap.innerHTML='<div class="preview-placeholder">미리보기를 불러오지 못했습니다.<br>상세보기 또는 다시 불러오기를 눌러주세요.</div>';
+        var wrap=img.closest('.doc-preview')||img.parentElement;if(wrap)wrap.innerHTML='<div class="preview-placeholder">미리보기 주소가 열리지 않아 서버 원본을 다시 확인하고 있습니다.</div>';
+        var card=img.closest('[data-doc-index]');var docIndex=Number(card&&card.getAttribute('data-doc-index')||-1);var failedDoc=state.docs&&state.docs[docIndex];
+        reportShareLogicalErrorV546('Storage 파일주소가 있으나 실제 파일을 열지 못했습니다.','share_file_url_unreachable_v547',{stage:'image_candidates_exhausted',candidate_count:list.length,doc_index:docIndex,doc_key:failedDoc&&failedDoc.key||'',doc_title:failedDoc&&failedDoc.title||''},'error');
+        try{if(window.SitePassErrorMonitor&&window.SitePassErrorMonitor.flush)window.SitePassErrorMonitor.flush();}catch(e){}
+        repairMissingFileAddressesV547(state.item||{});
       });
     });
   }
@@ -591,8 +645,10 @@
     closeModal();var modal=document.createElement('div');modal.id='docModal';modal.className='modal';modal.innerHTML='<div class="backdrop" data-close-modal></div><div class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(doc.title)+' 상세보기"><div class="modal-head"><div><small>SitePass 서류 상세보기</small><strong>'+esc(doc.title)+'</strong></div><button class="close-x" type="button" data-close-modal aria-label="닫기">×</button></div><div class="modal-body"><section class="page"><div class="missing-page">실제 Storage 파일을 확인하는 중입니다.</div></section></div><button class="close-bottom" type="button" data-close-modal>닫기</button></div>';document.body.appendChild(modal);document.body.classList.add('modal-open');
     var entries=pageEntriesForDoc(doc);var resolved=await Promise.all(entries.map(async function(entry){entry.workingUrl=await workingUrlForEntry(entry);return entry;}));
     if(!document.body.contains(modal))return;
+    var missingResolved=resolved.filter(function(entry){return !entry.workingUrl;});
+    if(missingResolved.length){reportShareLogicalErrorV546('상세보기에서 Storage 파일을 열지 못했습니다.','share_detail_file_unreachable_v547',{stage:'detail_url_unreachable',doc_key:doc.key,doc_title:doc.title,failed_pages:missingResolved.length,total_pages:resolved.length},'error');try{if(window.SitePassErrorMonitor&&window.SitePassErrorMonitor.flush)window.SitePassErrorMonitor.flush();}catch(e){}repairMissingFileAddressesV547(state.item||{});}
     var html=resolved.map(function(entry){
-      if(!entry.workingUrl)return '<section class="page"><div class="page-title">'+(entry.index+1)+'. '+esc(entry.name)+'</div><div class="missing-page">서버에 연결된 실제 파일이 없습니다.<br>회원 보관함에서 원본 서류를 다시 저장한 뒤 링크를 열어주세요.</div></section>';
+      if(!entry.workingUrl)return '<section class="page"><div class="page-title">'+(entry.index+1)+'. '+esc(entry.name)+'</div><div class="missing-page">실제 Storage 파일주소를 다시 확인하고 있습니다.<br>잠시 후 다시 열어주세요.</div></section>';
       var first=entry.workingUrl,body=entry.pdf?'<iframe src="'+esc(first)+'" title="'+esc(entry.name)+'"></iframe>':'<img src="'+esc(first)+'" alt="'+esc(entry.name)+'">';
       return '<section class="page"><div class="page-title">'+(entry.index+1)+'. '+esc(entry.name)+'</div>'+body+'</section>';
     }).join('');
