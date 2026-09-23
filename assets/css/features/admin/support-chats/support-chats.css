@@ -1,0 +1,506 @@
+/* SitePass v23.7.670-66-admin-inquiry-four-state */
+
+.sitepass-admin-inquiry-root-v668 {
+  min-height: 620px;
+}
+
+.sitepass-admin-inquiry-title-v668,
+.sitepass-admin-inquiry-detail-head-v668,
+.sitepass-admin-inquiry-list-head-v668,
+.sitepass-admin-inquiry-compose-foot-v668 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sitepass-admin-inquiry-title-v668 h3,
+.sitepass-admin-inquiry-detail-head-v668 h3 {
+  margin: 0 0 4px;
+}
+
+.sitepass-admin-inquiry-toolbar-v668 {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 140px auto;
+  gap: 10px;
+  align-items: center;
+  margin: 16px 0 12px;
+}
+
+.sitepass-admin-inquiry-search-v668 {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  gap: 8px;
+}
+
+.sitepass-admin-inquiry-toolbar-v668 input,
+.sitepass-admin-inquiry-toolbar-v668 select,
+.sitepass-admin-inquiry-compose-v668 textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sitepass-admin-inquiry-unread-filter-v668 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #dfe5ec;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sitepass-admin-inquiry-unread-filter-v668 input {
+  width: auto;
+  margin: 0;
+}
+
+.sitepass-admin-inquiry-layout-v668 {
+  display: grid;
+  grid-template-columns: minmax(300px, 38%) minmax(0, 1fr);
+  min-height: 510px;
+  overflow: hidden;
+  border: 1px solid #e5e9ef;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.sitepass-admin-inquiry-list-panel-v668 {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid #e5e9ef;
+  background: #f8fafc;
+}
+
+.sitepass-admin-inquiry-list-head-v668 {
+  min-height: 50px;
+  padding: 0 14px;
+  border-bottom: 1px solid #e5e9ef;
+  background: #fff;
+}
+
+.sitepass-admin-inquiry-list-head-v668 span {
+  color: #667085;
+  font-size: 12px;
+}
+
+.sitepass-admin-inquiry-room-list-v668 {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.sitepass-admin-inquiry-room-v668 {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 13px 14px;
+  border: 0;
+  border-bottom: 1px solid #e8edf3;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sitepass-admin-inquiry-room-v668:hover {
+  background: #f1f5f9;
+}
+
+.sitepass-admin-inquiry-room-v668.selected {
+  background: #eaf2ff;
+  box-shadow: inset 3px 0 0 #2563eb;
+}
+
+.sitepass-admin-inquiry-room-head-v668 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sitepass-admin-inquiry-room-head-v668 strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sitepass-admin-inquiry-unread-v668 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #e11d48;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sitepass-admin-inquiry-room-meta-v668,
+.sitepass-admin-inquiry-room-preview-v668,
+.sitepass-admin-inquiry-room-time-v668 {
+  overflow: hidden;
+  color: #667085;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sitepass-admin-inquiry-room-preview-v668 {
+  color: #344054;
+  font-size: 13px;
+}
+
+.sitepass-admin-inquiry-detail-panel-v668 {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 14px;
+  background: #fff;
+}
+
+.sitepass-admin-inquiry-detail-head-v668 {
+  min-height: 50px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.sitepass-admin-inquiry-messages-v668 {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 300px;
+  max-height: 390px;
+  padding: 16px 4px;
+  overflow: auto;
+}
+
+.sitepass-admin-inquiry-message-v668 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 82%;
+}
+
+.sitepass-admin-inquiry-message-v668.admin {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.sitepass-admin-inquiry-message-name-v668,
+.sitepass-admin-inquiry-message-time-v668 {
+  padding: 0 4px;
+  color: #667085;
+  font-size: 11px;
+}
+
+.sitepass-admin-inquiry-message-bubble-v668 {
+  margin: 3px 0;
+  padding: 10px 12px;
+  border: 1px solid #e5e9ef;
+  border-radius: 14px 14px 14px 4px;
+  background: #f3f5f8;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.sitepass-admin-inquiry-message-v668.admin
+.sitepass-admin-inquiry-message-bubble-v668 {
+  border-color: #cfe0ff;
+  border-radius: 14px 14px 4px 14px;
+  background: #eaf2ff;
+}
+
+.sitepass-admin-inquiry-compose-v668 {
+  padding-top: 12px;
+  border-top: 1px solid #e5e9ef;
+}
+
+.sitepass-admin-inquiry-compose-v668 textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.sitepass-admin-inquiry-compose-foot-v668 {
+  margin-top: 8px;
+}
+
+.sitepass-admin-inquiry-compose-foot-v668 span {
+  color: #667085;
+  font-size: 12px;
+}
+
+.sitepass-admin-inquiry-empty-v668,
+.sitepass-admin-inquiry-detail-empty-v668 {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 170px;
+  padding: 24px;
+  color: #667085;
+  text-align: center;
+}
+
+.sitepass-admin-inquiry-detail-empty-v668 strong {
+  color: #344054;
+}
+
+.sitepass-admin-inquiry-error-v668 {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fff1f2;
+  color: #b42318;
+  font-size: 13px;
+}
+
+.sitepass-admin-inquiry-more-v668,
+.sitepass-admin-inquiry-older-v668 {
+  margin: 10px;
+}
+
+.sitepass-admin-inquiry-older-v668 {
+  align-self: center;
+}
+
+@media (max-width: 860px) {
+  .sitepass-admin-inquiry-toolbar-v668 {
+    grid-template-columns: 1fr 130px;
+  }
+
+  .sitepass-admin-inquiry-search-v668 {
+    grid-column: 1 / -1;
+  }
+
+  .sitepass-admin-inquiry-layout-v668 {
+    grid-template-columns: 1fr;
+  }
+
+  .sitepass-admin-inquiry-list-panel-v668 {
+    max-height: 320px;
+    border-right: 0;
+    border-bottom: 1px solid #e5e9ef;
+  }
+}
+
+@media (max-width: 560px) {
+  .sitepass-admin-inquiry-toolbar-v668,
+  .sitepass-admin-inquiry-search-v668 {
+    grid-template-columns: 1fr;
+  }
+
+  .sitepass-admin-inquiry-unread-filter-v668 {
+    justify-content: flex-start;
+  }
+
+  .sitepass-admin-inquiry-message-v668 {
+    max-width: 92%;
+  }
+}
+
+.sitepass-admin-inquiry-room-head-actions-v670,
+.sitepass-admin-inquiry-detail-actions-v670 {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sitepass-admin-inquiry-status-badge-v670 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sitepass-admin-inquiry-status-badge-v670.waiting_admin {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #b42318;
+}
+
+.sitepass-admin-inquiry-status-badge-v670.in_progress {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.sitepass-admin-inquiry-status-badge-v670.waiting_member {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.sitepass-admin-inquiry-status-badge-v670.completed {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.sitepass-admin-inquiry-status-control-v670 {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) auto minmax(220px, 1fr);
+  gap: 10px;
+  align-items: end;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #e5e9ef;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.sitepass-admin-inquiry-status-control-v670 label {
+  display: grid;
+  gap: 5px;
+}
+
+.sitepass-admin-inquiry-status-control-v670 label > span {
+  color: #475467;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sitepass-admin-inquiry-status-control-v670 select {
+  width: 100%;
+  min-height: 40px;
+}
+
+.sitepass-admin-inquiry-status-control-v670 .small {
+  align-self: center;
+  color: #667085;
+}
+
+@media (max-width: 700px) {
+  .sitepass-admin-inquiry-status-control-v670 {
+    grid-template-columns: 1fr auto;
+  }
+
+  .sitepass-admin-inquiry-status-control-v670 .small {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .sitepass-admin-inquiry-status-control-v670 {
+    grid-template-columns: 1fr;
+  }
+
+  .sitepass-admin-inquiry-status-control-v670 .small {
+    grid-column: auto;
+  }
+
+  .sitepass-admin-inquiry-detail-actions-v670 {
+    align-items: flex-end;
+    flex-direction: column;
+  }
+}
+
+
+/* STEP92 R10A — 관리자 문의 상세 상태 UX 단순화 */
+.sitepass-admin-inquiry-workflow-v92 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #e4eaf2;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.sitepass-admin-inquiry-workflow-v92.completed {
+  border-color: #d1ead8;
+  background: #f5fbf7;
+}
+
+.sitepass-admin-inquiry-workflow-copy-v92 {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sitepass-admin-inquiry-workflow-copy-v92 strong {
+  color: #344054;
+  font-size: 12px;
+}
+
+.sitepass-admin-inquiry-workflow-copy-v92 span {
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.sitepass-admin-inquiry-workflow-actions-v92 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.sitepass-admin-inquiry-detail-head-v668 {
+  gap: 16px;
+}
+
+@media (max-width: 620px) {
+  .sitepass-admin-inquiry-workflow-v92 {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sitepass-admin-inquiry-workflow-actions-v92 {
+    justify-content: stretch;
+  }
+
+  .sitepass-admin-inquiry-workflow-actions-v92 button {
+    flex: 1 1 0;
+  }
+}
+
+
+/* STEP92 R10B — 상태 배지 옆 빠른 처리 + 대량 문의 큐 */
+.sitepass-admin-inquiry-detail-actions-v670 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.sitepass-admin-inquiry-status-action-v92 {
+  min-height: 34px;
+  padding: 7px 11px;
+  white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  .sitepass-admin-inquiry-detail-head-v668 {
+    align-items: flex-start;
+  }
+
+  .sitepass-admin-inquiry-detail-actions-v670 {
+    justify-content: flex-start;
+  }
+}

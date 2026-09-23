@@ -1,4 +1,4 @@
-// SitePass v23.7.553-test - 담당자 링크 query 고정 및 업데이트 경로 보존
+// SitePass v23.7.676-72-e3-server-signature-consumption - 서버 발급 공유서명 소비 고정
 // 이 파일에는 QR 링크 생성, 담당자 공유링크 서명, Supabase 공유링크 저장/조회 보조 기능을 둡니다.
 (function(){
   'use strict';
@@ -7,6 +7,89 @@
   const DAY_MS = 24 * 60 * 60 * 1000;
   // v23.7.350: 테스트기간 담당자 공유 링크는 1일만 유효하게 발급합니다.
   const MANAGER_SHARE_DAYS = 1;
+
+
+  // v23.7.676 / 72-E3:
+  // public share capability signature는 서버(v2) 발급값만 실제 링크에 사용합니다.
+  // 메모리에는 현재 페이지에서 서버가 방금 발급한 값만 보관하며 localStorage에는 기록하지 않습니다.
+  const serverIssuedShareMemoryV676 = new Map();
+
+  function isServerIssuedShareSigV676(value){
+    return /^[0-9a-f]{64}$/.test(String(value || '').trim());
+  }
+
+  function normalizeServerIssuedShareV676(share){
+    share = share && typeof share === 'object' ? share : {};
+    const code = String(share.share_code || share.code || '').trim();
+    const sig = String(share.share_sig || '').trim();
+    const expiresAtText = String(share.expires_at || share.expiresAt || '').trim();
+    const expiresAtMs = expiresAtText ? new Date(expiresAtText).getTime() : 0;
+    if (!code || !isServerIssuedShareSigV676(sig)) return null;
+    if (!Number.isFinite(expiresAtMs) || expiresAtMs <= nowMs()) return null;
+    return {
+      code:code,
+      share_code:code,
+      share_sig:sig,
+      expires_at:new Date(expiresAtMs).toISOString(),
+      expiresAtMs:expiresAtMs
+    };
+  }
+
+  function rememberServerIssuedSharesV676(shares, items){
+    const issued = (Array.isArray(shares) ? shares : [])
+      .map(normalizeServerIssuedShareV676)
+      .filter(Boolean);
+
+    const byCode = new Map();
+    issued.forEach(function(share){
+      byCode.set(share.code, share);
+      serverIssuedShareMemoryV676.set(share.code, share);
+    });
+
+    const safeItems = (items || []).filter(Boolean);
+    safeItems.forEach(function(item){
+      const code = ensureManagerShareCodeForItem(item);
+      const share = byCode.get(code);
+      if (!share) return;
+      item.share_sig = share.share_sig;
+      item.publicShareSig = share.share_sig;
+      item.managerShareSig = share.share_sig;
+      item.managerExpireAt = share.expires_at;
+      item.manager_expire_at = share.expires_at;
+      item.publicShareSavedAt = new Date().toISOString();
+      item.serverSignatureVersion = 'server-random-32byte-hex';
+    });
+
+    return {
+      ok: issued.length === safeItems.length && issued.length > 0,
+      shares: issued,
+      items: safeItems
+    };
+  }
+
+  function getServerIssuedShareSignatureV676(code, expireAt){
+    const key = String(code || '').trim();
+    if (!key) return '';
+    const share = serverIssuedShareMemoryV676.get(key);
+    if (!share || !isServerIssuedShareSigV676(share.share_sig)) return '';
+    if (!share.expiresAtMs || share.expiresAtMs <= nowMs()) {
+      serverIssuedShareMemoryV676.delete(key);
+      return '';
+    }
+    const requestedExpireAt = Number(expireAt || 0);
+    if (Number.isFinite(requestedExpireAt) && requestedExpireAt > 0) {
+      if (Math.abs(requestedExpireAt - share.expiresAtMs) > 2000) return '';
+    }
+    return share.share_sig;
+  }
+
+  function getServerIssuedShareV676(code){
+    const key = String(code || '').trim();
+    const share = key ? serverIssuedShareMemoryV676.get(key) : null;
+    if (!share || !isServerIssuedShareSigV676(share.share_sig)) return null;
+    if (!share.expiresAtMs || share.expiresAtMs <= nowMs()) return null;
+    return { ...share };
+  }
 
   function nowMs(){ return Date.now(); }
 
@@ -104,8 +187,8 @@
     url.search = '';
     url.hash = '';
     url.searchParams.set('manager', String(code || ''));
-    const sig = typeof getSignature === 'function' ? String(getSignature(code, expireAt) || '') : '';
-    if (sig) url.searchParams.set('sig', sig);
+    const linkSig = typeof getSignature === 'function' ? String(getSignature(code, expireAt) || '') : '';
+    if (linkSig) url.searchParams.set('sig', linkSig);
     url.searchParams.set('v', '521');
     return url.toString();
   }
@@ -199,32 +282,69 @@
     };
   }
 
-  function isManagerShareRpcMissingV501(error){
+  function isManagerShareRpcMissingV2(error){
     const code = String(error && error.code || '');
     const message = String(error && (error.message || error.details || error.hint) || '').toLowerCase();
-    return code === 'PGRST202' || message.includes('could not find the function') || message.includes('schema cache') || message.includes('sitepass_upsert_public_shares_v501');
+    return code === 'PGRST202' ||
+      message.includes('could not find the function') ||
+      message.includes('schema cache') ||
+      message.includes('sitepass_upsert_public_shares_v2');
   }
 
-  async function saveManagerShareItemsByRpc(client, rows, deps){
-    if (!client || typeof client.rpc !== 'function') return { ok:false, skipped:true, message:'Supabase RPC 연결 객체가 없습니다.' };
-    const member = getManagerShareMemberPayloadV501(deps || {});
-    if (!member.signup_id && !member.provider_id && !member.phone) {
-      return { ok:false, message:'SitePass 로그인 회원정보를 확인하지 못했습니다. 로그아웃 후 다시 로그인해주세요.' };
+  async function saveManagerShareItemsByRpc(client, rows){
+    if (!client || typeof client.rpc !== 'function') {
+      return { ok:false, skipped:true, message:'Supabase RPC 연결 객체가 없습니다.' };
     }
-    const { data, error } = await client.rpc('sitepass_upsert_public_shares_v501', {
-      p_rows: rows,
-      p_member: member
+
+    const { data, error } = await client.rpc('sitepass_upsert_public_shares_v2', {
+      p_rows: rows
     });
+
     if (error) {
-      const message = formatManagerShareSupabaseErrorV496(error, 'Supabase 공유링크 RPC 저장 오류');
-      if (isManagerShareRpcMissingV501(error)) {
-        return { ok:false, sqlRequired:true, message:message + ' / v501 담당자 공유링크 SQL을 먼저 실행해주세요.' };
+      const message = formatManagerShareSupabaseErrorV496(error, 'Supabase 공유링크 v2 저장 오류');
+      if (isManagerShareRpcMissingV2(error)) {
+        return {
+          ok:false,
+          sqlRequired:true,
+          message:message + ' / sitepass_upsert_public_shares_v2 서버 공유서명 RPC를 확인해주세요.'
+        };
       }
       return { ok:false, message };
     }
+
     const result = normalizeRpcPublicShareResult(data) || {};
-    if (result.ok === false) return { ok:false, message:result.message || result.error || '공유링크 RPC 저장 실패' };
-    return { ok:true, saved:Number(result.saved || rows.length || 0), rpc:true, version:'v501' };
+    if (result.ok === false) {
+      return { ok:false, message:result.message || result.error || '공유링크 v2 저장 실패' };
+    }
+
+    const shares = Array.isArray(result.shares) ? result.shares : [];
+    if (!shares.length || shares.length !== rows.length) {
+      return {
+        ok:false,
+        message:'SERVER_SIGNATURE_RESPONSE_REQUIRED',
+        serverSignatureMissing:true
+      };
+    }
+
+    if (shares.some(function(share){
+      return !share || !isServerIssuedShareSigV676(share.share_sig);
+    })) {
+      return {
+        ok:false,
+        message:'SERVER_SIGNATURE_FORMAT_INVALID',
+        serverSignatureInvalid:true
+      };
+    }
+
+    return {
+      ok:true,
+      saved:Number(result.saved || rows.length || 0),
+      rpc:true,
+      version:'v2',
+      shares:shares,
+      signatureVersion:String(result.signatureVersion || 'server-random-32byte-hex'),
+      signatureLength:Number(result.signatureLength || 64)
+    };
   }
 
   async function saveManagerShareItemsToSupabase(items, deps){
@@ -238,16 +358,23 @@
       const nowIso = new Date().toISOString();
       const memberPayloadV501 = getManagerShareMemberPayloadV501(deps || {});
       const memberOwnerLoginIdV501 = String(memberPayloadV501.signup_id || memberPayloadV501.provider_id || '').trim();
+
+      // v23.7.676 / 72-E3:
+      // caller share_sig는 더 이상 만들거나 보내지 않습니다.
+      // v2가 32-byte random signature를 발급하고 응답 shares[]로 돌려줍니다.
       const rows = safeItems.map(item => {
         const code = ensureManagerShareCodeForItem(item);
-        const expireAt = (deps && typeof deps.getExpireAt === 'function') ? deps.getExpireAt(item) : getSevenDaysFromNowMs();
-        const sig = (deps && typeof deps.getSignature === 'function') ? deps.getSignature(code, expireAt) : '';
-        const shareItem = cloneItemForServer(item, expireAt, sig, deps || {});
-        const label = (deps && typeof deps.getLabel === 'function') ? deps.getLabel(item) : String(item.equipmentName || code || 'SitePass 서류');
+        const expireAt = (deps && typeof deps.getExpireAt === 'function')
+          ? deps.getExpireAt(item)
+          : getSevenDaysFromNowMs();
+        const shareItem = cloneItemForServer(item, expireAt, '', deps || {});
+        const label = (deps && typeof deps.getLabel === 'function')
+          ? deps.getLabel(item)
+          : String(item.equipmentName || code || 'SitePass 서류');
+
         return {
           code: String(code || ''),
           share_code: String(code || ''),
-          share_sig: String(sig || ''),
           expires_at: new Date(expireAt).toISOString(),
           item_data: shareItem,
           payload: shareItem,
@@ -257,26 +384,45 @@
           owner_login_id: String(memberOwnerLoginIdV501 || item.ownerSignupId || item.ownerProviderId || ''),
           updated_at: nowIso
         };
-      }).filter(row => row.share_code && row.share_sig);
-      if (!rows.length) return { ok:false, message:'저장할 담당자 링크 정보가 없습니다.' };
-      if (typeof client.rpc === 'function') {
-        let rpcSaved = await saveManagerShareItemsByRpc(client, rows, deps || {});
-        if (rpcSaved.ok) return rpcSaved;
-        if (rpcSaved.sqlRequired) return rpcSaved;
-        // v23.7.496: 휴대폰 네트워크/DB 순간 지연은 가벼운 URL 전용 payload로 한 번만 재시도합니다.
-        if (/timeout|timed out|statement|canceling|network|fetch/i.test(String(rpcSaved.message || ''))) {
-          await new Promise(function(resolve){ setTimeout(resolve, 350); });
-          rpcSaved = await saveManagerShareItemsByRpc(client, rows, deps || {});
-          if (rpcSaved.ok) return rpcSaved;
-        }
-        // RPC가 아직 적용되지 않은 경우에만 기존 직접 upsert를 fallback으로 시도합니다.
-        if (!/not found|Could not find|schema cache|function/i.test(String(rpcSaved.message || ''))) {
-          return rpcSaved;
-        }
+      }).filter(row => row.share_code);
+
+      if (!rows.length) {
+        return { ok:false, message:'저장할 담당자 링크 정보가 없습니다.' };
       }
-      const { error } = await client.from(PUBLIC_SHARE_TABLE).upsert(rows, { onConflict:'share_code' });
-      if (error) return { ok:false, message:formatManagerShareSupabaseErrorV496(error, 'Supabase 저장 오류') };
-      return { ok:true, saved:rows.length, direct:true };
+
+      if (typeof client.rpc !== 'function') {
+        return {
+          ok:false,
+          message:'SERVER_SIGNATURE_RPC_REQUIRED',
+          serverSignatureRpcRequired:true
+        };
+      }
+
+      let rpcSaved = await saveManagerShareItemsByRpc(client, rows);
+
+      if (!rpcSaved.ok &&
+          /timeout|timed out|statement|canceling|network|fetch/i.test(String(rpcSaved.message || ''))) {
+        await new Promise(function(resolve){ setTimeout(resolve, 350); });
+        rpcSaved = await saveManagerShareItemsByRpc(client, rows);
+      }
+
+      if (!rpcSaved.ok) return rpcSaved;
+
+      const applied = rememberServerIssuedSharesV676(rpcSaved.shares, safeItems);
+      if (!applied.ok) {
+        return {
+          ok:false,
+          message:'SERVER_SIGNATURE_APPLY_FAILED',
+          serverSignatureApplyFailed:true
+        };
+      }
+
+      return {
+        ...rpcSaved,
+        shares:applied.shares,
+        items:applied.items,
+        serverSignatureApplied:true
+      };
     } catch (e) {
       return { ok:false, message:e && e.message ? e.message : String(e) };
     }
@@ -346,6 +492,9 @@
     makeManagerLinkSignatureRaw,
     makeManagerLink,
     parseManagerHash,
+    isServerIssuedShareSigV676,
+    getServerIssuedShareSignatureV676,
+    getServerIssuedShareV676,
     saveManagerShareItemsToSupabase,
     loadManagerShareItemFromSupabase
   };

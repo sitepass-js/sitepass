@@ -1,0 +1,1156 @@
+.sp-r10h-recent-chat {
+  width: calc(100% - 20px);
+  margin: 8px 10px 10px;
+  padding: 10px 11px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #0f172a;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sp-r10h-recent-chat.hidden {
+  display: none !important;
+}
+
+.sp-r10h-recent-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.sp-r10h-recent-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sp-r10h-recent-copy small {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.sp-r10h-recent-copy b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.sp-r10h-recent-copy > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.sp-r10h-recent-meta {
+  min-width: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.sp-r10h-recent-meta i {
+  color: #94a3b8;
+  font-size: 10px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.sp-r10h-recent-unread {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.sp606-member-chat-label {
+  gap: 7px;
+}
+
+.sp-r10h-section-toggle {
+  margin-left: auto;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 9px;
+  padding: 6px 9px;
+  background: #111827;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sp-r10h-member-collapsed #sp566MemberRoomList,
+.sp-r10h-member-collapsed #sp605BulkSendCard {
+  display: none !important;
+}
+
+#spF1FriendCenter {
+  margin-top: 10px;
+}
+
+@media (max-width: 680px) {
+  .sp-r10h-recent-chat {
+    width: calc(100% - 16px);
+    margin: 7px 8px 9px;
+    padding: 9px;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+  }
+
+  .sp-r10h-recent-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .sp-r10h-section-toggle {
+    padding: 6px 8px;
+  }
+}
+
+/* SitePass R10I - 알림/채팅 왼쪽 패널 자연스러운 세로 스크롤
+ * 원인: desktop grid 안에서 #sitepassChatListPanel에 height:100%와 padding이 함께
+ * 적용되어 border-box가 부모 높이를 초과할 수 있었고, 부모 overflow:hidden에서
+ * 친구채팅 확장 하단이 잘릴 수 있었다.
+ * 범위: 왼쪽 목록 패널 스크롤 박스만 보정. 채팅/친구 RPC 및 방 UI 로직 변경 없음.
+ */
+#contactScreen #sitepassChatListPanel {
+  box-sizing: border-box !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+@media (min-width: 920px) {
+  #contactScreen #sitepassChatListPanel {
+    height: 100% !important;
+    padding-bottom: 24px !important;
+  }
+}
+
+@media (max-width: 919px) {
+  #contactScreen #sitepassChatListPanel {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overscroll-behavior-y: auto;
+    scrollbar-gutter: auto;
+  }
+}
+
+/* SitePass R10J - 친구채팅 flex-item shrink 방지
+ * 실제 원인:
+ * #sitepassChatListPanel은 desktop에서 flex-column 컨테이너이고,
+ * #spF1FriendCenter는 flex-item 기본값 flex-shrink:1 이었다.
+ * 친구채팅을 펼치면 패널 자체가 overflow 되는 대신 친구 카드가 먼저 줄어들고,
+ * .sp-f1-friend-center의 overflow:hidden 때문에 내부 하단이 잘렸다.
+ *
+ * 최소수정:
+ * 친구채팅 섹션 자체는 내용 높이를 유지하게 하고,
+ * 초과 높이는 부모 #sitepassChatListPanel의 overflow-y:auto가 담당한다.
+ */
+@media (min-width: 920px) {
+  #contactScreen #spF1FriendCenter {
+    flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+/* SitePass R10NO - 알림/문의·친구·연동회원 통합목록 */
+#sitepassChatListPanel.sp-r10no-unified-active > #sitepassChatRoomList,
+#sitepassChatListPanel.sp-r10no-unified-active > #sp566MemberChatSection,
+#sitepassChatListPanel.sp-r10no-unified-active > #spF1FriendCenter,
+#sitepassChatListPanel.sp-r10no-unified-active > #spR10HRecentChat {
+  display: none !important;
+}
+
+.sp-r10no-toolbar {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 8px;
+  padding: 0 10px 8px;
+}
+
+.sp-r10no-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.sp-r10no-search-toggle,
+.sp-r10no-friend-add,
+.sp-r10no-bulk-send {
+  appearance: none;
+  border: 1px solid #dbe4f0;
+  border-radius: 11px;
+  background: #ffffff;
+  color: #111827;
+  min-height: 36px;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.sp-r10no-search-toggle {
+  width: 42px;
+  flex: 0 0 42px;
+  padding: 0;
+  font-size: 16px;
+}
+
+.sp-r10no-friend-add {
+  flex: 0 0 auto;
+}
+
+.sp-r10no-bulk-send {
+  margin-left: 0;
+  flex: 0 0 auto;
+}
+
+.sp-r10no-search-toggle:hover,
+.sp-r10no-friend-add:hover,
+.sp-r10no-bulk-send:hover,
+.sp-r10no-search-toggle[aria-expanded="true"] {
+  border-color: #f2c900;
+  background: #fffaf0;
+}
+
+.sp-r10no-search-wrap.hidden,
+.sp-r10no-bulk-send.hidden {
+  display: none !important;
+}
+
+.sp-r10no-search-wrap .sp641-chat-search {
+  margin-top: 0 !important;
+}
+
+.sp-r10no-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.sp-r10no-tabs button {
+  appearance: none;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid #dbe4f0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #475569;
+  padding: 0 7px;
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sp-r10no-tabs button.active,
+.sp-r10no-tabs button[aria-selected="true"] {
+  border-color: #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+.sp-r10no-unified-list {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+
+.sp-r10no-unified-card {
+  box-sizing: border-box;
+}
+
+.sp-r10no-unified-card.sp641-search-hidden {
+  display: none !important;
+}
+
+.sp-r10no-member-card,
+.sp-r10no-friend-card {
+  width: 100%;
+  border: 1px solid #e0e7f0;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.96);
+  color: #111827;
+  min-height: 66px;
+  padding: 8px 9px;
+  box-shadow: none;
+}
+
+.sp-r10no-member-card {
+  cursor: pointer;
+}
+
+.sp-r10no-member-card:hover,
+.sp-r10no-friend-card:hover {
+  border-color: #f2c900;
+  background: #fffaf0;
+}
+
+.sp-r10no-member-main,
+.sp-r10no-friend-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: center;
+}
+
+.sp-r10no-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 16px;
+}
+
+.sp-r10no-member-copy,
+.sp-r10no-friend-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-r10no-name-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sp-r10no-name-row b {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.sp-r10no-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.sp-r10no-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+  border: 1px solid #dbe4f0;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.sp-r10no-badge.member {
+  background: #fff8db;
+  border-color: #f4d96a;
+  color: #7a5b00;
+}
+
+.sp-r10no-badge.friend {
+  background: #eef7ff;
+  border-color: #c7e1fa;
+  color: #24527a;
+}
+
+.sp-r10no-badge.request {
+  background: #fff3e9;
+  border-color: #ffd3ad;
+  color: #8a4a10;
+}
+
+.sp-r10no-equipment,
+.sp-r10no-preview {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.sp-r10no-equipment {
+  color: #334155;
+  font-weight: 750;
+}
+
+.sp-r10no-meta,
+.sp-r10no-request-actions {
+  min-width: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.sp-r10no-meta i,
+.sp-r10no-request-actions i {
+  color: #94a3b8;
+  font-size: 10px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.sp-r10no-unread {
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.sp-r10no-friend-more {
+  position: relative;
+}
+
+.sp-r10no-friend-more summary {
+  list-style: none;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  font-weight: 900;
+}
+
+.sp-r10no-friend-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.sp-r10no-friend-menu {
+  position: absolute;
+  top: 32px;
+  right: 0;
+  z-index: 8;
+  min-width: 100px;
+  padding: 5px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15,23,42,0.12);
+}
+
+.sp-r10no-friend-menu button,
+.sp-r10no-request-actions button {
+  appearance: none;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sp-r10no-friend-menu button.danger {
+  color: #b42318;
+}
+
+.sp-r10no-request-actions {
+  min-width: 88px;
+}
+
+.sp-r10no-request-actions button {
+  width: 100%;
+}
+
+.sp-r10no-request-actions button.secondary {
+  color: #64748b;
+}
+
+.sp-r10no-empty {
+  padding: 18px 8px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sp-r10no-friend-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 14000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15,23,42,0.38);
+}
+
+.sp-r10no-friend-dialog.hidden {
+  display: none !important;
+}
+
+.sp-r10no-friend-dialog-card {
+  width: min(100%, 430px);
+  max-height: min(80vh, 620px);
+  overflow: auto;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 50px rgba(15,23,42,0.20);
+  padding: 14px;
+}
+
+.sp-r10no-friend-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sp-r10no-friend-dialog-head > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-r10no-friend-dialog-head b {
+  font-size: 16px;
+}
+
+.sp-r10no-friend-dialog-head small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.sp-r10no-friend-dialog-head > button {
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.sp-r10no-friend-search-row {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+
+.sp-r10no-friend-search-row input {
+  min-width: 0;
+  height: 40px;
+  border: 1px solid #dbe4f0;
+  border-radius: 11px;
+  padding: 0 11px;
+  outline: none;
+  font-size: 13px;
+}
+
+.sp-r10no-friend-search-row button {
+  appearance: none;
+  min-width: 62px;
+  border: 0;
+  border-radius: 11px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.sp-r10no-friend-result {
+  margin-top: 10px;
+}
+
+.sp-r10no-friend-result > p {
+  margin: 0;
+  padding: 10px;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.sp-r10no-friend-result-card {
+  display: grid;
+  gap: 6px;
+  padding: 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.sp-r10no-friend-result-card b {
+  font-size: 14px;
+}
+
+.sp-r10no-friend-result-card span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.sp-r10no-friend-result-card button {
+  appearance: none;
+  justify-self: start;
+  min-height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: #111827;
+  color: #ffffff;
+  padding: 0 11px;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+body.sp-r10no-friend-dialog-open {
+  overflow: hidden !important;
+}
+
+@media (max-width: 680px) {
+  .sp-r10no-toolbar,
+  .sp-r10no-unified-list {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .sp-r10no-actions {
+    gap: 6px;
+  }
+
+  .sp-r10no-friend-add,
+  .sp-r10no-bulk-send {
+    padding-left: 9px;
+    padding-right: 9px;
+    font-size: 11px;
+  }
+
+  .sp-r10no-tabs {
+    gap: 4px;
+  }
+
+  .sp-r10no-tabs button {
+    min-height: 32px;
+    padding: 0 4px;
+    font-size: 10px;
+  }
+
+  .sp-r10no-member-main,
+  .sp-r10no-friend-card {
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    column-gap: 7px;
+  }
+
+  .sp-r10no-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .sp-r10no-name-row b {
+    font-size: 12px;
+  }
+
+  .sp-r10no-meta,
+  .sp-r10no-request-actions {
+    min-width: 70px;
+  }
+}
+
+/* SitePass R10NO UI follow-up - member card fixed-room height/right-meta parity
+ * User-confirmed target:
+ * - member right meta stays in the right column (Push -> badges -> date/time)
+ * - desktop member card height/padding matches locked fixed-room cards exactly
+ * 기능/RPC/Push/클릭동작은 변경하지 않고 unified-list 표시만 보정한다.
+ */
+.sp-r10no-member-card {
+  min-height: 44px;
+  padding: 5px 9px;
+  border-radius: 16px;
+}
+
+.sp-r10no-member-main {
+  width: 100%;
+}
+
+.sp-r10no-meta {
+  margin-left: auto;
+  justify-self: end;
+  align-self: center;
+}
+
+@media (min-width: 920px) {
+  #contactScreen .sp-r10no-member-card {
+    min-height: 68px;
+    padding: 9px 10px;
+    border-radius: 14px;
+  }
+
+  #contactScreen .sp-r10no-member-main {
+    grid-template-columns: 34px minmax(0, 1fr) 78px;
+    column-gap: 8px;
+    align-items: center;
+    min-height: 48px;
+  }
+
+  #contactScreen .sp-r10no-meta {
+    width: 78px;
+    min-width: 78px;
+    max-width: 78px;
+    margin-left: 0;
+    justify-self: end;
+    align-self: center;
+    align-items: flex-end;
+    gap: 1px;
+  }
+
+  #contactScreen .sp-r10no-meta .sp592-member-notice-pill {
+    align-self: flex-end;
+  }
+
+  #contactScreen .sp-r10no-meta .sp-r10no-badges,
+  #contactScreen .sp-r10no-meta-bottom {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+.sp-r10no-meta .sp592-member-notice-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 2px 6px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 950;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.sp-r10no-meta .sp592-member-notice-pill.off {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* SitePass R10NO UI follow-up - member right meta order
+ * User-confirmed visual order:
+ * 1) Push ON/OFF
+ * 2) linked-member/friend badges
+ * 3) activity date + time
+ * Unread count stays on the final date/time row.
+ * 기능/RPC/Push 동작은 변경하지 않는다.
+ */
+.sp-r10no-meta .sp-r10no-badges {
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+}
+
+.sp-r10no-meta-bottom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* SitePass v23.7.740 R10NO - 연동회원 단체메시지 전용 UI
+ * 기존 sp605 원소유자 단체발송 UI는 건드리지 않는다.
+ * 통합목록의 연동회원 탭에서 신규 linked-member broadcast RPC만 사용한다.
+ */
+.sp-r10no-bulk-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 14020;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15,23,42,0.42);
+}
+
+.sp-r10no-bulk-dialog.hidden {
+  display: none !important;
+}
+
+.sp-r10no-bulk-dialog-card {
+  width: min(100%, 460px);
+  max-height: min(84vh, 680px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 50px rgba(15,23,42,0.22);
+  padding: 14px;
+}
+
+.sp-r10no-bulk-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sp-r10no-bulk-dialog-head > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-r10no-bulk-dialog-head b {
+  font-size: 16px;
+  color: #111827;
+}
+
+.sp-r10no-bulk-dialog-head small {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.sp-r10no-bulk-dialog-head > button {
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.sp-r10no-bulk-search-row {
+  margin-top: 12px;
+}
+
+.sp-r10no-bulk-search-row input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  border: 1px solid #dbe4f0;
+  border-radius: 11px;
+  padding: 0 11px;
+  outline: none;
+  font-size: 13px;
+}
+
+.sp-r10no-bulk-search-row input:focus {
+  border-color: #f2c900;
+  box-shadow: 0 0 0 3px rgba(242,201,0,0.12);
+}
+
+.sp-r10no-bulk-select-head {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sp-r10no-bulk-select-head button {
+  appearance: none;
+  min-height: 30px;
+  border: 1px solid #dbe4f0;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #334155;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.sp-r10no-bulk-select-head span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sp-r10no-bulk-target-list {
+  margin-top: 8px;
+  min-height: 96px;
+  max-height: 260px;
+  flex: 1 1 260px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+.sp-r10no-bulk-target-row {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: auto 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.sp-r10no-bulk-target-row.selected {
+  border-color: #f2c900;
+  background: #fffaf0;
+}
+
+.sp-r10no-bulk-target-row input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #111827;
+}
+
+.sp-r10no-bulk-target-avatar {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 15px;
+}
+
+.sp-r10no-bulk-target-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-r10no-bulk-target-copy b,
+.sp-r10no-bulk-target-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-r10no-bulk-target-copy b {
+  color: #111827;
+  font-size: 13px;
+}
+
+.sp-r10no-bulk-target-copy small {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.sp-r10no-bulk-empty {
+  padding: 18px 10px;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sp-r10no-bulk-message-label {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+#spR10NOLinkedBulkMessage {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 108px;
+  margin-top: 6px;
+  resize: vertical;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  padding: 10px 11px;
+  outline: none;
+  color: #111827;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+#spR10NOLinkedBulkMessage:focus {
+  border-color: #f2c900;
+  box-shadow: 0 0 0 3px rgba(242,201,0,0.12);
+}
+
+.sp-r10no-bulk-result {
+  margin-top: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sp-r10no-bulk-result.hidden {
+  display: none !important;
+}
+
+.sp-r10no-bulk-result.error {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.sp-r10no-bulk-footer {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.sp-r10no-bulk-footer button {
+  appearance: none;
+  min-height: 40px;
+  border: 0;
+  border-radius: 11px;
+  background: #111827;
+  color: #ffffff;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.sp-r10no-bulk-footer button.secondary {
+  border: 1px solid #dbe4f0;
+  background: #ffffff;
+  color: #334155;
+}
+
+.sp-r10no-bulk-footer button:disabled,
+.sp-r10no-bulk-select-head button:disabled {
+  opacity: 0.48;
+  cursor: default;
+}
+
+.sp-r10no-bulk-dialog-head,
+.sp-r10no-bulk-search-row,
+.sp-r10no-bulk-select-head,
+.sp-r10no-bulk-message-label,
+#spR10NOLinkedBulkMessage,
+.sp-r10no-bulk-result,
+.sp-r10no-bulk-footer {
+  flex: 0 0 auto;
+}
+
+body.sp-r10no-bulk-dialog-open {
+  overflow: hidden !important;
+}
+
+@media (max-width: 680px) {
+  .sp-r10no-bulk-dialog {
+    align-items: flex-end;
+    box-sizing: border-box;
+    padding: 10px 10px calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .sp-r10no-bulk-dialog-card {
+    width: 100%;
+    height: calc(100vh - 112px - env(safe-area-inset-bottom));
+    height: calc(100dvh - 112px - env(safe-area-inset-bottom));
+    max-height: calc(100vh - 112px - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 112px - env(safe-area-inset-bottom));
+    overflow: hidden;
+    border-radius: 18px;
+  }
+
+  .sp-r10no-bulk-target-list {
+    min-height: 112px;
+    max-height: none;
+    flex: 1 1 auto;
+  }
+
+  #spR10NOLinkedBulkMessage {
+    min-height: 76px;
+    max-height: 92px;
+    resize: none;
+  }
+
+  .sp-r10no-bulk-send {
+    max-width: 128px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+

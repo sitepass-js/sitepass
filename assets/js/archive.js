@@ -338,7 +338,7 @@ function renderList() {
   const pageStart = (archiveCurrentPage - 1) * ARCHIVE_PAGE_SIZE;
   const items = filteredItems.slice(pageStart, pageStart + ARCHIVE_PAGE_SIZE);
 
-  // v23.7.553-test: 보관함 카드에서 사용한 장비 원본을 즉시 상세보기/링크화면에 전달합니다.
+  // v23.7.553-recovery-test: 보관함 카드에서 사용한 장비 원본을 즉시 상세보기/링크화면에 전달합니다.
   // Ctrl+F5 직후 서버 캐시 재구축 중에도 목록에 보인 장비를 다시 찾느라 기다리지 않게 합니다.
   if (!(window.sitePassArchiveItemSnapshotV538 instanceof Map)) window.sitePassArchiveItemSnapshotV538 = new Map();
   allItems.forEach(function(item){
@@ -387,8 +387,8 @@ function renderList() {
       ? '<div class="small">장비업자: ' + escapeHtml(item.ownerName || item.ownerSignupId || '미지정') + (item.ownerPhone ? ' / ' + escapeHtml(item.ownerPhone) : ' / 휴대폰 미등록') + '</div>'
       : '';
     const actionButtons = isAdminMode
-      ? '<div class="actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(cardCode) + '\')">상세보기</button><button class="primary" onclick="openAdminQrLink(\'' + escapeJs(cardCode) + '\')">큐알링크</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(cardCode) + '\')">삭제</button></div>'
-      : '<div class="archive-card-actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(cardCode) + '\')">상세보기</button><button class="primary" onclick="startEditEquipment(\'' + escapeJs(cardCode) + '\')">수정/갱신</button><button class="ghost" onclick="openManagerPublicView(\'' + escapeJs(cardCode) + '\')">링크화면</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(cardCode) + '\')">삭제</button></div>';
+      ? '<div class="actions"><button class="ghost" onclick="window.SitePassEquipment.detail.open(\'' + escapeJs(cardCode) + '\')">상세보기</button><button class="primary" onclick="openAdminQrLink(\'' + escapeJs(cardCode) + '\')">큐알링크</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(cardCode) + '\')">삭제</button></div>'
+      : '<div class="archive-card-actions"><button class="ghost" onclick="window.SitePassEquipment.detail.open(\'' + escapeJs(cardCode) + '\')">상세보기</button><button class="primary" onclick="window.SitePassEquipment.update.start(\'' + escapeJs(cardCode) + '\')">수정/갱신</button><button class="ghost" onclick="openManagerPublicView(\'' + escapeJs(cardCode) + '\')">링크화면</button><button class="dangerBtn" onclick="deleteItem(\'' + escapeJs(cardCode) + '\')">삭제</button></div>';
     return '<div class="list-item">' +
       '<div class="list-item-head"><strong>' + escapeHtml(getItemTitle(item)) + '</strong><label class="list-select-label"><input type="checkbox" data-list-share-check value="' + escapeHtml(cardCode) + '" /> 선택</label></div>' +
       ownerInfo +

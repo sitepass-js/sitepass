@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>현장서류패스 설치하기</title>
   <meta name="description" content="카톡에서 열렸다면 Chrome 또는 Safari로 열어 홈화면에 설치하세요. 장비서류·기사서류·인부서류 QR 공유 서비스입니다." />
-  <link rel="canonical" href="https://sitepass-js.github.io/sitepass/recommend.html" />
+  <link rel="canonical" href="https://sitepass.co.kr/recommend.html" />
 
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="현장서류패스" />
   <meta property="og:locale" content="ko_KR" />
   <meta property="og:title" content="현장서류패스 설치하기" />
   <meta property="og:description" content="장비서류·기사서류·인부서류를 휴대폰으로 등록하고 QR링크로 현장 담당자에게 바로 공유하세요." />
-  <meta property="og:url" content="https://sitepass-js.github.io/sitepass/recommend.html" />
-  <meta property="og:image" content="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview-v188.png" />
-  <meta property="og:image:secure_url" content="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview-v188.png" />
+  <meta property="og:url" content="https://sitepass.co.kr/recommend.html" />
+  <meta property="og:image" content="https://sitepass.co.kr/share/sitepass-kakao-preview-v188.png" />
+  <meta property="og:image:secure_url" content="https://sitepass.co.kr/share/sitepass-kakao-preview-v188.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -23,7 +23,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="현장서류패스 설치하기" />
   <meta name="twitter:description" content="카톡에서 열렸다면 Chrome 또는 Safari로 열어 홈화면에 설치하세요." />
-  <meta name="twitter:image" content="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview-v188.png" />
+  <meta name="twitter:image" content="https://sitepass.co.kr/share/sitepass-kakao-preview-v188.png" />
 
   <style>
     *{box-sizing:border-box}
@@ -601,10 +601,10 @@
       <span class="badge">추천 설치 링크</span>
       <h1>현장서류패스 설치하기</h1>
       <p>카톡에서 바로 설치창이 안 뜨면 아래 버튼으로 Chrome 또는 Safari에서 열어 설치하면 됩니다.</p>
-      <img class="hero" src="https://sitepass-js.github.io/sitepass/share/sitepass-kakao-preview-v188.png" alt="현장서류패스 추천 이미지" />
-      <a class="btn primary" href="intent://sitepass-js.github.io/sitepass/?install=1&ref=recommend#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2Fsitepass-js.github.io%2Fsitepass%2F%3Finstall%3D1%26ref%3Drecommend;end">안드로이드 · Chrome으로 열고 설치하기</a>
+      <img class="hero" src="https://sitepass.co.kr/share/sitepass-kakao-preview-v188.png" alt="현장서류패스 추천 이미지" />
+      <a class="btn primary" href="intent://sitepass.co.kr/?install=1&ref=recommend#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2Fsitepass.co.kr%2F%3Finstall%3D1%26ref%3Drecommend;end">안드로이드 · Chrome으로 열고 설치하기</a>
       <button class="btn dark" type="button" onclick="copyInstallLink()">설치주소 복사하기</button>
-      <a class="btn light" href="https://sitepass-js.github.io/sitepass/?install=1&ref=recommend">현재 브라우저에서 설치화면 열기</a>
+      <a class="btn light" href="https://sitepass.co.kr/?install=1&ref=recommend">현재 브라우저에서 설치화면 열기</a>
       <div id="copyOk" class="ok">설치주소를 복사했습니다. Chrome 또는 Safari 주소창에 붙여넣어 주세요.</div>
       <div class="notice"><b>카톡에서 설치창이 안 뜰 때</b><br />카톡 오른쪽 위 <b>점 3개</b> → <b>다른 브라우저로 열기</b>를 누르거나, 설치주소를 복사해서 Chrome/Safari 주소창에 붙여넣어 주세요.</div>
     </section>
@@ -625,14 +625,14 @@
         <li><b>Safari</b>를 열고 주소창에 붙여넣습니다.</li>
         <li>아래쪽 <b>공유 버튼</b> → <b>홈 화면에 추가</b>를 누릅니다.</li>
       </ol>
-      <div class="copybox" id="installUrlText">https://sitepass-js.github.io/sitepass/?install=1&ref=recommend</div>
+      <div class="copybox" id="installUrlText">https://sitepass.co.kr/?install=1&ref=recommend</div>
       <button class="btn ghost" type="button" onclick="copyInstallLink()">설치주소 다시 복사</button>
       <p class="small">아이폰은 보안상 카톡 안에서 버튼 하나로 홈화면 설치창을 바로 띄우기 어렵습니다. Safari에서 열어야 가장 안정적입니다.</p>
     </section>
   </main>
 
   <script>
-    const INSTALL_URL = 'https://sitepass-js.github.io/sitepass/?install=1&ref=recommend';
+    const INSTALL_URL = 'https://sitepass.co.kr/?install=1&ref=recommend';
     function copyInstallLink() {
       const showOk = () => { const el = document.getElementById('copyOk'); if (el) el.style.display = 'block'; };
       if (navigator.clipboard && window.isSecureContext) {
@@ -1224,7 +1224,7 @@
   } catch(e) {}
 })();
 </script>
-<script src="./assets/js/sitepass-chat-v460.js?v=23.7.493"></script>
+<script src="./assets/js/sitepass-chat-v667.js?step=93-v784"></script>
 <script>
 /* v23.7.494 - 테스트모드 포함 알림/채팅 하단버튼 최우선 직접 라우팅 */
 (function(){

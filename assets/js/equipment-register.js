@@ -193,7 +193,7 @@
     const paidItem = {
       ...item,
       serviceStatus: info.serviceStatus || '유료사용',
-      paymentPlan: info.key || item.paymentPlan || 'monthly',
+      paymentPlan: info.key || item.paymentPlan || 'annual',
       basicPlan: info.planText || item.basicPlan || '',
       paidAt: nowIso,
       trialEndsAt: String((options && options.trialEndsAt) || item.trialEndsAt || ''),

@@ -1,4 +1,4 @@
-// SitePass v23.7.256 split step 4 - 관리자 상세관리 전용 파일
+// SitePass v23.7.735R6 STEP90 - 관리자 상세관리 / 장비별 무료 1개월권 v2 연결
 // 이 파일에는 관리자 상세관리 열기/닫기, 결제처리, 무료권, 정지, 메모, 관리자권한, 강제탈퇴 기능을 둡니다.
 // 주의: app.bundle.js보다 먼저 불러와야 하며, app.bundle.js의 SitePassAdminRuntime 브리지와 공통 helper 함수를 사용합니다.
 (function(){
@@ -135,7 +135,7 @@
 
   function applyMemberPaymentToOwnedItems(member, planKey, days, planText) {
     if (!member) return 0;
-    const info = getPlanInfo(planKey || 'monthly');
+    const info = getPlanInfo(planKey || 'annual');
     const now = new Date();
     const freshManagerExpireAt = new Date(getSevenDaysFromNowMs()).toISOString();
     let changed = 0;
@@ -146,15 +146,15 @@
       const base = currentEnd.getTime() > now.getTime() ? currentEnd : now;
       const newEnd = addDaysIso(base.toISOString(), days || info.days || 30);
       item.serviceStatus = '유료사용';
-      item.paymentPlan = info.key || planKey || 'monthly';
-      item.basicPlan = planText || info.planText || '월 결제';
+      item.paymentPlan = info.key || planKey || 'annual';
+      item.basicPlan = planText || info.planText || '일반 연간결제';
       item.alertPlan = item.alertPlan || '보험·검사 만료 알림 포함 준비';
       item.paidAt = now.toISOString();
       item.trialEndsAt = newEnd;
       item.managerExpireAt = freshManagerExpireAt;
       item.updatedAt = now.toISOString();
       if (item.paymentConversionTest) item.paymentTestPaid = true;
-      if (item.bundleMeta) item.bundleMeta.paymentText = (planText || info.planText || '월 결제') + ' 결제완료';
+      if (item.bundleMeta) item.bundleMeta.paymentText = (planText || info.planText || '일반 연간결제') + ' 결제완료';
       changed += 1;
     });
     if (changed) setItems(items);
@@ -190,22 +190,22 @@
     const { members, target } = getAdminEditableMember(memberId);
     if (!target) { alert('회원을 찾을 수 없습니다.'); return; }
     const input = readAdminPaymentInputs(memberId);
-    if (!confirm((target.name || target.signupId || '회원') + '님을 1개월 신규결제로 처리할까요?')) return;
+    if (!confirm((target.name || target.signupId || '회원') + '님을 일반 연간결제(30,000원 / 1년)로 처리할까요?')) return;
     const nowIso = new Date().toISOString();
-    target.paymentPlanLabel = '1개월권';
-    target.memberPlan = '1개월권';
+    target.paymentPlanLabel = '일반 연간이용권';
+    target.memberPlan = '일반 연간이용권';
     target.paymentStartedAt = nowIso;
-    target.paymentEndsAt = addDaysIso(nowIso, 30);
+    target.paymentEndsAt = addDaysIso(nowIso, 365);
     target.paymentStatus = '신규결제완료';
-    target.paymentAmount = input.amount || target.paymentAmount || '';
+    target.paymentAmount = input.amount || target.paymentAmount || '30000';
     target.paymentMemo = input.memo || '';
-    target.status = '1개월 신규결제';
-    target.adminLastAction = '1개월 신규결제 처리';
+    target.status = '일반 연간결제';
+    target.adminLastAction = '일반 연간결제 처리';
     target.adminLastActionAt = nowIso;
-    addMemberPaymentHistory(target, '신규결제', input.memo || '1개월권 결제완료 처리', input.amount);
-    const activatedCount = applyMemberPaymentToOwnedItems(target, 'monthly', 30, '월 결제 · 월 2,000원');
+    addMemberPaymentHistory(target, '신규결제', input.memo || '일반 연간이용권 30,000원 결제완료 처리', input.amount || '30000');
+    const activatedCount = applyMemberPaymentToOwnedItems(target, 'annual', 365, '일반 연간결제 · 연 30,000원');
     setMembers(members);
-    alert('신규결제 처리했습니다. 남은기간은 30일로 표시됩니다.' + (activatedCount ? '\n연결된 장비서류 ' + activatedCount + '건의 QR·링크도 다시 활성화했습니다.' : ''));
+    alert('신규결제 처리했습니다. 남은기간은 1년으로 표시됩니다.' + (activatedCount ? '\n연결된 장비서류 ' + activatedCount + '건의 QR·링크도 다시 활성화했습니다.' : ''));
     renderAdmin();
   }
 
@@ -217,27 +217,27 @@
     const { members, target } = getAdminEditableMember(memberId);
     if (!target) { alert('회원을 찾을 수 없습니다.'); return; }
     const input = readAdminPaymentInputs(memberId);
-    if (!confirm((target.name || target.signupId || '회원') + '님의 결제기간을 1개월 연장할까요?')) return;
+    if (!confirm((target.name || target.signupId || '회원') + '님의 결제기간을 일반 연간결제로 1년 연장할까요?')) return;
     const now = new Date();
     const currentEnd = target.paymentEndsAt ? new Date(target.paymentEndsAt) : null;
     const base = currentEnd && !Number.isNaN(currentEnd.getTime()) && currentEnd > now ? currentEnd : now;
     const newEnd = new Date(base.getTime());
-    newEnd.setDate(newEnd.getDate() + 30);
+    newEnd.setDate(newEnd.getDate() + 365);
     const nowIso = now.toISOString();
-    target.paymentPlanLabel = target.paymentPlanLabel && target.paymentPlanLabel !== '미결제' ? target.paymentPlanLabel : '1개월권';
-    target.memberPlan = target.memberPlan && target.memberPlan !== '미결제' ? target.memberPlan : '1개월권';
+    target.paymentPlanLabel = '일반 연간이용권';
+    target.memberPlan = '일반 연간이용권';
     target.paymentStartedAt = target.paymentStartedAt || nowIso;
     target.paymentEndsAt = newEnd.toISOString();
     target.paymentStatus = '연장결제완료';
     target.paymentAmount = input.amount || target.paymentAmount || '';
     target.paymentMemo = input.memo || '';
-    target.status = '1개월 연장결제';
-    target.adminLastAction = '1개월 연장결제 처리';
+    target.status = '일반 연간 연장결제';
+    target.adminLastAction = '일반 연간 연장결제 처리';
     target.adminLastActionAt = nowIso;
-    addMemberPaymentHistory(target, '연장결제', input.memo || '기존 만료일 기준 또는 오늘 기준 30일 연장', input.amount);
-    const activatedCount = applyMemberPaymentToOwnedItems(target, 'monthly', 30, '월 결제 · 월 2,000원');
+    addMemberPaymentHistory(target, '연장결제', input.memo || '기존 만료일 기준 또는 오늘 기준 1년 연장', input.amount || '30000');
+    const activatedCount = applyMemberPaymentToOwnedItems(target, 'annual', 365, '일반 연간결제 · 연 30,000원');
     setMembers(members);
-    alert('연장결제 처리했습니다. 만료일이 30일 연장되었습니다.' + (activatedCount ? '\n연결된 장비서류 ' + activatedCount + '건의 QR·링크도 다시 활성화했습니다.' : ''));
+    alert('연장결제 처리했습니다. 만료일이 1년 연장되었습니다.' + (activatedCount ? '\n연결된 장비서류 ' + activatedCount + '건의 QR·링크도 다시 활성화했습니다.' : ''));
     renderAdmin();
   }
 
@@ -294,7 +294,6 @@
 
   function renderAdminPaymentWindow(member) {
     const actionId = getAdminMemberActionId(member);
-    const plan = getMemberPlanInfo(member);
     const refundDone = !!(member.refundProcessedAt || member.paymentRefundedAt || String(member.paymentStatus || member.status || '').includes('환불처리'));
     const refundDoneAt = member.refundProcessedAt || member.paymentRefundedAt || '';
     const refundDoneText = refundDone ? ('처리완료' + (refundDoneAt ? ' · ' + formatNullableDateTime(refundDoneAt) : '')) : '미처리';
@@ -322,24 +321,120 @@
     '</div>';
   }
 
-  function grantMemberFreeMonth(memberId) {
+  async function grantEquipmentFreeMonthFromMemberDetail(memberId, equipmentId, equipmentNo, button) {
     if (!isSuperAdminLoggedIn()) {
       alert('무료 1개월권 지급은 최고관리자만 가능합니다.');
       return;
     }
-    const { members, target } = getAdminEditableMember(memberId);
-    if (!target) { alert('회원을 찾을 수 없습니다.'); return; }
-    const nowIso = new Date().toISOString();
-    target.paymentPlanLabel = '무료 1개월권';
-    target.memberPlan = '무료 1개월권';
-    target.paymentStartedAt = nowIso;
-    target.paymentEndsAt = addDaysIso(nowIso, 30);
-    target.status = '무료 1개월권';
-    target.adminLastAction = '무료 1개월권 지급';
-    target.adminLastActionAt = nowIso;
-    setMembers(members);
-    alert((target.name || target.signupId || '회원') + '님에게 무료 1개월권을 지급했습니다.');
-    renderAdmin();
+
+    const cleanEquipmentId = String(equipmentId || '').trim();
+    const cleanEquipmentNo = String(equipmentNo || '').trim() || '선택 장비';
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (!uuidPattern.test(cleanEquipmentId)) {
+      alert('장비의 서버 equipment_id를 확인하지 못했습니다. 무료권을 지급하지 않았습니다.');
+      return;
+    }
+
+    const displayMember = getAdminAllMemberRows().find(member => isSameAdminActionMember(member, memberId));
+    if (!displayMember) {
+      alert('회원 상세정보를 찾지 못했습니다. 무료권을 지급하지 않았습니다.');
+      return;
+    }
+
+    const membersApi = window.SitePassAdminMembersApi || null;
+    if (!membersApi || typeof membersApi.getForMember !== 'function') {
+      alert('회원의 서버 UUID를 확인할 수 없습니다. 무료권을 지급하지 않았습니다.');
+      return;
+    }
+
+    let serverMember = null;
+    try {
+      serverMember = membersApi.getForMember(displayMember);
+      if ((!serverMember || serverMember.found !== true || !serverMember.memberId) &&
+          typeof membersApi.refresh === 'function') {
+        await membersApi.refresh(true);
+        serverMember = membersApi.getForMember(displayMember);
+      }
+    } catch (e) {
+      alert('회원 서버정보 확인에 실패했습니다.\n' + (e?.message || e));
+      return;
+    }
+
+    const expectedOwnerMemberUuid = String(serverMember?.memberId || '').trim();
+    if (!uuidPattern.test(expectedOwnerMemberUuid)) {
+      alert('회원의 실제 서버 member UUID를 확인하지 못했습니다. 무료권을 지급하지 않았습니다.');
+      return;
+    }
+
+    if (!confirm(cleanEquipmentNo + ' 장비에 무료 1개월권을 지급할까요?\n\n이 회원이 실제 소유한 선택 장비 1대에만 적용됩니다.')) {
+      return;
+    }
+
+    const api = window.SitePassSupabaseApi || null;
+    if (!api || typeof api.rpc !== 'function') {
+      alert('Supabase RPC 연결을 확인하지 못했습니다. 무료권을 지급하지 않았습니다.');
+      return;
+    }
+
+    const originalDisabled = !!button?.disabled;
+    const originalText = button?.textContent || '';
+    if (button) {
+      button.disabled = true;
+      button.textContent = '지급 확인 중';
+    }
+
+    try {
+      const rpcResult = await api.rpc(
+        'sitepass_admin_grant_equipment_free_month_v2',
+        {
+          p_equipment_id: cleanEquipmentId,
+          p_expected_owner_member_uuid: expectedOwnerMemberUuid
+        }
+      );
+
+      if (rpcResult?.error) throw rpcResult.error;
+
+      let data = rpcResult?.data;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) {}
+      }
+
+      if (!data || data.ok !== true ||
+          data.ownerContextVerified !== true ||
+          String(data.ownerMemberUuid || '') !== expectedOwnerMemberUuid ||
+          Number(data.grantApiVersion || 0) !== 2) {
+        throw new Error('FREE_MONTH_V2_SERVER_RESULT_INVALID');
+      }
+
+      let syncOk = true;
+      try {
+        if (typeof syncSupabaseEquipmentItems === 'function') {
+          const syncResult = await syncSupabaseEquipmentItems(true);
+          syncOk = !(syncResult && syncResult.ok === false);
+        }
+      } catch (syncError) {
+        syncOk = false;
+      }
+
+      try { renderAdmin(); } catch (e) {}
+
+      if (data.alreadyGranted === true) {
+        alert(cleanEquipmentNo + ' 장비에는 이미 유효한 무료 1개월권이 적용되어 있습니다.\n기간을 중복 연장하지 않았습니다.');
+      } else if (syncOk) {
+        alert(cleanEquipmentNo + ' 장비에 무료 1개월권을 지급했습니다.\n다른 장비에는 적용되지 않습니다.');
+      } else {
+        alert(cleanEquipmentNo + ' 장비의 무료권 지급은 서버에서 완료되었습니다.\n화면 새로고침에 실패했으므로 장비목록 새로고침 후 다시 확인해주세요.');
+      }
+
+    } catch (e) {
+      alert('무료 1개월권 지급에 실패했습니다.\n서버 데이터는 임의로 변경하지 않습니다.\n\n' + (e?.message || e));
+    } finally {
+      if (button && document.body.contains(button)) {
+        button.disabled = originalDisabled;
+        button.textContent = originalText || '무료 1개월권';
+      }
+    }
   }
 
   function setMemberPaidMonth(memberId) {
@@ -377,6 +472,106 @@
     renderAdmin();
   }
 
+
+  function renderAdminMemberLinkDetailsV733R2E(member) {
+    const api = window.SitePassAdminMembersApi || null;
+
+    if (!api || typeof api.getLinkDetailsForMember !== 'function') {
+      return '<div class="sitepass-member-link-detail-r2e"><h4>장비 연동</h4><div class="small">연동 상세 조회 모듈을 준비하지 못했습니다.</div></div>';
+    }
+
+    let info = null;
+    try {
+      info = api.getLinkDetailsForMember(member);
+    } catch (e) {
+      info = {
+        ready: true,
+        outgoing: [],
+        incoming: [],
+        error: e?.message || 'MEMBER_LINK_DETAILS_LOOKUP_ERROR'
+      };
+    }
+
+    info = info || {};
+    const outgoing = Array.isArray(info.outgoing) ? info.outgoing : [];
+    const incoming = Array.isArray(info.incoming) ? info.incoming : [];
+
+    if (info.error) {
+      return '<div class="sitepass-member-link-detail-r2e"><h4>장비 연동</h4><div class="notice">연동 상대방 정보를 읽지 못했습니다. 기존 회원/장비 데이터는 변경하지 않았습니다.<br>' +
+        escapeHtml(info.error) + '</div></div>';
+    }
+
+    if (!info.ready) {
+      return '<div class="sitepass-member-link-detail-r2e"><h4>장비 연동</h4><div class="small">연동 상대방 정보를 확인 중입니다.</div></div>';
+    }
+
+    const maskPhone = last4 => {
+      const digits = String(last4 || '').replace(/[^0-9]/g, '').slice(-4);
+      return digits ? '***-' + digits : '-';
+    };
+
+    const renderLinkCard = (row, direction) => {
+      const outgoingDirection = direction === 'outgoing';
+
+      const counterpartName = outgoingDirection
+        ? (row.linkedName || '-')
+        : (row.ownerName || '-');
+
+      const counterpartLoginId = outgoingDirection
+        ? (row.linkedLoginId || '-')
+        : (row.ownerLoginId || '-');
+
+      const counterpartPhone = outgoingDirection
+        ? row.linkedPhoneLast4
+        : row.ownerPhoneLast4;
+
+      const directionLabel = outgoingDirection
+        ? '연동 보냄'
+        : '연동 받음';
+
+      const counterpartLabel = outgoingDirection
+        ? '받은 회원'
+        : '보낸 회원(장비소유자)';
+
+      const equipmentTitle = [
+        row.equipmentName || '',
+        row.equipmentNo || ''
+      ].filter(Boolean).join(' / ') || '-';
+
+      return '<div class="sitepass-member-link-row-r5">' +
+        '<strong class="sitepass-member-link-equipment-r5">' + escapeHtml(equipmentTitle) + '</strong>' +
+        '<span class="sitepass-member-link-counterpart-r5"><b>' + escapeHtml(counterpartLabel) + '</b> ' + escapeHtml(counterpartName) + '</span>' +
+        '<span><b>아이디</b> ' + escapeHtml(counterpartLoginId) + '</span>' +
+        '<span><b>전화</b> ' + escapeHtml(maskPhone(counterpartPhone)) + '</span>' +
+        '<span><b>연동일</b> ' + escapeHtml(formatNullableDateTime(row.linkedAt)) + '</span>' +
+        '<span class="badge">' + escapeHtml(directionLabel) + '</span>' +
+      '</div>';
+    };
+
+    let html = '<div class="sitepass-member-link-detail-r2e"><h4>장비 연동</h4>';
+
+    if (!outgoing.length && !incoming.length) {
+      html += '<div class="small">현재 활성 장비 연동이 없습니다.</div>';
+    }
+
+    if (outgoing.length) {
+      html += '<div class="sitepass-member-link-group-r2e"><div class="sitepass-member-link-group-title-r2e">연동 보낸 장비 ' +
+        outgoing.length + '건</div>' +
+        outgoing.map(row => renderLinkCard(row, 'outgoing')).join('') +
+      '</div>';
+    }
+
+    if (incoming.length) {
+      html += '<div class="sitepass-member-link-group-r2e"><div class="sitepass-member-link-group-title-r2e">연동 받은 장비 ' +
+        incoming.length + '건</div>' +
+        incoming.map(row => renderLinkCard(row, 'incoming')).join('') +
+      '</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
   function renderAdminMemberDetail(member) {
     if (member.withdrawn) {
       return '<div class="admin-member-detail"><div class="notice">강제탈퇴 처리된 기록입니다.<br>처리일: ' + escapeHtml(formatDateTime(member.withdrawnAt)) + '<br>처리자: ' + escapeHtml(member.withdrawnBy || SUPER_ADMIN_ROLE_NAME) + '</div></div>';
@@ -386,26 +581,24 @@
     }
     const actionId = getAdminMemberActionId(member);
     const warnings = getMemberDocWarningCount(member);
-    const plan = getMemberPlanInfo(member);
     return '<div class="admin-member-detail">' +
       '<div class="admin-mini-grid">' +
-        '<div class="line"><b>가입일</b><span>' + escapeHtml(formatShortDate(member.createdAt)) + '</span></div>' +
+        '<div class="line"><b>가입일</b><span>' + escapeHtml(formatDateTime(member.createdAt)) + '</span></div>' +
         '<div class="line"><b>최근접속</b><span>' + escapeHtml(formatNullableDateTime(member.lastLoginAt || member.loggedInAt)) + '</span></div>' +
         '<div class="line"><b>만료임박</b><span>' + warnings.expiring + '건</span></div>' +
         '<div class="line"><b>만료</b><span>' + warnings.expired + '건</span></div>' +
       '</div>' +
       '<div class="field" style="margin-top:10px;"><label>관리자 메모</label><textarea id="adminMemo_' + escapeHtml(actionId) + '" rows="3" style="min-height:78px;resize:vertical;" placeholder="문의내용, 결제약속, 민원, 특이사항 등을 남겨두세요.">' + escapeHtml(member.adminMemo || '') + '</textarea></div>' +
       '<div class="small">최근 조치: ' + escapeHtml(member.adminLastAction || '-') + (member.adminLastActionAt ? ' · ' + escapeHtml(formatDateTime(member.adminLastActionAt)) : '') + '</div>' +
-      renderAdminPaymentWindow(member) +
       '<div class="actions">' +
-        '<button class="primary" onclick="grantMemberFreeMonth(\'' + escapeJs(actionId) + '\')">무료 1개월권</button>' +
         '<button class="ghost" onclick="saveAdminMemberMemo(\'' + escapeJs(actionId) + '\')">메모 저장</button>' +
         '<button class="ghost" onclick="toggleMemberSuspended(\'' + escapeJs(actionId) + '\')">' + (member.suspended ? '정지해제' : '회원정지') + '</button>' +
         (member.adminRole && member.adminRole !== SUPER_ADMIN_ROLE_NAME ? '<button class="ghost" onclick="resetAdminAccountPassword(\'' + escapeJs(actionId) + '\')">관리자 비밀번호 재설정</button>' : '') +
         (member.adminRole ? '<button class="dangerBtn" onclick="clearMemberAdminRole(\'' + escapeJs(actionId) + '\')">관리자해제</button>' : '') +
         '<button class="dangerBtn" onclick="forceWithdrawMember(\'' + escapeJs(actionId) + '\')">회원 강제탈퇴</button>' +
       '</div>' +
-      '<div class="small">결제 시작일: ' + escapeHtml(formatShortDate(plan.startedAt)) + ' · 결제 만료일: ' + escapeHtml(formatShortDate(plan.endsAt)) + '</div>' +
+      '<div class="notice blue-note" style="margin-top:10px;">결제상태·시작일·만료일·무료 1개월권은 아래 <b>소유 장비별</b>로 관리합니다.</div>' +
+      renderAdminMemberLinkDetailsV733R2E(member) +
       renderMemberEquipmentList(member) +
     '</div>';
   }
@@ -470,15 +663,22 @@
       return;
     }
     const targetName = getMemberDisplayName(target);
-    if (!confirm(targetName + '님을 강제탈퇴 처리할까요?\n\n회원 목록에서 삭제되고 관리자 권한, 연결 서류/코드가 함께 삭제됩니다.')) return;
-    if (!confirm('정말 삭제할까요?\n삭제 후 이 브라우저에 저장된 해당 회원 서류/코드는 복구되지 않습니다.')) return;
+    if (!confirm(targetName + '님을 강제탈퇴 처리할까요?\n\n서버에서 회원 접근권한, 회원간 장비연동, 활성 공유를 안전하게 해제한 뒤에만 이 브라우저의 관리자 목록을 갱신합니다. 장비 원본은 물리 삭제하지 않습니다.')) return;
+
+    // 59/60 추가강화: 서버 성공 전에 로컬 회원/서류/관리자 권한을 먼저 지우지 않습니다.
+    // 현재 브라우저 관리자 인증은 service_role 전용 RPC를 안전하게 호출할 수 없으므로
+    // 서버 관리자 인증 경로가 연결되지 않은 상태에서는 강제탈퇴 자체를 중단합니다.
+    const serverUpdated = await markMemberWithdrawnInSupabase(target, '최고관리자가 강제탈퇴 처리했습니다.');
+    if (Number(serverUpdated || 0) < 1) {
+      alert('안전한 관리자 서버 강제탈퇴 경로가 아직 연결되지 않아 처리하지 않았습니다.\n회원정보, 장비 원본, 장비연동, 로컬 관리자 목록은 변경하지 않았습니다.');
+      return;
+    }
 
     syncMemberAdminRoleMap(target, '');
     const targetKeys = getMemberLoginKeys(target);
     addWithdrawnMemberRecord(target, getSessionValue(ADMIN_SESSION_KEY + '_id') || SUPER_ADMIN_ROLE_NAME, '강제탈퇴');
     const removedDocs = deleteOwnedItemsForMember(target);
-    const serverCleanup = window.deleteOwnedServerItemsForMember ? await window.deleteOwnedServerItemsForMember(target) : { ok:false, error:'서버정리 함수 없음' };
-    const serverUpdated = await markMemberWithdrawnInSupabase(target, '최고관리자가 강제탈퇴 처리했습니다. SitePass 회원정보와 연결서류 삭제 처리');
+    try { removeServerEquipmentCacheForMember(target); } catch (e) {}
     setAdminDetailServerMemberRows(removeRowsByMemberKeys(getAdminDetailServerMemberRows(), target));
 
     const remained = members.filter(member => {
@@ -499,10 +699,7 @@
       if (sameCurrent) removeSessionValue(CURRENT_MEMBER_KEY);
     } catch (e) {}
 
-    const serverCleanupText = serverCleanup && serverCleanup.ok
-      ? '\n서버 장비 ' + (serverCleanup.equipmentDeleted || 0) + '건, QR링크 ' + (serverCleanup.sharesDeleted || 0) + '건 정리했습니다.'
-      : '\n서버 장비/큐알 정리는 확인이 필요합니다: ' + escapeHtml(serverCleanup?.error?.message || serverCleanup?.error || 'RPC 미연결');
-    alert(targetName + '님을 강제탈퇴 처리했습니다.\n연결된 서류/코드 ' + removedDocs + '건도 함께 삭제했습니다.\n서버 탈퇴처리 ' + (serverUpdated || 0) + '건 반영했습니다.' + serverCleanupText + '\n이제 새로고침해도 가입자 수에 다시 포함되지 않습니다.');
+    alert(targetName + '님을 서버에서 강제탈퇴 처리했습니다.\n회원간 장비연동과 활성 공유 접근을 해제했고, 이 브라우저의 해당 회원 임시 데이터 ' + removedDocs + '건을 정리했습니다.');
     refreshMemberUi();
     renderAdmin();
   }
@@ -552,7 +749,7 @@
   window.requestMemberRefund = requestMemberRefund;
   window.processMemberRefund = processMemberRefund;
   window.renderAdminPaymentWindow = renderAdminPaymentWindow;
-  window.grantMemberFreeMonth = grantMemberFreeMonth;
+  window.grantEquipmentFreeMonthFromMemberDetail = grantEquipmentFreeMonthFromMemberDetail;
   window.setMemberPaidMonth = setMemberPaidMonth;
   window.toggleMemberSuspended = toggleMemberSuspended;
   window.saveAdminMemberMemo = saveAdminMemberMemo;
@@ -578,7 +775,7 @@
     requestMemberRefund: requestMemberRefund,
     processMemberRefund: processMemberRefund,
     renderAdminPaymentWindow: renderAdminPaymentWindow,
-    grantMemberFreeMonth: grantMemberFreeMonth,
+    grantEquipmentFreeMonthFromMemberDetail: grantEquipmentFreeMonthFromMemberDetail,
     setMemberPaidMonth: setMemberPaidMonth,
     toggleMemberSuspended: toggleMemberSuspended,
     saveAdminMemberMemo: saveAdminMemberMemo,

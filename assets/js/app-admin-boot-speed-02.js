@@ -1,4 +1,4 @@
-// SitePass v23.7.350 - speed optimized medium chunk (app-admin-boot-speed 02/03)
+// SitePass v23.7.735R6 STEP90 - speed chunk 02/03 / 소유 장비별 결제 UI
 // ---- merged from app-admin-boot-06.js ----
 // SitePass v23.7.350 - app-admin-boot finer split (06/14)
 window.deleteOwnedServerItemsForMember = deleteOwnedServerItemsForMember;
@@ -31,16 +31,58 @@ window.deleteOwnedServerItemsForMember = deleteOwnedServerItemsForMember;
 
     function getMemberEquipmentItems(member) {
       if (!member || member.isSuperAdminVirtual || member.withdrawn) return [];
-      const ids = getMemberAdminIdentifiers(member);
+
+      /*
+       * STEP90 R5
+       * 회원 상세의 "이 회원의 장비서류"는 직접 등록/소유 장비만 표시합니다.
+       * 이름은 동명이인 충돌이 가능하므로 강한 소유자 식별키가 있는 장비에는 사용하지 않습니다.
+       * legacy 장비가 이름만 보유한 경우에만 기존 호환을 위해 이름 fallback을 허용합니다.
+       */
+      const memberPhoneDigits = String(member.phone || '').replace(/[^0-9]/g, '');
+      const memberProviderRaw = String(member.providerId || '');
+      const memberProviderNoPrefix = memberProviderRaw
+        .replace(/^SITEPASS-LOGIN-/i, '')
+        .replace(/^SITEPASS-/i, '');
+
+      const strongMemberIds = [
+        member.id,
+        member.signupId,
+        member.providerId,
+        memberProviderNoPrefix,
+        member.phone,
+        memberPhoneDigits
+      ].map(normalizeAdminRoleKey)
+       .filter(Boolean)
+       .filter((value, index, arr) => arr.indexOf(value) === index);
+
+      const memberNameKey = normalizeAdminRoleKey(member.name || '');
+
       return filterAdminArchiveVisibleItems(getItems()).filter(item => {
-        const ownerKeys = [
+        const ownerPhoneDigits = String(item.ownerPhone || '').replace(/[^0-9]/g, '');
+        const ownerProviderRaw = String(item.ownerProviderId || '');
+        const ownerProviderNoPrefix = ownerProviderRaw
+          .replace(/^SITEPASS-LOGIN-/i, '')
+          .replace(/^SITEPASS-/i, '');
+
+        const strongOwnerKeys = [
           item.ownerMemberId,
           item.ownerSignupId,
           item.ownerProviderId,
+          ownerProviderNoPrefix,
           item.ownerPhone,
-          item.ownerName
-        ].map(normalizeAdminRoleKey).filter(Boolean);
-        return ownerKeys.some(key => ids.includes(key));
+          ownerPhoneDigits
+        ].map(normalizeAdminRoleKey)
+         .filter(Boolean)
+         .filter((value, index, arr) => arr.indexOf(value) === index);
+
+        if (strongOwnerKeys.length) {
+          return strongOwnerKeys.some(key => strongMemberIds.includes(key));
+        }
+
+        const legacyOwnerNameKey = normalizeAdminRoleKey(item.ownerName || '');
+        return !!legacyOwnerNameKey &&
+          !!memberNameKey &&
+          legacyOwnerNameKey === memberNameKey;
       });
     }
 
@@ -127,10 +169,144 @@ window.deleteOwnedServerItemsForMember = deleteOwnedServerItemsForMember;
       return '소유회원 미지정';
     }
 
+    function getAdminEquipmentPaymentSource(item) {
+      if (!item || typeof item !== 'object') return item || {};
+      try {
+        const rows = typeof getServerEquipmentCache === 'function'
+          ? getServerEquipmentCache()
+          : [];
+        const equipmentId = String(item.equipmentId || item.equipment_id || '').trim();
+        const code = String(item.code || '').trim();
+        const found = (Array.isArray(rows) ? rows : []).find(row => {
+          if (!row || typeof row !== 'object') return false;
+          const rowEquipmentId = String(row.equipmentId || row.equipment_id || '').trim();
+          const rowCode = String(row.code || '').trim();
+          return (equipmentId && rowEquipmentId === equipmentId) ||
+                 (code && rowCode === code);
+        });
+        if (found) return { ...item, ...found };
+      } catch (e) {}
+      return item;
+    }
+
+    function formatAdminEquipmentPaymentDate(value) {
+      if (!value) return '-';
+      try {
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return '-';
+        return d.getFullYear() + '-' +
+          String(d.getMonth() + 1).padStart(2, '0') + '-' +
+          String(d.getDate()).padStart(2, '0');
+      } catch (e) {
+        return '-';
+      }
+    }
+
+    function getAdminEquipmentPaymentRemainText(value) {
+      if (!value) return '-';
+      try {
+        const end = new Date(value);
+        if (Number.isNaN(end.getTime())) return '-';
+        const diff = end.getTime() - Date.now();
+        if (diff <= 0) return '만료';
+        return Math.ceil(diff / 86400000) + '일 남음';
+      } catch (e) {
+        return '-';
+      }
+    }
+
+    function renderAdminEquipmentPaymentMeta(item, member, warningCount) {
+      const serverItem = getAdminEquipmentPaymentSource(item);
+      const actionId = getAdminMemberActionId(member);
+      const equipmentId = String(
+        serverItem.equipmentId ||
+        serverItem.equipment_id ||
+        item?.equipmentId ||
+        item?.equipment_id ||
+        ''
+      ).trim();
+
+      const equipmentNo = String(
+        serverItem.equipmentNo ||
+        item?.equipmentNo ||
+        serverItem.code ||
+        item?.code ||
+        ''
+      ).trim();
+
+      const paymentStatus = String(serverItem.paymentStatus || '-').trim() || '-';
+      const paymentMethod = String(
+        serverItem.paymentMethod ||
+        serverItem.basicPlan ||
+        serverItem.paymentPlan ||
+        '-'
+      ).trim() || '-';
+      const betaNoChargeV91 =
+        typeof window.sitePassIsBetaNoChargeEquipmentV91 === 'function' &&
+        window.sitePassIsBetaNoChargeEquipmentV91(serverItem) === true;
+
+      const paymentStatusDisplayV91 =
+        typeof window.sitePassPaymentDisplayTextV91 === 'function'
+          ? window.sitePassPaymentDisplayTextV91(serverItem)
+          : (
+              betaNoChargeV91
+                ? ((paymentStatus || '등록완료') + ' · 베타/실결제없음')
+                : paymentStatus
+            );
+
+      const paymentMethodDisplayV91 =
+        betaNoChargeV91
+          ? ((paymentMethod || '테스트 등록처리') + ' · 실제청구없음')
+          : paymentMethod;
+
+      const paymentPlanKey = String(serverItem.paymentPlan || '').trim().toLowerCase();
+      const isAutoRenewPayment =
+        paymentPlanKey === 'annual_auto' ||
+        paymentPlanKey === 'auto_annual' ||
+        paymentPlanKey === 'autopay_annual';
+
+      const paidAt = formatAdminEquipmentPaymentDate(serverItem.paidAt);
+      const trialEndsAt = isAutoRenewPayment
+        ? '연장종료까지'
+        : formatAdminEquipmentPaymentDate(serverItem.trialEndsAt);
+      const remainText = getAdminEquipmentPaymentRemainText(serverItem.trialEndsAt);
+
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const canGrant = !!actionId && uuidPattern.test(equipmentId);
+
+      const warning = warningCount || { expiring: 0, expired: 0 };
+      const managerText = getManagerExpireText(getManagerExpireAt(item));
+      const itemCode = String(item?.code || '').trim();
+
+      return '<div class="admin-member-summary" style="margin-top:8px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;">' +
+        '<span><b>보험/검사 상태</b>만료임박 ' + warning.expiring + '건 · 만료 ' + warning.expired + '건</span>' +
+        '<span><b>담당자 링크</b>' + escapeHtml(managerText) + '</span>' +
+        '<span><b>결제상태</b>' + escapeHtml(paymentStatusDisplayV91) + '</span>' +
+        '<span><b>결제방식</b>' + escapeHtml(paymentMethodDisplayV91) + '</span>' +
+        '<span><b>결제 시작일</b>' + escapeHtml(paidAt) + '</span>' +
+        '<span><b>결제 만료일</b>' + escapeHtml(trialEndsAt) + '</span>' +
+        '<span><b>남은기간</b>' + escapeHtml(remainText) + '</span>' +
+        '<span aria-hidden="true">&nbsp;</span>' +
+      '</div>' +
+      '<div style="margin-top:8px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;">' +
+        (
+          canGrant
+            ? "<button type=\"button\" class=\"primary\" style=\"width:100%;\" onclick=\"grantEquipmentFreeMonthFromMemberDetail('" +
+                escapeJs(actionId) + "','" +
+                escapeJs(equipmentId) + "','" +
+                escapeJs(equipmentNo) + "',this)\">무료 1개월권</button>"
+            : '<button type="button" class="primary" style="width:100%;" disabled title="서버 equipment_id 확인 필요">무료 1개월권</button>'
+        ) +
+        '<button type="button" class="ghost" style="width:100%;" onclick="return sitePassOpenAdminMemberEquipmentDetailV91(\'' + escapeJs(itemCode) + '\',\'' + escapeJs(equipmentId) + '\')">서류 상세보기</button>' +
+        '<button type="button" class="primary" style="width:100%;" onclick="openAdminQrLink(\'' + escapeJs(itemCode) + '\')">큐알링크</button>' +
+        '<button type="button" class="okBtn" style="width:100%;" onclick="shareAdminOwnerAlertSmsForCode(\'' + escapeJs(itemCode) + '\')">장비업자 알림</button>' +
+      '</div>';
+    }
+
     function renderMemberEquipmentList(member) {
       const items = getMemberEquipmentItems(member);
       if (!items.length) {
-        return '<div class="notice">이 회원과 연결된 장비서류가 아직 없습니다.<br><span class="small">이전 버전에서 등록한 서류는 회원정보가 저장되지 않아 소유회원 미지정으로 보일 수 있습니다. 새로 저장하는 장비서류부터 회원과 자동 연결됩니다.</span></div>';
+        return '<div class="notice">이 회원이 직접 등록·소유한 장비서류가 아직 없습니다.<br><span class="small">연동으로 받은 다른 회원 소유 장비는 이 영역에 중복 표시하지 않습니다.</span></div>';
       }
       const rows = items.map(item => {
         const warningCount = Object.values(item.docs || {}).reduce((acc, doc) => {
@@ -141,11 +317,7 @@ window.deleteOwnedServerItemsForMember = deleteOwnedServerItemsForMember;
         }, { expiring:0, expired:0 });
         return '<div class="list-item" style="box-shadow:none;margin-top:8px;">' +
           '<div class="doc-head"><div><strong>' + escapeHtml(getItemTitle(item)) + '</strong><div class="small">통합코드: ' + escapeHtml(item.code || '') + '<br>포함서류: ' + escapeHtml(getIncludedGroupText(item)) + '</div></div><span class="badge done">장비서류</span></div>' +
-          '<div class="admin-member-summary">' +
-            '<span><b>보험/검사 상태</b>만료임박 ' + warningCount.expiring + '건 · 만료 ' + warningCount.expired + '건</span>' +
-            '<span><b>담당자 링크</b>' + escapeHtml(getManagerExpireText(getManagerExpireAt(item))) + '</span>' +
-          '</div>' +
-          '<div class="actions"><button class="ghost" onclick="renderDetail(\'' + escapeJs(item.code || '') + '\')">서류 상세보기</button><button class="primary" onclick="openAdminQrLink(\'' + escapeJs(item.code || '') + '\')">큐알링크</button><button class="okBtn" onclick="shareAdminOwnerAlertSmsForCode(\'' + escapeJs(item.code || '') + '\')">장비업자 알림</button></div>' +
+          renderAdminEquipmentPaymentMeta(item, member, warningCount) +
         '</div>';
       }).join('');
       return '<div class="admin-member-detail" style="margin-top:12px;"><h4 style="margin:0 0 8px;">이 회원의 장비서류</h4>' + rows + '</div>';
@@ -702,7 +874,7 @@ function renderAdminStaffManager(members) {
           '<div class="line"><b>강제탈퇴</b><span>' + counts.withdrawn + '명</span></div>' +
         '</div>' +
         '<div class="admin-summary-row">' +
-          '<div class="line"><b>1개월권</b><span>' + counts.monthly + '명</span></div>' +
+          '<div class="line"><b>기존 1개월권</b><span>' + counts.monthly + '명</span></div>' +
           '<div class="line"><b>만료예정</b><span>' + counts.due + '명</span></div>' +
           '<div class="line"><b>유예14일 이상</b><span>' + counts.grace14 + '명</span></div>' +
           '<div class="line"><b>정지회원</b><span>' + counts.suspended + '명</span></div>' +

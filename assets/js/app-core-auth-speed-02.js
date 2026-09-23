@@ -510,34 +510,22 @@ function saveMemberTest(member) {
         let rpcErrorMessage = '';
         let directErrorMessage = '';
 
-        // v23.7.225: 관리자 새로고침 전 Auth 소셜 가입자를 members로 먼저 보강 동기화합니다.
-        // 이 단계가 실패해도 아래 회원목록 조회는 계속 진행합니다.
-        if (supabaseApi.hasRpc && supabaseApi.hasRpc()) {
-          try {
-            const { data: authSyncCount, error: authSyncError } = await supabaseApi.rpc('sitepass_sync_auth_social_users_to_members');
-            if (authSyncError) {
-              console.warn('Auth 소셜 회원 보강 동기화 실패:', authSyncError.message || authSyncError);
-            } else {
-              console.log('Auth 소셜 회원 보강 동기화 완료:', authSyncCount);
-            }
-          } catch (authSyncException) {
-            console.warn('Auth 소셜 회원 보강 동기화 예외:', authSyncException?.message || authSyncException);
-          }
-        }
+        // v684: service_role/postgres 전용 no-op 소셜 보강 RPC는 브라우저에서 호출하지 않는다.
+        // 회원목록은 아래 검증된 super_admin wrapper만 사용한다.
 
         // v23.7.216: 인터넷 배포에서는 RLS 때문에 직접 SELECT가 막힐 수 있으므로 RPC를 1순위로 호출합니다.
         let triedRpc = false;
         if (supabaseApi.hasRpc && supabaseApi.hasRpc()) {
           triedRpc = true;
           try {
-            const { data: rpcRows, error: rpcError } = await supabaseApi.rpc('sitepass_admin_sync_members');
+            const { data: rpcRows, error: rpcError } = await supabaseApi.rpc('sitepass_admin_list_members_v1');
             if (rpcError) {
-              rpcErrorMessage = rpcError.message || 'sitepass_admin_sync_members RPC 실패';
+              rpcErrorMessage = rpcError.message || 'sitepass_admin_list_members_v1 RPC 실패';
             } else {
               rows = Array.isArray(rpcRows) ? rpcRows : [];
             }
           } catch (rpcException) {
-            rpcErrorMessage = rpcException?.message || 'sitepass_admin_sync_members RPC 예외';
+            rpcErrorMessage = rpcException?.message || 'sitepass_admin_list_members_v1 RPC 예외';
           }
         }
 
@@ -561,7 +549,7 @@ function saveMemberTest(member) {
         // v23.7.225: 관리자 통계는 회원 행 수가 아니라 약관동의 완료/active/탈퇴 이벤트 기준 RPC를 우선 사용합니다.
         if (supabaseApi.hasRpc && supabaseApi.hasRpc()) {
           try {
-            const { data: summaryData, error: summaryError } = await supabaseApi.rpc('sitepass_admin_member_summary');
+            const { data: summaryData, error: summaryError } = await supabaseApi.rpc('sitepass_admin_member_summary_v1');
             if (summaryError) {
               console.warn('관리자 가입/탈퇴 통계 RPC 실패:', summaryError.message || summaryError);
             } else {

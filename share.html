@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f3f6fb">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
   <title>SitePass 담당자 서류</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",Arial,sans-serif;color:#17243b;background:#f3f6fb}
@@ -45,16 +46,17 @@
     <button type="button" data-member-target="myAccountScreen"><span>👤</span><b>내정보</b></button>
   </nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.553-test"></script>
+<script src="./assets/js/sitepass-error-monitor-v537.js?v=23.7.569-test"></script>
 <script>
 (function(){
   'use strict';
-  var VERSION='23.7.553-test';
-  var SUPABASE_URL='https://fipbgzvdwgjsmazmswaj.supabase.co';
-  var SUPABASE_KEY='sb_publishable_thd7o7GUgf8EcetTFndW9A_Nxh6oIAO';
+  var VERSION='23.7.677-72-f2-external-share-fail-closed';
+  var SUPABASE_URL='https://kbshbjrsjyqegacbtxme.supabase.co';
+  var SUPABASE_KEY='sb_publishable_vtGzfisU-fVqJQ7JhDUB0A_8zBtXPfo';
   var STORAGE_BUCKET='sitepass-documents';
   var STORAGE_ACCESS_MODE='signed';
   var SIGNED_URL_TTL=900;
+  var PUBLIC_FILE_DOWNLOAD_ENDPOINT=SUPABASE_URL+'/functions/v1/sitepass-public-file-download';
   var storageClient=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
   window.sitepassSupabase=storageClient;
   try{if(window.SitePassErrorMonitor&&window.SitePassErrorMonitor.installHooks)window.SitePassErrorMonitor.installHooks();}catch(ignore){}
@@ -154,7 +156,7 @@
   }
   function firstValue(obj,keys){for(var i=0;i<keys.length;i++){var v=obj&&obj[keys[i]];if(v!==undefined&&v!==null&&String(v).trim())return String(v).trim();}return '';}
   function unique(values){var seen={};return (values||[]).filter(function(v){v=String(v||'').trim();if(!v||seen[v])return false;seen[v]=true;return true;});}
-  function isUsableUrl(value){var text=String(value||'').trim();return !!text&&!/^blob:/i.test(text)&&/^(data:|https?:\/\/|\/)/i.test(text);}
+  function isUsableUrl(value){var text=String(value||'').trim();return !!text&&/^(data:|blob:|https?:\/\/|\/)/i.test(text);}
   function isPlaceholderAttachmentName(value){
     var text=String(value||'').trim().replace(/\s+/g,'');
     if(!text)return true;
@@ -191,44 +193,65 @@
   }
   function signedCacheKeyV523(bucket,path){return String(bucket||STORAGE_BUCKET)+'|'+String(path||'').replace(/^\/+/, '');}
   function cachedSignedUrlV523(bucket,path){var row=signedUrlCacheV523[signedCacheKeyV523(bucket,path)];return row&&row.url&&row.expiresAt>Date.now()+30000?row.url:'';}
+  function memberSignedStorageUrlV569(path){
+    // v569: 회원 미리보기는 URL 파라미터만으로 허용하지 않는다.
+    // state.fromMember는 verifyMemberPreviewV542()가 같은 탭의 sessionStorage 토큰까지
+    // 일치시킨 경우에만 true가 된다. 그때 발급된 짧은 Storage signed URL만 허용한다.
+    if(!state.fromMember)return false;
+    try{
+      var u=new URL(String(path||''),location.href);
+      var supabaseOrigin=new URL(SUPABASE_URL).origin;
+      if(u.origin!==supabaseOrigin)return false;
+      if(!/\/storage\/v1\/object\/sign\/sitepass-documents\//i.test(u.pathname))return false;
+      return !!String(u.searchParams.get('token')||'').trim();
+    }catch(e){return false;}
+  }
   function absoluteStorageUrl(path,bucket){
     path=String(path||'').trim();if(!path)return '';
-    if(/^blob:/i.test(path))return '';
+    if(/^blob:/i.test(path))return path;
     if(/^data:/i.test(path))return path;
-    if(/\/storage\/v1\/object\/sign\//i.test(path)&&/[?&]token=/i.test(path))return path;
     var ref=storageRefFromValueV523(path,bucket),cached=cachedSignedUrlV523(ref.bucket,ref.path);
     if(cached)return cached;
-    if(/^https?:\/\//i.test(path))return path;
+    // v569: 외부 담당자 링크는 v561 프록시 원칙을 그대로 유지한다.
+    // 단, 검증된 로그인 회원 미리보기(state.fromMember=true)에서 이미 발급된
+    // sitepass-documents signed URL만 렌더링에 사용한다.
+    if(/^https?:\/\//i.test(path)){
+      try{
+        var u=new URL(path,location.href);
+        if(u.origin===new URL(SUPABASE_URL).origin&&/\/storage\/v1\/object\//i.test(u.pathname)){
+          return memberSignedStorageUrlV569(path)?path:'';
+        }
+      }catch(e){}
+      return path;
+    }
     if(STORAGE_ACCESS_MODE==='signed')return '';
-    var encoded=normalizeEncodedPath(ref.path);
-    return encoded?SUPABASE_URL+'/storage/v1/object/public/'+encodeURIComponent(ref.bucket)+'/'+encoded:'';
+    return '';
+  }
+  function proxySelectorFromStoragePathV561(path){
+    var parts=String(path||'').replace(/^\/+/, '').split('/').filter(Boolean);
+    if(parts.length!==4)return null;
+    var docKey=String(parts[2]||'').trim(),fileId=String(parts[3]||'').trim();
+    if(!docKey||!fileId||/[\\/\0\r\n]/.test(fileId))return null;
+    return {docKey:docKey,fileId:fileId};
   }
   async function createSignedUrlsV523(bucket,paths,forceRefresh){
     bucket=String(bucket||STORAGE_BUCKET);paths=unique((paths||[]).map(function(path){return String(path||'').replace(/^\/+/, '');}).filter(Boolean));
     var resultMap={};var missing=[];
     paths.forEach(function(path){var cached=!forceRefresh&&cachedSignedUrlV523(bucket,path);if(cached)resultMap[path]=cached;else missing.push(path);});
     if(!missing.length)return resultMap;
-    if(!storageClient||!storageClient.storage){return resultMap;}
-    try{
-      var result=await storageClient.storage.from(bucket).createSignedUrls(missing,SIGNED_URL_TTL);
-      var rows=result&&Array.isArray(result.data)?result.data:[];
-      rows.forEach(function(row,index){
-        var path=String(row&&row.path||missing[index]||'').replace(/^\/+/, '');
-        var url=String(row&&(row.signedUrl||row.signedURL)||'');
-        if(path&&url){signedUrlCacheV523[signedCacheKeyV523(bucket,path)]={url:url,expiresAt:Date.now()+SIGNED_URL_TTL*1000};resultMap[path]=url;}
-      });
-      if(result&&result.error)console.warn('기간 제한 주소 일괄 생성 실패:',result.error);
-    }catch(e){console.warn('기간 제한 주소 생성 실패:',e);}
-    if(Object.keys(resultMap).length<paths.length){
-      await Promise.all(missing.map(async function(path){
-        if(resultMap[path])return;
-        try{
-          var one=await storageClient.storage.from(bucket).createSignedUrl(path,SIGNED_URL_TTL);
-          var url=String(one&&one.data&&(one.data.signedUrl||one.data.signedURL)||'');
-          if(url){signedUrlCacheV523[signedCacheKeyV523(bucket,path)]={url:url,expiresAt:Date.now()+SIGNED_URL_TTL*1000};resultMap[path]=url;}
-        }catch(e){}
-      }));
-    }
+    await Promise.all(missing.map(async function(path){
+      var selector=proxySelectorFromStoragePathV561(path);if(!selector)return;
+      var cacheKey=signedCacheKeyV523(bucket,path),old=signedUrlCacheV523[cacheKey];
+      if(forceRefresh&&old&&/^blob:/i.test(String(old.url||''))){try{URL.revokeObjectURL(old.url);}catch(e){}}
+      try{
+        var res=await timeoutFetch(PUBLIC_FILE_DOWNLOAD_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({share_code:state.code,share_sig:state.sig||'',docKey:selector.docKey,fileId:selector.fileId,disposition:'inline'})},12000);
+        if(!res.ok)throw new Error('파일 프록시 오류 '+res.status);
+        var blob=await res.blob();if(!blob||!blob.size)throw new Error('빈 파일');
+        var url=URL.createObjectURL(blob);
+        signedUrlCacheV523[cacheKey]={url:url,expiresAt:Date.now()+SIGNED_URL_TTL*1000};
+        resultMap[path]=url;
+      }catch(e){console.warn('파일 프록시 준비 실패:',e);}
+    }));
     return resultMap;
   }
   function applySignedUrlToValueV523(value,url){
@@ -245,6 +268,11 @@
         if(!value||typeof value!=='object')return;
         var bucket=firstValue(value,['storageBucket','storage_bucket','bucket','bucket_id'])||STORAGE_BUCKET;
         var path=firstValue(value,['storagePath','storage_path','storageKey','storage_key','filePath','file_path','objectPath','object_path','uploadPath','upload_path','storedPath','stored_path','path']).replace(/^\/+/, '');
+        if(!path){
+          var rawUrl=firstValue(value,['storagePublicUrl','storage_public_url','publicUrl','public_url','fileUrl','file_url','downloadUrl','download_url','signedUrl','signed_url','storageAccessUrl','storage_access_url','url','src','imageUrl','image_url','previewUrl','preview_url']);
+          var parsedRef=storageRefFromValueV523(rawUrl,bucket);
+          if(parsedRef&&parsedRef.path){bucket=parsedRef.bucket||bucket;path=parsedRef.path.replace(/^\/+/, '');}
+        }
         if(!path)return;
         (grouped[bucket]=grouped[bucket]||[]).push(path);refs.push({value:value,bucket:bucket,path:path});
       });
@@ -275,13 +303,36 @@
     var text=String(value||fallback||'file').trim();
     return text.replace(/[^0-9a-zA-Z가-힣._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||String(fallback||'file');
   }
-  function filePathFromRow(row){return firstValue(row,['storagePath','storage_path','name','path','objectPath','object_path']).replace(/^\/+/, '');}
+  function filePathFromRow(row){return firstValue(row,['storagePath','storage_path','filePath','file_path','name','path','objectPath','object_path']).replace(/^\/+/, '');}
+  function safeServerFileUrlV560(row){
+    var url=firstValue(row,['signedUrl','signed_url','storageAccessUrl','storage_access_url','fileUrl','file_url','downloadUrl','download_url','previewUrl','preview_url','publicUrl','public_url','url','src']);
+    return /^(https?:\/\/|\/)/i.test(String(url||''))&&!/^(data:|blob:)/i.test(String(url||''))?String(url||'').trim():'';
+  }
   function normalizeServerFiles(payload){
-    var root=parseObject(payload)||{};var list=Array.isArray(root)?root:(Array.isArray(root.files)?root.files:[]);
+    // v23.7.561-test: RPC 반환 래퍼 형식이 data/files/result/rows 중 무엇이든 canonical 파일행을 놓치지 않습니다.
+    var root=parseObject(payload)||payload||{};var list=[];
+    function collect(value,depth){
+      if(!value||depth>3)return;
+      value=parseObject(value)||value;
+      if(Array.isArray(value)){value.forEach(function(row){if(row&&typeof row==='object')list.push(row);});return;}
+      if(typeof value!=='object')return;
+      if(filePathFromRow(value)||safeServerFileUrlV560(value)){list.push(value);return;}
+      ['files','data','result','rows','items'].forEach(function(key){if(value[key])collect(value[key],depth+1);});
+    }
+    collect(root,0);
     return list.map(function(row){
-      row=parseObject(row)||{};var path=filePathFromRow(row);if(!path)return null;
+      row=parseObject(row)||{};var path=filePathFromRow(row),safeUrl=safeServerFileUrlV560(row);if(!path&&!safeUrl)return null;
       var parts=path.split('/').filter(Boolean);
-      return {storagePath:path,storageBucket:firstValue(row,['storageBucket','storage_bucket','bucket','bucket_id'])||STORAGE_BUCKET,docKey:firstValue(row,['docKey','doc_key'])||(parts[2]||''),fileName:firstValue(row,['fileName','file_name'])||(parts[parts.length-1]||'첨부파일'),updatedAt:firstValue(row,['updatedAt','updated_at','createdAt','created_at']),matchSource:firstValue(row,['matchSource','match_source'])};
+      return {
+        storagePath:path,
+        storageBucket:firstValue(row,['storageBucket','storage_bucket','bucket','bucket_id'])||STORAGE_BUCKET,
+        docKey:firstValue(row,['docKey','doc_key','documentKey','document_key','documentType','document_type','docType','doc_type','type','kind'])||(parts[2]||''),
+        fileName:firstValue(row,['fileName','file_name','originalName','original_name'])||(parts[parts.length-1]||'첨부파일'),
+        pageNo:firstValue(row,['pageNo','page_no','pageIndex','page_index']),
+        signedUrl:safeUrl,
+        updatedAt:firstValue(row,['updatedAt','updated_at','createdAt','created_at']),
+        matchSource:firstValue(row,['matchSource','match_source'])
+      };
     }).filter(Boolean);
   }
   function canonicalDocKey(key,title){
@@ -304,8 +355,12 @@
     return {canonicalKey:canonical,group:group,groupOrder:group==='equipment'?0:(group==='driver'?1:2),order:index>=0?index:999,title:DOC_TITLES[canonical]||title||key||'등록서류',groupTitle:DOC_GROUPS[group]};
   }
   function storagePagesFromFiles(files){
-    return (files||[]).slice().sort(function(a,b){return String(a.storagePath).localeCompare(String(b.storagePath),'ko');}).map(function(file,index){
-      var cached=cachedSignedUrlV523(file.storageBucket,file.storagePath);
+    return (files||[]).slice().sort(function(a,b){
+      var ap=Number(a&&a.pageNo||0),bp=Number(b&&b.pageNo||0);
+      if(ap&&bp&&ap!==bp)return ap-bp;
+      return String(a&&a.storagePath||'').localeCompare(String(b&&b.storagePath||''),'ko');
+    }).map(function(file,index){
+      var cached=file.signedUrl||cachedSignedUrlV523(file.storageBucket,file.storagePath);
       return {id:'storage_'+(index+1),fileName:file.fileName,storageBucket:file.storageBucket,storagePath:file.storagePath,signedUrl:cached,storageAccessUrl:cached,fileUrl:cached,downloadUrl:cached,previewDataUrl:cached,editDataUrl:cached,storageObjectVerified:true,storageMatchSource:file.matchSource||''};
     });
   }
@@ -445,33 +500,39 @@
     if(data&&data.ok===false)throw new Error(data.message||data.error||'서류파일 조회 실패');
     return normalizeServerFiles(data);
   }
-  async function directLoad(){
-    var query=SUPABASE_URL+'/rest/v1/sitepass_public_shares?share_code=eq.'+encodeURIComponent(state.code)+'&select=share_code,share_sig,expires_at,item_data,payload&limit=1';
-    var res=await timeoutFetch(query,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,Accept:'application/json'}},4500);var text=await res.text(),data=null;try{data=text?JSON.parse(text):null;}catch(e){}
-    if(!res.ok)throw new Error((data&&data.message)||('서버 직접조회 오류 '+res.status));
-    return {root:Array.isArray(data)?data[0]:data};
-  }
   function snapshotKeys(){return ['sitepass_recipient_preview_current_'+state.code,'sitepass_recipient_server_cache_v512_'+state.code,'sitepass_recipient_preview_v508_'+state.code,'sitepass_recipient_preview_v507_'+state.code,'sitepass_recipient_preview_v506_'+state.code];}
+  function clearExternalRecipientSnapshotsV677(){
+    if(state.fromMember)return;
+    var keys=snapshotKeys();for(var i=0;i<keys.length;i++){try{sessionStorage.removeItem(keys[i]);}catch(e){}}
+  }
   function previewSnapshot(){
-    var keys=snapshotKeys();for(var i=0;i<keys.length;i++){try{var raw=sessionStorage.getItem(keys[i]);if(!raw)continue;var parsed=JSON.parse(raw);if(!parsed||typeof parsed!=='object')continue;if(parsed.member_preview&&!state.fromMember)continue;if(parsed.member_preview&&state.fromMember&&String(parsed.member_preview_token||'')!==String(state.memberPreviewToken||''))continue;return parsed;}catch(e){}}
+    // v677: 외부 담당자 화면은 현재 링크를 서버에서 확인하기 전 저장 스냅샷을 렌더하지 않는다.
+    if(!state.fromMember)return null;
+    var keys=snapshotKeys();for(var i=0;i<keys.length;i++){try{var raw=sessionStorage.getItem(keys[i]);if(!raw)continue;var parsed=JSON.parse(raw);if(!parsed||typeof parsed!=='object')continue;if(!parsed.member_preview)continue;if(String(parsed.member_preview_token||'')!==String(state.memberPreviewToken||''))continue;return parsed;}catch(e){}}
     return null;
   }
-  function cacheServerRoot(root){try{sessionStorage.setItem('sitepass_recipient_server_cache_v512_'+state.code,JSON.stringify(root));}catch(e){}}
+  function cacheServerRoot(root){
+    // v677: 외부 capability 공유 응답은 sessionStorage에 저장하지 않는다.
+    if(!state.fromMember)return;
+    try{sessionStorage.setItem('sitepass_recipient_server_cache_v512_'+state.code,JSON.stringify(root));}catch(e){}
+  }
   function itemFromRoot(root){var item=normalizeItem(root,state.code);if(!item)return null;var docs=normalizeDocs(item);var hasEquipment=!!firstValue(item,['equipmentName','equipment_name','machineName','equipmentNo','equipment_no','registrationNo','vehicleNo','code','share_code']);return (docs.length||hasEquipment)?item:null;}
-  function firstServerResult(){
-    return new Promise(function(resolve){
-      var done=false,pending=2,lastError='';
-      function finish(value){if(done)return;done=true;resolve(value);}
-      function handleLoaded(loaded){
-        loaded=loaded||{};
-        if(loaded.expired){if(!state.fromMember){finish({expired:true,error:loaded.error||'만료된 링크입니다.'});return;}lastError=loaded.error||'수신자 공유링크 만료';pending--;if(pending<=0)finish({error:lastError});return;}
-        if(loaded.root){var item=itemFromRoot(loaded.root);if(item){finish({valid:{item:item,root:loaded.root}});return;}lastError=loaded.error||'공유 데이터에 서류가 없습니다.';}
-        pending--;if(pending<=0)finish({error:lastError});
+  async function firstServerResult(){
+    try{
+      var loaded=await rpcLoad();
+      loaded=loaded||{};
+      if(loaded.expired){
+        if(!state.fromMember)return {expired:true,error:loaded.error||'만료된 링크입니다.'};
+        return {error:loaded.error||'수신자 공유링크 만료'};
       }
-      function handleError(error){lastError=error&&error.message?error.message:String(error||'');pending--;if(pending<=0)finish({error:lastError});}
-      rpcLoad().then(handleLoaded).catch(handleError);
-      setTimeout(function(){directLoad().then(handleLoaded).catch(handleError);},180);
-    });
+      if(loaded.root){
+        var item=itemFromRoot(loaded.root);
+        if(item)return {valid:{item:item,root:loaded.root}};
+      }
+      return {error:loaded.error||'공유 데이터에 서류가 없습니다.'};
+    }catch(error){
+      return {error:error&&error.message?error.message:String(error||'')};
+    }
   }
   async function retryMissingDocsV541(root){
     for(var attempt=0;attempt<8;attempt++){
@@ -505,24 +566,77 @@
   }
   async function load(){
     if(!state.code){renderError('담당자 링크 정보가 없습니다.','링크 주소를 다시 확인해주세요.',false);return;}
-    if(!state.rendered){content.className='card loading';content.innerHTML='<span class="spinner" aria-hidden="true"></span><b>담당자 서류를 불러오는 중입니다.</b><span>장비정보를 먼저 표시하고 실제 Storage 파일목록을 확인합니다.</span>';}
+    if(!state.fromMember){
+      clearExternalRecipientSnapshotsV677();
+      state.item=null;state.docs=[];state.expiresAt=0;state.serverConfirmed=false;state.rendered=false;
+      content.className='card loading';content.innerHTML='<span class="spinner" aria-hidden="true"></span><b>담당자 서류를 확인하는 중입니다.</b><span>현재 링크 권한을 서버에서 확인한 뒤 서류를 표시합니다.</span>';
+    }else if(!state.rendered){content.className='card loading';content.innerHTML='<span class="spinner" aria-hidden="true"></span><b>담당자 서류를 불러오는 중입니다.</b><span>장비정보를 먼저 표시하고 실제 Storage 파일목록을 확인합니다.</span>';}
     var filesPromise=rpcFilesLoad().then(function(files){state.serverFiles=files;state.serverFilesLoaded=true;return files;}).catch(function(){state.serverFilesLoaded=true;return [];});
     var snapshot=previewSnapshot();if(snapshot){var snapItem=itemFromRoot(snapshot);if(snapItem){renderItem(snapItem,snapshot,false);hydrateSignedUrlsForItemV523(snapItem,false).then(function(){if(state.item===snapItem||!state.serverConfirmed)renderItem(snapItem,snapshot,false);});filesPromise.then(async function(files){if(files.length&&state.item){applyServerFiles(state.item,files);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,snapshot,false);}});}}
     var serverResult=await firstServerResult();
-    if(serverResult.expired){if(state.fromMember&&state.rendered){showToast('회원 미리보기는 수신자 링크 만료와 관계없이 표시됩니다.');return;}renderError('만료된 담당자 링크입니다.',serverResult.error||'새 링크를 요청해주세요.',false);return;}
+    if(serverResult.expired){if(state.fromMember&&state.rendered){showToast('회원 미리보기는 수신자 링크 만료와 관계없이 표시됩니다.');return;}clearExternalRecipientSnapshotsV677();renderError('만료된 담당자 링크입니다.',serverResult.error||'새 링크를 요청해주세요.',false);return;}
     if(serverResult.valid){
       cacheServerRoot(serverResult.valid.root);
       var files=await Promise.race([filesPromise,new Promise(function(resolve){setTimeout(function(){resolve([]);},1300);})]);
+
+      // v23.7.561-test: 첫 화면 표시 전에 signed URL 생성 완료를 기다리지 않습니다.
+      // 장비/서류 메타정보를 즉시 렌더링하고, 비공개 Storage 기간제 주소는 백그라운드에서 채웁니다.
+      if(state.fromMember&&state.rendered&&state.item){
+        var memberItem=state.item;
+        if(files.length)applyServerFiles(memberItem,files);
+
+        var serverItem=serverResult.valid.item;
+        if(files.length&&serverItem)applyServerFiles(serverItem,files);
+
+        var memberDocs=normalizeDocs(memberItem).length;
+        var serverDocs=serverItem?normalizeDocs(serverItem).length:0;
+        var memberHasEquipment=!!firstValue(memberItem,['equipmentName','equipment_name','machineName','equipmentNo','equipment_no','registrationNo','vehicleNo']);
+        var serverHasEquipment=!!(serverItem&&firstValue(serverItem,['equipmentName','equipment_name','machineName','equipmentNo','equipment_no','registrationNo','vehicleNo']));
+
+        var visibleMemberItem=(serverItem&&(serverDocs>memberDocs||(!memberHasEquipment&&serverHasEquipment)))?serverItem:memberItem;
+        var visibleMemberRoot=visibleMemberItem===serverItem?serverResult.valid.root:memberItem;
+        renderItem(visibleMemberItem,visibleMemberRoot,true);
+
+        Promise.resolve(hydrateSignedUrlsForItemV523(visibleMemberItem,false)).then(function(){
+          if(state.item===visibleMemberItem)renderItem(visibleMemberItem,visibleMemberRoot,true);
+        }).catch(function(error){console.warn('회원 링크화면 기간제 파일주소 준비 지연:',error);});
+
+        filesPromise.then(function(lateFiles){
+          if(!lateFiles.length||!state.item)return;
+          var lateItem=state.item;
+          applyServerFiles(lateItem,lateFiles);
+          renderItem(lateItem,lateItem,true);
+          Promise.resolve(hydrateSignedUrlsForItemV523(lateItem,false)).then(function(){
+            if(state.item===lateItem)renderItem(lateItem,lateItem,true);
+          }).catch(function(error){console.warn('회원 링크화면 늦은 파일주소 준비 지연:',error);});
+        });
+        if(!state.docs.length)retryMissingDocsV541(memberItem).then(function(ok){if(!ok&&state.item&&!state.docs.length)showToast('회원 서류목록 확인이 지연되고 있습니다. 보관함으로 돌아가 다시 열어주세요.');});
+        return;
+      }
+
       if(files.length)applyServerFiles(serverResult.valid.item,files);
-      await hydrateSignedUrlsForItemV523(serverResult.valid.item,false);
+      // 수신자 링크도 장비/서류 목록부터 즉시 표시합니다. signed URL은 뒤에서 보완합니다.
       renderItem(serverResult.valid.item,serverResult.valid.root,true);
       markShareViewedV521();
-      filesPromise.then(async function(lateFiles){if(lateFiles.length&&state.item){applyServerFiles(state.item,lateFiles);await hydrateSignedUrlsForItemV523(state.item,false);renderItem(state.item,serverResult.valid.root,true);}});
+      var firstVisibleItemV557=state.item;
+      Promise.resolve(hydrateSignedUrlsForItemV523(firstVisibleItemV557,false)).then(function(){
+        if(state.item===firstVisibleItemV557)renderItem(firstVisibleItemV557,serverResult.valid.root,true);
+      }).catch(function(error){console.warn('담당자 링크화면 기간제 파일주소 준비 지연:',error);});
+      filesPromise.then(function(lateFiles){
+        if(!lateFiles.length||!state.item)return;
+        var lateItem=state.item;
+        applyServerFiles(lateItem,lateFiles);
+        renderItem(lateItem,serverResult.valid.root,true);
+        Promise.resolve(hydrateSignedUrlsForItemV523(lateItem,false)).then(function(){
+          if(state.item===lateItem)renderItem(lateItem,serverResult.valid.root,true);
+        }).catch(function(error){console.warn('담당자 링크화면 늦은 파일주소 준비 지연:',error);});
+      });
       if(!state.docs.length)retryMissingDocsV541(serverResult.valid.root).then(function(ok){if(!ok&&state.item&&!state.docs.length)showToast('서버 서류목록 확인이 지연되고 있습니다. 다시 불러오기를 눌러주세요.');});
       return;
     }
-    if(state.rendered){showToast('최신 서버 확인이 지연되어 저장된 화면을 표시했습니다.');return;}
-    renderError('서류를 불러오지 못했습니다.',serverResult.error||'장비업자에게 새 링크를 다시 보내달라고 요청해주세요.',true);
+    if(state.fromMember&&state.rendered){showToast('회원 미리보기 서버 확인이 지연되고 있습니다.');return;}
+    clearExternalRecipientSnapshotsV677();
+    renderError('서류를 불러오지 못했습니다.',serverResult.error||'현재 링크 권한을 확인할 수 없습니다. 네트워크 연결 후 다시 시도해주세요.',true);
   }
   function closeModal(){var modal=document.getElementById('docModal');if(modal)modal.remove();document.body.classList.remove('modal-open');}
   function printUrl(url){var win=window.open(url,'_blank','noopener');if(!win)return;try{win.addEventListener('load',function(){setTimeout(function(){try{win.print();}catch(e){}},500);},{once:true});}catch(e){}}
@@ -662,7 +776,8 @@
     if(event.target.closest&&event.target.closest('[data-print-selected]')){event.preventDefault();printSelected(selectedIndexes(false));return;}
   });
   document.addEventListener('keydown',function(event){if(event.key==='Escape')closeModal();});
-  var route=parseRoute();state.code=route.code;state.sig=route.sig;state.trackingToken=route.trackingToken;state.memberPreviewToken=route.previewToken||'';state.fromMember=verifyMemberPreviewV542(route);setExitMode();load();
+  window.addEventListener('pagehide',function(){Object.keys(signedUrlCacheV523).forEach(function(key){var row=signedUrlCacheV523[key];if(row&&/^blob:/i.test(String(row.url||''))){try{URL.revokeObjectURL(row.url);}catch(e){}}});signedUrlCacheV523={};});
+  var route=parseRoute();state.code=route.code;state.sig=route.sig;state.trackingToken=route.trackingToken;state.memberPreviewToken=route.previewToken||'';state.fromMember=verifyMemberPreviewV542(route);setExitMode();clearExternalRecipientSnapshotsV677();load();
 })();
 </script>
 </body>

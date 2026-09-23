@@ -86,12 +86,117 @@
     }
 
 
+    const REGISTRATION_DRAFT_MEMBER_PREFIX_V730R3 =
+      REGISTRATION_DRAFT_KEY + '_member_';
+
+    function normalizeRegistrationDraftOwnerScopeV730R3(value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[^0-9a-z._-]/g, '');
+    }
+
+    function getCurrentRegistrationDraftMemberV730R3() {
+      try {
+        if (typeof getCurrentMemberTest === 'function') {
+          const member = getCurrentMemberTest();
+          if (member && typeof member === 'object') return member;
+        }
+      } catch (e) {}
+      try {
+        if (typeof getCurrentMember === 'function') {
+          const member = getCurrentMember();
+          if (member && typeof member === 'object') return member;
+        }
+      } catch (e) {}
+      try {
+        if (window.currentMember && typeof window.currentMember === 'object') {
+          return window.currentMember;
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function getRegistrationDraftOwnerScopeV730R3() {
+      try {
+        if (typeof isMemberLoggedIn === 'function' && !isMemberLoggedIn()) return '';
+      } catch (e) {
+        return '';
+      }
+
+      const member = getCurrentRegistrationDraftMemberV730R3();
+      if (!member || typeof member !== 'object') return '';
+
+      const authUid = normalizeRegistrationDraftOwnerScopeV730R3(
+        member.authUserId ||
+        member.auth_user_id ||
+        member.supabaseAuthUserId ||
+        member.userId ||
+        member.user_id ||
+        ''
+      );
+      if (authUid) return 'auth-' + authUid;
+
+      const memberId = normalizeRegistrationDraftOwnerScopeV730R3(
+        member.id ||
+        member.memberId ||
+        member.member_id ||
+        ''
+      );
+      if (memberId) return 'member-' + memberId;
+
+      const providerId = normalizeRegistrationDraftOwnerScopeV730R3(
+        member.providerId ||
+        member.provider_id ||
+        ''
+      );
+      if (providerId) return 'provider-' + providerId;
+
+      const loginId = normalizeRegistrationDraftOwnerScopeV730R3(
+        member.signupId ||
+        member.loginId ||
+        member.signup_id ||
+        member.login_id ||
+        ''
+      );
+      if (loginId) return 'login-' + loginId;
+
+      return '';
+    }
+
+    function getRegistrationDraftStorageKeyV730R3() {
+      const scope = getRegistrationDraftOwnerScopeV730R3();
+      return scope
+        ? REGISTRATION_DRAFT_MEMBER_PREFIX_V730R3 + scope
+        : '';
+    }
+
+    function registrationDraftBelongsToCurrentMemberV730R3(draft) {
+      if (!draft || typeof draft !== 'object') return false;
+      const scope = getRegistrationDraftOwnerScopeV730R3();
+      const draftScope = String(draft.ownerScopeV730R3 || '').trim();
+      return !!scope && !!draftScope && scope === draftScope;
+    }
+
+    try {
+      window.sitePassGetRegistrationDraftStorageKeyV730R3 =
+        getRegistrationDraftStorageKeyV730R3;
+      window.sitePassGetRegistrationDraftOwnerScopeV730R3 =
+        getRegistrationDraftOwnerScopeV730R3;
+    } catch (e) {}
+
     function getRegistrationDraft() {
       try {
-        const raw = localStorage.getItem(REGISTRATION_DRAFT_KEY) || '';
+        const key = getRegistrationDraftStorageKeyV730R3();
+        if (!key) return null;
+        const raw = localStorage.getItem(key) || '';
         if (!raw) return null;
         const draft = JSON.parse(raw);
-        return draft && typeof draft === 'object' ? draft : null;
+        if (!draft || typeof draft !== 'object') return null;
+        return registrationDraftBelongsToCurrentMemberV730R3(draft)
+          ? draft
+          : null;
       } catch (e) { return null; }
     }
 
@@ -104,21 +209,48 @@
     }
 
     function clearRegistrationDraft() {
-      try { localStorage.removeItem(REGISTRATION_DRAFT_KEY); } catch (e) {}
+      try {
+        const key = getRegistrationDraftStorageKeyV730R3();
+        if (key) localStorage.removeItem(key);
+      } catch (e) {}
       updateRegistrationDraftNotice();
     }
 
     // v23.7.461: 사용자가 임시등록 안내에서 취소를 누르면
     // 이미 예약된 자동저장 타이머까지 끊어 삭제한 초안이 다시 생기지 않게 합니다.
     function discardRegistrationDraftCompletely() {
+      const draftBeforeDiscardV730 = getRegistrationDraft();
+      const draftIdV730 = String(draftBeforeDiscardV730 && draftBeforeDiscardV730.serverRegistrationDraftIdV730 || '').trim();
+      if (draftIdV730) {
+        try {
+          const lifecycleV730 = window.SitePassRegistrationDraftLifecycleV730;
+          if (lifecycleV730 && typeof lifecycleV730.finish === 'function') {
+            lifecycleV730.finish(draftIdV730, 'cancelled').catch(function(){});
+          }
+        } catch (e) {}
+      }
       try { window.clearTimeout(registrationDraftSaveTimer); } catch (e) {}
       registrationDraftSaveTimer = null;
       clearRegistrationDraft();
       try { window.__sitePassRegistrationDraftStorageFull = false; } catch (e) {}
     }
 
+    function discardLegacyEquipmentEditDraftV6() {
+      const draft = getRegistrationDraft();
+      if (!draft || !String(draft.editingCode || '').trim()) return false;
+      try { window.clearTimeout(registrationDraftSaveTimer); } catch (e) {}
+      registrationDraftSaveTimer = null;
+      clearRegistrationDraft();
+      return true;
+    }
+    window.sitePassDiscardLegacyEquipmentEditDraftV6 = discardLegacyEquipmentEditDraftV6;
+
     function hasMeaningfulRegistrationDraftData(draft) {
       if (!draft) return false;
+      // STEP81 V6: 기존 장비 수정/갱신 화면은 신규 장비등록 임시저장과 완전히 분리합니다.
+      // 과거 버전에서 editingCode가 포함된 수정상태가 registration draft로 저장된 경우
+      // "등록중인 장비"로 복원하지 않고 무효 draft로 처리합니다.
+      if (String(draft.editingCode || '').trim()) return false;
       if (String(draft.equipmentNo || '').trim()) return true;
       if (String(draft.equipmentName || '').trim()) return true;
       if (draft.includeDriver || draft.includeWorker) return true;
@@ -144,7 +276,7 @@
       const nowIso = new Date().toISOString();
       const existing = getRegistrationDraft();
       return {
-        version:'v23.7.244',
+        version:'v23.7.730',
         editingCode:editingCode || '',
         equipmentNo:(equipmentNoEl?.value || '').trim(),
         equipmentName:(equipmentNameEl?.value || '').trim(),
@@ -152,6 +284,7 @@
         includeWorker:!!includeWorker?.checked,
         docs,
         workerPeople:collectWorkerPeopleMeta(),
+        serverRegistrationDraftIdV730:String(existing?.serverRegistrationDraftIdV730 || '').trim(),
         savedAt:nowIso,
         createdAt:existing?.createdAt || nowIso
       };
@@ -186,7 +319,10 @@
     }
 
     function cleanupRegistrationDraftStorageForRetry() {
-      try { localStorage.removeItem(REGISTRATION_DRAFT_KEY); } catch (e) {}
+      try {
+        const currentDraftKey = getRegistrationDraftStorageKeyV730R3();
+        if (currentDraftKey) localStorage.removeItem(currentDraftKey);
+      } catch (e) {}
       try {
         const removablePatterns = [
           'registration_draft',
@@ -198,11 +334,18 @@
           'sitePass_tmp'
         ];
         const keys = [];
+        const protectedMemberDraftPrefix =
+          String(REGISTRATION_DRAFT_MEMBER_PREFIX_V730R3 || '').toLowerCase();
         for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
         keys.filter(Boolean).forEach(key => {
           const lower = String(key).toLowerCase();
           if (!lower.includes('sitepass')) return;
+
+          // STEP88 v730R3: 다른 회원의 scoped draft와 소유자를 알 수 없는
+          // legacy unscoped draft는 저장공간 정리 과정에서도 임의 삭제하지 않습니다.
           if (key === REGISTRATION_DRAFT_KEY) return;
+          if (protectedMemberDraftPrefix && lower.indexOf(protectedMemberDraftPrefix) === 0) return;
+
           if (removablePatterns.some(pattern => lower.includes(pattern.toLowerCase()))) {
             try { localStorage.removeItem(key); } catch (e) {}
           }
@@ -212,22 +355,37 @@
 
     function setRegistrationDraft(draft) {
       if (window.__sitePassRegistrationDraftStorageFull) return false;
+
+      const ownerScopeV730R3 = getRegistrationDraftOwnerScopeV730R3();
+      const draftStorageKeyV730R3 = getRegistrationDraftStorageKeyV730R3();
+
+      // STEP88 v730R3: 현재 회원을 강하게 식별할 수 없으면 fail-closed.
+      // 회원 구분 없는 공용 key에 임시등록을 저장하지 않습니다.
+      if (!ownerScopeV730R3 || !draftStorageKeyV730R3) return false;
+
       const candidates = [
         makeRegistrationDraftForLocalSave(draft, 'light-no-file-data'),
         makeRegistrationDraftForLocalSave(draft, 'meta')
-      ];
+      ].map(function(candidate) {
+        candidate.ownerScopeV730R3 = ownerScopeV730R3;
+        return candidate;
+      });
+
       for (let i = 0; i < candidates.length; i++) {
         try {
           if (i > 0) cleanupRegistrationDraftStorageForRetry();
-          localStorage.setItem(REGISTRATION_DRAFT_KEY, JSON.stringify(candidates[i]));
+          localStorage.setItem(
+            draftStorageKeyV730R3,
+            JSON.stringify(candidates[i])
+          );
           return true;
         } catch (error) {
           if (i === 0) {
             cleanupRegistrationDraftStorageForRetry();
             continue;
           }
-          console.warn('등록중 자동저장은 브라우저 저장공간 부족으로 이번 화면에서는 생략합니다. 실제 등록은 현재 화면에서 계속 진행할 수 있습니다.', error);
-          try { localStorage.removeItem(REGISTRATION_DRAFT_KEY); } catch (e) {}
+          console.warn('등록중 임시저장은 브라우저 저장공간 부족으로 이번 화면에서는 생략합니다. 실제 등록은 현재 화면에서 계속 진행할 수 있습니다.', error);
+          try { localStorage.removeItem(draftStorageKeyV730R3); } catch (e) {}
           window.__sitePassRegistrationDraftStorageFull = true;
           return false;
         }
@@ -255,10 +413,59 @@
       return mm + '/' + dd + ' ' + hh + ':' + mi;
     }
 
+    function getActiveEquipmentEditCodeV6() {
+      try {
+        return String(
+          window.SitePassEquipment &&
+          window.SitePassEquipment.update &&
+          typeof window.SitePassEquipment.update.getState === 'function'
+            ? window.SitePassEquipment.update.getState().editingCode || ''
+            : (typeof editingCode !== 'undefined' ? editingCode || '' : '')
+        ).trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function hasUnsavedEquipmentEditChangesV6() {
+      const code = getActiveEquipmentEditCodeV6();
+      if (!code) return false;
+      try {
+        const update = window.SitePassEquipment && window.SitePassEquipment.update;
+        if (update && typeof update.hasUnsavedChanges === 'function') {
+          return update.hasUnsavedChanges() === true;
+        }
+      } catch (e) {}
+      // 수정상태인데 dirty 판정을 할 수 없으면 데이터 유실 방지를 위해 보수적으로 true.
+      return true;
+    }
+
+    function discardEquipmentEditForNavigationV6() {
+      try {
+        const update = window.SitePassEquipment && window.SitePassEquipment.update;
+        if (update && typeof update.discardForNavigation === 'function') {
+          const result = update.discardForNavigation();
+          return !result || result.ok !== false;
+        }
+      } catch (e) {}
+      try { editingCode = ''; } catch (e) {}
+      try { discardLegacyEquipmentEditDraftV6(); } catch (e) {}
+      try { resetForm(false); } catch (e) {}
+      try { updateRegisterModeUi(); } catch (e) {}
+      return true;
+    }
+
     function hasActiveRegistrationAttachments() {
       try {
         const register = document.getElementById('registerScreen');
         if (!register || register.classList.contains('hidden')) return false;
+
+        // STEP81 V6: 기존 장비 수정화면은 이미 저장된 첨부가 있는 것 자체를
+        // "신규 등록중 첨부"로 보지 않습니다. 실제 수정 dirty 상태만 나가기 보호 대상으로 봅니다.
+        if (getActiveEquipmentEditCodeV6()) {
+          return hasUnsavedEquipmentEditChangesV6();
+        }
+
         const docs = collectDocData();
         return Object.values(docs || {}).some(function(doc) {
           if (!doc) return false;
@@ -273,57 +480,230 @@
     }
 
     function confirmLeaveRegistrationIfNeeded(targetScreenId) {
-      // v23.7.350: 사진/파일 첨부 후 등록완료 전에 홈/보관함/뒤로가기 등으로 나가면
-      // 브라우저 저장공간 제한 때문에 기사·인부 첨부자료가 복구되지 않을 수 있어 명확히 막습니다.
+      // STEP88 v730R1: 신규 장비등록은 입력만으로 임시저장하지 않습니다.
+      // SitePass 내부의 다른 화면으로 나갈 때 사용자가 직접 저장 여부를 선택합니다.
       if (sitePassRegistrationCompletionBusy) return true;
-      if (!hasActiveRegistrationAttachments()) return true;
+
       const target = String(targetScreenId || '');
       if (target === 'registerScreen') return true;
-      return confirm('아직 등록완료 전입니다.\n\n첨부한 기사/인부/장비 자료는 화면을 나가면 사라질 수 있습니다.\n등록완료까지 진행한 뒤 이동하는 것을 권장합니다.\n\n그래도 이 화면을 나갈까요?');
+
+      // 결제대기 정보가 이미 확정된 뒤 pricingScreen으로 이동하는 것은
+      // 등록을 그만두는 이탈이 아니라 같은 등록 흐름의 다음 단계입니다.
+      if (target === 'pricingScreen') {
+        try {
+          const pendingForPricing = typeof getPendingRegistration === 'function'
+            ? getPendingRegistration()
+            : null;
+          if (pendingForPricing && pendingForPricing.item) {
+            window.__sitePassSkipRegistrationDraftSaveOnceV6 = true;
+            return true;
+          }
+        } catch (e) {}
+      }
+
+      const editCode = getActiveEquipmentEditCodeV6();
+      if (editCode) {
+        const dirty = hasUnsavedEquipmentEditChangesV6();
+        if (
+          dirty &&
+          !confirm(
+            '수정한 내용이 아직 저장되지 않았습니다.\n\n' +
+            '이 화면을 나가면 이번 수정내용은 취소됩니다.\n\n' +
+            '그래도 나갈까요?'
+          )
+        ) {
+          return false;
+        }
+
+        // app-core-auth의 기존 showScreen은 이 함수가 true를 반환한 직후
+        // saveRegistrationDraftNow()를 한 번 호출합니다. 그 1회를 건너뛰어
+        // 수정화면이 신규등록 draft로 다시 생성되지 않게 합니다.
+        window.__sitePassSkipRegistrationDraftSaveOnceV6 = true;
+        discardEquipmentEditForNavigationV6();
+        return true;
+      }
+
+      const leavingDraft = makeRegistrationDraftPayload();
+      if (!hasMeaningfulRegistrationDraftData(leavingDraft)) {
+        window.__sitePassSkipRegistrationDraftSaveOnceV6 = true;
+        return true;
+      }
+
+      const shouldSaveDraft = confirm(
+        '작성 중인 장비등록이 있습니다.\n\n' +
+        '임시저장하시겠습니까?\n\n' +
+        '확인: 임시저장 후 이동\n' +
+        '취소: 임시저장하지 않고 이동'
+      );
+
+      if (shouldSaveDraft) {
+        saveRegistrationDraftNow({ userConfirmed: true, reason: 'leave_registration' });
+      } else {
+        discardRegistrationDraftCompletely();
+      }
+
+      // app-core-auth showScreen의 기존 후속 saveRegistrationDraftNow()는
+      // 사용자의 방금 선택을 뒤집지 않도록 반드시 1회 건너뜁니다.
+      window.__sitePassSkipRegistrationDraftSaveOnceV6 = true;
+      return true;
     }
 
-    function saveRegistrationDraftNow() {
-      if (sitePassRegistrationCompletionBusy) return;
-      if (registrationDraftRestoreBusy) return;
+    function saveRegistrationDraftNow(options) {
+      const saveOptions = options && typeof options === 'object' ? options : {};
+      if (window.__sitePassSkipRegistrationDraftSaveOnceV6) {
+        window.__sitePassSkipRegistrationDraftSaveOnceV6 = false;
+        return false;
+      }
+
+      // STEP88 v730R1: input/change/pagehide에서 자동 임시저장하지 않습니다.
+      // 사용자 확인 또는 결제대기 전환처럼 명시된 흐름에서만 저장합니다.
+      if (saveOptions.userConfirmed !== true && saveOptions.registrationFlow !== true) {
+        return false;
+      }
+
+      if (sitePassRegistrationCompletionBusy && saveOptions.registrationFlow !== true) return false;
+      if (registrationDraftRestoreBusy) return false;
       const register = document.getElementById('registerScreen');
-      if (!register || register.classList.contains('hidden')) return;
+      if (!register || register.classList.contains('hidden')) return false;
+
+      // STEP81 V6: 수정/갱신 화면은 신규 장비등록 draft를 쓰지 않습니다.
+      if (getActiveEquipmentEditCodeV6()) {
+        discardLegacyEquipmentEditDraftV6();
+        return false;
+      }
+
       const draft = makeRegistrationDraftPayload();
       if (!hasMeaningfulRegistrationDraftData(draft)) {
         clearRegistrationDraft();
-        return;
+        return false;
       }
-      if (setRegistrationDraft(draft)) updateRegistrationDraftNotice();
+
+      const lifecycleV730 = window.SitePassRegistrationDraftLifecycleV730;
+      if (!String(draft.serverRegistrationDraftIdV730 || '').trim()
+          && lifecycleV730
+          && typeof lifecycleV730.createDraftId === 'function') {
+        draft.serverRegistrationDraftIdV730 = lifecycleV730.createDraftId();
+      }
+
+      if (!setRegistrationDraft(draft)) return false;
+
+      updateRegistrationDraftNotice();
+      const draftIdV730 = String(draft.serverRegistrationDraftIdV730 || '').trim();
+      if (draftIdV730 && lifecycleV730 && typeof lifecycleV730.touch === 'function') {
+        lifecycleV730.touch(draftIdV730).then(function(touchResult){
+          // STEP88 v730R2: 서버에 이미 본인의 active draft가 있으면 touch RPC가
+          // 그 canonical draftId를 반환한다. 서버/로컬 추적 ID가 어긋나지 않게
+          // 현재 로컬 draft가 아직 같은 requested id일 때만 ID를 정규화한다.
+          if (!touchResult || touchResult.ok !== true) return;
+          const canonicalDraftIdV730 = String(
+            touchResult.data && touchResult.data.draftId || ''
+          ).trim();
+          if (!canonicalDraftIdV730 || canonicalDraftIdV730 === draftIdV730) return;
+
+          const latestDraftV730 = getRegistrationDraft();
+          if (!latestDraftV730) return;
+          if (String(latestDraftV730.serverRegistrationDraftIdV730 || '').trim() !== draftIdV730) return;
+
+          latestDraftV730.serverRegistrationDraftIdV730 = canonicalDraftIdV730;
+          if (setRegistrationDraft(latestDraftV730)) updateRegistrationDraftNotice();
+        }).catch(function(){});
+      }
+      return true;
     }
 
     function scheduleRegistrationDraftSave() {
-      if (registrationDraftRestoreBusy) return;
-      if (window.__sitePassRegistrationDraftStorageFull) return;
-      window.clearTimeout(registrationDraftSaveTimer);
-      registrationDraftSaveTimer = window.setTimeout(saveRegistrationDraftNow, 550);
+      // STEP88 v730R1: 입력/변경 자체로 임시저장을 만들지 않습니다.
+      // 기존 타이머가 남아 있다면 끊기만 합니다.
+      try { window.clearTimeout(registrationDraftSaveTimer); } catch (e) {}
+      registrationDraftSaveTimer = null;
+    }
+
+    function clearRegistrationDraftRuntimeForSignedOutV730R3() {
+      try { window.clearTimeout(registrationDraftSaveTimer); } catch (e) {}
+      registrationDraftSaveTimer = null;
+      registrationDraftPromptOpen = false;
+      registrationDraftRestoreBusy = false;
+      try { window.__sitePassSkipRegistrationDraftSaveOnceV6 = true; } catch (e) {}
+      try { editingCode = ''; } catch (e) {}
+      try { resetForm(false); } catch (e) {}
+      try { updateRegisterModeUi(); } catch (e) {}
+      try { updateRegistrationDraftNotice(); } catch (e) {}
+    }
+
+    function setupRegistrationDraftAccountIsolationV730R3() {
+      if (window.__sitePassRegistrationDraftAccountIsolationV730R3) return;
+      window.__sitePassRegistrationDraftAccountIsolationV730R3 = true;
+
+      try {
+        if (
+          window.SitePassAuthEvents &&
+          typeof window.SitePassAuthEvents.subscribe === 'function'
+        ) {
+          window.SitePassAuthEvents.subscribe(function(event) {
+            if (event && event.type === 'SIGNED_OUT') {
+              clearRegistrationDraftRuntimeForSignedOutV730R3();
+            }
+          }, { replay:false });
+        }
+      } catch (e) {}
     }
 
     function setupRegistrationDraftAutoSave() {
       if (window.__sitePassRegistrationDraftAutoSave) return;
       window.__sitePassRegistrationDraftAutoSave = true;
+
+      // 기존 호출부 호환용 이벤트는 유지하되 실제 저장은 하지 않습니다.
       document.addEventListener('input', function(event) {
         if (event.target && event.target.closest && event.target.closest('#registerScreen')) scheduleRegistrationDraftSave();
       }, true);
       document.addEventListener('change', function(event) {
         if (event.target && event.target.closest && event.target.closest('#registerScreen')) scheduleRegistrationDraftSave();
       }, true);
-      window.addEventListener('pagehide', saveRegistrationDraftNow);
+
+      // F5/탭닫기/브라우저 종료는 브라우저 정책상 사용자 정의 confirm을 보장할 수 없습니다.
+      // STEP88 v730R3: 실제 로그인 회원이 실제 등록화면을 보고 있을 때만 경고합니다.
+      // 로그아웃 후 로그인 화면 / 카카오·네이버 OAuth 이동에서는 숨겨진 등록 DOM 때문에
+      // beforeunload 경고가 남지 않게 합니다.
       window.addEventListener('beforeunload', function(event) {
-        saveRegistrationDraftNow();
-        if (!sitePassRegistrationCompletionBusy && hasActiveRegistrationAttachments()) {
+        if (sitePassRegistrationCompletionBusy) return;
+
+        let loggedInForRegistrationV730R3 = false;
+        try {
+          loggedInForRegistrationV730R3 =
+            (typeof isMemberLoggedIn === 'function' && isMemberLoggedIn()) ||
+            (typeof isAdminLoggedIn === 'function' && isAdminLoggedIn());
+        } catch (e) {
+          loggedInForRegistrationV730R3 = false;
+        }
+        if (!loggedInForRegistrationV730R3) return;
+
+        const registerScreenV730R3 = document.getElementById('registerScreen');
+        if (!registerScreenV730R3 || registerScreenV730R3.classList.contains('hidden')) return;
+
+        let shouldWarn = false;
+        try {
+          if (getActiveEquipmentEditCodeV6()) {
+            shouldWarn = hasUnsavedEquipmentEditChangesV6();
+          } else {
+            shouldWarn = hasMeaningfulRegistrationDraftData(makeRegistrationDraftPayload());
+          }
+        } catch (e) {
+          shouldWarn = hasActiveRegistrationAttachments();
+        }
+
+        if (shouldWarn) {
           event.preventDefault();
-          event.returnValue = '등록완료 전 첨부자료가 사라질 수 있습니다.';
-          return event.returnValue;
+          event.returnValue = '';
+          return '';
         }
       });
+
+      setupRegistrationDraftAccountIsolationV730R3();
     }
 
     function restoreRegistrationDraft(draft) {
       draft = draft || getRegistrationDraft();
+      if (!registrationDraftBelongsToCurrentMemberV730R3(draft)) return false;
       if (!hasMeaningfulRegistrationDraftData(draft)) return false;
       registrationDraftRestoreBusy = true;
       try {
@@ -394,6 +774,9 @@ function promptRegistrationDraftIfNeeded(reason) {
       setTimeout(function(){
         try {
           if (!isMemberLoggedIn() && !isAdminLoggedIn()) return;
+          // STEP88 v730R3: login prompt 예약 뒤 계정이 바뀌어도
+          // 이전 회원 draft를 새 회원에게 표시하거나 삭제하지 않습니다.
+          if (!registrationDraftBelongsToCurrentMemberV730R3(draft)) return;
           if (confirm(message)) {
             restoreRegistrationDraft(draft);
           } else {
@@ -418,6 +801,13 @@ function promptRegistrationDraftIfNeeded(reason) {
           openPendingRegistrationPaymentScreen(pendingPay);
           return;
         }
+        try {
+          const lifecycleV730 = window.SitePassRegistrationDraftLifecycleV730;
+          const pendingDraftIdV730 = String(pendingPay.serverRegistrationDraftIdV730 || '').trim();
+          if (pendingDraftIdV730 && lifecycleV730 && typeof lifecycleV730.finish === 'function') {
+            lifecycleV730.finish(pendingDraftIdV730, 'cancelled').catch(function(){});
+          }
+        } catch (e) {}
         clearPendingRegistration();
         discardRegistrationDraftCompletely();
         resetForm(false);
@@ -447,7 +837,7 @@ function promptRegistrationDraftIfNeeded(reason) {
       const noInput = document.getElementById('equipmentNo');
       if (banner) {
         banner.classList.toggle('hidden', !editingCode);
-        if (editingCode) banner.innerHTML = '기존 장비등록 수정/갱신 중입니다. 장비는 그대로 두고 기사 교체, 보험증·검사증 날짜 갱신, 제원표·비파괴·특수건강검진 파일 교체가 가능합니다. <button type="button" class="mini-button" onclick="cancelEditMode()">수정취소</button>';
+        if (editingCode) banner.innerHTML = '기존 장비등록 수정/갱신 중입니다. 장비는 그대로 두고 기사 교체, 보험증·검사증 날짜 갱신, 제원표·비파괴·특수건강검진 파일 교체가 가능합니다. <button type="button" class="mini-button" onclick="window.SitePassEquipment && window.SitePassEquipment.update && window.SitePassEquipment.update.cancel()">수정취소</button>';
       }
       if (saveButton) {
         if (editingCode) saveButton.textContent = '수정내용 저장';
@@ -534,6 +924,11 @@ function fillDocsForEdit(item) {
         const card = findDocCardByKey(doc.key);
         if (!card) return;
         const pages = getDocPagesFromDoc(doc);
+        const fileBox = card.querySelector('[data-role="filename"]');
+        if (fileBox && fileBox.dataset) {
+          fileBox.dataset.sitepassRenewalStarted = '';
+          fileBox.dataset.sitepassRenewalCleared = '';
+        }
         setDocPagesToCard(card, pages);
         const dateInput = card.querySelector('[data-date-key]');
         if (dateInput) {
@@ -568,12 +963,26 @@ function fillDocsForEdit(item) {
       if (!card) return;
       const pages = getDocPagesFromCard(card);
       if (pages.length && !confirm('이 서류에 첨부된 ' + pages.length + '장을 모두 비울까요?')) return;
+      const fileBox = card.querySelector('[data-role="filename"]');
+      let editingActive = false;
+      try {
+        editingActive = !!(
+          window.SitePassEquipment &&
+          window.SitePassEquipment.update &&
+          typeof window.SitePassEquipment.update.getState === 'function' &&
+          String(window.SitePassEquipment.update.getState().editingCode || '').trim()
+        );
+      } catch (error) {}
+      if (editingActive && fileBox && fileBox.dataset) {
+        fileBox.dataset.sitepassRenewalCleared = 'true';
+        fileBox.dataset.sitepassRenewalStarted = '';
+      }
       setDocPagesToCard(card, []);
     }
 
     function renderUpdatePanel(item) {
       if (!item) return '';
-      return '<div class="update-panel"><b>서류 수정/갱신</b><span>장비번호와 QR코드는 그대로 유지하면서 기사서류 교체, 보험증권/검사증 만료일 갱신, 제원표·비파괴·특수건강검진 파일 교체/삭제가 가능합니다. 저장하면 같은 QR 조회화면에 바로 반영됩니다.</span><div class="update-actions"><button type="button" class="primary" onclick="startEditEquipment(\'' + escapeJs(item.code) + '\')">수정/갱신하기</button><button type="button" class="ghost" onclick="openQrPublicView(\'' + escapeJs(item.code) + '\')">수정 후 QR 확인</button></div></div>';
+      return '<div class="update-panel"><b>서류 수정/갱신</b><span>장비번호와 QR코드는 그대로 유지하면서 기사서류 교체, 보험증권/검사증 만료일 갱신, 제원표·비파괴·특수건강검진 파일 교체/삭제가 가능합니다. 저장하면 같은 QR 조회화면에 바로 반영됩니다.</span><div class="update-actions"><button type="button" class="primary" onclick="window.SitePassDocument.renewal.open(\'' + escapeJs(item.code) + '\')">수정/갱신하기</button><button type="button" class="ghost" onclick="window.SitePassDocument.viewer.openQr(\'' + escapeJs(item.code) + '\')">수정 후 QR 확인</button></div></div>';
     }
 
     function buildUpdateSummary(oldItem, newItem) {
@@ -943,7 +1352,7 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       // v23.7.288: 결제대기/고아장비/탈퇴장비를 기존 장비로 세면 첫 장비도 추가결제로 오판됩니다.
       // 추가결제 여부는 현재 회원의 활성 결제완료 장비만 기준으로 판단합니다.
       const isAdditionalRegistration = isNewRegistration && getActivePaidRegistrationItemsForCurrentOwner(currentMember, '').length > 0;
-      const selectedPlan = getPlanInfo(localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'monthly', { additional: isAdditionalRegistration });
+      const selectedPlan = getPlanInfo(localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'annual', { additional: isAdditionalRegistration });
       const bundleMeta = getBundleMeta();
       const code = oldItem ? oldItem.code : makeBundleCode(equipmentNo);
       if (isNewRegistration && items.some(x => String(x.code || '') === String(code || ''))) {
@@ -1011,7 +1420,11 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
         let editUploadResult = null;
         try {
           try { saveRegistrationDraftNow(); } catch (e) {}
-          editUploadResult = await uploadAndPersistEquipmentItemDocsInBackground(item, 'edit_storage_verified_v517', updateSitePassRegistrationUploadProgressV515);
+          const documentUpload = window.SitePassDocument && window.SitePassDocument.upload;
+          if (!documentUpload || typeof documentUpload.persistEquipmentDocuments !== 'function') {
+            throw new Error('[SitePass Step81] document upload public API unavailable');
+          }
+          editUploadResult = await documentUpload.persistEquipmentDocuments(item, 'edit_storage_verified_v517', updateSitePassRegistrationUploadProgressV515);
         } catch (e) {
           editUploadResult = { ok:false, error:e };
         } finally {
@@ -1044,13 +1457,24 @@ Storage 확인: ${Number(savedEditItem.storageVerifiedCount || 0)}개
             paymentTier: isAdditionalRegistration ? 'additional' : 'first',
             createdAt: nowIso
           };
+      // STEP88 v730R1: 결제화면으로 정상 진행하는 경우는 임시저장 확인창 대상이 아닙니다.
+      // 대신 결제대기에서 이탈하면 서버가 등록대기 상태를 알 수 있어야 하므로
+      // 정식 결제 흐름에서만 tracker draft를 명시적으로 확보합니다.
+      if (!window.SITEPASS_TEST_NO_PAYMENT_MODE) {
+        try {
+          saveRegistrationDraftNow({ registrationFlow: true, reason: 'pending_registration' });
+        } catch (e) {}
+      }
+      const registrationDraftV730 = getRegistrationDraft();
+      const registrationDraftIdV730 = String(registrationDraftV730 && registrationDraftV730.serverRegistrationDraftIdV730 || '').trim();
+      if (registrationDraftIdV730) pending.serverRegistrationDraftIdV730 = registrationDraftIdV730;
       if (window.SITEPASS_TEST_NO_PAYMENT_MODE) {
         // v23.7.350: 테스트 등록완료는 Supabase/전체 보관함 렌더링/결제대기 처리를 기다리지 않고
         // 현재 등록 1건을 즉시 QR/보관함 카드로 표시합니다.
         // 이전 v317~v320에서는 completePendingRegistrationPayment() 안쪽에서 남은 처리 때문에
         // 등록완료 버튼 이후 대기가 길어질 수 있었습니다.
         pendingRegistrationItemMemory = pending;
-        // v23.7.553-test: Storage 업로드와 실제 파일 확인이 끝나기 전에는
+        // v23.7.553-recovery-test: Storage 업로드와 실제 파일 확인이 끝나기 전에는
         // 초안·서류 데이터를 지우거나 보관함 완료화면으로 이동하지 않습니다.
         console.info('SitePass 테스트 모드: Storage 선업로드/검증 후 등록완료 처리 시작');
         try {

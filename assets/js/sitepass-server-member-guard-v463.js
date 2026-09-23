@@ -265,6 +265,17 @@
   async function verifyCurrentMember(reason, silent){
     if (invalidated || checking) return !invalidated;
     try { if (typeof window.isAdminLoggedIn === 'function' && window.isAdminLoggedIn()) return true; } catch(e) {}
+    var authEventStateV79 = null;
+    try {
+      authEventStateV79 = window.SitePassAuthEvents && typeof window.SitePassAuthEvents.getState === 'function'
+        ? window.SitePassAuthEvents.getState()
+        : null;
+    } catch(e) {}
+    if (
+      authEventStateV79 &&
+      Number(authEventStateV79.revision || 0) > 0 &&
+      String(authEventStateV79.type || '') === 'SIGNED_OUT'
+    ) return true;
     var member = getCurrentLocalMember();
     if (!member) return true;
     var lookup = memberLookup(member);

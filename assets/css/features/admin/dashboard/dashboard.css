@@ -1,0 +1,25 @@
+/* SitePass STEP88 - admin dashboard isolated styles */
+.sitepass-admin-dashboard-card-v727,
+.sitepass-admin-dashboard-state-v727 {
+  width: 100%;
+}
+
+.sitepass-admin-dashboard-state-v727 .notice {
+  margin: 10px 0;
+}
+
+
+/* STEP88 v730R5 - dashboard summary is always two rows of three metrics. */
+.sitepass-admin-dashboard-summary-row-v730r5 {
+  grid-template-columns: 1fr;
+}
+
+.sitepass-admin-dashboard-todo-v730r5 .admin-quick-line {
+  width: 100%;
+}
+
+@media (min-width: 720px) {
+  .sitepass-admin-dashboard-summary-row-v730r5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

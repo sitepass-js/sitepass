@@ -1,8 +1,8 @@
-// SitePass v23.7.553-test - 오류 로그 및 관리자 모니터링
+// SitePass v23.7.682-73-admin-error-monitor-dedicated-tab-scroll-stable - 오류 로그 및 관리자 모니터링
 (function(){
   'use strict';
 
-  var VERSION = '23.7.553-test';
+  var VERSION = '23.7.682-73-admin-error-monitor-dedicated-tab-scroll-stable';
   var REPORT_RPC = 'sitepass_report_error_v537';
   var LIST_RPC = 'sitepass_list_error_logs_v537';
   var STATUS_RPC = 'sitepass_set_error_status_v537';
@@ -128,8 +128,6 @@
     try { if (!loginId && typeof getSessionValue === 'function') loginId = getSessionValue(ADMIN_ID_KEY) || ''; } catch (e) {}
     try { if (!role && typeof getCurrentAdminRoleName === 'function') role = getCurrentAdminRoleName() || ''; } catch (e) {}
     var normalizedId = text(loginId,180).toLowerCase();
-    // 이전 비상 관리자 아이디로 로그인했어도 서버 권한 행은 지정 최고관리자 1명으로 확인합니다.
-    if (normalizedId === 'dream9473' || normalizedId === 'sitepassadmin') normalizedId = 'sitepass@kakao.com';
     return {
       login_id:normalizedId,
       signup_id:normalizedId,
@@ -522,7 +520,7 @@
       return VERSION + ' 자동 확인: 현재 서버 연결이 정상이고 마지막 발생 후 30분 이상 재발하지 않아 일시 통신 오류를 해결완료로 전환했습니다.';
     }
 
-    // v23.7.553-test: v546~v550의 자동 Storage 추측·직접조회 코드를 제거했습니다.
+    // v23.7.553-recovery-test: v546~v550의 자동 Storage 추측·직접조회 코드를 제거했습니다.
     // 같은 오류가 최신 안정화 버전에서 30분 이상 재발하지 않을 때만 과거 기록을 자동 정리합니다.
     if (olderThanMinutes(row.last_seen_at, 30) && (
         /generatedStorageCandidates is not defined/i.test(message) ||
@@ -685,7 +683,19 @@
     if (!panel.classList.contains('sp-error-monitor') || !document.getElementById('sitepassErrorRowsV537')) renderAdminShell();
     var rowsBox = document.getElementById('sitepassErrorRowsV537');
     var statusBox = document.getElementById('sitepassErrorServerStatusV537');
-    if (rowsBox) rowsBox.innerHTML = '<div class="sp-em-empty">서버 오류 로그를 불러오는 중입니다.</div>';
+    var hasRenderedRows = !!(
+      rowsBox &&
+      (
+        rowsBox.querySelector('.sp-em-row') ||
+        rowsBox.querySelector('.sp-em-local')
+      )
+    );
+    if (rowsBox && !hasRenderedRows) {
+      rowsBox.innerHTML = '<div class="sp-em-empty">서버 오류 로그를 불러오는 중입니다.</div>';
+    }
+    if (statusBox && hasRenderedRows) {
+      statusBox.textContent = '서버 오류 로그를 새로 확인하는 중입니다. 기존 목록은 그대로 유지합니다.';
+    }
     adminLoading = true;
     try {
       var client = window.sitepassSupabase;
@@ -785,6 +795,13 @@
         if (!screen || !panel || screen.classList.contains('hidden')) return;
         var style = window.getComputedStyle ? getComputedStyle(screen) : null;
         if (style && style.display === 'none') return;
+
+        // v682: 오류로그는 독립 관리자 폴더에서만 렌더/자동조회한다.
+        if (
+          panel.hidden ||
+          panel.getAttribute('aria-hidden') === 'true'
+        ) return;
+
         if (!panel.classList.contains('sp-error-monitor')) renderAdminShell();
         if (!adminLoading && Date.now() - adminLastLoadedAt > 30000) loadAdminLogs(adminFilter);
       } catch (e) {}

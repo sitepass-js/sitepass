@@ -2,6 +2,13 @@
 // ---- merged from app-register-share-payment-05.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (05/15)
 async function completePendingRegistrationPayment(plan) {
+      const localPaymentTestAllowed =
+        typeof window.sitePassIsLocalPaymentTestRuntimeV718 === 'function' &&
+        window.sitePassIsLocalPaymentTestRuntimeV718() === true;
+      if (!localPaymentTestAllowed) {
+        alert('실제 결제는 결제대행사(PG) 연동 및 서버 승인검증이 완료되기 전에는 처리할 수 없습니다.');
+        return;
+      }
       if (sitePassRegistrationCompletionBusy) return;
       sitePassRegistrationCompletionBusy = true;
       try {
@@ -10,6 +17,11 @@ async function completePendingRegistrationPayment(plan) {
         if (!window.SITEPASS_TEST_NO_PAYMENT_MODE && !requirePaymentOwnerVerification('등록 결제')) return;
 
         const item = pending.item;
+        const pendingDraftIdV730 = String(
+          pending.serverRegistrationDraftIdV730
+          || (typeof getRegistrationDraft === 'function' && getRegistrationDraft() && getRegistrationDraft().serverRegistrationDraftIdV730)
+          || ''
+        ).trim();
         // v23.7.350: 테스트 등록완료에서는 기존 전체 보관함/구버전 사진 캐시를 병합하지 않습니다.
         // getItems()가 과거 base64 포함 저장값을 모두 읽으면서 등록완료 버튼이 오래 멈추는 문제가 있어,
         // 현재 STORAGE_KEY 목록 + 이번 등록 1건만 빠르게 처리합니다.
@@ -86,6 +98,12 @@ async function completePendingRegistrationPayment(plan) {
             try {
               const bgResult = await saveEquipmentItemToSupabase(paidItem, 'test_free_completed_background');
               sitePassEquipmentSyncMessage = bgResult && bgResult.ok ? '장비 서버저장 완료: 백그라운드 동기화' : ('장비 서버저장 확인 필요: ' + (bgResult?.error?.message || bgResult?.error || '알 수 없음'));
+              if (bgResult && bgResult.ok && pendingDraftIdV730) {
+                const lifecycleV730 = window.SitePassRegistrationDraftLifecycleV730;
+                if (lifecycleV730 && typeof lifecycleV730.finish === 'function') {
+                  await lifecycleV730.finish(pendingDraftIdV730, 'completed');
+                }
+              }
             } catch (e) {
               console.warn('테스트 등록완료 후 백그라운드 서버 저장 실패:', e);
               sitePassEquipmentSyncMessage = '장비 서버저장 확인 필요: ' + (e?.message || e);
@@ -103,6 +121,16 @@ async function completePendingRegistrationPayment(plan) {
           return;
         }
         try { await syncSupabaseEquipmentItems(true); } catch (e) {}
+        if (paidServerResult && paidServerResult.ok && pendingDraftIdV730) {
+          try {
+            const lifecycleV730 = window.SitePassRegistrationDraftLifecycleV730;
+            if (lifecycleV730 && typeof lifecycleV730.finish === 'function') {
+              await lifecycleV730.finish(pendingDraftIdV730, 'completed');
+            }
+          } catch (e) {
+            console.warn('등록완료 draft 추적 종료 지연:', e);
+          }
+        }
         clearPendingRegistration();
         clearRegistrationDraft();
         updateHomeRegistrationButton();
@@ -403,9 +431,14 @@ function resetForm(clearEdit = true) {
       }
       if (!item || typeof item !== 'object') item = {};
       item.code = item.code || row.code || '';
+      item.equipmentId = item.equipmentId || item.equipment_id || row.equipment_id || '';
+      item.equipment_id = item.equipment_id || item.equipmentId || row.equipment_id || '';
       item.equipmentNo = item.equipmentNo || row.equipment_no || '';
       item.equipmentName = item.equipmentName || row.equipment_name || '';
       item.ownerMemberId = item.ownerMemberId || row.owner_member_id || '';
+      item.ownerAuthUid = item.ownerAuthUid || item.owner_auth_uid || row.owner_auth_uid || row.owner_auth_user_id || '';
+      item.owner_auth_uid = item.owner_auth_uid || item.ownerAuthUid || row.owner_auth_uid || row.owner_auth_user_id || '';
+      item.ownerAuthUserId = item.ownerAuthUserId || item.owner_auth_user_id || item.ownerAuthUid || '';
       item.ownerSignupId = item.ownerSignupId || row.owner_signup_id || '';
       item.ownerProviderId = item.ownerProviderId || row.owner_provider_id || '';
       item.ownerName = item.ownerName || row.owner_name || '';
@@ -417,6 +450,7 @@ function resetForm(clearEdit = true) {
       item.createdAt = item.createdAt || row.created_at || '';
       item.updatedAt = item.updatedAt || row.updated_at || '';
       item.fromSupabaseEquipment = true;
+      sanitizeGhostEquipmentDocsV581(item);
       return item.code ? item : null;
     }
 
@@ -451,12 +485,66 @@ function resetForm(clearEdit = true) {
       });
     }
 
+    function sitePassDocPlaceholderFileNameV581(value) {
+      const text = String(value || '').trim();
+      if (!text) return true;
+      return (
+        /^첨부됨$/i.test(text) ||
+        /^첨부\s*없음$/i.test(text) ||
+        /^첨부\s*\d+장$/i.test(text) ||
+        /^첨부\s*\d+장\s*[·-]\s*첨부됨$/i.test(text) ||
+        /^첨부파일$/i.test(text)
+      );
+    }
+
+    function sitePassObjectHasRealAttachmentValueV581(obj) {
+      obj = (obj && typeof obj === 'object') ? obj : {};
+      const path = String(
+        obj.storagePath || obj.storage_path ||
+        obj.objectPath || obj.object_path ||
+        obj.filePath || obj.file_path || ''
+      ).replace(/^\/+/, '').trim();
+      if (path) return true;
+
+      const media = [
+        obj.previewDataUrl, obj.editDataUrl, obj.originalDataUrl,
+        obj.correctedDataUrl, obj.fileDataUrl, obj.dataUrl,
+        obj.fileObjectUrl, obj.blobUrl, obj.fileUrl, obj.downloadUrl,
+        obj.signedUrl, obj.storageAccessUrl, obj.storagePublicUrl,
+        obj.publicUrl
+      ];
+      return media.some(function(value) {
+        return !!String(value || '').trim();
+      });
+    }
+
     function docLooksAttached(doc) {
       doc = (doc && typeof doc === 'object') ? doc : {};
+      if (sitePassObjectHasRealAttachmentValueV581(doc)) return true;
       const pages = Array.isArray(doc.pages) ? doc.pages : [];
-      const pageCount = Number(doc.pageCount || pages.length || 0);
+      if (pages.some(sitePassObjectHasRealAttachmentValueV581)) return true;
       const fileName = String(doc.fileName || '').trim();
-      return !!fileName || pageCount > 0 || pages.length > 0;
+      return !!fileName && !sitePassDocPlaceholderFileNameV581(fileName);
+    }
+
+    function sanitizeGhostEquipmentDocsV581(item) {
+      if (!item || typeof item !== 'object' || !item.docs || typeof item.docs !== 'object') return item;
+      Object.keys(item.docs).forEach(function(key) {
+        const doc = item.docs[key];
+        if (!doc || typeof doc !== 'object' || String(doc.groupKey || 'equipment') !== 'equipment') return;
+        if (docLooksAttached(doc)) return;
+        doc.pages = [];
+        doc.pageCount = 0;
+        doc.fileName = '';
+        [
+          'storageBucket','storagePath','storage_bucket','storage_path',
+          'previewDataUrl','editDataUrl','originalDataUrl','correctedDataUrl',
+          'fileDataUrl','dataUrl','fileObjectUrl','blobUrl','fileUrl',
+          'downloadUrl','signedUrl','storageAccessUrl','storagePublicUrl',
+          'publicUrl'
+        ].forEach(function(field){ if (field in doc) doc[field] = ''; });
+      });
+      return item;
     }
 
     function getAttachedDocs(item) {
@@ -539,7 +627,7 @@ function resetForm(clearEdit = true) {
     }
 
 
-    // v23.7.553-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
+    // v23.7.553-recovery-test: 회원 보관함·상세보기·링크화면이 같은 서버 장비 원본을 사용합니다.
     // 일반회원 로그인 상태에서는 localStorage 장비목록을 원본으로 다시 섞지 않고,
     // 서버 최신목록 → 서버 캐시 → 아직 서버저장 확인 중인 현재 등록건 순서로만 찾습니다.
     function sitePassEquipmentCodeMatchesV519(item, targetCode) {
@@ -594,7 +682,8 @@ function resetForm(clearEdit = true) {
         code: String(item.code || ''),
         equipment_no: String(item.equipmentNo || ''),
         equipment_name: String(item.equipmentName || ''),
-        owner_member_id: String(item.ownerMemberId || ''),
+        owner_member_id: String(item.ownerMemberId || item.owner_member_id || ''),
+        owner_auth_uid: String(item.ownerAuthUid || item.owner_auth_uid || item.ownerAuthUserId || item.owner_auth_user_id || ''),
         owner_signup_id: String(item.ownerSignupId || ''),
         owner_provider_id: String(item.ownerProviderId || ''),
         owner_name: String(item.ownerName || ''),
@@ -626,6 +715,53 @@ function resetForm(clearEdit = true) {
       const code = String(error && error.code || '');
       const message = String(error && (error.message || error.details) || '').toLowerCase();
       return code === 'PGRST202' || message.indexOf('could not find the function') >= 0 || message.indexOf('schema cache') >= 0;
+    }
+
+    // STEP90 v23.7.732R1C:
+    // Storage에 파일을 올리기 전에 현재 로그인 회원의 장비 저장권한을 서버에서 먼저 고정합니다.
+    // 신규 장비는 서버 소유 draft만 만들고, 기존 장비는 현재 회원 소유인지 확인합니다.
+    async function prepareEquipmentItemSaveToSupabaseV732R1C(item) {
+      const supabaseApi = window.SitePassSupabaseApi;
+      if (!supabaseApi || typeof supabaseApi.rpc !== 'function') {
+        throw new Error('장비 저장 사전확인 실패: Supabase RPC 연결 없음');
+      }
+
+      const preparedItem = ensureEquipmentItemCodeForSync(
+        item && typeof item === 'object' ? item : {}
+      );
+      const code = String(preparedItem.code || '').trim();
+      if (!code) throw new Error('장비 저장 사전확인 실패: 장비 code 없음');
+
+      const rpcResult = await supabaseApi.rpc(
+        'sitepass_prepare_my_equipment_item_save_v1',
+        {
+          p_code: code,
+          p_equipment_no: String(preparedItem.equipmentNo || '').trim() || null,
+          p_equipment_name: String(preparedItem.equipmentName || '').trim() || null
+        }
+      );
+      const error = rpcResult && rpcResult.error ? rpcResult.error : null;
+      if (error) {
+        console.warn('장비 Storage 업로드 전 서버 소유권 사전확인 실패:', error);
+        throw error;
+      }
+
+      let data = rpcResult ? rpcResult.data : null;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) {}
+      }
+      if (!data || data.ok !== true) {
+        throw new Error('장비 저장 사전확인 결과를 확인하지 못했습니다.');
+      }
+      if (data.code && String(data.code) !== code) {
+        throw new Error('장비 저장 사전확인 식별자가 일치하지 않습니다.');
+      }
+
+      return {
+        ok: true,
+        item: preparedItem,
+        data: data
+      };
     }
 
     async function saveEquipmentItemToSupabase(item, reason) {
@@ -715,23 +851,19 @@ function resetForm(clearEdit = true) {
       try {
         let data = null;
         let error = null;
-        // v23.7.281: 서버 RPC 목록 조회를 우선 사용하고, 실패 시 직접 SELECT로 재시도합니다.
+        // v684: 관리자 전체 장비목록은 검증된 super_admin wrapper만 사용한다.
+        // RPC 실패 시 RLS를 우회하려는 direct SELECT fallback을 실행하지 않는다.
         if (supabaseApi.rpc) {
-          const rpcResult = await supabaseApi.rpc('sitepass_list_equipment_items', {});
+          const rpcResult = await supabaseApi.rpc('sitepass_admin_list_equipment_items_v1', {});
           error = rpcResult && rpcResult.error ? rpcResult.error : null;
           data = rpcResult ? rpcResult.data : null;
           if (typeof data === 'string') {
             try { data = JSON.parse(data); } catch (e) {}
           }
           if (data && !Array.isArray(data) && Array.isArray(data.items)) data = data.items;
-          if (error) console.warn('Supabase 장비 RPC 목록 실패, 직접 SELECT 재시도:', error);
-        }
-        if ((error || !Array.isArray(data)) && supabaseApi.select) {
-          const selectResult = await supabaseApi.select('sitepass_equipment_items', '*', function(query){
-            return query.eq('is_deleted', false).order('updated_at', { ascending:false }).limit(1000);
-          });
-          data = selectResult && selectResult.data ? selectResult.data : [];
-          error = selectResult && selectResult.error ? selectResult.error : null;
+          if (error) console.warn('Supabase 관리자 장비목록 wrapper 실패:', error);
+        } else {
+          error = { message:'관리자 장비목록 RPC 사용 불가' };
         }
         if (error) {
           sitePassEquipmentSyncMessage = '장비 서버목록 불러오기 실패: ' + (error.message || JSON.stringify(error));
@@ -798,15 +930,8 @@ function resetForm(clearEdit = true) {
     }
 
     function getCurrentSitePassMemberForEquipmentSync() {
-      try {
-        if (typeof getEquipmentRegistrationOwnerMember === 'function') {
-          const m = getEquipmentRegistrationOwnerMember();
-          if (m && typeof m === 'object') return m;
-        }
-      } catch (e) {}
-      try {
-        if (window.currentMember && typeof window.currentMember === 'object') return window.currentMember;
-      } catch (e) {}
+      // v23.7.561: 장비 소유권/캐시 범위는 '현재 로그인 세션'을 최우선으로 사용합니다.
+      // 등록 보조용 owner fallback이나 오래된 window.currentMember가 현재 Auth 계정을 덮지 못하게 합니다.
       try {
         if (typeof getCurrentMemberTest === 'function') {
           const m = getCurrentMemberTest();
@@ -816,6 +941,15 @@ function resetForm(clearEdit = true) {
       try {
         if (typeof getCurrentMember === 'function') {
           const m = getCurrentMember();
+          if (m && typeof m === 'object') return m;
+        }
+      } catch (e) {}
+      try {
+        if (window.currentMember && typeof window.currentMember === 'object') return window.currentMember;
+      } catch (e) {}
+      try {
+        if (typeof getEquipmentRegistrationOwnerMember === 'function') {
+          const m = getEquipmentRegistrationOwnerMember();
           if (m && typeof m === 'object') return m;
         }
       } catch (e) {}
@@ -860,8 +994,8 @@ function resetForm(clearEdit = true) {
       if (!member || typeof member !== 'object') return [];
       const loginId = String(member.signupId || member.loginId || member.signup_id || member.login_id || member.supabaseLoginId || '').trim();
       return Array.from(new Set([
-        member.id, member.memberId, member.userId,
-        member.authUserId, member.auth_user_id, member.supabaseAuthUserId,
+        member.authUserId, member.auth_user_id, member.supabaseAuthUserId, member.userId, member.user_id,
+        member.id, member.memberId, member.member_id,
         member.providerId, member.provider_id,
         loginId ? ('SB-' + loginId) : '',
         loginId ? ('SITEPASS-' + loginId) : '',
@@ -872,8 +1006,9 @@ function resetForm(clearEdit = true) {
     function getEquipmentOwnerStrongStorageScopeKeys(item) {
       item = item && typeof item === 'object' ? item : {};
       return Array.from(new Set([
+        item.ownerAuthUid, item.owner_auth_uid, item.ownerAuthUserId, item.owner_auth_user_id,
         item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id,
-        item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id,
+        item.authUserId, item.auth_user_id, item.userId, item.user_id,
         item.ownerProviderId, item.owner_provider_id, item.providerId, item.provider_id
       ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean)));
     }
@@ -890,11 +1025,11 @@ function resetForm(clearEdit = true) {
       const member = getCurrentSitePassMemberForEquipmentSync() || {};
       const currentLoginId = String(member.signupId || member.loginId || member.signup_id || member.login_id || member.supabaseLoginId || '').trim();
       const currentPrimary = [
-        member.id, member.memberId, member.userId,
-        member.authUserId, member.auth_user_id, member.supabaseAuthUserId,
+        member.authUserId, member.auth_user_id, member.supabaseAuthUserId, member.userId, member.user_id,
+        member.id, member.memberId, member.member_id,
         currentLoginId ? ('SB-' + currentLoginId) : ''
       ].map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
-      const ownerPrimary = [item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.ownerAuthUserId, item.owner_auth_user_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
+      const ownerPrimary = [item.ownerAuthUid, item.owner_auth_uid, item.ownerAuthUserId, item.owner_auth_user_id, item.ownerMemberId, item.owner_member_id, item.memberId, item.member_id, item.authUserId, item.auth_user_id, item.userId, item.user_id]
         .map(normalizeSitePassMemberStorageScopeKey).filter(Boolean);
       // v23.7.493: 로그인 직후 회원 객체에 id가 잠시 비어 있어도 서버 저장 시 사용한
       // SB-로그인아이디 형식을 현재 회원 고유키로 함께 계산하여 정상 서버자료를 누락시키지 않습니다.
@@ -931,7 +1066,14 @@ function resetForm(clearEdit = true) {
         return ownerProvider.some(function(key) { return currentProvider.indexOf(key) >= 0; });
       }
 
-      // 강한 식별자가 없는 아주 오래된 자료만 로그인ID/전화번호 등 구버전 키로 보조 판정합니다.
+      // v23.7.561: Supabase Auth 계정에서는 강한 소유자 식별자가 없는 구버전 자료를
+      // 이름/전화번호만으로 현재 계정 소유라고 추정하지 않습니다. 동일 이름의 독립 계정 혼합을 막습니다.
+      const currentAuthUidV561 = normalizeSitePassMemberStorageScopeKey(
+        member.authUserId || member.auth_user_id || member.supabaseAuthUserId || member.userId || member.user_id || ''
+      );
+      if (currentAuthUidV561) return false;
+
+      // Auth UID가 없는 아주 오래된 로컬 전용 계정에서만 로그인ID/전화번호 등 구버전 키로 보조 판정합니다.
       const currentKeys = getCurrentSitePassMemberStorageScopeKeys();
       if (!currentKeys.length) return false;
       const ownerKeys = getEquipmentOwnerStorageScopeKeys(item);
@@ -1028,7 +1170,12 @@ function resetForm(clearEdit = true) {
         if (!code || sitePassUnsyncedRetryingCodesV476.has(code)) return;
         sitePassUnsyncedRetryingCodesV476.add(code);
         setTimeout(function(){
-          Promise.resolve(uploadAndPersistEquipmentItemDocsInBackground(item, 'v476_unsynced_recovery')).then(function(result){
+          const documentUpload = window.SitePassDocument && window.SitePassDocument.upload;
+          if (!documentUpload || typeof documentUpload.persistEquipmentDocuments !== 'function') {
+            sitePassUnsyncedRetryingCodesV476.delete(code);
+            return;
+          }
+          Promise.resolve(documentUpload.persistEquipmentDocuments(item, 'v476_unsynced_recovery')).then(function(result){
             if (result && result.ok) clearSitePassEquipmentUnsyncedV476(code);
           }).catch(function(){}).finally(function(){ sitePassUnsyncedRetryingCodesV476.delete(code); });
         }, 1200 + index * 900);
@@ -1137,10 +1284,14 @@ function resetForm(clearEdit = true) {
       if (!member || typeof member !== 'object') return out;
       // v23.7.350: PC 로컬 보관함을 서버로 옮길 때 기존 항목의 오래된 owner 값이 남아 있으면
       // 휴대폰에서 같은 로그인 회원의 장비로 불러오지 못합니다. 일반회원 저장/재동기화는 현재 로그인 회원값으로 확정합니다.
-      const memberId = member.id || member.authUserId || member.userId || '';
-      const signupId = member.signupId || member.loginId || member.email || '';
-      const providerId = member.providerId || member.provider_id || member.authUserId || member.id || signupId || '';
-      if (force || !out.ownerMemberId) out.ownerMemberId = memberId || out.ownerMemberId || '';
+      const memberId = member.id || member.memberId || member.member_id || member.serverMemberId || '';
+      const authUid = member.authUserId || member.auth_user_id || member.supabaseAuthUserId || member.userId || member.user_id || '';
+      const signupId = member.signupId || member.loginId || member.login_id || member.supabaseLoginId || member.email || '';
+      const providerId = member.providerId || member.provider_id || signupId || '';
+      if ((force || !out.ownerMemberId) && memberId) out.ownerMemberId = memberId;
+      if ((force || !out.ownerAuthUid) && authUid) out.ownerAuthUid = authUid;
+      if ((force || !out.owner_auth_uid) && authUid) out.owner_auth_uid = authUid;
+      if ((force || !out.ownerAuthUserId) && authUid) out.ownerAuthUserId = authUid;
       if (force || !out.ownerSignupId) out.ownerSignupId = signupId || out.ownerSignupId || '';
       if (force || !out.ownerProviderId) out.ownerProviderId = providerId || out.ownerProviderId || '';
       if (force || !out.ownerName) out.ownerName = member.name || member.fullName || out.ownerName || '';
@@ -2092,7 +2243,11 @@ let sitePassStorageQuotaNoticeShownV496 = false;
 
     async function uploadAndPersistEquipmentItemDocsInBackground(item, reason, onProgress) {
       try {
-        const storageItem = await uploadEquipmentItemDocsToSupabaseStorage(item, onProgress);
+        // STEP90 R1C: Storage 업로드보다 먼저 서버 소유권/preflight를 통과해야 합니다.
+        // preflight 실패 시 Storage 객체를 만들지 않고 fail-closed 합니다.
+        const preflight = await prepareEquipmentItemSaveToSupabaseV732R1C(item);
+        const preparedItem = preflight && preflight.item ? preflight.item : item;
+        const storageItem = await uploadEquipmentItemDocsToSupabaseStorage(preparedItem, onProgress);
         const serverItem = stripItemDataUrlsForServerStorage(storageItem);
         let persistResult = null;
         try { persistResult = await saveEquipmentItemToSupabase(serverItem, reason || 'storage_background'); } catch (e) { console.warn('Storage 업로드 후 서버저장 실패:', e); persistResult = { ok:false, error:e }; }
@@ -2125,7 +2280,8 @@ let sitePassStorageQuotaNoticeShownV496 = false;
         'key','title','groupKey','groupTitle','required','expiry','expireDate','educationDate','dateMode','dateLabel','fileName',
         'workerUid','workerIndex','workerType','workerLabel','workerPhone','workerTask',
         'driverPhone','personPhone','authPhone','authPersonName','authBirth6','authGenderDigit',
-        'authCarrier','authVerified','authVerifiedAt','juminMasked','authJuminMasked'
+        'authCarrier','authVerified','authVerifiedAt','authSubjectId','authVerificationId','identityStatus',
+        'juminMasked','authJuminMasked'
       ].forEach(function(key) {
         if (doc[key] !== undefined && doc[key] !== null && doc[key] !== '') tiny[key] = doc[key];
       });
@@ -2145,7 +2301,9 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       tiny.correctedDataUrl = '';
       tiny.previewChoice = firstStoredPage ? 'storage' : '';
       if (firstStoredPage) tiny.storageMode = doc.storageMode || 'supabase-storage-signed-v523';
-      tiny.fileName = tiny.fileName || (count ? ('첨부 ' + count + '장') : '첨부됨');
+      tiny.fileName = docLooksAttached(doc)
+        ? (tiny.fileName || (count ? ('첨부 ' + count + '장') : '첨부파일'))
+        : '';
       tiny.storageNote = '브라우저 저장공간 부족으로 사진 미리보기는 저장하지 않고 서류명/만료일/QR정보만 저장됨';
       return tiny;
     }
@@ -2191,7 +2349,17 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       // 등록 저장공간 정리 과정에서 삭제하지 않습니다. 작성중 임시자료만 정리합니다.
       try { localStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
       try { sessionStorage.removeItem(PENDING_REGISTRATION_KEY); } catch (e) {}
-      try { localStorage.removeItem(REGISTRATION_DRAFT_KEY); } catch (e) {}
+
+      // STEP88 v730R3: 현재 회원의 scoped registration draft만 정리합니다.
+      // 다른 회원 scoped draft와 소유자를 증명할 수 없는 legacy 공용 draft는 건드리지 않습니다.
+      try {
+        const currentDraftKeyV730R3 =
+          window.sitePassGetRegistrationDraftStorageKeyV730R3 &&
+          window.sitePassGetRegistrationDraftStorageKeyV730R3();
+        if (currentDraftKeyV730R3) {
+          localStorage.removeItem(currentDraftKeyV730R3);
+        }
+      } catch (e) {}
     }
 
     function clearLegacyEquipmentStorageForCompactSave() {
@@ -2332,8 +2500,8 @@ let sitePassStorageQuotaNoticeShownV496 = false;
           '<div class="small">담당자 QR·링크 만료: ' + expireText + '</div>' +
           (isNew ? '<div class="small">등록 직후에는 새 등록건을 먼저 표시하고 기존 보관함 항목은 함께 보존합니다.</div>' : '') +
           '<div class="archive-card-actions">' +
-            '<button class="ghost" onclick="renderDetail(\'' + code + '\')">상세보기</button>' +
-            '<button class="primary" onclick="startEditEquipment(\'' + code + '\')">수정/갱신</button>' +
+            '<button class="ghost" onclick="window.SitePassEquipment.detail.open(\'' + code + '\')">상세보기</button>' +
+            '<button class="primary" onclick="window.SitePassEquipment.update.start(\'' + code + '\')">수정/갱신</button>' +
             '<button class="ghost" onclick="openManagerPublicView(\'' + code + '\')">링크화면</button>' +
             '<button class="dangerBtn" onclick="deleteItem(\'' + code + '\')">삭제</button>' +
           '</div>' +
@@ -2476,6 +2644,13 @@ let sitePassStorageQuotaNoticeShownV496 = false;
       if (sitePassRegistrationCompletionBusy) return false;
       sitePassRegistrationCompletionBusy = true;
       item = (item && typeof item === 'object') ? item : {};
+      const pendingV730 = typeof getPendingRegistration === 'function' ? getPendingRegistration() : null;
+      const localDraftV730 = typeof getRegistrationDraft === 'function' ? getRegistrationDraft() : null;
+      const completionDraftIdV730 = String(
+        pendingV730 && pendingV730.serverRegistrationDraftIdV730
+        || localDraftV730 && localDraftV730.serverRegistrationDraftIdV730
+        || ''
+      ).trim();
       setSitePassRegistrationUploadBusyV515(true, '서류 저장중');
       try {
         try { saveRegistrationDraftNow(); } catch (e) {}
@@ -2503,7 +2678,11 @@ let sitePassStorageQuotaNoticeShownV496 = false;
         if (!equipmentRegister.buildPaidRegistrationItem && paidItem.bundleMeta) paidItem.bundleMeta.paymentText = info.planText + ' 결제완료';
         paidItem = applyCurrentMemberOwnerForEquipmentSync(paidItem, true);
 
-        const uploaded = await uploadAndPersistEquipmentItemDocsInBackground(
+        const documentUpload = window.SitePassDocument && window.SitePassDocument.upload;
+        if (!documentUpload || typeof documentUpload.persistEquipmentDocuments !== 'function') {
+          throw new Error('[SitePass Step81] document upload public API unavailable');
+        }
+        const uploaded = await documentUpload.persistEquipmentDocuments(
           paidItem,
           'test_free_completed_storage_verified_v517',
           updateSitePassRegistrationUploadProgressV515
@@ -2520,6 +2699,16 @@ let sitePassStorageQuotaNoticeShownV496 = false;
         const items = getImmediateRegistrationCompletionItems(savedItem);
         const saveResult = setItemsForImmediateRegistrationCompletion(items);
         try { rememberRuntimeEquipmentItems(items); } catch (e) {}
+        if (completionDraftIdV730) {
+          try {
+            const lifecycleV730 = window.SitePassRegistrationDraftLifecycleV730;
+            if (lifecycleV730 && typeof lifecycleV730.finish === 'function') {
+              await lifecycleV730.finish(completionDraftIdV730, 'completed');
+            }
+          } catch (e) {
+            console.warn('테스트 등록완료 draft 추적 종료 지연:', e);
+          }
+        }
         try { clearPendingRegistration(); } catch (e) {}
         try { clearRegistrationDraft(); } catch (e) {}
         try { resetForm(false); } catch (e) {}

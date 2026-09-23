@@ -1,4 +1,4 @@
-// SitePass v23.7.553-test - 회원 상세보기·공유 준비 (담당자 렌더링은 recipient.html 전용) (03/04)
+// SitePass STEP83 V34 - 공유 역할 모듈 분리 어댑터 + 기존 V31/V33 정상 동작 보존 (03/04)
 // ---- merged from app-register-share-payment-09.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (09/15)
 function shareOneListItemEmail(code) {
@@ -35,7 +35,23 @@ function shareOneListItemEmail(code) {
     const PUBLIC_SHARE_TABLE = 'sitepass_public_shares';
 
     function getSitePassSupabaseClient() {
-      return window.sitepassSupabase || null;
+      try {
+        if (window.SitePassSupabaseApi && typeof window.SitePassSupabaseApi.getClient === 'function') {
+          const apiClient = window.SitePassSupabaseApi.getClient();
+          if (apiClient) return apiClient;
+        }
+      } catch (e) {}
+      return window.sitepassSupabase || window.supabaseClient || null;
+    }
+
+    async function sitePassWaitForSupabaseClientV609(timeoutMs) {
+      const deadline = Date.now() + Math.max(500, Number(timeoutMs || 3500));
+      let client = getSitePassSupabaseClient();
+      while ((!client || typeof client.rpc !== 'function') && Date.now() < deadline) {
+        await new Promise(function(resolve){ setTimeout(resolve,120); });
+        client = getSitePassSupabaseClient();
+      }
+      return client && typeof client.rpc === 'function' ? client : null;
     }
 
     // v23.7.350: 담당자 공유 링크로 받은 자료는 수신자 기기의 localStorage에 의존하지 않고
@@ -268,11 +284,170 @@ function shareOneListItemEmail(code) {
       obj.downloadUrl = obj.downloadUrl || url;
       obj.storagePublicUrl = obj.storagePublicUrl || url;
       obj.publicUrl = obj.publicUrl || url;
-      // v23.7.553-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
+      // v23.7.553-recovery-test: data/blob 원본은 Storage 재업로드에 필요한 유일한 원본일 수 있습니다.
       // 경로에서 만든 오래된 URL로 덮어쓰지 않고, URL 칸이 비어 있을 때만 채웁니다.
       if (!obj.previewDataUrl) obj.previewDataUrl = url;
       if (!obj.editDataUrl) obj.editDataUrl = url;
       return obj;
+    }
+
+    // STEP91 R9E:
+    // sitepass-documents는 현재 Private bucket이다.
+    // 일반회원 상세 초기렌더에서 legacy/current /object/public/sitepass-documents
+    // 주소를 <img>에 먼저 넣지 않는다. signed URL과 data/blob은 유지한다.
+    function isSitePassPrivateDocumentPublicUrlV91(value) {
+      const text = String(value || '').trim();
+      if (!text) return false;
+      return /\/storage\/v1\/object\/public\/sitepass-documents(?:\/|$)/i.test(text);
+    }
+
+    // STEP91 R9G:
+    // Supabase signed URL의 JWT exp를 읽어 이미 만료된 URL을 초기 상세 렌더에 사용하지 않는다.
+    // URL이 signed sitepass-documents가 아니거나 exp를 읽지 못하면 여기서 임의 만료판정하지 않는다.
+    function getSitePassPrivateSignedUrlExpiryMsV91(value) {
+      const text = String(value || '').trim();
+      if (
+        !text ||
+        !/\/storage\/v1\/object\/sign\/sitepass-documents(?:\/|$)/i.test(text)
+      ) return 0;
+
+      try {
+        const parsed = new URL(
+          text,
+          window.location && window.location.href
+            ? window.location.href
+            : undefined
+        );
+
+        const token = String(
+          parsed.searchParams.get('token') || ''
+        ).trim();
+
+        const parts = token.split('.');
+        if (parts.length < 2) return 0;
+
+        let payloadText = String(parts[1] || '')
+          .replace(/-/g, '+')
+          .replace(/_/g, '/');
+
+        while (payloadText.length % 4) {
+          payloadText += '=';
+        }
+
+        const payload = JSON.parse(atob(payloadText));
+        const exp = Number(payload && payload.exp || 0);
+
+        return Number.isFinite(exp) && exp > 0
+          ? exp * 1000
+          : 0;
+      } catch (e) {
+        return 0;
+      }
+    }
+
+    function isSitePassPrivateDocumentExpiredSignedUrlV91(value, obj) {
+      const text = String(value || '').trim();
+
+      if (
+        !text ||
+        !/\/storage\/v1\/object\/sign\/sitepass-documents(?:\/|$)/i.test(text)
+      ) return false;
+
+      const nowWithBoundary = Date.now() + 5000;
+
+      const storedExpiresAt = Number(
+        obj && obj.storageAccessExpiresAt || 0
+      );
+
+      if (
+        Number.isFinite(storedExpiresAt) &&
+        storedExpiresAt > 0 &&
+        storedExpiresAt <= nowWithBoundary
+      ) {
+        return true;
+      }
+
+      const signedExpiry =
+        getSitePassPrivateSignedUrlExpiryMsV91(text);
+
+      return (
+        Number.isFinite(signedExpiry) &&
+        signedExpiry > 0 &&
+        signedExpiry <= nowWithBoundary
+      );
+    }
+
+    function clearSitePassPrivateDocumentPublicUrlsV91(obj) {
+      if (!obj || typeof obj !== 'object') return obj;
+
+      let expiredSignedRemoved = false;
+
+      [
+        'fileUrl','file_url',
+        'downloadUrl','download_url',
+        'storagePublicUrl','storage_public_url',
+        'publicUrl','public_url',
+        'previewUrl','preview_url',
+        'previewDataUrl','editDataUrl',
+        'storageAccessUrl','storage_access_url',
+        'signedUrl','signed_url',
+        'url','src','imageUrl','image_url'
+      ].forEach(function(key){
+        const value = obj[key];
+
+        if (isSitePassPrivateDocumentPublicUrlV91(value)) {
+          obj[key] = '';
+          return;
+        }
+
+        if (
+          isSitePassPrivateDocumentExpiredSignedUrlV91(
+            value,
+            obj
+          )
+        ) {
+          obj[key] = '';
+          expiredSignedRemoved = true;
+        }
+      });
+
+      if (expiredSignedRemoved) {
+        obj.storageAccessExpiresAt = 0;
+      }
+
+      return obj;
+    }
+
+    function sanitizeMemberDetailPrivateStorageUrlsV91(item) {
+      if (!item || typeof item !== 'object') return item;
+      const docs = item.docs && typeof item.docs === 'object'
+        ? item.docs
+        : {};
+
+      Object.keys(docs).forEach(function(key){
+        const doc = docs[key] && typeof docs[key] === 'object'
+          ? docs[key]
+          : {};
+
+        clearSitePassPrivateDocumentPublicUrlsV91(doc);
+        doc.sitePassMemberDetailPrivateFailClosedV91 = true;
+
+        const pages = Array.isArray(doc.pages)
+          ? doc.pages
+          : [];
+
+        pages.forEach(function(page){
+          clearSitePassPrivateDocumentPublicUrlsV91(page);
+          if (page && typeof page === 'object') {
+            page.sitePassMemberDetailPrivateFailClosedV91 = true;
+          }
+        });
+
+        docs[key] = doc;
+      });
+
+      item.docs = docs;
+      return item;
     }
 
     function hydrateManagerShareStorageUrlsV497(item) {
@@ -340,17 +515,22 @@ function shareOneListItemEmail(code) {
       if (stored) candidates.push(stored);
       const unique = Array.from(new Set(candidates.filter(Boolean))).slice(0, 4);
       if (!unique.length) return false;
-      const checks = await Promise.all(unique.map(function(url){ return probeManagerSharePublicUrlV498(url); }));
-      const index = checks.findIndex(Boolean);
-      if (index < 0) {
-        clearManagerShareUrlFieldsV511(obj);
-        obj.storageUrlInvalidV511 = true;
-        return false;
+
+      // STEP82 V31:
+      // fresh canonical/signed 후보가 먼저 정상이라면 뒤의 stale 저장 URL을
+      // 불필요하게 GET하지 않는다. 실패 후보가 있을 때만 다음 후보로 진행한다.
+      for (const url of unique) {
+        const ok = await probeManagerSharePublicUrlV498(url);
+        if (!ok) continue;
+        applyManagerShareRecoveredUrlV497(obj, url);
+        obj.storageUrlInvalidV511 = false;
+        obj.storageUrlValidatedAt = new Date().toISOString();
+        return true;
       }
-      applyManagerShareRecoveredUrlV497(obj, unique[index]);
-      obj.storageUrlInvalidV511 = false;
-      obj.storageUrlValidatedAt = new Date().toISOString();
-      return true;
+
+      clearManagerShareUrlFieldsV511(obj);
+      obj.storageUrlInvalidV511 = true;
+      return false;
     }
 
     async function validateManagerShareStoredFilesV511(item) {
@@ -426,13 +606,47 @@ function shareOneListItemEmail(code) {
       return false;
     }
 
+    // STEP81 V10:
+    // 공유 준비/검증은 상세보기 live item과 객체 참조를 공유하면 안 된다.
+    // plain object/array만 깊게 복제하고 File/Blob/Date 등 non-plain 값은 그대로 둔다.
+    // URL clear/hydrate 대상인 docs/pages는 plain object이므로 완전히 격리된다.
+    function cloneManagerShareLiveIsolationV10(value, seen) {
+      if (!value || typeof value !== 'object') return value;
+
+      seen = seen || new WeakMap();
+      if (seen.has(value)) return seen.get(value);
+
+      if (Array.isArray(value)) {
+        const arrayCopy = [];
+        seen.set(value, arrayCopy);
+        value.forEach(function(entry){
+          arrayCopy.push(cloneManagerShareLiveIsolationV10(entry, seen));
+        });
+        return arrayCopy;
+      }
+
+      let proto = null;
+      try { proto = Object.getPrototypeOf(value); } catch (e) {}
+
+      if (proto && proto !== Object.prototype) {
+        return value;
+      }
+
+      const copy = {};
+      seen.set(value, copy);
+      Object.keys(value).forEach(function(key){
+        copy[key] = cloneManagerShareLiveIsolationV10(value[key], seen);
+      });
+      return copy;
+    }
+
     function getManagerShareCandidateScoreV497(item) {
       if (!item) return -1;
       hydrateManagerShareStorageUrlsV497(item);
       const stored = countManagerShareStoredUrlsV496(item);
       const embedded = countManagerShareEmbeddedAttachmentsV497(item);
       const docCount = Object.keys((item && item.docs) || {}).length;
-      // v23.7.553-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
+      // v23.7.553-recovery-test: 휴대폰에 남은 data/blob 원본을 오래된 404 URL보다 우선합니다.
       // 이전 점수는 저장 URL에 가산점이 있어, 실제 원본이 있는 로컬 문서가
       // 잘못된 서버 URL 문서로 덮이는 경우가 있었습니다.
       let score = embedded * 5000 + stored * 2000 + stored * 40 + docCount;
@@ -472,30 +686,68 @@ function shareOneListItemEmail(code) {
       return hydrateManagerShareStorageUrlsV497(merged);
     }
 
-    function getBestManagerShareServerItemV497(item) {
-      const candidates = [item].filter(Boolean);
+    function getBestManagerShareServerItemV497(item, options) {
+      options = options && typeof options === 'object' ? options : {};
+      const isolateV10 = options.isolateLiveObjectsV10 === true;
+
+      function candidateV10(value) {
+        if (!value) return value;
+        return isolateV10
+          ? cloneManagerShareLiveIsolationV10(value)
+          : value;
+      }
+
+      const baseItem = candidateV10(item);
+      const candidates = [baseItem].filter(Boolean);
+
       try {
         const server = getSitePassServerAuthoritativeEquipmentItems();
-        (server || []).forEach(function(row){ if (isSameManagerShareEquipmentV497(row, item)) candidates.push(row); });
+        (server || []).forEach(function(row){
+          if (isSameManagerShareEquipmentV497(row, item)) {
+            candidates.push(candidateV10(row));
+          }
+        });
       } catch (e) {}
+
       try {
         const cached = getServerEquipmentCache();
-        (cached || []).forEach(function(row){ if (isSameManagerShareEquipmentV497(row, item)) candidates.push(row); });
+        (cached || []).forEach(function(row){
+          if (isSameManagerShareEquipmentV497(row, item)) {
+            candidates.push(candidateV10(row));
+          }
+        });
       } catch (e) {}
+
       // v23.7.497: 일반회원 보관함은 서버 기준이지만, 공유할 때는 휴대폰에 남은
       // 현재/구버전 등록 원본까지 찾아 Storage 업로드에 사용할 수 있게 합니다.
       try {
         if (typeof getLocalVisibleEquipmentItemsForServerResync === 'function') {
           (getLocalVisibleEquipmentItemsForServerResync() || []).forEach(function(row){
-            if (isSameManagerShareEquipmentV497(row, item)) candidates.push(row);
+            if (isSameManagerShareEquipmentV497(row, item)) {
+              candidates.push(candidateV10(row));
+            }
           });
         }
       } catch (e) { console.warn('담당자 공유용 기존 등록자료 검색 실패:', e); }
+
       try {
-        const pending = typeof getPendingRegistration === 'function' ? getPendingRegistration() : null;
-        if (pending && pending.item && isSameManagerShareEquipmentV497(pending.item, item)) candidates.push(pending.item);
+        const pending = typeof getPendingRegistration === 'function'
+          ? getPendingRegistration()
+          : null;
+
+        if (
+          pending &&
+          pending.item &&
+          isSameManagerShareEquipmentV497(pending.item, item)
+        ) {
+          candidates.push(candidateV10(pending.item));
+        }
       } catch (e) {}
-      return mergeManagerShareCandidatesV497(candidates, item) || item;
+
+      return mergeManagerShareCandidatesV497(
+        candidates,
+        baseItem || candidateV10(item)
+      ) || baseItem || candidateV10(item);
     }
 
 
@@ -789,22 +1041,108 @@ function shareOneListItemEmail(code) {
       try {
         const client = getSitePassSupabaseClient();
         const code = String(item && (item.code || item.publicShareCode || item.managerShareCode) || '').trim();
-        if (!client || !code || typeof client.from !== 'function') return { ok:false, item:item };
+        if (!client || !code || typeof client.rpc !== 'function') {
+          return { ok:false, item:item };
+        }
+
+        // STEP82 V31:
+        // sitepass_public_shares 직접 SELECT는 RLS를 우회하지 않는다.
+        // 서버 발급 64-hex capability가 확인되는 경우에만 기존 공개조회 RPC를 사용하고,
+        // capability가 없으면 이 legacy 복구 경로만 건너뛴다.
+        let sig = String(
+          item && (
+            item.share_sig ||
+            item.publicShareSig ||
+            item.managerShareSig ||
+            item.manager_share_sig
+          ) || ''
+        ).trim();
+
+        if (!/^[0-9a-f]{64}$/i.test(sig)) {
+          try {
+            const qrShare = getQrShareModule();
+            const issued =
+              qrShare &&
+              typeof qrShare.getServerIssuedShareV676 === 'function'
+                ? qrShare.getServerIssuedShareV676(code)
+                : null;
+            sig = String(issued && issued.share_sig || '').trim();
+          } catch (e) {
+            sig = '';
+          }
+        }
+
+        if (!/^[0-9a-f]{64}$/i.test(sig)) {
+          return {
+            ok:false,
+            item:item,
+            skippedCapabilityRequiredV31:true
+          };
+        }
+
         const result = await withManagerShareTimeoutV498(
-          client.from(PUBLIC_SHARE_TABLE)
-            .select('item_data,payload,share_code,updated_at')
-            .eq('share_code', code)
-            .order('updated_at', { ascending:false })
-            .limit(1)
-            .maybeSingle(),
+          client.rpc(
+            'sitepass_get_public_share_item',
+            {
+              p_share_code:code,
+              p_share_sig:sig
+            }
+          ),
           1800
         );
-        if (!result || result.error || !result.data) return { ok:false, item:item, error:result && result.error };
-        const previous = result.data.item_data || result.data.payload;
-        if (!previous || typeof previous !== 'object') return { ok:false, item:item };
-        const merged = mergeManagerShareCandidatesV497([item, previous], item);
+
+        if (!result || result.error || !result.data) {
+          return {
+            ok:false,
+            item:item,
+            error:result && result.error
+          };
+        }
+
+        const root =
+          Array.isArray(result.data)
+            ? (result.data[0] || null)
+            : result.data;
+
+        if (
+          !root ||
+          root.ok === false ||
+          root.notFound ||
+          root.not_found ||
+          root.expired
+        ) {
+          return {
+            ok:false,
+            item:item,
+            error:root && (root.message || root.error)
+              ? new Error(String(root.message || root.error))
+              : null
+          };
+        }
+
+        const previous =
+          root.item_data ||
+          root.item ||
+          root.payload ||
+          null;
+
+        if (!previous || typeof previous !== 'object') {
+          return { ok:false, item:item };
+        }
+
+        const merged = mergeManagerShareCandidatesV497(
+          [item, previous],
+          item
+        );
         hydrateManagerShareStorageUrlsV497(merged);
-        return { ok:countManagerShareStoredUrlsV496(merged) > 0 || countManagerShareEmbeddedAttachmentsV497(merged) > 0, item:merged };
+
+        return {
+          ok:
+            countManagerShareStoredUrlsV496(merged) > 0 ||
+            countManagerShareEmbeddedAttachmentsV497(merged) > 0,
+          item:merged,
+          rpcCapabilityRecoveryV31:true
+        };
       } catch (e) {
         return { ok:false, item:item, error:e };
       }
@@ -867,11 +1205,95 @@ function shareOneListItemEmail(code) {
       return item;
     }
 
-    async function prepareManagerShareItemsForServerV497(items) {
+    // STEP83 V35:
+    // 공유/QR 준비 전에 서버 canonical current 문서상태를 read-only로 확인한다.
+    // stale authoritative/cache/local 후보가 더 많은 URL 메타정보를 가지고 있어도
+    // 현재 document/version/storage_path를 덮어쓰지 못하게 기존 V9 overlay 전에 사용한다.
+    // canonical 조회가 불가능하거나 code가 다르면 기존 V34 경로를 그대로 유지한다.
+    async function hydrateManagerShareCanonicalCurrentV35(item) {
+      if (!item || typeof item !== 'object') return null;
+
+      const documentApi =
+        window.SitePassDocument &&
+        window.SitePassDocument.upload;
+
+      if (
+        !documentApi ||
+        typeof documentApi.hydrateActiveDocumentState !== 'function'
+      ) {
+        return null;
+      }
+
+      try {
+        const canonical =
+          await documentApi.hydrateActiveDocumentState(item);
+
+        if (!canonical || typeof canonical !== 'object') {
+          return null;
+        }
+
+        const expectedCode =
+          String(item.code || '').trim();
+
+        const returnedCode =
+          String(canonical.code || '').trim();
+
+        if (
+          expectedCode &&
+          returnedCode &&
+          expectedCode !== returnedCode
+        ) {
+          console.warn(
+            '담당자 공유 canonical 서류 code 불일치로 기존 공유준비를 유지합니다.',
+            {
+              expectedCode: expectedCode,
+              returnedCode: returnedCode
+            }
+          );
+          return null;
+        }
+
+        canonical.shareCanonicalHydratedAtV35 =
+          new Date().toISOString();
+
+        return canonical;
+      } catch (error) {
+        console.warn(
+          '담당자 공유 canonical current 서류 준비 실패로 기존 공유준비를 유지합니다.',
+          error
+        );
+        return null;
+      }
+    }
+
+    async function prepareManagerShareItemsForServerV497(items, options) {
+      options = options && typeof options === 'object' ? options : {};
+      const isolateV10 = options.isolateLiveObjectsV10 === true;
       const prepared = [];
-      for (const rawItem of (items || []).filter(Boolean)) {
-        let item = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(rawItem));
+
+      for (const rawInput of (items || []).filter(Boolean)) {
+        const rawItem = isolateV10
+          ? cloneManagerShareLiveIsolationV10(rawInput)
+          : rawInput;
+
+        const canonicalCurrentV35 =
+          await hydrateManagerShareCanonicalCurrentV35(rawItem);
+
+        let item = mergeLegacyManagerShareDocumentsV498(
+          getBestManagerShareServerItemV497(rawItem, options)
+        );
         item = recoverManagerShareItemFromRegistrationDomV500(item);
+
+        // STEP83 V35:
+        // stale 후보 병합/DOM 복구 뒤, Storage URL 검증 전에 서버 canonical current 문서를
+        // 동일 docKey에만 다시 덮어써서 현재 version/path가 과거 URL 후보에 밀리지 않게 한다.
+        if (canonicalCurrentV35) {
+          item = overlayCanonicalCurrentDocumentsV9(
+            item,
+            canonicalCurrentV35
+          );
+        }
+
         // 서버/구버전 자료를 사용하더라도 방금 만든 공유 만료일·토큰은 유지합니다.
         item.managerExpireAt = rawItem.managerExpireAt || item.managerExpireAt;
         item.managerShareToken = rawItem.managerShareToken || item.managerShareToken;
@@ -886,7 +1308,9 @@ function shareOneListItemEmail(code) {
         if (managerShareHasAttachmentMetadataV496(item) && !countManagerShareStoredUrlsV496(item)) {
           const previousShare = await recoverManagerShareItemFromPreviousPublicShareV499(item);
           if (previousShare && previousShare.item) {
-            item = previousShare.item;
+            item = isolateV10
+              ? cloneManagerShareLiveIsolationV10(previousShare.item)
+              : previousShare.item;
             await validateManagerShareStoredFilesV511(item);
           }
         }
@@ -896,9 +1320,13 @@ function shareOneListItemEmail(code) {
             const uploaded = await uploadEquipmentItemDocsToSupabaseStorage(item);
             item = hydrateManagerShareStorageUrlsV497(stripItemDataUrlsForServerStorage(uploaded));
             await validateManagerShareStoredFilesV511(item);
-            Promise.resolve(saveEquipmentItemToSupabase(item, 'manager_share_prepare_v511')).catch(function(e){
-              console.warn('담당자 공유 준비 후 장비 서버 갱신 실패:', e);
-            });
+            if (!isolateV10) {
+              Promise.resolve(
+                saveEquipmentItemToSupabase(item, 'manager_share_prepare_v511')
+              ).catch(function(e){
+                console.warn('담당자 공유 준비 후 장비 서버 갱신 실패:', e);
+              });
+            }
           } catch (e) {
             return { ok:false, message:'서류 사진 서버 업로드 중 오류가 발생했습니다. ' + (e && e.message ? e.message : String(e)) };
           }
@@ -910,9 +1338,16 @@ function shareOneListItemEmail(code) {
           await validateManagerShareStoredFilesV511(item);
           if (recovered && recovered.ok && countManagerShareStoredUrlsV496(item)) {
             const serverItem = stripItemDataUrlsForServerStorage(item);
-            Promise.resolve(saveEquipmentItemToSupabase(serverItem, 'manager_share_storage_recovery_v498')).catch(function(e){
-              console.warn('담당자 공유 Storage 복구 후 장비 서버 갱신 실패:', e);
-            });
+            if (!isolateV10) {
+              Promise.resolve(
+                saveEquipmentItemToSupabase(
+                  serverItem,
+                  'manager_share_storage_recovery_v498'
+                )
+              ).catch(function(e){
+                console.warn('담당자 공유 Storage 복구 후 장비 서버 갱신 실패:', e);
+              });
+            }
           }
         }
 
@@ -925,6 +1360,10 @@ function shareOneListItemEmail(code) {
         } else {
           item.shareFilesPendingRecovery = false;
         }
+        if (isolateV10) {
+          item.sharePreparationIsolatedV10 = true;
+        }
+
         prepared.push(item);
       }
       return { ok:true, items:prepared };
@@ -937,53 +1376,24 @@ function shareOneListItemEmail(code) {
     }
 
     async function saveManagerShareItemsToSupabase(items) {
-      const qrShare = getQrShareModule();
-      if (qrShare.saveManagerShareItemsToSupabase) {
-        return await qrShare.saveManagerShareItemsToSupabase(items, {
-          getClient: getSitePassSupabaseClient,
-          getExpireAt: getManagerExpireAt,
-          getSignature: getManagerLinkSignature,
-          cloneItem: cloneShareItemForServer,
-          getLabel: getShareItemLabel,
-          getMember: getManagerShareCurrentMemberV498
-        });
+      const shareCreate = window.SitePassShareCreate;
+
+      if (!shareCreate || typeof shareCreate.saveManagerShareItemsToSupabase !== 'function') {
+        return {
+          ok:false,
+          message:'STEP83_SHARE_CREATE_MODULE_REQUIRED',
+          serverSignatureModuleRequired:true
+        };
       }
-      const client = getSitePassSupabaseClient();
-      if (!client) {
-        return { ok:false, message:'Supabase 연결 객체가 없습니다.' };
-      }
-      const safeItems = (items || []).filter(Boolean);
-      if (!safeItems.length) return { ok:true, saved:0 };
-      try {
-        const nowIso = new Date().toISOString();
-        const rows = safeItems.map(item => {
-          const code = ensureManagerShareCodeForItem(item);
-          const expireAt = getManagerExpireAt(item);
-          const sig = getManagerLinkSignature(code, expireAt);
-          const shareItem = cloneShareItemForServer(item, expireAt, sig);
-          return {
-            code: String(code || ''),
-            share_code: String(code || ''),
-            share_sig: String(sig || ''),
-            expires_at: new Date(expireAt).toISOString(),
-            item_data: shareItem,
-            payload: shareItem,
-            share_title: getShareItemLabel(item),
-            equipment_no: String(item.equipmentNo || ''),
-            equipment_name: String(item.equipmentName || ''),
-            owner_login_id: String(item.ownerSignupId || item.ownerProviderId || ''),
-            updated_at: nowIso
-          };
-        }).filter(row => row.share_code && row.share_sig);
-        if (!rows.length) return { ok:false, message:'저장할 담당자 링크 정보가 없습니다.' };
-        const { error } = await client
-          .from(PUBLIC_SHARE_TABLE)
-          .upsert(rows, { onConflict:'share_code' });
-        if (error) return { ok:false, message:error.message || 'Supabase 저장 오류' };
-        return { ok:true, saved:rows.length };
-      } catch (e) {
-        return { ok:false, message:e?.message || String(e) };
-      }
+
+      return await shareCreate.saveManagerShareItemsToSupabase(items, {
+        getQrShareModule:getQrShareModule,
+        getClient:getSitePassSupabaseClient,
+        getExpireAt:getManagerExpireAt,
+        cloneItem:cloneShareItemForServer,
+        getLabel:getShareItemLabel,
+        getMember:getManagerShareCurrentMemberV498
+      });
     }
 
     async function loadManagerShareItemFromSupabase(code, sig) {
@@ -1154,10 +1564,1838 @@ function shareOneListItemEmail(code) {
       return result;
     }
 
+    // SITEPASS_45_8C_SENT_BINDING_V577
+    // 기존 v521 실제 전송 활성화가 성공한 뒤 같은 tracking token에 묶인
+    // Recipient Token V2 각각을 서버 sent 이벤트에 연결한다.
+    // 공유/QR 링크 생성 방식과 기존 전송 흐름은 변경하지 않는다.
+    async function markRecipientShareSentBundleV577(bundle, trackingToken) {
+      const client = getSitePassSupabaseClient();
+      const entries = bundle && Array.isArray(bundle.entries) ? bundle.entries : [];
+      const sid = String(trackingToken || '').trim();
+
+      if (!client || typeof client.rpc !== 'function') {
+        return { ok:false, message:'Supabase 연결 객체가 없습니다.', recorded:0, failed:entries.length };
+      }
+      if (!sid || !entries.length) {
+        return { ok:false, message:'Recipient 전송 기록 식별정보가 없습니다.', recorded:0, failed:entries.length };
+      }
+
+      let recorded = 0;
+      const failures = [];
+
+      for (const entry of entries) {
+        const tokenId = String(entry && entry.token_id || '').trim();
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tokenId)) {
+          failures.push('TOKEN_ID_INVALID');
+          continue;
+        }
+
+        try {
+          const result = await client.rpc('sitepass_mark_recipient_share_sent_v2', {
+            p_token_id: tokenId,
+            p_tracking_token: sid
+          });
+          if (result && result.error) {
+            failures.push(String(result.error.message || result.error.code || 'RECIPIENT_SENT_RPC_FAILED'));
+            continue;
+          }
+          const data = Array.isArray(result && result.data)
+            ? (result.data[0] || null)
+            : (result && result.data);
+          if (data && typeof data === 'object' && data.ok === false) {
+            failures.push(String(data.message || data.error || 'RECIPIENT_SENT_RECORD_FAILED'));
+            continue;
+          }
+          recorded += 1;
+        } catch (e) {
+          failures.push(e && e.message ? e.message : String(e || 'RECIPIENT_SENT_RPC_FAILED'));
+        }
+      }
+
+      if (recorded > 0) {
+        try {
+          window.dispatchEvent(new CustomEvent('sitepass-recipient-share-events-updated-v577', {
+            detail:{ recorded:recorded }
+          }));
+        } catch (e) {}
+      }
+
+      return {
+        ok: failures.length === 0 && recorded === entries.length,
+        recorded: recorded,
+        failed: failures.length,
+        message: failures.length ? failures[0] : ''
+      };
+    }
+
     async function cancelShareTrackingV521(token) {
       return await callShareTrackingRpcV521('sitepass_cancel_share_tracking_v521', { p_tracking_token:String(token || '') });
     }
 
+    // SITEPASS_42_RECIPIENT_SEND_V573
+    // 실제 외부 발송만 Recipient Token V2를 사용한다.
+    // 기존 Legacy share.html / makeManagerLink / 공유이력 / 회원미리보기는 변경하지 않는다.
+
+    function normalizeRecipientTokenRpcDataV573(data) {
+      if (Array.isArray(data)) return data[0] || null;
+      return data && typeof data === 'object' ? data : null;
+    }
+
+    function sitePassValidEquipmentUuidV609(value) {
+      const text = String(value || '').trim();
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : '';
+    }
+
+    function sitePassResolveRecipientEquipmentIdV609(item, code) {
+      const targetCode = String(code || (item && (item.code || item.share_code || item.equipmentCode || item.equipment_code)) || '').trim();
+      const candidates=[]; const seen=new Set();
+      function add(value){ if(!value || typeof value!=='object' || seen.has(value)) return; seen.add(value); candidates.push(value); ['item_json','item_data','payload','data'].forEach(function(key){ const nested=value[key]; if(nested && typeof nested==='object' && !seen.has(nested)){ seen.add(nested); candidates.push(nested); } }); }
+      add(item);
+      try{add(sitePassGetInstantLinkItemV559(targetCode));}catch(e){}
+      try{add(sitePassBuildStableDetailItemV536(targetCode));}catch(e){}
+      try{add(getRuntimeItemByCode(targetCode));}catch(e){}
+      try{add(getItemByCode(targetCode));}catch(e){}
+      try{if(typeof getSitePassCanonicalEquipmentItemV519==='function') add(getSitePassCanonicalEquipmentItemV519(targetCode));}catch(e){}
+      try{if(window.sitePassArchiveItemSnapshotV538 instanceof Map) add(window.sitePassArchiveItemSnapshotV538.get(targetCode));}catch(e){}
+      try{(getSitePassServerAuthoritativeEquipmentItems()||[]).forEach(add);}catch(e){}
+      try{(getServerEquipmentCache()||[]).forEach(add);}catch(e){}
+      for(const candidate of candidates){ const id=sitePassValidEquipmentUuidV609(candidate.equipment_id||candidate.equipmentId||candidate.id_uuid||candidate.equipment_uuid); if(id) return id; }
+      return '';
+    }
+
+    function getRecipientEquipmentIdV573(item) { return sitePassResolveRecipientEquipmentIdV609(item,''); }
+
+    function makeRecipientShareLinkV573(rawToken, trackingToken) {
+      const recipientView = window.SitePassShareRecipientView;
+      if (!recipientView || typeof recipientView.makeRecipientShareLink !== 'function') return '';
+      return recipientView.makeRecipientShareLink(rawToken, trackingToken);
+    }
+
+    async function revokeRecipientTokenBundleV573(bundle) {
+      const shareCreate = window.SitePassShareCreate;
+      if (!shareCreate || typeof shareCreate.revokeRecipientTokenBundle !== 'function') return;
+      return await shareCreate.revokeRecipientTokenBundle(bundle, {
+        getClient:getSitePassSupabaseClient
+      });
+    }
+
+    async function createRecipientTokenBundleV573(items) {
+      const shareCreate = window.SitePassShareCreate;
+
+      if (!shareCreate || typeof shareCreate.createRecipientTokenBundle !== 'function') {
+        return {
+          ok:false,
+          message:'STEP83_SHARE_CREATE_MODULE_REQUIRED',
+          entries:[]
+        };
+      }
+
+      return await shareCreate.createRecipientTokenBundle(items, {
+        waitForClient:sitePassWaitForSupabaseClientV609,
+        getClient:getSitePassSupabaseClient,
+        getEquipmentId:getRecipientEquipmentIdV573,
+        normalizeRpcData:normalizeRecipientTokenRpcDataV573
+      });
+    }
+
+    // SITEPASS_42_3C_D_5_MEMBER_DETAIL_QR_RECIPIENT_TOKEN_V2_V574
+    // 회원 상세보기 화면은 즉시 렌더하되, 외부 QR에는 Legacy manager+sig 링크를 절대 넣지 않는다.
+    // Token V2 생성은 비동기로 처리하고 같은 장비의 상세 재렌더에서는 런타임 캐시/진행중 Promise를 재사용한다.
+    const sitePassMemberRecipientQrCacheV574 = new Map();
+    const sitePassMemberRecipientQrPendingV574 = new Map();
+    let sitePassMemberRecipientQrDetailEquipmentV91 = '';
+
+    // STEP91 R9D:
+    // 기존 정상 UX(상세 진입 즉시 Recipient QR 표시)는 복구하되,
+    // F5/상세 재진입마다 새 Token V2가 생성되던 문제를 막기 위해
+    // raw Recipient URL은 localStorage가 아닌 현재 브라우저 탭의 sessionStorage에만
+    // auth uid + equipment id + canonical document revision + expiry와 함께 보관한다.
+    // 다른 계정/다른 문서버전/만료 토큰은 재사용하지 않으며 로그아웃 시 즉시 제거한다.
+    const sitePassMemberRecipientQrSessionKeyV91 =
+      'sitepass_member_recipient_qr_session_reuse_v91';
+
+    async function getMemberRecipientQrAuthUidV91() {
+      try {
+        const client = await sitePassWaitForSupabaseClientV609(4000);
+        if (
+          !client ||
+          !client.auth ||
+          typeof client.auth.getSession !== 'function'
+        ) return '';
+
+        const result = await client.auth.getSession();
+        if (result && result.error) return '';
+
+        return String(
+          result &&
+          result.data &&
+          result.data.session &&
+          result.data.session.user &&
+          result.data.session.user.id ||
+          ''
+        ).trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function readMemberRecipientQrSessionStoreV91() {
+      try {
+        const raw = sessionStorage.getItem(
+          sitePassMemberRecipientQrSessionKeyV91
+        );
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function writeMemberRecipientQrSessionStoreV91(store) {
+      try {
+        sessionStorage.setItem(
+          sitePassMemberRecipientQrSessionKeyV91,
+          JSON.stringify(
+            store && typeof store === 'object' ? store : {}
+          )
+        );
+      } catch (e) {}
+    }
+
+    function clearMemberRecipientQrSessionStoreV91() {
+      try {
+        sessionStorage.removeItem(
+          sitePassMemberRecipientQrSessionKeyV91
+        );
+      } catch (e) {}
+      try { sitePassMemberRecipientQrCacheV574.clear(); } catch (e) {}
+      try { sitePassMemberRecipientQrPendingV574.clear(); } catch (e) {}
+      try { currentDetailLink = ''; } catch (e) {}
+      try { sitePassMemberRecipientQrDetailEquipmentV91 = ''; } catch (e) {}
+    }
+
+    function removeMemberRecipientQrSessionEntryV91(equipmentId) {
+      const id = String(equipmentId || '').trim();
+      if (!id) return;
+      const store = readMemberRecipientQrSessionStoreV91();
+      if (Object.prototype.hasOwnProperty.call(store, id)) {
+        delete store[id];
+        writeMemberRecipientQrSessionStoreV91(store);
+      }
+    }
+
+    function restoreMemberRecipientQrSessionEntryV91(
+      equipmentId,
+      authUid,
+      documentRevisionV7
+    ) {
+      const id = String(equipmentId || '').trim();
+      const uid = String(authUid || '').trim();
+      if (!id || !uid) return null;
+
+      const store = readMemberRecipientQrSessionStoreV91();
+      const entry =
+        store[id] && typeof store[id] === 'object'
+          ? store[id]
+          : null;
+
+      if (!entry) return null;
+
+      const recipientView = window.SitePassShareRecipientView;
+      const parsed =
+        recipientView &&
+        typeof recipientView.parseRecipientShareLink === 'function'
+          ? recipientView.parseRecipientShareLink(entry.link)
+          : null;
+
+      const expiresAtMs = Number(entry.expiresAtMs || 0);
+      const sameRevision =
+        !documentRevisionV7 ||
+        String(entry.documentRevisionV7 || '') ===
+          String(documentRevisionV7 || '');
+
+      if (
+        String(entry.authUid || '') !== uid ||
+        !parsed ||
+        !Number.isFinite(expiresAtMs) ||
+        expiresAtMs <= Date.now() + 60000 ||
+        !sameRevision
+      ) {
+        removeMemberRecipientQrSessionEntryV91(id);
+        return null;
+      }
+
+      const restored = {
+        ok:true,
+        equipment_id:id,
+        link:String(entry.link || ''),
+        qrUrl:makeQrUrl(String(entry.link || ''), 180),
+        expires_at:String(entry.expires_at || ''),
+        expiresAtMs:expiresAtMs,
+        documentRevisionV7:String(entry.documentRevisionV7 || ''),
+        authUidV91:uid,
+        sessionReuseV91:true
+      };
+
+      sitePassMemberRecipientQrCacheV574.set(id, restored);
+      return restored;
+    }
+
+    function persistMemberRecipientQrSessionEntryV91(
+      equipmentId,
+      authUid,
+      result
+    ) {
+      const id = String(equipmentId || '').trim();
+      const uid = String(authUid || '').trim();
+
+      if (
+        !id ||
+        !uid ||
+        !result ||
+        !result.ok ||
+        !result.link ||
+        !(Number(result.expiresAtMs || 0) > Date.now() + 60000)
+      ) return;
+
+      const recipientView = window.SitePassShareRecipientView;
+      const parsed =
+        recipientView &&
+        typeof recipientView.parseRecipientShareLink === 'function'
+          ? recipientView.parseRecipientShareLink(result.link)
+          : null;
+
+      if (!parsed) return;
+
+      const store = readMemberRecipientQrSessionStoreV91();
+
+      store[id] = {
+        authUid:uid,
+        equipmentId:id,
+        link:String(result.link || ''),
+        expires_at:String(result.expires_at || ''),
+        expiresAtMs:Number(result.expiresAtMs || 0),
+        documentRevisionV7:String(
+          result.documentRevisionV7 || ''
+        )
+      };
+
+      writeMemberRecipientQrSessionStoreV91(store);
+    }
+
+    // 로그아웃 성공 뒤 auth-events가 SIGNED_OUT을 알리면 bearer URL을 탭 세션에서도 제거한다.
+    try {
+      window.addEventListener(
+        'sitepass-auth-session-event-v79',
+        function(event) {
+          const detail =
+            event && event.detail && typeof event.detail === 'object'
+              ? event.detail
+              : {};
+          if (String(detail.type || '') === 'SIGNED_OUT') {
+            clearMemberRecipientQrSessionStoreV91();
+          }
+        }
+      );
+    } catch (e) {}
+
+    function getMemberRecipientQrCacheKeyV574(item) {
+      return getRecipientEquipmentIdV573(item);
+    }
+
+    function getMemberRecipientQrExpiresAtMsV574(entry) {
+      const parsed = new Date(String(entry && entry.expires_at || '')).getTime();
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    // STEP81 V7:
+    // canonical current document version이 바뀌면 갱신 전 Recipient QR cache를 재사용하지 않는다.
+    function getMemberRecipientQrDocumentRevisionV7(item) {
+      const docs = item && item.docs && typeof item.docs === 'object'
+        ? item.docs
+        : {};
+      return Object.keys(docs).sort().map(function(key){
+        const doc = docs[key] && typeof docs[key] === 'object' ? docs[key] : {};
+        const versionId = String(
+          doc.canonicalCurrentVersionId ||
+          doc.canonical_current_version_id ||
+          ''
+        ).trim();
+        return versionId ? (String(key) + ':' + versionId) : '';
+      }).filter(Boolean).join('|');
+    }
+
+    // STEP81 V9:
+    // stale public-share 복구에서는 legacy/local 후보 병합 결과가
+    // 현재 canonical document를 덮어쓰지 못하게 한다.
+    // canonicalCurrentVersionId + storagePath가 확인된 현재 detail 문서만
+    // 동일 docKey에 한해 최종 우선 적용한다.
+    function overlayCanonicalCurrentDocumentsV9(preparedItem, currentItem) {
+      const output =
+        preparedItem && typeof preparedItem === 'object'
+          ? Object.assign({}, preparedItem)
+          : {};
+
+      output.docs =
+        output.docs && typeof output.docs === 'object'
+          ? Object.assign({}, output.docs)
+          : {};
+
+      const currentDocs =
+        currentItem &&
+        currentItem.docs &&
+        typeof currentItem.docs === 'object'
+          ? currentItem.docs
+          : {};
+
+      Object.keys(currentDocs).forEach(function(key) {
+        const doc =
+          currentDocs[key] && typeof currentDocs[key] === 'object'
+            ? currentDocs[key]
+            : null;
+
+        if (!doc) return;
+
+        const currentVersionId = String(
+          doc.canonicalCurrentVersionId ||
+          doc.canonical_current_version_id ||
+          ''
+        ).trim();
+
+        if (!currentVersionId) return;
+
+        const pages =
+          Array.isArray(doc.pages)
+            ? doc.pages.filter(Boolean)
+            : [];
+
+        const hasCanonicalPath = (
+          !!String(
+            doc.storagePath ||
+            doc.storage_path ||
+            ''
+          ).replace(/^\/+/, '').trim()
+          ||
+          pages.some(function(page) {
+            return !!String(
+              page && (
+                page.storagePath ||
+                page.storage_path
+              ) || ''
+            ).replace(/^\/+/, '').trim();
+          })
+        );
+
+        if (!hasCanonicalPath) return;
+
+        // JSON clone으로 현재 canonical 문서만 독립 복사한다.
+        // 과거 share/legacy 객체를 직접 수정하지 않는다.
+        let canonicalDoc = null;
+        try {
+          canonicalDoc = JSON.parse(JSON.stringify(doc));
+        } catch (e) {
+          canonicalDoc = Object.assign({}, doc);
+        }
+
+        canonicalDoc.shareCanonicalOverrideV9 = true;
+        output.docs[key] = canonicalDoc;
+      });
+
+      output.sharePayloadMode =
+        'canonical-current-doc-override-v9';
+
+      return output;
+    }
+
+    // STEP82 V31:
+    // Recipient Token RPC가 ACTIVE_PUBLIC_SHARE_REQUIRED 500을 먼저 만들기 전에
+    // read-only preflight로 현재 active public share 존재 여부만 확인한다.
+    // preflight가 없거나 실패하면 기존 Token-first 경로로 그대로 fallback한다.
+    async function getRecipientSharePreflightV31(equipmentId) {
+      const client = await sitePassWaitForSupabaseClientV609(4000);
+
+      if (!client || typeof client.rpc !== 'function') {
+        return { ok:false, unavailable:true };
+      }
+
+      try {
+        const result = await client.rpc(
+          'sitepass_get_recipient_share_preflight_v1',
+          { p_equipment_id:equipmentId }
+        );
+
+        if (result && result.error) {
+          return {
+            ok:false,
+            unavailable:true,
+            message:[
+              result.error.code,
+              result.error.message,
+              result.error.details,
+              result.error.hint
+            ].map(function(v){
+              return String(v || '').trim();
+            }).filter(Boolean).join(' / ')
+          };
+        }
+
+        const data =
+          normalizeRecipientTokenRpcDataV573(
+            result && result.data
+          ) || {};
+
+        if (data.ok === false) {
+          return {
+            ok:false,
+            unavailable:true,
+            message:String(data.message || data.error || '')
+          };
+        }
+
+        return {
+          ok:true,
+          activePublicShare:
+            data.active_public_share === true,
+          expiresAt:
+            String(data.expires_at || '')
+        };
+      } catch (e) {
+        return {
+          ok:false,
+          unavailable:true,
+          message:e && e.message ? e.message : String(e || '')
+        };
+      }
+    }
+
+    async function getOrCreateMemberRecipientQrV574(item, optionsV764) {
+      const forceFreshForChatV764 = !!(
+        optionsV764 &&
+        optionsV764.forceFreshForChatV764 === true
+      );
+
+      const equipmentId = getMemberRecipientQrCacheKeyV574(item);
+      if (!equipmentId) {
+        return { ok:false, message:'수신자 QR에 필요한 장비 식별정보를 확인하지 못했습니다.' };
+      }
+
+      try {
+        if (typeof isServiceShareBlocked === 'function' && isServiceShareBlocked(item)) {
+          return { ok:false, blocked:true, message:'결제 또는 서비스 상태로 담당자 QR을 사용할 수 없습니다.' };
+        }
+      } catch (e) {}
+
+      const documentRevisionV7 =
+        forceFreshForChatV764
+          ? ''
+          : getMemberRecipientQrDocumentRevisionV7(item);
+
+      const authUidV91 =
+        forceFreshForChatV764
+          ? ''
+          : await getMemberRecipientQrAuthUidV91();
+
+      const cached =
+        forceFreshForChatV764
+          ? null
+          : sitePassMemberRecipientQrCacheV574.get(equipmentId);
+
+      if (
+        !forceFreshForChatV764 &&
+        cached &&
+        cached.ok &&
+        cached.link &&
+        cached.expiresAtMs > Date.now() + 60000 &&
+        String(cached.authUidV91 || '') === String(authUidV91 || '') &&
+        !!authUidV91 &&
+        (
+          !documentRevisionV7 ||
+          String(cached.documentRevisionV7 || '') === documentRevisionV7
+        )
+      ) {
+        return cached;
+      }
+
+      if (
+        !forceFreshForChatV764 &&
+        cached &&
+        (
+          !authUidV91 ||
+          String(cached.authUidV91 || '') !== String(authUidV91 || '') ||
+          (
+            documentRevisionV7 &&
+            String(cached.documentRevisionV7 || '') !== documentRevisionV7
+          )
+        )
+      ) {
+        sitePassMemberRecipientQrCacheV574.delete(equipmentId);
+      }
+
+      const restoredV91 =
+        forceFreshForChatV764
+          ? null
+          : restoreMemberRecipientQrSessionEntryV91(
+              equipmentId,
+              authUidV91,
+              documentRevisionV7
+            );
+
+      if (restoredV91) return restoredV91;
+
+      const pending =
+        forceFreshForChatV764
+          ? null
+          : sitePassMemberRecipientQrPendingV574.get(equipmentId);
+
+      if (pending) return await pending;
+
+      const task = (async function(){
+        const safeItem = Object.assign({}, item || {}, { equipment_id:equipmentId, equipmentId:equipmentId });
+
+        const preflightV31 =
+          await getRecipientSharePreflightV31(equipmentId);
+
+        const refreshBeforeTokenV31 =
+          !!(
+            preflightV31 &&
+            preflightV31.ok &&
+            preflightV31.activePublicShare === false
+          );
+
+        let bundle = null;
+        let firstMessage = '';
+
+        if (!refreshBeforeTokenV31) {
+          bundle =
+            await createRecipientTokenBundleV573(
+              [safeItem]
+            );
+          firstMessage =
+            String(bundle && bundle.message || '');
+        }
+
+        // STEP81 V8:
+        // Recipient Token V2의 fail-closed 경계를 완화하지 않는다.
+        // 기존 public share가 만료됐거나, 문서 갱신으로 v512 canonical scope 검증이 실패한 경우에만
+        // 현재 detail item을 기존 정상 공유 전처리 경로로 다시 준비한 뒤 server-signed share를
+        // 한 번 재발급하고 Token V2 생성을 한 번만 재시도한다.
+        if (
+          refreshBeforeTokenV31 ||
+          (
+            (!bundle || !bundle.ok) &&
+            /ACTIVE_PUBLIC_SHARE_REQUIRED|PUBLIC_SHARE_ALREADY_EXPIRED|PUBLIC_SHARE_SCOPE_INVALID|RECIPIENT_SHARE_FILE_MAPPING_MISMATCH|RECIPIENT_SHARE_DOCUMENT_MAPPING_MISMATCH/i.test(firstMessage)
+          )
+        ) {
+          const freshExpireAt = Date.now() + (24 * 60 * 60 * 1000);
+          const refreshSource = Object.assign({}, safeItem, {
+            managerExpireAt: new Date(freshExpireAt).toISOString(),
+            manager_expire_at: new Date(freshExpireAt).toISOString()
+          });
+
+          const refreshedPrepared =
+            await prepareManagerShareItemsForServerV497(
+              [refreshSource],
+              {
+                isolateLiveObjectsV10:true
+              }
+            );
+
+          if (
+            !refreshedPrepared ||
+            !refreshedPrepared.ok ||
+            !Array.isArray(refreshedPrepared.items) ||
+            !refreshedPrepared.items.length
+          ) {
+            return {
+              ok:false,
+              message:String(
+                refreshedPrepared && refreshedPrepared.message ||
+                'ACTIVE_PUBLIC_SHARE_REPREPARE_FAILED'
+              )
+            };
+          }
+
+          const canonicalRefreshItemV9 =
+            overlayCanonicalCurrentDocumentsV9(
+              refreshedPrepared.items[0],
+              refreshSource
+            );
+
+          const freshItem = Object.assign(
+            {},
+            canonicalRefreshItemV9,
+            {
+              managerExpireAt: new Date(freshExpireAt).toISOString(),
+              manager_expire_at: new Date(freshExpireAt).toISOString()
+            }
+          );
+
+          const publicShareReady =
+            await saveManagerShareItemsToSupabase([freshItem]);
+
+          if (publicShareReady && publicShareReady.ok) {
+            const issuedItems =
+              Array.isArray(publicShareReady.items) &&
+              publicShareReady.items.length
+                ? publicShareReady.items
+                : [freshItem];
+
+            const tokenItem =
+              Object.assign(
+                {},
+                issuedItems[0] || freshItem,
+                {
+                  equipment_id:equipmentId,
+                  equipmentId:equipmentId
+                }
+              );
+
+            bundle =
+              await createRecipientTokenBundleV573([tokenItem]);
+
+            firstMessage =
+              String(bundle && bundle.message || '');
+          } else {
+            const publicShareMessage = String(
+              publicShareReady &&
+              publicShareReady.message ||
+              'ACTIVE_PUBLIC_SHARE_REFRESH_FAILED'
+            );
+            return {
+              ok:false,
+              message:publicShareMessage
+            };
+          }
+        }
+
+        if ((!bundle || !bundle.ok) && /Supabase 연결|Failed to fetch|Network|fetch|timeout|시간 초과/i.test(firstMessage)) {
+          await new Promise(function(resolve){ setTimeout(resolve,700); });
+          bundle = await createRecipientTokenBundleV573([safeItem]);
+        }
+        if (!bundle || !bundle.ok) {
+          return {
+            ok:false,
+            message:String(bundle && bundle.message || '수신자 Token V2 QR 링크를 만들지 못했습니다.')
+          };
+        }
+
+        const entry = Array.isArray(bundle.entries) && bundle.entries.length
+          ? bundle.entries[0]
+          : null;
+        const link = entry && entry.token
+          ? makeRecipientShareLinkV573(entry.token, '')
+          : '';
+
+        if (!link) {
+          await revokeRecipientTokenBundleV573(bundle);
+          return { ok:false, message:'수신자 Token V2 QR 링크 형식이 올바르지 않습니다.' };
+        }
+
+        const result = {
+          ok:true,
+          equipment_id:equipmentId,
+          link:link,
+          qrUrl:makeQrUrl(link, 180),
+          expires_at:String(entry && entry.expires_at || ''),
+          expiresAtMs:getMemberRecipientQrExpiresAtMsV574(entry),
+          documentRevisionV7:documentRevisionV7,
+          authUidV91:String(authUidV91 || '')
+        };
+
+        // 서버가 만료시각을 생략하더라도 현재 페이지 재렌더에서는 새 토큰을 반복 발급하지 않는다.
+        if (!result.expiresAtMs) {
+          result.expiresAtMs =
+            Date.now() + (24 * 60 * 60 * 1000);
+        }
+
+        // v23.7.764 R14:
+        // 장비 상세 QR은 기존 cache/session 재사용을 그대로 유지한다.
+        // 친구채팅 전송은 token_id가 메시지 1건에만 binding되는 서버 UNIQUE 경계 때문에
+        // cache/session에 넣지 않는 fresh Recipient Token을 사용한다.
+        if (!forceFreshForChatV764) {
+          sitePassMemberRecipientQrCacheV574.set(
+            equipmentId,
+            result
+          );
+          persistMemberRecipientQrSessionEntryV91(
+            equipmentId,
+            authUidV91,
+            result
+          );
+        }
+
+        return result;
+      })();
+
+      if (!forceFreshForChatV764) {
+        sitePassMemberRecipientQrPendingV574.set(
+          equipmentId,
+          task
+        );
+      }
+
+      try {
+        return await task;
+      } finally {
+        if (
+          !forceFreshForChatV764 &&
+          sitePassMemberRecipientQrPendingV574.get(equipmentId) === task
+        ) {
+          sitePassMemberRecipientQrPendingV574.delete(
+            equipmentId
+          );
+        }
+      }
+    }
+
+    function paintMemberRecipientQrResultV574(itemCode, equipmentId, result) {
+      const recipientView = window.SitePassShareRecipientView;
+      if (!recipientView || typeof recipientView.paintMemberRecipientQrResult !== 'function') return;
+      return recipientView.paintMemberRecipientQrResult(
+        itemCode,
+        equipmentId,
+        result,
+        {
+        getCurrentDetailCode:function(){ return window.sitePassCurrentDetailCodeV519 || ''; },
+        getCurrentScreenId:function(){
+          return typeof sitePassCurrentScreenId !== 'undefined'
+            ? sitePassCurrentScreenId
+            : '';
+        },
+        getCurrentDetailLink:function(){ return currentDetailLink || ''; },
+        setCurrentDetailLink:function(value){ currentDetailLink = String(value || ''); },
+        resolveEquipmentId:sitePassResolveRecipientEquipmentIdV609,
+        getOrCreateRecipientQr:getOrCreateMemberRecipientQrV574,
+        buildStableDetailItem:sitePassBuildStableDetailItemV536,
+        getInstantLinkItem:sitePassGetInstantLinkItemV559,
+        getRuntimeItemByCode:getRuntimeItemByCode,
+        escapeHtml:escapeHtml
+      }
+      );
+    }
+
+    function prepareMemberRecipientQrV574(item, itemCode) {
+      const recipientView = window.SitePassShareRecipientView;
+      if (!recipientView || typeof recipientView.prepareMemberRecipientQr !== 'function') {
+        console.warn('[SitePass STEP83] recipient-view module missing');
+        return;
+      }
+      return recipientView.prepareMemberRecipientQr(
+        item,
+        itemCode,
+        {
+        getCurrentDetailCode:function(){ return window.sitePassCurrentDetailCodeV519 || ''; },
+        getCurrentScreenId:function(){
+          return typeof sitePassCurrentScreenId !== 'undefined'
+            ? sitePassCurrentScreenId
+            : '';
+        },
+        getCurrentDetailLink:function(){ return currentDetailLink || ''; },
+        setCurrentDetailLink:function(value){ currentDetailLink = String(value || ''); },
+        resolveEquipmentId:sitePassResolveRecipientEquipmentIdV609,
+        getOrCreateRecipientQr:getOrCreateMemberRecipientQrV574,
+        buildStableDetailItem:sitePassBuildStableDetailItemV536,
+        getInstantLinkItem:sitePassGetInstantLinkItemV559,
+        getRuntimeItemByCode:getRuntimeItemByCode,
+        escapeHtml:escapeHtml
+      }
+      );
+    }
+
+    // STEP91 R9G:
+    // Token 생성은 paint/repaint와 분리한다.
+    // canonical current hydration이 실제 완료된 stable item에서만 자동 QR 준비를 시작한다.
+    // 같은 final revision의 반복 render는 getOrCreateMemberRecipientQrV574의
+    // pending/cache/session 재사용을 타므로 새 Token을 만들지 않는다.
+    function sitePassPrepareMemberRecipientQrAfterCanonicalV91(
+      item,
+      itemCode
+    ) {
+      if (!item || typeof item !== 'object') return false;
+
+      const targetCode = String(itemCode || '').trim();
+
+      if (
+        !targetCode ||
+        String(window.sitePassCurrentDetailCodeV519 || '') !==
+          targetCode
+      ) {
+        return false;
+      }
+
+      if (
+        typeof sitePassCurrentScreenId !== 'undefined' &&
+        sitePassCurrentScreenId !== 'detailScreen'
+      ) {
+        return false;
+      }
+
+      // canonical hydration 실패/미완료 item에서는 자동 Token을 만들지 않는다.
+      // 사용자는 QR 영역 클릭으로 기존 on-demand 안전경로를 재시도할 수 있다.
+      if (!item.detailCanonicalHydratedAtV13) {
+        return false;
+      }
+
+      const equipmentId =
+        sitePassResolveRecipientEquipmentIdV609(
+          item,
+          targetCode
+        );
+
+      if (!equipmentId) return false;
+
+      sitePassMemberRecipientQrDetailEquipmentV91 =
+        String(equipmentId || '');
+
+      prepareMemberRecipientQrV574(
+        item,
+        targetCode
+      );
+
+      return true;
+    }
+
+    window.sitePassPrepareMemberRecipientQrAfterCanonicalV91 =
+      sitePassPrepareMemberRecipientQrAfterCanonicalV91;
+
+    async function sitePassOpenMemberRecipientQrV609(code) {
+      const recipientView = window.SitePassShareRecipientView;
+      if (!recipientView || typeof recipientView.openMemberRecipientQr !== 'function') {
+        alert('담당자 QR 화면 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return false;
+      }
+
+      return await recipientView.openMemberRecipientQr(
+        code,
+        {
+        getCurrentDetailCode:function(){ return window.sitePassCurrentDetailCodeV519 || ''; },
+        getCurrentScreenId:function(){
+          return typeof sitePassCurrentScreenId !== 'undefined'
+            ? sitePassCurrentScreenId
+            : '';
+        },
+        getCurrentDetailLink:function(){ return currentDetailLink || ''; },
+        setCurrentDetailLink:function(value){ currentDetailLink = String(value || ''); },
+        resolveEquipmentId:sitePassResolveRecipientEquipmentIdV609,
+        getOrCreateRecipientQr:getOrCreateMemberRecipientQrV574,
+        buildStableDetailItem:sitePassBuildStableDetailItemV536,
+        getInstantLinkItem:sitePassGetInstantLinkItemV559,
+        getRuntimeItemByCode:getRuntimeItemByCode,
+        escapeHtml:escapeHtml
+      }
+      );
+    }
+
+    window.sitePassOpenMemberRecipientQrV609 = sitePassOpenMemberRecipientQrV609;
+
+    // SitePass v23.7.752 R14:
+    // 채팅용 Recipient 링크도 기존 정상 담당자 QR/링크 생성·갱신 경로를 그대로 재사용합니다.
+    // 기존 public share가 만료되어도 getOrCreateMemberRecipientQrV574가
+    // canonical 준비 -> server-signed public share 갱신 -> Recipient Token V2 순서로 처리합니다.
+    async function sitePassPrepareRecipientShareForChatV752(
+      equipmentId,
+      equipmentCode,
+      equipmentMeta
+    ) {
+      const targetEquipmentId =
+        sitePassValidEquipmentUuidV609(equipmentId);
+
+      if (!targetEquipmentId) {
+        return {
+          ok:false,
+          message:'담당자 링크에 필요한 장비 식별자를 확인하지 못했습니다.'
+        };
+      }
+
+      const meta =
+        equipmentMeta && typeof equipmentMeta === 'object'
+          ? equipmentMeta
+          : {};
+
+      const targetCode = String(
+        equipmentCode ||
+        meta.equipmentCode ||
+        meta.equipment_code ||
+        meta.code ||
+        ''
+      ).trim();
+
+      const candidates = [];
+      const seen = new Set();
+
+      function add(value) {
+        if (!value || typeof value !== 'object' || seen.has(value)) return;
+        seen.add(value);
+        candidates.push(value);
+      }
+
+      try { (getItems() || []).forEach(add); } catch (e) {}
+      try { (getSitePassServerAuthoritativeEquipmentItems() || []).forEach(add); } catch (e) {}
+      try { (getServerEquipmentCache() || []).forEach(add); } catch (e) {}
+      try {
+        if (targetCode && typeof getSitePassCanonicalEquipmentItemV519 === 'function') {
+          add(getSitePassCanonicalEquipmentItemV519(targetCode));
+        }
+      } catch (e) {}
+
+      let item = null;
+
+      for (const candidate of candidates) {
+        const candidateId =
+          sitePassResolveRecipientEquipmentIdV609(
+            candidate,
+            targetCode
+          );
+        if (candidateId === targetEquipmentId) {
+          item = candidate;
+          break;
+        }
+      }
+
+      // v23.7.760 R14:
+      // 친구채팅의 서버 장비목록은 원소유 장비뿐 아니라 현재 ACTIVE 연동장비도
+      // sitepass_has_equipment_access 경계로 반환합니다.
+      // 연동장비는 로컬 보관함 원본이 없을 수 있으므로 그 사실만으로 차단하지 않습니다.
+      // 최소 서버 seed를 만든 뒤 기존 getOrCreateMemberRecipientQrV574 경로를 그대로 사용합니다.
+      // ACTIVE public share는 equipment_id 기반 Recipient Token V2를 바로 생성하고,
+      // 만료된 share는 기존 V31/V35 canonical hydration -> server-signed public share 재발급
+      // -> Recipient Token V2 순서를 그대로 거칩니다.
+      if (!item) {
+        const equipmentNo = String(
+          meta.equipmentNo ||
+          meta.equipment_no ||
+          ''
+        ).trim();
+
+        const equipmentName = String(
+          meta.equipmentName ||
+          meta.equipment_name ||
+          '장비'
+        ).trim() || '장비';
+
+        item = {
+          equipment_id:targetEquipmentId,
+          equipmentId:targetEquipmentId,
+          code:targetCode,
+          equipmentCode:targetCode,
+          equipment_code:targetCode,
+          equipmentNo:equipmentNo,
+          equipment_no:equipmentNo,
+          equipmentName:equipmentName,
+          equipment_name:equipmentName,
+          sitePassLinkedRecipientShareSeedV760:true
+        };
+      }
+
+      const safeItem = Object.assign(
+        {},
+        item,
+        {
+          equipment_id:targetEquipmentId,
+          equipmentId:targetEquipmentId,
+          code:String(
+            item && (
+              item.code ||
+              item.equipmentCode ||
+              item.equipment_code
+            ) ||
+            targetCode ||
+            ''
+          ).trim(),
+          equipmentCode:String(
+            item && (
+              item.equipmentCode ||
+              item.equipment_code ||
+              item.code
+            ) ||
+            targetCode ||
+            ''
+          ).trim()
+        }
+      );
+
+      // v23.7.764 R14:
+      // 친구채팅 전송은 매 전송마다 fresh Recipient Token을 사용한다.
+      // 장비 상세 QR의 cache/session 재사용 정책은 변경하지 않는다.
+      const result =
+        await getOrCreateMemberRecipientQrV574(
+          safeItem,
+          {
+            forceFreshForChatV764:true
+          }
+        );
+
+      if (!result || result.ok !== true || !result.link) {
+        return {
+          ok:false,
+          message:String(
+            result && result.message ||
+            '담당자 링크를 준비하지 못했습니다.'
+          )
+        };
+      }
+
+      const recipientView =
+        window.SitePassShareRecipientView;
+
+      const parsed =
+        recipientView &&
+        typeof recipientView.parseRecipientShareLink === 'function'
+          ? recipientView.parseRecipientShareLink(result.link)
+          : null;
+
+      const rawToken =
+        parsed
+          ? String(parsed.searchParams.get('token') || '').trim()
+          : '';
+
+      if (!/^[A-Za-z0-9_-]{43}$/.test(rawToken)) {
+        return {
+          ok:false,
+          message:'담당자 Recipient 링크 형식을 확인하지 못했습니다.'
+        };
+      }
+
+      return {
+        ok:true,
+        equipmentId:targetEquipmentId,
+        equipmentCode:targetCode,
+        recipientToken:rawToken,
+        link:String(result.link || ''),
+        expiresAt:String(result.expires_at || '')
+      };
+    }
+
+    window.sitePassPrepareRecipientShareForChatV752 =
+      sitePassPrepareRecipientShareForChatV752;
+
+
+    // SitePass v23.7.761 R14
+    // 받은 연락처 카드의 "장비 링크 공유" 전용 흐름.
+    // 기존 친구채팅 Recipient 전송 RPC를 사용하지 않으며,
+    // 연락처 1건당 fresh Recipient Token + SMS tracking을 만든 뒤
+    // OS 문자 작성창만 연다.
+    async function sitePassOpenContactRecipientSmsV761(
+      equipmentId,
+      equipmentCode,
+      equipmentMeta,
+      contact
+    ) {
+      const targetEquipmentId =
+        sitePassValidEquipmentUuidV609(equipmentId);
+
+      const meta =
+        equipmentMeta && typeof equipmentMeta === 'object'
+          ? equipmentMeta
+          : {};
+
+      const targetCode = String(
+        equipmentCode ||
+        meta.equipmentCode ||
+        meta.equipment_code ||
+        meta.code ||
+        ''
+      ).trim();
+
+      const contactValue =
+        contact && typeof contact === 'object'
+          ? contact
+          : {};
+
+      const receiverName =
+        String(contactValue.name || '').trim();
+
+      const rawPhone =
+        String(contactValue.phone || '').trim();
+
+      const phone =
+        normalizePhoneForShare(rawPhone);
+
+      if (!targetEquipmentId) {
+        return {
+          ok:false,
+          message:'문자 장비 링크에 필요한 장비 식별자를 확인하지 못했습니다.'
+        };
+      }
+
+      // 서버 장비목록은 equipmentCode를 실제 e.code에서 반환한다.
+      // 값이 없을 때 임의 share code를 만들지 않고 fail-closed.
+      if (!targetCode) {
+        return {
+          ok:false,
+          message:'문자 장비 링크에 필요한 서버 장비 코드를 확인하지 못했습니다.'
+        };
+      }
+
+      if (!phone) {
+        return {
+          ok:false,
+          message:'받은 연락처의 휴대폰번호를 확인하지 못했습니다.'
+        };
+      }
+
+      const candidates = [];
+      const seen = new Set();
+
+      function add(value) {
+        if (!value || typeof value !== 'object' || seen.has(value)) return;
+        seen.add(value);
+        candidates.push(value);
+      }
+
+      try { (getItems() || []).forEach(add); } catch (e) {}
+      try { (getSitePassServerAuthoritativeEquipmentItems() || []).forEach(add); } catch (e) {}
+      try { (getServerEquipmentCache() || []).forEach(add); } catch (e) {}
+      try {
+        if (
+          targetCode &&
+          typeof getSitePassCanonicalEquipmentItemV519 === 'function'
+        ) {
+          add(getSitePassCanonicalEquipmentItemV519(targetCode));
+        }
+      } catch (e) {}
+
+      let item = null;
+
+      for (const candidate of candidates) {
+        const candidateId =
+          sitePassResolveRecipientEquipmentIdV609(
+            candidate,
+            targetCode
+          );
+
+        if (candidateId === targetEquipmentId) {
+          item = candidate;
+          break;
+        }
+      }
+
+      if (!item) {
+        const equipmentNo = String(
+          meta.equipmentNo ||
+          meta.equipment_no ||
+          ''
+        ).trim();
+
+        const equipmentName = String(
+          meta.equipmentName ||
+          meta.equipment_name ||
+          '장비'
+        ).trim() || '장비';
+
+        item = {
+          equipment_id:targetEquipmentId,
+          equipmentId:targetEquipmentId,
+          code:targetCode,
+          equipmentCode:targetCode,
+          equipment_code:targetCode,
+          equipmentNo:equipmentNo,
+          equipment_no:equipmentNo,
+          equipmentName:equipmentName,
+          equipment_name:equipmentName,
+          sitePassContactRecipientSmsSeedV761:true
+        };
+      }
+
+      let safeItem =
+        Object.assign(
+          {},
+          item,
+          {
+            equipment_id:targetEquipmentId,
+            equipmentId:targetEquipmentId,
+            code:targetCode,
+            equipmentCode:targetCode,
+            equipment_code:targetCode,
+            publicShareCode:targetCode,
+            managerShareCode:targetCode
+          }
+        );
+
+      // 현재 public share가 살아 있는지 서버 기준으로 먼저 확인한다.
+      // preflight 자체를 확인하지 못한 경우 임의 갱신/전송하지 않는다.
+      const preflight =
+        await getRecipientSharePreflightV31(
+          targetEquipmentId
+        );
+
+      if (!preflight || preflight.ok !== true) {
+        return {
+          ok:false,
+          message:String(
+            preflight && preflight.message ||
+            '담당자 링크 서버 사전검사를 완료하지 못했습니다.'
+          )
+        };
+      }
+
+      if (preflight.activePublicShare === false) {
+        const freshExpireAt =
+          Date.now() + (24 * 60 * 60 * 1000);
+
+        const refreshSource =
+          Object.assign(
+            {},
+            safeItem,
+            {
+              managerExpireAt:
+                new Date(freshExpireAt).toISOString(),
+              manager_expire_at:
+                new Date(freshExpireAt).toISOString()
+            }
+          );
+
+        const refreshedPrepared =
+          await prepareManagerShareItemsForServerV497(
+            [refreshSource],
+            {
+              isolateLiveObjectsV10:true
+            }
+          );
+
+        if (
+          !refreshedPrepared ||
+          refreshedPrepared.ok !== true ||
+          !Array.isArray(refreshedPrepared.items) ||
+          !refreshedPrepared.items.length
+        ) {
+          return {
+            ok:false,
+            message:String(
+              refreshedPrepared &&
+              refreshedPrepared.message ||
+              'ACTIVE_PUBLIC_SHARE_REPREPARE_FAILED'
+            )
+          };
+        }
+
+        const canonicalRefreshItem =
+          overlayCanonicalCurrentDocumentsV9(
+            refreshedPrepared.items[0],
+            refreshSource
+          );
+
+        const freshItem =
+          Object.assign(
+            {},
+            canonicalRefreshItem,
+            {
+              equipment_id:targetEquipmentId,
+              equipmentId:targetEquipmentId,
+              code:targetCode,
+              equipmentCode:targetCode,
+              equipment_code:targetCode,
+              publicShareCode:targetCode,
+              managerShareCode:targetCode,
+              managerExpireAt:
+                new Date(freshExpireAt).toISOString(),
+              manager_expire_at:
+                new Date(freshExpireAt).toISOString()
+            }
+          );
+
+        const publicShareReady =
+          await saveManagerShareItemsToSupabase(
+            [freshItem]
+          );
+
+        if (!publicShareReady || publicShareReady.ok !== true) {
+          return {
+            ok:false,
+            message:String(
+              publicShareReady &&
+              publicShareReady.message ||
+              'ACTIVE_PUBLIC_SHARE_REFRESH_FAILED'
+            )
+          };
+        }
+
+        const issuedItems =
+          Array.isArray(publicShareReady.items) &&
+          publicShareReady.items.length
+            ? publicShareReady.items
+            : [freshItem];
+
+        safeItem =
+          Object.assign(
+            {},
+            issuedItems[0] || freshItem,
+            {
+              equipment_id:targetEquipmentId,
+              equipmentId:targetEquipmentId,
+              code:targetCode,
+              equipmentCode:targetCode,
+              equipment_code:targetCode,
+              publicShareCode:targetCode,
+              managerShareCode:targetCode
+            }
+          );
+      }
+
+      // 한 연락처 전송당 별도 tracking row를 만든다.
+      // receiver/phone snapshot은 기존 share_tracking_v521에만 보관한다.
+      const prepared =
+        await prepareShareTrackingV521(
+          [safeItem],
+          'sms',
+          {
+            receiver:receiverName || rawPhone,
+            phone:rawPhone
+          }
+        );
+
+      if (!prepared || prepared.ok !== true) {
+        return {
+          ok:false,
+          message:String(
+            prepared && prepared.message ||
+            '문자 링크 전송 기록을 준비하지 못했습니다.'
+          )
+        };
+      }
+
+      // 연락처별 수신자 문맥을 모호하게 만들지 않도록
+      // QR/session cache를 재사용하지 않고 fresh Recipient Token을 만든다.
+      const recipientBundle =
+        await createRecipientTokenBundleV573(
+          [safeItem]
+        );
+
+      if (!recipientBundle || recipientBundle.ok !== true) {
+        await cancelShareTrackingV521(prepared.token);
+
+        return {
+          ok:false,
+          message:String(
+            recipientBundle &&
+            recipientBundle.message ||
+            '수신자 Token V2 링크를 만들지 못했습니다.'
+          )
+        };
+      }
+
+      const payload =
+        buildRecipientTrackedSharePayloadV573(
+          [safeItem],
+          recipientBundle,
+          prepared.token
+        );
+
+      if (!payload || !payload.text || !payload.firstLink) {
+        await revokeRecipientTokenBundleV573(
+          recipientBundle
+        );
+        await cancelShareTrackingV521(
+          prepared.token
+        );
+
+        return {
+          ok:false,
+          message:'문자용 Recipient 링크를 만들지 못했습니다.'
+        };
+      }
+
+      const activated =
+        await activateShareTrackingV521(
+          prepared.token
+        );
+
+      if (!activated || activated.ok !== true) {
+        await revokeRecipientTokenBundleV573(
+          recipientBundle
+        );
+        await cancelShareTrackingV521(
+          prepared.token
+        );
+
+        return {
+          ok:false,
+          message:String(
+            activated && activated.message ||
+            '문자 링크 전송 기록을 활성화하지 못했습니다.'
+          )
+        };
+      }
+
+      // 신규 contact SMS 경로는 공유기록 연결이 필수이므로
+      // sent-event binding 실패 시 SMS 작성창을 열지 않는다.
+      const recipientSent =
+        await markRecipientShareSentBundleV577(
+          recipientBundle,
+          prepared.token
+        );
+
+      if (!recipientSent || recipientSent.ok !== true) {
+        await revokeRecipientTokenBundleV573(
+          recipientBundle
+        );
+        await cancelShareTrackingV521(
+          prepared.token
+        );
+
+        return {
+          ok:false,
+          message:String(
+            recipientSent &&
+            recipientSent.message ||
+            'Recipient 문자 전송 기록을 저장하지 못했습니다.'
+          )
+        };
+      }
+
+      // SitePass v23.7.762 R14:
+      // Android 앱에서는 Native ACTION_SENDTO bridge를 우선 사용한다.
+      // Native 환경인데 플러그인이 빠진 구 APK라면 기존 web sms: 경로로
+      // 조용히 fallback하지 않고 fail-closed 하여 재발을 숨기지 않는다.
+      const capacitorV762 =
+        window.Capacitor &&
+        typeof window.Capacitor === 'object'
+          ? window.Capacitor
+          : null;
+
+      const nativeAndroidV762 = !!(
+        capacitorV762 &&
+        typeof capacitorV762.isNativePlatform === 'function' &&
+        capacitorV762.isNativePlatform() &&
+        typeof capacitorV762.getPlatform === 'function' &&
+        String(capacitorV762.getPlatform() || '').toLowerCase() === 'android'
+      );
+
+      const smsNativeV762 =
+        capacitorV762 &&
+        capacitorV762.Plugins
+          ? capacitorV762.Plugins.SitePassSmsNative || null
+          : null;
+
+      if (nativeAndroidV762) {
+        if (
+          !smsNativeV762 ||
+          typeof smsNativeV762.openComposer !== 'function'
+        ) {
+          return {
+            ok:false,
+            message:
+              'Android 문자 Native 모듈을 확인하지 못했습니다. ' +
+              'v762 앱을 설치한 뒤 다시 시도해주세요.'
+          };
+        }
+
+        let nativeSmsResultV762 = null;
+
+        try {
+          nativeSmsResultV762 =
+            await smsNativeV762.openComposer({
+              phone:phone,
+              body:payload.text
+            });
+        } catch (nativeSmsErrorV762) {
+          return {
+            ok:false,
+            message:
+              'Android 문자 작성창을 열지 못했습니다.\n\n' +
+              String(
+                nativeSmsErrorV762 &&
+                nativeSmsErrorV762.message ||
+                nativeSmsErrorV762 ||
+                'SMS_COMPOSER_START_FAILED'
+              )
+          };
+        }
+
+        if (
+          !nativeSmsResultV762 ||
+          String(nativeSmsResultV762.status || '').toLowerCase() !== 'opened'
+        ) {
+          return {
+            ok:false,
+            message:
+              'Android 문자 작성 앱을 사용할 수 없습니다. (' +
+              String(
+                nativeSmsResultV762 &&
+                nativeSmsResultV762.code ||
+                'SMS_COMPOSER_ACTIVITY_UNAVAILABLE'
+              ) +
+              ')'
+          };
+        }
+      } else {
+        // 일반 웹 환경은 기존 동작을 유지한다.
+        window.location.href =
+          'sms:' +
+          encodeURIComponent(phone) +
+          '?body=' +
+          encodeURIComponent(payload.text);
+      }
+
+      return {
+        ok:true,
+        equipmentId:targetEquipmentId,
+        equipmentCode:targetCode,
+        recipientLinkPrepared:true,
+        smsHandoffMode:
+          nativeAndroidV762
+            ? 'native-sendto-v762'
+            : 'web-sms-uri'
+      };
+    }
+
+    window.sitePassOpenContactRecipientSmsV761 =
+      sitePassOpenContactRecipientSmsV761;
+
+
+    // STEP91 R9A:
+    // 회원 상세화면을 여는 것만으로 Recipient Token을 만들지 않는다.
+    // 사용자가 담당자 QR 영역을 명시적으로 눌렀을 때만 Token V2 QR을 준비한다.
+    // 이미 현재 상세에서 준비된 Recipient 링크가 있으면 기존 회원 미리보기 동작을 유지한다.
+    function sitePassPrepareMemberRecipientQrOnDemandV91(code) {
+      const targetCode = String(code || '').trim();
+
+      if (!targetCode) {
+        alert('담당자 QR에 필요한 장비 정보를 확인하지 못했습니다.');
+        return false;
+      }
+
+      if (currentDetailLink) {
+        const recipientView = window.SitePassShareRecipientView;
+        const parsed =
+          recipientView && typeof recipientView.parseRecipientShareLink === 'function'
+            ? recipientView.parseRecipientShareLink(currentDetailLink)
+            : null;
+
+        if (parsed) {
+          openManagerPublicView(targetCode);
+          return false;
+        }
+      }
+
+      const item =
+        sitePassBuildStableDetailItemV536(targetCode) ||
+        sitePassGetInstantLinkItemV559(targetCode) ||
+        getRuntimeItemByCode(targetCode);
+
+      if (!item) {
+        alert('장비 정보를 확인하지 못했습니다. 보관함에서 상세보기를 다시 열어주세요.');
+        return false;
+      }
+
+      const equipmentId =
+        sitePassResolveRecipientEquipmentIdV609(item, targetCode);
+
+      if (!equipmentId) {
+        alert('담당자 QR에 필요한 장비 식별자를 확인하지 못했습니다.');
+        return false;
+      }
+
+      const box = document.querySelector(
+        '[data-sitepass-member-recipient-qr-v574="' +
+        String(equipmentId || '').replace(/"/g, '') +
+        '"]'
+      );
+
+      if (box) {
+        box.innerHTML =
+          '<div style="min-height:180px;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;">' +
+            '<span class="small">담당자 QR을 생성하고 있습니다.</span>' +
+          '</div>' +
+          '<div class="qr-hint">잠시만 기다려주세요.</div>';
+      }
+
+      prepareMemberRecipientQrV574(item, targetCode);
+      return false;
+    }
+
+    window.sitePassPrepareMemberRecipientQrOnDemandV91 =
+      sitePassPrepareMemberRecipientQrOnDemandV91;
+
+    function buildRecipientShareTextV573(items, bundle, trackingToken) {
+      const safeItems = (items || []).filter(Boolean);
+      const entries = bundle && Array.isArray(bundle.entries)
+        ? bundle.entries
+        : [];
+
+      if (!safeItems.length || safeItems.length !== entries.length) {
+        return '';
+      }
+
+      const heading = '[SitePass] ' + getShareTitleForItems(safeItems);
+
+      const list = safeItems.map(function(item, index) {
+        const entry = entries[index];
+
+        const link = makeRecipientShareLinkV573(
+          entry && entry.token,
+          trackingToken
+        );
+
+        if (!link) return '';
+
+        let expireAt = getManagerExpireAt(item);
+
+        if (entry && entry.expires_at) {
+          const parsed = new Date(entry.expires_at).getTime();
+          if (Number.isFinite(parsed)) expireAt = parsed;
+        }
+
+        return (safeItems.length > 1 ? (index + 1) + '. ' : '') +
+          getShareItemLabel(item) + ' 서류\n' +
+          '포함서류: ' + getIncludedGroupText(item) + '\n' +
+          '담당자 화면: ' + link + '\n' +
+          '유효기간: ' + getManagerExpireText(expireAt);
+      }).filter(Boolean).join('\n\n');
+
+      if (!list) return '';
+
+      return heading + '\n' +
+        'QR·링크를 누르면 코드 입력 없이 바로 담당자 다운로드/프린트 화면이 열립니다.\n' +
+        '담당자가 한눈에 알아볼 수 있도록 장비명/장비번호를 먼저 표시했습니다.\n' +
+        '1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.\n\n' +
+        list;
+    }
+
+    function buildRecipientTrackedSharePayloadV573(items, bundle, trackingToken) {
+      const safeItems = (items || []).filter(Boolean);
+      const entries = bundle && Array.isArray(bundle.entries)
+        ? bundle.entries
+        : [];
+
+      const text = buildRecipientShareTextV573(
+        safeItems,
+        bundle,
+        trackingToken
+      );
+
+      const firstLink =
+        safeItems.length &&
+        entries.length
+          ? makeRecipientShareLinkV573(
+              entries[0].token,
+              trackingToken
+            )
+          : '';
+
+      return {
+        text:text,
+        firstLink:firstLink
+      };
+    }
+
+    // SITEPASS_42_3C_B_EMAIL_TOKEN_V2_FIX1
+    async function openRecipientEmailShareV573(items) {
+      const safeItems = (items || []).filter(Boolean);
+
+      const email = prompt(
+        '받는 사람 이메일을 입력해주세요.\n예: site@example.com'
+      );
+
+      if (email === null) return;
+
+      const cleanEmail = String(email || '').trim();
+
+      if (!cleanEmail || !cleanEmail.includes('@')) {
+        alert('받는 사람 이메일을 정확히 입력해주세요.');
+        return;
+      }
+
+      // 이메일도 SMS/Kakao와 동일한 서버 추적 흐름을 사용한다.
+      const prepared = await prepareShareTrackingV521(
+        safeItems,
+        'email',
+        {
+          receiver:cleanEmail,
+          email:cleanEmail
+        }
+      );
+
+      if (!prepared.ok) {
+        alert(
+          '이메일 링크 전송 준비를 완료하지 못했습니다.\n\n오류: ' +
+          (prepared.message || '알 수 없는 오류')
+        );
+        return;
+      }
+
+      const recipientBundle =
+        await createRecipientTokenBundleV573(safeItems);
+
+      if (!recipientBundle.ok) {
+        await cancelShareTrackingV521(prepared.token);
+
+        alert(
+          '수신자 Token V2 링크를 만들지 못했습니다.\n\n오류: ' +
+          (recipientBundle.message || '알 수 없는 오류')
+        );
+        return;
+      }
+
+      const payload = buildRecipientTrackedSharePayloadV573(
+        safeItems,
+        recipientBundle,
+        prepared.token
+      );
+
+      if (!payload || !payload.text) {
+        await revokeRecipientTokenBundleV573(recipientBundle);
+        await cancelShareTrackingV521(prepared.token);
+
+        alert('수신자 Token V2 이메일 공유문을 만들지 못했습니다.');
+        return;
+      }
+
+      const activated =
+        await activateShareTrackingV521(prepared.token);
+
+      if (!activated.ok) {
+        await revokeRecipientTokenBundleV573(recipientBundle);
+        await cancelShareTrackingV521(prepared.token);
+
+        alert(
+          '이메일 링크 전송 기록을 서버에 저장하지 못했습니다.\n\n오류: ' +
+          (activated.message || '알 수 없는 오류')
+        );
+        return;
+      }
+
+      const recipientSentV577 =
+        await markRecipientShareSentBundleV577(recipientBundle, prepared.token);
+
+      if (!recipientSentV577.ok) {
+        alert(
+          '이메일 작성창은 열지만 Recipient 전송 기록 일부를 저장하지 못했습니다.\n\n오류: ' +
+          (recipientSentV577.message || '알 수 없는 오류')
+        );
+      }
+
+      const subjectBase = getShareTitleForItems(safeItems);
+      const subject = encodeURIComponent(
+        '[SitePass] ' + subjectBase + ' QR·링크'
+      );
+
+      // 기존 로컬 공유이력 형식은 유지한다.
+      // Recipient Token 원문은 localStorage에 기록하지 않는다.
+      recordSitePassShareHistoryV520(
+        safeItems,
+        {
+          method:'이메일 공유',
+          receiver:cleanEmail,
+          email:cleanEmail,
+          status:'이메일 작성창 열기'
+        }
+      );
+
+      // v580: 이메일에서는 Recipient URL을 별도 줄에 두어
+      // 일반 메일 클라이언트의 자동 링크 인식률을 높인다.
+      // SMS/Kakao/QR/Recipient 링크 생성 방식은 변경하지 않는다.
+      const emailBodyText = String(payload.text || '')
+        .replace(/담당자 화면:\s*(https?:\/\/[^\r\n]+)/g, '담당자 화면 바로 열기\n$1')
+        .replace(/\r?\n/g, '\r\n');
+      const body = encodeURIComponent(emailBodyText);
+
+      window.location.href =
+        'mailto:' + cleanEmail +
+        '?subject=' + subject +
+        '&body=' + body;
+    }
     function buildTrackedSharePayloadV521(items, token) {
       const previous = window.sitePassShareTrackingTokenV521;
       window.sitePassShareTrackingTokenV521 = String(token || '');
@@ -1183,12 +3421,24 @@ function shareOneListItemEmail(code) {
         alert('문자 링크 전송 알림을 준비하지 못했습니다.\n\n오류: ' + (prepared.message || '알 수 없는 오류') + shareTrackingSqlHintV521(prepared.message));
         return;
       }
-      const payload = buildTrackedSharePayloadV521(items, prepared.token);
+      const recipientBundle = await createRecipientTokenBundleV573(items);
+      if (!recipientBundle.ok) {
+        await cancelShareTrackingV521(prepared.token);
+        alert('수신자 Token V2 링크를 만들지 못했습니다.\n\n오류: ' + (recipientBundle.message || '알 수 없는 오류'));
+        return;
+      }
+
+      const payload = buildRecipientTrackedSharePayloadV573(items, recipientBundle, prepared.token);
       const activated = await activateShareTrackingV521(prepared.token);
       if (!activated.ok) {
         alert('문자 링크 전송 기록을 서버에 저장하지 못했습니다.\n\n오류: ' + (activated.message || '알 수 없는 오류') + shareTrackingSqlHintV521(activated.message));
+        await revokeRecipientTokenBundleV573(recipientBundle);
         await cancelShareTrackingV521(prepared.token);
         return;
+      }
+      const recipientSentV577 = await markRecipientShareSentBundleV577(recipientBundle, prepared.token);
+      if (!recipientSentV577.ok) {
+        alert('문자 작성창은 열지만 Recipient 전송 기록 일부를 저장하지 못했습니다.\n\n오류: ' + (recipientSentV577.message || '알 수 없는 오류'));
       }
       window.location.href = 'sms:' + encodeURIComponent(phone) + '?body=' + encodeURIComponent(payload.text);
     }
@@ -1214,22 +3464,39 @@ function shareOneListItemEmail(code) {
       const saved = await saveManagerShareItemsToSupabase(safeItems);
       if (!saved.ok) {
         const message = String(saved.message || '알 수 없는 오류');
-        const sqlHint = /P0001|login required|not found|Could not find|schema cache|function|permission|42501|v501 담당자 공유링크 SQL/i.test(message)
-          ? '\n\nSupabase의 v501 담당자 공유링크 SQL을 실행한 뒤 다시 보내주세요.'
+        const sqlHint = /P0001|login required|not found|Could not find|schema cache|function|permission|42501|SERVER_SIGNATURE|sitepass_upsert_public_shares_v2/i.test(message)
+          ? '\n\nSupabase의 서버 공유서명 v2 RPC 상태를 확인한 뒤 다시 보내주세요.'
           : '';
         alert('담당자 링크를 서버에 저장하지 못했습니다.\n지금 보내면 받은 사람 휴대폰에서 조회할 수 없는 코드가 나올 수 있어 전송을 중단했습니다.' + sqlHint + '\n\n오류: ' + message);
         return;
       }
 
+      // v23.7.676 / 72-E3:
+      // 저장 성공만 보지 않고 v2가 돌려준 shares[].share_sig를 반드시 소비합니다.
+      const issuedSharesV676 = Array.isArray(saved.shares) ? saved.shares : [];
+      const issuedItemsV676 = Array.isArray(saved.items) && saved.items.length
+        ? saved.items
+        : [];
+
+      if (!saved.serverSignatureApplied ||
+          issuedSharesV676.length !== safeItems.length ||
+          issuedItemsV676.length !== safeItems.length ||
+          issuedSharesV676.some(function(share){
+            return !share || !/^[0-9a-f]{64}$/.test(String(share.share_sig || ''));
+          })) {
+        alert('서버 발급 공유서명을 확인하지 못해 전송을 중단했습니다.\n페이지를 새로고침한 뒤 다시 시도해주세요.');
+        return;
+      }
+
       if (channel === 'sms') {
-        await openTrackedSmsShareV521(safeItems);
+        await openTrackedSmsShareV521(issuedItemsV676);
         return;
       }
       if (channel === 'email') {
-        openEmailShare(buildManagerShareText(safeItems), safeItems);
+        await openRecipientEmailShareV573(issuedItemsV676);
         return;
       }
-      await openKakaoShareV521(safeItems);
+      await openKakaoShareV521(issuedItemsV676);
     }
 
     async function openKakaoShareV521(items) {
@@ -1239,7 +3506,14 @@ function shareOneListItemEmail(code) {
         alert('카카오톡 링크 전송 알림을 준비하지 못했습니다.\n\n오류: ' + (prepared.message || '알 수 없는 오류') + shareTrackingSqlHintV521(prepared.message));
         return;
       }
-      const tracked = buildTrackedSharePayloadV521(safeItems, prepared.token);
+      const recipientBundle = await createRecipientTokenBundleV573(safeItems);
+      if (!recipientBundle.ok) {
+        await cancelShareTrackingV521(prepared.token);
+        alert('수신자 Token V2 링크를 만들지 못했습니다.\n\n오류: ' + (recipientBundle.message || '알 수 없는 오류'));
+        return;
+      }
+
+      const tracked = buildRecipientTrackedSharePayloadV573(safeItems, recipientBundle, prepared.token);
       const itemCount = safeItems.length;
       if (navigator.share) {
         const payload = itemCount === 1
@@ -1250,9 +3524,15 @@ function shareOneListItemEmail(code) {
           const activated = await activateShareTrackingV521(prepared.token);
           if (!activated.ok) {
             alert('링크는 공유했지만 전송 알림을 서버에 저장하지 못했습니다.\n\n오류: ' + (activated.message || '알 수 없는 오류') + shareTrackingSqlHintV521(activated.message));
+          } else {
+            const recipientSentV577 = await markRecipientShareSentBundleV577(recipientBundle, prepared.token);
+            if (!recipientSentV577.ok) {
+              alert('링크는 공유했지만 Recipient 전송 기록 일부를 저장하지 못했습니다.\n\n오류: ' + (recipientSentV577.message || '알 수 없는 오류'));
+            }
           }
         } catch (error) {
           if (error && String(error.name || '').toLowerCase() === 'aborterror') {
+            await revokeRecipientTokenBundleV573(recipientBundle);
             await cancelShareTrackingV521(prepared.token);
             return;
           }
@@ -1260,6 +3540,11 @@ function shareOneListItemEmail(code) {
           const activated = await activateShareTrackingV521(prepared.token);
           if (!activated.ok) {
             alert('공유문은 복사했지만 전송 알림을 서버에 저장하지 못했습니다.\n\n오류: ' + (activated.message || '알 수 없는 오류') + shareTrackingSqlHintV521(activated.message));
+          } else {
+            const recipientSentV577 = await markRecipientShareSentBundleV577(recipientBundle, prepared.token);
+            if (!recipientSentV577.ok) {
+              alert('공유문은 복사했지만 Recipient 전송 기록 일부를 저장하지 못했습니다.\n\n오류: ' + (recipientSentV577.message || '알 수 없는 오류'));
+            }
           }
         }
       } else {
@@ -1267,6 +3552,11 @@ function shareOneListItemEmail(code) {
         const activated = await activateShareTrackingV521(prepared.token);
         if (!activated.ok) {
           alert('공유문은 복사했지만 전송 알림을 서버에 저장하지 못했습니다.\n\n오류: ' + (activated.message || '알 수 없는 오류') + shareTrackingSqlHintV521(activated.message));
+        } else {
+          const recipientSentV577 = await markRecipientShareSentBundleV577(recipientBundle, prepared.token);
+          if (!recipientSentV577.ok) {
+            alert('공유문은 복사했지만 Recipient 전송 기록 일부를 저장하지 못했습니다.\n\n오류: ' + (recipientSentV577.message || '알 수 없는 오류'));
+          }
         }
       }
     }
@@ -1378,7 +3668,7 @@ function normalizePhoneForShare(phone) {
        .filter(group => group.docs.length > 0);
       if (!groups.length) return '<div class="empty">표시할 서류가 없습니다.</div>';
       const activeKey = groups.some(group => group.key === 'equipment') ? 'equipment' : groups[0].key;
-      const tabs = groups.map(group => '<button type="button" role="tab" class="doc-folder-tab-v486 ' + (group.key === activeKey ? 'active' : '') + '" data-doc-folder-tab="' + group.key + '" aria-selected="' + (group.key === activeKey ? 'true' : 'false') + '" onclick="switchDocFolderV486(\'' + escapeJs(folderId) + '\',\'' + group.key + '\')"><span>' + escapeHtml(group.label) + '</span><b>' + group.docs.length + '</b></button>').join('');
+      const tabs = groups.map(group => '<button type="button" role="tab" class="doc-folder-tab-v486 ' + (group.key === activeKey ? 'active' : '') + '" data-doc-folder-tab="' + group.key + '" aria-selected="' + (group.key === activeKey ? 'true' : 'false') + '" onclick="window.SitePassDocument.selection.switchFolder(\'' + escapeJs(folderId) + '\',\'' + group.key + '\')"><span>' + escapeHtml(group.label) + '</span><b>' + group.docs.length + '</b></button>').join('');
       const panels = groups.map(group => '<div class="doc-folder-panel-v486 ' + (group.key === activeKey ? '' : 'hidden') + '" data-doc-folder-panel="' + group.key + '">' + group.docs.map((doc, index) => renderOne(doc, index)).join('') + '</div>').join('');
       return '<div id="' + escapeHtml(folderId) + '" class="doc-folders-v486"><div class="doc-folder-tabs-v486" role="tablist">' + tabs + '</div>' + panels + '</div>';
     }
@@ -1395,7 +3685,64 @@ function normalizePhoneForShare(phone) {
         return;
       }
       try { item = await hydrateItemStorageAccessUrlsV523(item); } catch (e) { console.warn('관리자 상세 서류주소 준비 실패:', e); }
-      currentDetailLink = makeManagerLink(item.code, getManagerExpireAt(item));
+      // SITEPASS_42_3C_D_QR_RECIPIENT_TOKEN_V2
+      const qrPrepared =
+        await prepareManagerShareItemsForServerV497([item]);
+
+      if (
+        !qrPrepared.ok ||
+        !Array.isArray(qrPrepared.items) ||
+        !qrPrepared.items.length
+      ) {
+        alert(
+          '담당자 QR·링크를 준비하지 못했습니다.\n\n오류: ' +
+          (qrPrepared.message || '알 수 없는 오류')
+        );
+        return;
+      }
+
+      const qrItems = qrPrepared.items;
+
+      const qrSaved =
+        await saveManagerShareItemsToSupabase(qrItems);
+
+      if (!qrSaved.ok) {
+        alert(
+          '담당자 QR·링크를 서버에 저장하지 못했습니다.\n\n오류: ' +
+          (qrSaved.message || '알 수 없는 오류')
+        );
+        return;
+      }
+
+      const qrBundle =
+        await createRecipientTokenBundleV573(qrItems);
+
+      if (!qrBundle.ok) {
+        alert(
+          '수신자 Token V2 QR 링크를 만들지 못했습니다.\n\n오류: ' +
+          (qrBundle.message || '알 수 없는 오류')
+        );
+        return;
+      }
+
+      const qrEntry =
+        Array.isArray(qrBundle.entries) && qrBundle.entries.length
+          ? qrBundle.entries[0]
+          : null;
+
+      currentDetailLink =
+        qrEntry && qrEntry.token
+          ? makeRecipientShareLinkV573(qrEntry.token, '')
+          : '';
+
+      if (!currentDetailLink) {
+        await revokeRecipientTokenBundleV573(qrBundle);
+        alert('수신자 Token V2 QR 링크를 만들지 못했습니다.');
+        return;
+      }
+
+      item = qrItems[0] || item;
+
       const qrUrl = makeQrUrl(currentDetailLink, 240);
       const docs = getDisplayDocs(item);
       const docHtml = renderDocFoldersV486(docs, 'adminDetailFoldersV486_' + String(item.code || '').replace(/[^a-zA-Z0-9_-]/g, ''), (doc) => renderDocDetail(doc));
@@ -1420,7 +3767,7 @@ function normalizePhoneForShare(phone) {
     const sitePassDetailServerRefreshAtV519 = {};
     const sitePassStorageHydrateCacheV523 = new WeakMap();
 
-    // v23.7.553-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
+    // v23.7.553-recovery-test: 장비 상세보기는 v520의 단순 흐름을 기준으로 복원합니다.
     // 서버자료가 비어 있거나 축약돼도 같은 회원의 기존 브라우저 등록자료를 보조자료로만 합칩니다.
     // 신규 Storage 경로가 있는 자료를 최우선으로 유지하고, 첨부 흔적이 없는 빈 서류카드는 상세보기에서 숨깁니다.
     const sitePassMemberDetailSnapshotV536 = new Map();
@@ -1646,26 +3993,76 @@ function normalizePhoneForShare(phone) {
     }
 
     function sitePassRenderMemberDetailDocV536(doc) {
-      return sitePassDetailDocHasFileV536(doc) ? renderDocDetail(doc) : sitePassRenderMissingOriginalDocV536(doc);
+      const memberView = window.SitePassShareMemberView;
+      if (!memberView || typeof memberView.renderMemberDetailDoc !== 'function') {
+        return sitePassDetailDocHasFileV536(doc) ? renderDocDetail(doc) : sitePassRenderMissingOriginalDocV536(doc);
+      }
+      return memberView.renderMemberDetailDoc(doc, {
+        hasFile:sitePassDetailDocHasFileV536,
+        renderDocDetail:renderDocDetail,
+        renderMissingOriginal:sitePassRenderMissingOriginalDocV536
+      });
     }
 
     async function resolveStorageAccessUrlForObjectV523(obj, parent, forceRefresh) {
       if (!obj || typeof obj !== 'object') return '';
+
       const path = getManagerShareStoragePathV497(obj);
-      if (!path) return getManagerShareObjectStoredUrlV496(obj) || '';
+      const bucket = getManagerShareStorageBucketV497(obj, parent);
+      const isPrivateSitePassDocuments =
+        String(bucket || '').trim() === 'sitepass-documents';
+
+      const stored = getManagerShareObjectStoredUrlV496(obj) || '';
+
+      if (!path) {
+        return (
+          isPrivateSitePassDocuments &&
+          isSitePassPrivateDocumentPublicUrlV91(stored)
+        ) ? '' : stored;
+      }
+
       const api = window.SitePassSupabaseApi;
-      if (!api) return getManagerShareObjectStoredUrlV496(obj) || '';
+
+      if (!api) {
+        return isPrivateSitePassDocuments ? '' : stored;
+      }
+
       try {
         if (typeof api.storageResolveUrl === 'function') {
-          return String(await api.storageResolveUrl(getManagerShareStorageBucketV497(obj, parent), path, {
-            preferSigned:true,
-            forceRefresh:!!forceRefresh
-          }) || '');
+          const resolved = String(
+            await api.storageResolveUrl(
+              bucket,
+              path,
+              {
+                preferSigned:true,
+                forceRefresh:!!forceRefresh,
+                allowPublicFallback:false
+              }
+            ) || ''
+          );
+
+          if (
+            isPrivateSitePassDocuments &&
+            isSitePassPrivateDocumentPublicUrlV91(resolved)
+          ) {
+            return '';
+          }
+
+          if (resolved) return resolved;
         }
-      } catch (e) { console.warn('기간 제한 파일주소 생성 실패:', e); }
+      } catch (e) {
+        console.warn('기간 제한 파일주소 생성 실패:', e);
+      }
+
+      // sitepass-documents는 Private이므로 signed 실패 뒤 public URL로 내려가지 않는다.
+      if (isPrivateSitePassDocuments) return '';
+
       try {
-        if (typeof api.storagePublicUrl === 'function') return String(api.storagePublicUrl(getManagerShareStorageBucketV497(obj, parent), path) || '');
+        if (typeof api.storagePublicUrl === 'function') {
+          return String(api.storagePublicUrl(bucket, path) || '');
+        }
       } catch (e) {}
+
       return '';
     }
 
@@ -1749,11 +4146,27 @@ function normalizePhoneForShare(phone) {
     function sitePassPaintMemberDetailV536(item, requestedCodeV519, paintOptionsV541) {
       if (!item) return false;
       paintOptionsV541 = paintOptionsV541 || {};
+      const adminReadOnlyV91 = paintOptionsV541.adminReadOnlyV91 === true;
       try { item = mergeLegacyManagerShareDocumentsV498(item); } catch (e) {}
-      try { item = hydrateManagerShareStorageUrlsV497(item); } catch (e) {}
+      if (!adminReadOnlyV91) {
+        // Private 원본은 signed URL 준비 전 public endpoint로 임시 렌더하지 않는다.
+        // storage_path와 이미 준비된 signed/data/blob URL은 그대로 유지한다.
+        try { item = sanitizeMemberDetailPrivateStorageUrlsV91(item); } catch (e) {}
+      }
       const itemCode = ensureManagerShareCodeForItem(item) || String(requestedCodeV519 || '').trim();
-      currentDetailLink = makeManagerLink(itemCode, getManagerExpireAt(item));
-      const qrUrl = makeQrUrl(currentDetailLink, 180);
+      const recipientEquipmentIdV574 = sitePassResolveRecipientEquipmentIdV609(item,itemCode);
+
+      if (adminReadOnlyV91) {
+        currentDetailLink = '';
+      } else if (
+        String(sitePassMemberRecipientQrDetailEquipmentV91 || '') !==
+        String(recipientEquipmentIdV574 || '')
+      ) {
+        currentDetailLink = '';
+        sitePassMemberRecipientQrDetailEquipmentV91 =
+          String(recipientEquipmentIdV574 || '');
+      }
+
       const detailDocs = sitePassGetRegisteredDetailDocsV536(item);
       const docHtml = detailDocs.length
         ? renderDocFoldersV486(detailDocs, 'memberDetailFoldersV536_' + String(itemCode || '').replace(/[^a-zA-Z0-9_-]/g, ''), function(doc){ return sitePassRenderMemberDetailDocV536(doc); })
@@ -1761,6 +4174,14 @@ function normalizePhoneForShare(phone) {
           ? '<div class="empty sitepass-detail-doc-loading-v541"><b>등록 서류를 불러오는 중입니다.</b><br>로그인 직후 서버 서류목록을 확인하고 있습니다. 확인 전에는 서류 없음으로 표시하지 않습니다.</div>'
           : '<div class="empty"><b>서버에서 등록된 서류정보를 확인하지 못했습니다.</b><br>수정/갱신 화면에서 등록서류가 남아 있는지 확인해주세요.</div>');
       const renewalHtml = isAdminLoggedIn() ? '<div class="notice blue-note">관리자 상세보기에서는 수정/갱신·결제연장 버튼을 숨깁니다. 장비업자에게 알림만 보내고, 실제 수정/갱신은 회원 보관함에서 처리합니다.</div>' : renderRenewPanel(item);
+      const recipientQrHtmlV91 = adminReadOnlyV91
+        ? '<div class="notice blue-note"><b>최고관리자 읽기전용 상세보기</b><br>현재 서버 canonical 서류를 조회합니다. 이 상세화면에서는 QR 생성·문서수정·갱신을 실행하지 않습니다.</div>'
+        : '<div class="qr-box" data-sitepass-member-recipient-qr-v574="' + escapeHtml(recipientEquipmentIdV574) + '" onclick="return sitePassPrepareMemberRecipientQrOnDemandV91(\'' + escapeJs(itemCode) + '\');">' +
+            '<div style="min-height:180px;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;">' +
+              '<span class="small">담당자 QR을 안전하게 준비하고 있습니다.</span>' +
+            '</div>' +
+            '<div class="qr-hint">QR 준비 중 · 누르면 회원 미리보기 화면이 열립니다.</div>' +
+          '</div>';
       const detailBox = document.getElementById('detailBox');
       if (!detailBox) return false;
       detailBox.innerHTML =
@@ -1773,14 +4194,350 @@ function normalizePhoneForShare(phone) {
         '<div class="line"><b>요금제 기준</b><span>' + escapeHtml(item.basicPlan || BASIC_PRICE_TEXT) + '<br>' + escapeHtml(item.alertPlan || ALERT_PRICE_TEXT) + '</span></div>' +
         '<div class="line"><b>전달 정책</b><span>' + escapeHtml(item.forwardPolicy || '공유 후 1일 재전송 가능 예정') + '</span></div>' +
         renewalHtml +
-        '<div class="qr-box" onclick="openManagerPublicView(\'' + escapeJs(itemCode) + '\')">' +
-          '<img alt="통합 QR" src="' + qrUrl + '">' +
-          '<div class="qr-hint">QR 누르면 담당자 다운로드/프린트 화면 바로 열림</div>' +
-        '</div>' +
+        recipientQrHtmlV91 +
         '<h3>등록 서류 폴더</h3>' + docHtml;
       showScreen('detailScreen');
       return true;
     }
+
+    // STEP81 V12:
+    // 상세보기 forceRefresh로 방금 발급한 signed URL은 stable 후보 재병합 뒤에도
+    // 동일 Storage 객체에 한해 최종 우선 유지한다.
+    // DB/공유 payload/기존 후보 객체는 변경하지 않고, 렌더할 stable 복사본만 갱신한다.
+    function sitePassOverlayFreshDetailStorageUrlsV12(stableItem, hydratedItem) {
+      if (!stableItem || typeof stableItem !== 'object') return hydratedItem || stableItem;
+      if (!hydratedItem || typeof hydratedItem !== 'object') return stableItem;
+
+      const out = Object.assign({}, stableItem);
+      out.docs =
+        stableItem.docs && typeof stableItem.docs === 'object'
+          ? Object.assign({}, stableItem.docs)
+          : {};
+
+      const freshDocs =
+        hydratedItem.docs && typeof hydratedItem.docs === 'object'
+          ? hydratedItem.docs
+          : {};
+
+      const urlKeys = [
+        'signedUrl',
+        'storageAccessUrl',
+        'fileUrl',
+        'downloadUrl',
+        'previewDataUrl',
+        'editDataUrl',
+        'storageAccessExpiresAt'
+      ];
+
+      function storageIdentity(obj, parent) {
+        if (!obj || typeof obj !== 'object') return '';
+        const path = String(
+          obj.storagePath ||
+          obj.storage_path ||
+          obj.filePath ||
+          obj.file_path ||
+          obj.storageKey ||
+          obj.storage_key ||
+          obj.objectPath ||
+          obj.object_path ||
+          obj.path ||
+          ''
+        ).replace(/^\/+/, '').trim();
+
+        if (!path) return '';
+
+        const bucket = String(
+          obj.storageBucket ||
+          obj.storage_bucket ||
+          obj.bucket ||
+          obj.bucketName ||
+          obj.bucket_name ||
+          (parent && (
+            parent.storageBucket ||
+            parent.storage_bucket ||
+            parent.bucket ||
+            parent.bucketName ||
+            parent.bucket_name
+          )) ||
+          (window.SITEPASS_DB_CONFIG &&
+            window.SITEPASS_DB_CONFIG.storageBucket) ||
+          'sitepass-documents'
+        ).trim() || 'sitepass-documents';
+
+        return bucket + '|' + path;
+      }
+
+      function hasFreshAccess(obj) {
+        if (!obj || typeof obj !== 'object') return false;
+
+        const expiresAt = Number(obj.storageAccessExpiresAt || 0);
+        const url = String(
+          obj.storageAccessUrl ||
+          obj.signedUrl ||
+          obj.previewDataUrl ||
+          obj.fileUrl ||
+          ''
+        ).trim();
+
+        return (
+          !!url &&
+          /^https?:\/\//i.test(url) &&
+          expiresAt > Date.now() + 5000
+        );
+      }
+
+      function overlayObject(target, fresh, targetParent, freshParent) {
+        if (!target || typeof target !== 'object') return target;
+        if (!fresh || typeof fresh !== 'object') return target;
+        if (!hasFreshAccess(fresh)) return target;
+
+        const targetId = storageIdentity(target, targetParent);
+        const freshId = storageIdentity(fresh, freshParent);
+
+        if (!targetId || !freshId || targetId !== freshId) return target;
+
+        const copy = Object.assign({}, target);
+        urlKeys.forEach(function(key) {
+          if (
+            fresh[key] !== undefined &&
+            fresh[key] !== null &&
+            fresh[key] !== ''
+          ) {
+            copy[key] = fresh[key];
+          }
+        });
+        copy.detailFreshSignedUrlOverlayV12 = true;
+        return copy;
+      }
+
+      Object.keys(freshDocs).forEach(function(key) {
+        const freshDoc =
+          freshDocs[key] && typeof freshDocs[key] === 'object'
+            ? freshDocs[key]
+            : null;
+
+        if (!freshDoc) return;
+
+        const stableDoc =
+          out.docs[key] && typeof out.docs[key] === 'object'
+            ? Object.assign({}, out.docs[key])
+            : null;
+
+        if (!stableDoc) return;
+
+        let nextDoc = overlayObject(
+          stableDoc,
+          freshDoc,
+          out,
+          hydratedItem
+        );
+
+        const stablePages =
+          Array.isArray(nextDoc.pages)
+            ? nextDoc.pages
+            : [];
+
+        const freshPages =
+          Array.isArray(freshDoc.pages)
+            ? freshDoc.pages
+            : [];
+
+        const freshByIdentity = new Map();
+
+        freshPages.forEach(function(page) {
+          const id = storageIdentity(page, freshDoc);
+          if (id && hasFreshAccess(page)) {
+            freshByIdentity.set(id, page);
+          }
+        });
+
+        nextDoc.pages = stablePages.map(function(page) {
+          if (!page || typeof page !== 'object') return page;
+
+          const id = storageIdentity(page, nextDoc);
+          const freshPage = id ? freshByIdentity.get(id) : null;
+
+          return freshPage
+            ? overlayObject(page, freshPage, nextDoc, freshDoc)
+            : page;
+        });
+
+        out.docs[key] = nextDoc;
+      });
+
+      out.detailFreshSignedUrlOverlayAtV12 =
+        new Date().toISOString();
+
+      return out;
+    }
+
+    // STEP81 V13:
+    // 상세보기 equipment 문서는 기존 Document public API의 canonical current hydration을
+    // 그대로 사용한다. 이 함수는 연결만 담당하며 DB/RPC/Storage 쓰기를 하지 않는다.
+    // 실패 시 기존 V12 stable 상세를 유지하여 다른 정상기능을 지우지 않는다.
+    async function sitePassHydrateCanonicalDetailDocumentsV13(item, requestedCode) {
+      if (!item || typeof item !== 'object') return item;
+
+      const documentApi =
+        window.SitePassDocument &&
+        window.SitePassDocument.upload;
+
+      if (
+        !documentApi ||
+        typeof documentApi.hydrateActiveDocumentState !== 'function'
+      ) {
+        return item;
+      }
+
+      try {
+        const canonical =
+          await documentApi.hydrateActiveDocumentState(item);
+
+        if (!canonical || typeof canonical !== 'object') {
+          return item;
+        }
+
+        const expectedCode =
+          String(requestedCode || '').trim();
+
+        const returnedCode =
+          String(canonical.code || '').trim();
+
+        if (
+          expectedCode &&
+          returnedCode &&
+          expectedCode !== returnedCode
+        ) {
+          console.warn(
+            '회원 상세 canonical 서류 code 불일치로 기존 상세를 유지합니다.',
+            {
+              expectedCode: expectedCode,
+              returnedCode: returnedCode
+            }
+          );
+          return item;
+        }
+
+        canonical.detailCanonicalHydratedAtV13 =
+          new Date().toISOString();
+
+        return canonical;
+      } catch (error) {
+        console.warn(
+          '회원 상세 canonical current 서류 준비 실패:',
+          error
+        );
+        return item;
+      }
+    }
+
+    // STEP91 R9B:
+    // 최고관리자 회원관리 장비 상세는 기존 회원용 권한 RPC를 우회하지 않고,
+    // 관리자 전용 read-only RPC로 canonical current 서류를 받은 뒤 동일 최신 UI 렌더러만 재사용한다.
+    function sitePassOpenAdminMemberEquipmentDetailV91(code,equipmentId) {
+      const requestedCode = String(code || '').trim();
+      const expectedEquipmentId = String(equipmentId || '').trim();
+
+      try {
+        window.sitePassCurrentDetailCodeV519 = requestedCode;
+      } catch (e) {}
+
+      const item =
+        sitePassBuildStableDetailItemV536(requestedCode);
+
+      const detailBox =
+        document.getElementById('detailBox');
+
+      if (!detailBox) return false;
+
+      if (!item || !expectedEquipmentId) {
+        detailBox.innerHTML =
+          '<div class="empty"><b>관리자 장비 상세 식별정보를 확인하지 못했습니다.</b><br>회원관리로 돌아가 다시 열어주세요.</div>';
+        showScreen('detailScreen');
+        return false;
+      }
+
+      detailBox.innerHTML =
+        '<div class="empty sitepass-detail-doc-loading-v541"><b>현재 서버 서류를 불러오는 중입니다.</b><br>최고관리자 read-only canonical 상세를 확인하고 있습니다.</div>';
+
+      showScreen('detailScreen');
+
+      const documentApi =
+        window.SitePassDocument &&
+        window.SitePassDocument.upload;
+
+      if (
+        !documentApi ||
+        typeof documentApi.hydrateAdminDocumentState !== 'function'
+      ) {
+        detailBox.innerHTML =
+          '<div class="empty"><b>관리자 최신 서류 조회 모듈을 확인하지 못했습니다.</b><br>새로고침 후 다시 시도해주세요.</div>';
+        return false;
+      }
+
+      Promise.resolve(
+        documentApi.hydrateAdminDocumentState(
+          item,
+          expectedEquipmentId
+        )
+      ).then(function(stable) {
+        if (
+          String(window.sitePassCurrentDetailCodeV519 || '') !==
+          requestedCode
+        ) return;
+
+        if (
+          typeof sitePassCurrentScreenId !== 'undefined' &&
+          sitePassCurrentScreenId !== 'detailScreen'
+        ) return;
+
+        stable =
+          stable && typeof stable === 'object'
+            ? stable
+            : null;
+
+        if (!stable) {
+          throw new Error(
+            '관리자 canonical 상세를 확인하지 못했습니다.'
+          );
+        }
+
+        sitePassPaintMemberDetailV536(
+          stable,
+          requestedCode,
+          {
+            docsPending:false,
+            adminReadOnlyV91:true
+          }
+        );
+      }).catch(function(error) {
+        console.warn(
+          '최고관리자 회원관리 canonical 장비 상세 실패:',
+          error
+        );
+
+        if (
+          String(window.sitePassCurrentDetailCodeV519 || '') !==
+          requestedCode
+        ) return;
+
+        detailBox.innerHTML =
+          '<div class="empty"><b>현재 서버 서류를 불러오지 못했습니다.</b><br>' +
+          escapeHtml(
+            String(
+              error && error.message
+                ? error.message
+                : error || '관리자 상세 조회 실패'
+            )
+          ) +
+          '<br><span class="small">오래된 public URL로 대체 표시하지 않았습니다.</span></div>';
+      });
+
+      return false;
+    }
+
+    window.sitePassOpenAdminMemberEquipmentDetailV91 =
+      sitePassOpenAdminMemberEquipmentDetailV91;
 
     function renderDetail(code, options) {
       options = options || {};
@@ -1814,9 +4571,57 @@ function normalizePhoneForShare(phone) {
       Promise.resolve(hydrateItemStorageAccessUrlsV523(item, true)).then(function(hydrated){
         if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
         if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
-        const stable = sitePassBuildStableDetailItemV536(requestedCodeV519) || hydrated || item;
-        const stableDocs = sitePassGetRegisteredDetailDocsV536(stable);
-        sitePassPaintMemberDetailV536(stable, requestedCodeV519, { docsPending:shouldWaitForDocsV541 && !stableDocs.length });
+        const rebuiltStableV12 =
+          sitePassBuildStableDetailItemV536(requestedCodeV519) ||
+          hydrated ||
+          item;
+
+        const stableV12 =
+          sitePassOverlayFreshDetailStorageUrlsV12(
+            rebuiltStableV12,
+            hydrated
+          );
+
+        return Promise.resolve(
+          sitePassHydrateCanonicalDetailDocumentsV13(
+            stableV12,
+            requestedCodeV519
+          )
+        ).then(function(stable) {
+          if (
+            String(
+              window.sitePassCurrentDetailCodeV519 || ''
+            ) !== requestedCodeV519
+          ) return;
+
+          if (
+            typeof sitePassCurrentScreenId !== 'undefined' &&
+            sitePassCurrentScreenId !== 'detailScreen'
+          ) return;
+
+          stable =
+            stable && typeof stable === 'object'
+              ? stable
+              : stableV12;
+
+          const stableDocs =
+            sitePassGetRegisteredDetailDocsV536(stable);
+
+          sitePassPaintMemberDetailV536(
+            stable,
+            requestedCodeV519,
+            {
+              docsPending:
+                shouldWaitForDocsV541 &&
+                !stableDocs.length
+            }
+          );
+
+          sitePassPrepareMemberRecipientQrAfterCanonicalV91(
+            stable,
+            requestedCodeV519
+          );
+        });
       }).catch(function(error){ console.warn('회원 상세 서류주소 준비 실패:', error); });
 
       if (shouldWaitForDocsV541 && typeof syncSupabaseMyEquipmentItems === 'function') {
@@ -1984,10 +4789,160 @@ function renderDocExpiryStrip(doc) {
       return record.token;
     }
 
+    // v23.7.561-test regression lock:
+    // 링크 클릭은 계속 즉시 이동해야 하므로 data:/blob: 원본과 대용량 문자열은 절대 snapshot에 넣지 않습니다.
+    // 대신 이미 준비되어 있는 짧은 https 기간제 URL과 canonical Storage 경로는 보존합니다.
+    // 이렇게 해야 v559의 즉시진입을 유지하면서 v556 이전처럼 보이던 서류 미리보기를 잃지 않습니다.
+    function sitePassIsSafeInstantFileUrlV560(value) {
+      const text = String(value || '').trim();
+      if (!text || text.length > 4096) return false;
+      if (/^(data:|blob:)/i.test(text)) return false;
+      return /^(https?:\/\/|\/)/i.test(text);
+    }
+
+    function sitePassCopyInstantFileRefsV560(source, target) {
+      source = source && typeof source === 'object' ? source : {};
+      target = target && typeof target === 'object' ? target : {};
+      const pathKeys = [
+        'storageBucket','storage_bucket','storagePath','storage_path','storageKey','storage_key',
+        'filePath','file_path','objectPath','object_path','uploadPath','upload_path','storedPath','stored_path','path'
+      ];
+      pathKeys.forEach(function(field){
+        const value = source[field];
+        if (value === undefined || value === null) return;
+        const text = String(value).trim();
+        if (!text || text.length > 2048) return;
+        target[field] = text;
+      });
+      const urlKeys = [
+        'signedUrl','signed_url','storageAccessUrl','storage_access_url','fileUrl','file_url',
+        'downloadUrl','download_url','previewUrl','preview_url','storagePublicUrl','storage_public_url',
+        'publicUrl','public_url','url','src','imageUrl','image_url',
+        // 구버전/등록완료 경로는 https 기간제 주소를 previewDataUrl/editDataUrl에 넣어두기도 합니다.
+        // data:/blob: 값은 sitePassIsSafeInstantFileUrlV560에서 차단되므로 안전한 짧은 URL만 보존됩니다.
+        'previewDataUrl','editDataUrl','originalDataUrl','correctedDataUrl','fileDataUrl','dataUrl','fileObjectUrl','blobUrl'
+      ];
+      urlKeys.forEach(function(field){
+        const value = source[field];
+        if (sitePassIsSafeInstantFileUrlV560(value)) target[field] = String(value).trim();
+      });
+      if (Number.isFinite(Number(source.storageAccessExpiresAt || source.storage_access_expires_at))) {
+        target.storageAccessExpiresAt = Number(source.storageAccessExpiresAt || source.storage_access_expires_at);
+      }
+      return target;
+    }
+
+    function sitePassBuildInstantPageV560(page) {
+      page = page && typeof page === 'object' ? page : {};
+      const row = {};
+      const pageKeys = [
+        'id','fileId','file_id','versionId','version_id','fileName','file_name','name','mimeType','mime_type',
+        'pageNo','page_no','pageIndex','page_index','storageMode','previewChoice','storageObjectVerified'
+      ];
+      pageKeys.forEach(function(field){
+        const value = page[field];
+        if (value === undefined || value === null) return;
+        if (typeof value === 'string' && value.length > 2048) return;
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') row[field] = value;
+      });
+      sitePassCopyInstantFileRefsV560(page, row);
+      return row;
+    }
+
+    function sitePassInstantPageHasFileRefV560(page) {
+      if (!page || typeof page !== 'object') return false;
+      const path = page.storagePath || page.storage_path || page.storageKey || page.storage_key || page.filePath || page.file_path || page.objectPath || page.object_path || page.path;
+      if (String(path || '').trim()) return true;
+      return [page.signedUrl,page.signed_url,page.storageAccessUrl,page.fileUrl,page.file_url,page.downloadUrl,page.download_url,page.previewUrl,page.preview_url,page.storagePublicUrl,page.publicUrl,page.url,page.src,page.imageUrl,page.previewDataUrl,page.editDataUrl,page.originalDataUrl,page.correctedDataUrl,page.fileDataUrl,page.dataUrl,page.fileObjectUrl,page.blobUrl]
+        .some(sitePassIsSafeInstantFileUrlV560);
+    }
+
+    function sitePassCollectInstantPagesV560(doc) {
+      doc = doc && typeof doc === 'object' ? doc : {};
+      const out = [];
+      const seenObjects = new WeakSet();
+      const seenRefs = new Set();
+      function pushPage(value) {
+        if (!value || typeof value !== 'object' || out.length >= 24) return;
+        const row = sitePassBuildInstantPageV560(value);
+        if (!sitePassInstantPageHasFileRefV560(row)) return;
+        const ref = String(row.storagePath || row.storage_path || row.filePath || row.file_path || row.objectPath || row.object_path || row.path || row.signedUrl || row.fileUrl || row.downloadUrl || row.url || row.src || '');
+        if (ref && seenRefs.has(ref)) return;
+        if (ref) seenRefs.add(ref);
+        out.push(row);
+      }
+      function walk(value, depth) {
+        if (!value || depth > 3 || out.length >= 24) return;
+        if (Array.isArray(value)) {
+          value.slice(0, 24).forEach(function(entry){ walk(entry, depth + 1); });
+          return;
+        }
+        if (typeof value !== 'object' || seenObjects.has(value)) return;
+        seenObjects.add(value);
+        pushPage(value);
+        ['pages','files','attachments','images','items'].forEach(function(key){ if (value[key]) walk(value[key], depth + 1); });
+        ['file','asset','upload','storage','original','corrected','preview'].forEach(function(key){ if (value[key] && typeof value[key] === 'object') walk(value[key], depth + 1); });
+      }
+      ['pages','files','attachments','images','items'].forEach(function(key){ if (doc[key]) walk(doc[key], 0); });
+      ['file','asset','upload','storage','original','corrected','preview'].forEach(function(key){ if (doc[key] && typeof doc[key] === 'object') walk(doc[key], 0); });
+      if (!out.length) pushPage(doc);
+      return out;
+    }
+
+    function sitePassBuildInstantPreviewItemV560(item, targetCode) {
+      item = item && typeof item === 'object' ? item : {};
+      const out = {};
+      const topKeys = [
+        'code','equipmentNo','equipment_no','equipmentName','equipment_name','machineName','machine_name',
+        'vehicleNo','vehicle_number','registrationNo','registration_no','itemType','item_type','type',
+        'ownerSignupId','owner_signup_id','ownerProviderId','owner_provider_id','ownerMemberId','owner_member_id',
+        'managerExpireAt','manager_expire_at','managerShareToken','manager_share_token',
+        'publicShareCode','public_share_code','managerShareCode','manager_share_code','shareCode','share_code',
+        'serviceStatus','service_status','paymentStatus','payment_status','lifecycleStatus','lifecycle_status',
+        'createdAt','created_at','updatedAt','updated_at'
+      ];
+      topKeys.forEach(function(key){
+        const value = item[key];
+        if (value === undefined || value === null) return;
+        if (typeof value === 'string' && value.length > 2048) return;
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') out[key] = value;
+      });
+      out.code = String(out.code || targetCode || '').trim();
+
+      const docs = item.docs && typeof item.docs === 'object' ? item.docs : {};
+      out.docs = {};
+      const docKeys = [
+        'key','docKey','doc_key','docKind','doc_kind','type','kind','title','groupTitle','group_title','groupKey','group_key',
+        'required','isRequired','is_required','expiry','expireDate','expire_date','expiryDate','expiry_date','educationDate','education_date',
+        'fileName','file_name','pageCount','page_count','status','attachStatus','attachmentStatus','storageMode','previewChoice'
+      ];
+      Object.keys(docs).forEach(function(key){
+        const doc = docs[key];
+        if (!doc || typeof doc !== 'object') return;
+        const clean = {};
+        docKeys.forEach(function(field){
+          const value = doc[field];
+          if (value === undefined || value === null) return;
+          if (typeof value === 'string' && value.length > 2048) return;
+          if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') clean[field] = value;
+        });
+        clean.key = String(clean.key || key || '').trim();
+        sitePassCopyInstantFileRefsV560(doc, clean);
+        clean.pages = sitePassCollectInstantPagesV560(doc);
+        if (!clean.pageCount && !clean.page_count && clean.pages.length) clean.pageCount = clean.pages.length;
+        out.docs[key] = clean;
+      });
+      out.storageMode = 'instant-preview-safe-file-refs-v560';
+      return out;
+    }
+
     function sitePassSaveManagerPreviewSnapshotV538(previewItem, finalCode, linkSig, memberPreviewToken) {
+      // v23.7.561-test: 링크 클릭 경로에서는 원본 장비 객체를 JSON.stringify 하지 않습니다.
+      // base64/data URL이 수 MB여도 메인 스레드가 멈추지 않도록 최소 메타데이터 + 안전한 파일참조만 저장합니다.
+      const lightItem = sitePassBuildInstantPreviewItemV560(previewItem, finalCode);
       const snapshot = {
-        item_data:previewItem,
-        payload:previewItem,
+        item_data:lightItem,
+        payload:lightItem,
         expires_at:null,
         share_code:String(finalCode || ''),
         share_sig:String(linkSig || ''),
@@ -2000,98 +4955,125 @@ function renderDocExpiryStrip(doc) {
         sessionStorage.setItem(key, JSON.stringify(snapshot));
         return true;
       } catch (e) {
-        try {
-          const lightItem = typeof stripItemDataUrlsForServerStorage === 'function'
-            ? stripItemDataUrlsForServerStorage(previewItem)
-            : previewItem;
-          sessionStorage.setItem(key, JSON.stringify(Object.assign({}, snapshot, { item_data:lightItem, payload:lightItem })));
-          return true;
-        } catch (ignore) {
-          console.warn('링크화면 즉시 미리보기 저장 실패:', ignore);
-          return false;
-        }
+        console.warn('링크화면 최소 미리보기 저장 실패(화면 이동은 계속):', e);
+        return false;
       }
     }
 
-    async function openManagerPublicView(code, expireAt, sig, options) {
-      options = options || {};
+    // v23.7.561-test: 링크 버튼 클릭 순간에는 localStorage 장비 전체목록을 읽거나 병합하지 않습니다.
+    // 보관함 렌더링 때 이미 확보한 메모리 스냅샷만 O(1)에 가깝게 확인하고, 없으면 코드만으로 즉시 이동합니다.
+    function sitePassGetInstantLinkItemV559(code) {
       const targetCode = String(code || '').trim();
+      if (!targetCode) return null;
       let item = null;
-      try { if (window.sitePassArchiveItemSnapshotV538 instanceof Map) item = window.sitePassArchiveItemSnapshotV538.get(targetCode) || null; } catch (e) {}
-      item = item || sitePassBuildStableDetailItemV536(targetCode) || getRuntimeItemByCode(targetCode) || getItemByCode(targetCode);
-      if (!item) {
-        if (!options.skipServerRetry && typeof syncSupabaseMyEquipmentItems === 'function') {
-          showManagerPreviewPreparingV511();
-          try {
-            await syncSupabaseMyEquipmentItems(true, true);
-          } catch (e) { console.warn('링크화면 장비 재확인 실패:', e); }
-          hideManagerPreviewPreparingV511();
-          return openManagerPublicView(targetCode, expireAt, sig, { skipServerRetry:true });
+      try {
+        if (window.sitePassArchiveItemSnapshotV538 instanceof Map) {
+          item = window.sitePassArchiveItemSnapshotV538.get(targetCode) || null;
         }
-        alert('장비 정보를 최종 확인하지 못했습니다. 보관함으로 돌아가 다시 열어주세요.');
+      } catch (e) {}
+      try { item = item || getManagerShareRuntimeItem(targetCode); } catch (e) {}
+
+      function matchesFast(candidate) {
+        if (!candidate || typeof candidate !== 'object') return false;
+        const values = [
+          candidate.code, candidate.share_code, candidate.shareCode,
+          candidate.publicShareCode, candidate.managerShareCode,
+          candidate.equipmentCode, candidate.equipment_code, candidate.id
+        ];
+        return values.some(function(value){ return String(value || '').trim() === targetCode; });
+      }
+
+      try {
+        if (!item && matchesFast(window.sitePassFastCompletionItem)) item = window.sitePassFastCompletionItem;
+      } catch (e) {}
+      try {
+        if (!item && Array.isArray(window.sitePassFastCompletionItems)) {
+          item = window.sitePassFastCompletionItems.find(matchesFast) || null;
+        }
+      } catch (e) {}
+      return item || null;
+    }
+
+    // 기존 getManagerLinkSignature()는 내부에서 getItemByCode()를 다시 호출할 수 있으므로
+    // 링크 클릭 전용 경로에서는 작은 토큰 맵과 현재 메모리 항목만 사용합니다.
+    function sitePassGetManagerShareTokenFastV559(code, item) {
+      const safeCode = String(code || '').trim();
+      if (!safeCode) return '';
+      let token = '';
+      try { token = String(item && (item.managerShareToken || item.manager_share_token) || '').trim(); } catch (e) {}
+      try {
+        if (!token && sitePassManagerShareTokenMemoryV496 instanceof Map) {
+          token = String(sitePassManagerShareTokenMemoryV496.get(safeCode) || '').trim();
+        }
+      } catch (e) {}
+
+      const tokenKey = 'SITEPASS_MANAGER_SHARE_TOKEN_MAP_V1';
+      let tokenMap = null;
+      if (!token) {
+        try {
+          tokenMap = JSON.parse(localStorage.getItem(tokenKey) || '{}') || {};
+          token = String(tokenMap[safeCode] || '').trim();
+        } catch (e) { tokenMap = {}; }
+      }
+      if (!token) {
+        token = makeManagerShareToken();
+        try {
+          tokenMap = tokenMap && typeof tokenMap === 'object' ? tokenMap : {};
+          tokenMap[safeCode] = token;
+          localStorage.setItem(tokenKey, JSON.stringify(tokenMap));
+        } catch (e) {}
+      }
+      try { if (sitePassManagerShareTokenMemoryV496 instanceof Map) sitePassManagerShareTokenMemoryV496.set(safeCode, token); } catch (e) {}
+      try { if (item && token) item.managerShareToken = token; } catch (e) {}
+      return token;
+    }
+
+    function openManagerPublicView(code, expireAt, sig, options) {
+      const memberView = window.SitePassShareMemberView;
+
+      if (!memberView || typeof memberView.openMemberPreview !== 'function') {
+        try { hideManagerPreviewPreparingV511(); } catch (e) {}
+        alert('회원 미리보기 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
         return;
       }
 
-      // v23.7.553-test: 로그인 직후 캐시에 서류목록이 아직 없으면 진행 중인 첫 서버동기화를
-      // 최대 2.2초만 함께 기다립니다. 30~40초짜리 중복 재조회는 만들지 않습니다.
-      if (!options.skipDocsWarmup && !sitePassGetRegisteredDetailDocsV536(item).length && typeof syncSupabaseMyEquipmentItems === 'function') {
-        try {
-          const warmupsV541 = [Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(){
-            const syncedItem = sitePassBuildStableDetailItemV536(targetCode);
-            if (syncedItem && sitePassGetRegisteredDetailDocsV536(syncedItem).length) return syncedItem;
-            throw new Error('전체 동기화에 서류목록 없음');
-          })];
-          if (typeof window.sitePassLoadMemberEquipmentItemByCodeV541 === 'function') {
-            warmupsV541.push(Promise.resolve(window.sitePassLoadMemberEquipmentItemByCodeV541(targetCode)).then(function(result){
-              const directItem = sitePassBuildStableDetailItemV536(targetCode) || (result && result.item);
-              if (result && result.ok === true && directItem && sitePassGetRegisteredDetailDocsV536(directItem).length) return directItem;
-              throw new Error('장비 한 건 조회에 서류목록 없음');
-            }));
-          }
-          const readyV541 = Promise.any ? Promise.any(warmupsV541) : Promise.race(warmupsV541);
-          await Promise.race([
-            readyV541.catch(function(){ return null; }),
-            new Promise(function(resolve){ setTimeout(resolve, 2200); })
-          ]);
-          item = sitePassBuildStableDetailItemV536(targetCode) || item;
-        } catch (e) { console.warn('링크화면 서류목록 빠른 준비 실패:', e); }
-      }
-
-      // 링크화면은 Storage 전체검사·복구를 기다리지 않고 캐시된 서류 메타정보와 경로로 먼저 엽니다.
-      // 보관함 카드에서 확보한 장비 원본을 sessionStorage에 넘기고 share.html이 즉시 그린 뒤
-      // 서버 최신자료와 기간 제한 파일주소를 뒤에서 보완합니다.
-      let previewItem = item;
-      try { previewItem = mergeLegacyManagerShareDocumentsV498(getBestManagerShareServerItemV497(item)); } catch (e) {}
-      try { previewItem = recoverManagerShareItemFromRegistrationDomV500(previewItem); } catch (e) {}
-      try { previewItem = hydrateManagerShareStorageUrlsV497(previewItem); } catch (e) {}
-      const originalCode = ensureManagerShareCodeForItem(previewItem) || targetCode;
-      const finalCode = ensureManagerShareCodeForItem(previewItem) || originalCode;
-      // v23.7.553-test: 회원이 보관함에서 여는 링크화면은 수신자 공유링크와 분리합니다.
-      // 회원 미리보기에는 만료시간을 적용하거나 공개 공유행의 만료시간을 갱신하지 않습니다.
-      // 카카오톡·문자 등 실제 전송 기능에서 만든 링크만 기존 1일 만료 규칙을 사용합니다.
-      const recipientExpireAt = expireAt ? Number(expireAt) : getManagerExpireAt(previewItem);
-      const linkSig = sig || getManagerLinkSignature(finalCode, recipientExpireAt);
-      const memberPreviewToken = sitePassCreateMemberPreviewTokenV542(finalCode);
-      sitePassSaveManagerPreviewSnapshotV538(previewItem, finalCode, linkSig, memberPreviewToken);
-
-      const url = new URL('./share.html', window.location.href);
-      url.search = ''; url.hash = '';
-      url.searchParams.set('manager', String(finalCode || ''));
-      if (linkSig) url.searchParams.set('sig', String(linkSig));
-      url.searchParams.set('from', 'member');
-      url.searchParams.set('preview_token', String(memberPreviewToken || ''));
-      url.searchParams.set('v', '23.7.553-test');
-      window.location.assign(url.toString());
+      return memberView.openMemberPreview(code, {
+        getItem:sitePassGetInstantLinkItemV559,
+        hidePreparing:hideManagerPreviewPreparingV511
+      });
     }
 
 
+    async function copyManagerCode(code) {
+      const sourceItem = getShortcutItem(code);
+      if (!sourceItem) return;
+      if (!canUseQrShareItems([sourceItem], '담당자 QR·링크 복사')) return;
 
-    function copyManagerCode(code) {
-      const item = getShortcutItem(code);
-      if (!item) return;
-      if (!canUseQrShareItems([item], '담당자 QR·링크 복사')) return;
+      const ensured = await ensureServerIssuedManagerShareItemV676(
+        sourceItem,
+        '담당자 QR·링크 복사'
+      );
+
+      if (!ensured.ok) {
+        alert('담당자 QR·링크용 서버 서명을 준비하지 못했습니다.\n\n오류: ' + ensured.message);
+        return;
+      }
+
+      const item = ensured.item;
       const expireAt = getManagerExpireAt(item);
       const link = makeManagerLink(item.code, expireAt);
+
+      try {
+        const parsed = new URL(link, window.location.href);
+        if (!/^[0-9a-f]{64}$/.test(String(parsed.searchParams.get('sig') || ''))) {
+          alert('서버 발급 공유서명이 확인되지 않아 링크 복사를 중단했습니다.');
+          return;
+        }
+      } catch (e) {
+        alert('담당자 링크 형식을 확인하지 못했습니다.');
+        return;
+      }
+
       const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\n' +
         '장비: ' + getItemTitle(item) + '\n' +
         'QR·링크: ' + link + '\n' +
@@ -2100,31 +5082,51 @@ function renderDocExpiryStrip(doc) {
       copyTextFallback(text, '담당자 QR·링크를 복사했습니다.\n카톡이나 문자에 붙여넣으면 담당자가 코드 입력 없이 바로 열 수 있습니다.');
     }
 
+    function getStep83DownloadDepsV34() {
+      return {
+        getRuntimeItemByCode:getRuntimeItemByCode,
+        getAttachedDisplayDocs:getAttachedDisplayDocs,
+        getSelectedPrintDocKeys:getSelectedPrintDocKeys,
+        getDocsByKeys:getDocsByKeys,
+        getDocumentOutputModule:getDocumentOutputModule,
+        getDocumentOutputDeps:getDocumentOutputDeps
+      };
+    }
+
     function downloadAllDocsBundle(code) {
-      const item = getRuntimeItemByCode(code);
-      if (!item) return;
-      downloadDocsBundle(item, getAttachedDisplayDocs(item), '전체서류');
+      const download = window.SitePassShareDownload;
+      if (!download || typeof download.downloadAllDocsBundle !== 'function') {
+        alert('공유 다운로드 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
+      return download.downloadAllDocsBundle(code, getStep83DownloadDepsV34());
     }
 
     function downloadSelectedDocsBundle(code) {
-      const item = getRuntimeItemByCode(code);
-      if (!item) return;
-      const keys = getSelectedPrintDocKeys();
-      if (!keys.length) { alert('다운로드할 서류를 체크해주세요.'); return; }
-      downloadDocsBundle(item, getDocsByKeys(item, keys), '선택서류');
+      const download = window.SitePassShareDownload;
+      if (!download || typeof download.downloadSelectedDocsBundle !== 'function') {
+        alert('공유 다운로드 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
+      return download.downloadSelectedDocsBundle(code, getStep83DownloadDepsV34());
     }
 
     function downloadSingleDocBundle(code, key) {
-      const item = getRuntimeItemByCode(code);
-      if (!item) return;
-      downloadDocsBundle(item, getDocsByKeys(item, [key]), '단일서류');
+      const download = window.SitePassShareDownload;
+      if (!download || typeof download.downloadSingleDocBundle !== 'function') {
+        alert('공유 다운로드 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
+      return download.downloadSingleDocBundle(code, key, getStep83DownloadDepsV34());
     }
 
-
     function downloadDocsBundle(item, docs, label) {
-      const out = getDocumentOutputModule();
-      if (out.downloadDocsBundle) return out.downloadDocsBundle(item, docs, label, getDocumentOutputDeps());
-      alert('문서 다운로드 기능 파일을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+      const download = window.SitePassShareDownload;
+      if (!download || typeof download.downloadDocsBundle !== 'function') {
+        alert('공유 다운로드 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
+      return download.downloadDocsBundle(item, docs, label, getStep83DownloadDepsV34());
     }
 
 
@@ -2191,28 +5193,25 @@ function renderDocExpiryStrip(doc) {
     }
 
 
+    function getStep83PrintDepsV34() {
+      return {
+        getRecipientViewModule:getRecipientViewModule,
+        getAttachedDisplayDocs:getAttachedDisplayDocs,
+        getDocPagesFromDoc:getDocPagesFromDoc,
+        expandPrintablePages:expandPrintablePages,
+        escapeJs:escapeJs,
+        cssEscapeValue:cssEscapeValue,
+        getRuntimeItemByCode:getRuntimeItemByCode,
+        getDocsByKeys:getDocsByKeys,
+        getDocumentOutputModule:getDocumentOutputModule,
+        getDocumentOutputDeps:getDocumentOutputDeps
+      };
+    }
+
     function renderPrintToolbar(item, showSelection) {
-      if (!item) return '';
-      const recipientView = getRecipientViewModule();
-      if (recipientView.renderDownloadToolbar) {
-        return recipientView.renderDownloadToolbar(item, {
-          mode:'public',
-          showSelection: !!showSelection,
-          deps:{ getDisplayDocs:getAttachedDisplayDocs, getDocPagesFromDoc, expandPrintablePages, escapeJs }
-        });
-      }
-      const code = item.code || '';
-      const printableCount = getAttachedDisplayDocs(item).reduce((sum, doc) => sum + expandPrintablePages([doc]).length, 0);
-      const attachedPageCount = getAttachedDisplayDocs(item).reduce((sum, doc) => sum + getDocPagesFromDoc(doc).length, 0);
-      return '<div class="print-toolbar download-toolbar">' +
-        '<div class="print-help full">필요한 서류를 체크하고 상단 버튼으로 다운로드/프린트하세요. 첨부 ' + attachedPageCount + '장 / 바로 처리 가능 ' + printableCount + '장</div>' +
-        '<button type="button" class="okBtn" onclick="downloadAllDocsBundle(\'' + escapeJs(code) + '\')">전체 서류 다운로드</button>' +
-        '<button type="button" class="primary" onclick="printAllDocs(\'' + escapeJs(code) + '\')">전체 서류 인쇄</button>' +
-        (showSelection ? '<button type="button" class="ghost" onclick="selectAllPrintDocs(true)">전체선택</button>' : '') +
-        (showSelection ? '<button type="button" class="secondary" onclick="selectAllPrintDocs(false)">선택해제</button>' : '') +
-        (showSelection ? '<button type="button" class="okBtn" onclick="downloadSelectedDocsBundle(\'' + escapeJs(code) + '\')">선택 다운로드</button>' : '<button type="button" class="okBtn" onclick="openQrPublicView(\'' + escapeJs(code) + '\')">선택 다운로드</button>') +
-        (showSelection ? '<button type="button" class="primary" onclick="printSelectedDocs(\'' + escapeJs(code) + '\')">선택 인쇄</button>' : '<button type="button" class="primary" onclick="openQrPublicView(\'' + escapeJs(code) + '\')">선택 인쇄</button>') +
-      '</div>';
+      const print = window.SitePassSharePrint;
+      if (!print || typeof print.renderPrintToolbar !== 'function') return '';
+      return print.renderPrintToolbar(item, showSelection, getStep83PrintDepsV34());
     }
 
     function renderPrintSelectRow(code) {
@@ -2220,22 +5219,27 @@ function renderDocExpiryStrip(doc) {
     }
 
     function selectAllPrintDocs(checked) {
-      document.querySelectorAll('[data-print-doc-check]').forEach(input => {
-        if (!input.disabled) input.checked = !!checked;
-      });
+      const print = window.SitePassSharePrint;
+      if (!print || typeof print.selectAllPrintDocs !== 'function') return;
+      return print.selectAllPrintDocs(checked);
     }
 
     function toggleSinglePrintCheck(key) {
-      const input = document.querySelector('[data-print-doc-check][value="' + cssEscapeValue(key) + '"]');
-      if (input && !input.disabled) input.checked = !input.checked;
+      const print = window.SitePassSharePrint;
+      if (!print || typeof print.toggleSinglePrintCheck !== 'function') return;
+      return print.toggleSinglePrintCheck(key, getStep83PrintDepsV34());
     }
 
     function getSelectedPrintKeys() {
-      return Array.from(document.querySelectorAll('[data-print-doc-check]:checked')).map(input => input.value);
+      const print = window.SitePassSharePrint;
+      if (!print || typeof print.getSelectedPrintKeys !== 'function') return [];
+      return print.getSelectedPrintKeys();
     }
 
     function getSelectedPrintDocKeys() {
-      return getSelectedPrintKeys();
+      const print = window.SitePassSharePrint;
+      if (!print || typeof print.getSelectedPrintDocKeys !== 'function') return [];
+      return print.getSelectedPrintDocKeys();
     }
 
     function openPublicDocPreview(code, key) {
@@ -2250,32 +5254,39 @@ function renderDocExpiryStrip(doc) {
     }
 
     function printAllDocs(code) {
-      const item = getRuntimeItemByCode(code);
-      if (!item) { alert('인쇄할 코드를 찾을 수 없습니다.'); return; }
-      const docs = getAttachedDisplayDocs(item);
-      printDocs(item, docs);
+      const print = window.SitePassSharePrint;
+      if (!print || typeof print.printAllDocs !== 'function') {
+        alert('공유 인쇄 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
+      return print.printAllDocs(code, getStep83PrintDepsV34());
     }
 
     function printSelectedDocs(code) {
-      const item = getRuntimeItemByCode(code);
-      if (!item) { alert('인쇄할 코드를 찾을 수 없습니다.'); return; }
-      const keys = getSelectedPrintKeys();
-      if (!keys.length) { alert('인쇄할 서류를 체크해주세요.'); return; }
-      const docs = getDocsByKeys(item, keys);
-      printDocs(item, docs);
+      const print = window.SitePassSharePrint;
+      if (!print || typeof print.printSelectedDocs !== 'function') {
+        alert('공유 인쇄 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
+      return print.printSelectedDocs(code, getStep83PrintDepsV34());
     }
 
     function printSingleDoc(code, key) {
-      const item = getRuntimeItemByCode(code);
-      if (!item) { alert('인쇄할 코드를 찾을 수 없습니다.'); return; }
-      const docs = getDocsByKeys(item, [key]);
-      printDocs(item, docs);
+      const print = window.SitePassSharePrint;
+      if (!print || typeof print.printSingleDoc !== 'function') {
+        alert('공유 인쇄 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
+      return print.printSingleDoc(code, key, getStep83PrintDepsV34());
     }
 
     function printDocs(item, docs) {
-      const out = getDocumentOutputModule();
-      if (out.printDocs) return out.printDocs(item, docs, getDocumentOutputDeps());
-      alert('문서 인쇄 기능 파일을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+      const print = window.SitePassSharePrint;
+      if (!print || typeof print.printDocs !== 'function') {
+        alert('공유 인쇄 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+        return;
+      }
+      return print.printDocs(item, docs, getStep83PrintDepsV34());
     }
 
 

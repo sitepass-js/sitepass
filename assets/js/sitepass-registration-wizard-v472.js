@@ -287,7 +287,15 @@
     finally { if (btn) btn.disabled = false; }
   }
   async function saveEdit486(){
-    await finalize();
+    const equipmentApi = window.SitePassEquipment;
+    if (
+      equipmentApi &&
+      equipmentApi.update &&
+      typeof equipmentApi.update.save === 'function'
+    ) {
+      return await equipmentApi.update.save();
+    }
+    throw new Error('[SitePass Step80] equipment update public API unavailable');
   }
   window.sitePassRegistrationWizardSaveEdit486 = saveEdit486;
 

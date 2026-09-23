@@ -1,0 +1,7 @@
+/* SitePass STEP92 v775 - admin notification operation ownership.
+ * Existing visual values remain inline to preserve the locked STEP92 UI exactly.
+ * This file is the independent CSS ownership boundary for later scoped styling.
+ */
+.sitepass-admin-notification-operation-v92 {
+  --sitepass-step92-notification-module: 1;
+}

@@ -3,16 +3,14 @@
 (function(){
   'use strict';
 
-  const APP_VERSION = 'v23.7.463';
+  const APP_VERSION = 'v23.7.596';
   const STORAGE_PREFIX = 'sitepass_push_notify_v23_7_283';
   const SUBSCRIPTION_KEY = STORAGE_PREFIX + '_subscription';
   const PERMISSION_LOG_KEY = STORAGE_PREFIX + '_permission_log';
   const LAST_DRAFT_NOTICE_KEY = STORAGE_PREFIX + '_draft_notice_sent';
   const LAST_TEST_KEY = STORAGE_PREFIX + '_last_test';
-  const PUSH_TABLE = 'sitepass_push_subscriptions';
 
   function storage(){ return window.SitePassStorage || {}; }
-  function supabaseApi(){ return window.SitePassSupabaseApi || {}; }
   function getConfig(){ return window.SITEPASS_DB_CONFIG || {}; }
   function nowIso(){ return new Date().toISOString(); }
 
@@ -55,19 +53,47 @@
       !!window.navigator.standalone;
   }
 
+  function getDeviceClass(){
+    try {
+      if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+        return navigator.userAgentData.mobile ? 'mobile' : 'desktop';
+      }
+    } catch (e) {}
+
+    const ua = String(navigator.userAgent || '');
+    if (/Android|iPhone|iPad|iPod|Windows Phone|IEMobile|Opera Mini|Mobile/i.test(ua)) {
+      return 'mobile';
+    }
+
+    // iPadOS 13+ may identify itself as Macintosh.
+    if (/Macintosh/i.test(ua) && Number(navigator.maxTouchPoints || 0) > 1) {
+      return 'mobile';
+    }
+
+    return 'desktop';
+  }
+
+  function isMobilePushDevice(){
+    return getDeviceClass() === 'mobile';
+  }
+
   function getSupportStatus(){
     const hasSw = 'serviceWorker' in navigator;
     const hasNotification = 'Notification' in window;
     const hasPush = 'PushManager' in window;
     const permission = getNotificationPermission();
+    const deviceClass = getDeviceClass();
+    const mobilePushEligible = deviceClass === 'mobile';
     return {
       serviceWorker: hasSw,
       notification: hasNotification,
       pushManager: hasPush,
       permission,
       standalone: isStandalone(),
-      canLocalTest: hasSw && hasNotification && permission === 'granted',
-      canRealPush: hasSw && hasNotification && hasPush && permission === 'granted'
+      deviceClass,
+      mobilePushEligible,
+      canLocalTest: mobilePushEligible && hasSw && hasNotification && permission === 'granted',
+      canRealPush: mobilePushEligible && hasSw && hasNotification && hasPush && permission === 'granted'
     };
   }
 
@@ -84,6 +110,12 @@
 
   async function ensurePermissionForPush(options){
     const silentIfGranted = !!(options && options.silentIfGranted);
+    if (!isMobilePushDevice()) {
+      if (!silentIfGranted) {
+        alert('휴대폰 Push 알림은 휴대폰에서만 설정합니다.\nPC에서는 알림 권한을 요청하거나 Windows 알림을 등록하지 않습니다.');
+      }
+      return 'desktop_not_eligible';
+    }
     if (!('Notification' in window)) {
       if (!silentIfGranted) alert('이 브라우저는 휴대폰 푸시알림을 지원하지 않습니다.');
       return 'unsupported';
@@ -152,12 +184,21 @@
     const url = getFunctionEndpoint();
     if (!url) return { data:null, error:{ message:'Supabase 함수 주소 없음' } };
     const anon = getAnonKey();
+    let accessToken = anon;
+    try {
+      const authSession = window.SitePassAuthSession || null;
+      if (authSession && typeof authSession.getSession === 'function') {
+        const sessionResult = await authSession.getSession();
+        accessToken = String(sessionResult?.data?.session?.access_token || anon || '');
+      }
+    } catch (e) {}
     try {
       const res = await fetch(url, {
         method:'POST',
         headers:{
           'Content-Type':'application/json',
-          ...(anon ? { 'apikey': anon, 'Authorization': 'Bearer ' + anon } : {})
+          ...(anon ? { 'apikey': anon } : {}),
+          ...(accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {})
         },
         body: JSON.stringify(payload || {})
       });
@@ -219,34 +260,59 @@
   }
 
   async function saveSubscriptionRow(subscription, extra){
-    const member = getCurrentMemberForPush() || {};
+    const subscriptionObject = subscription && typeof subscription.toJSON === 'function'
+      ? subscription.toJSON()
+      : subscription;
+    const endpoint = String(subscriptionObject && subscriptionObject.endpoint || '').trim();
     const row = {
-      id: (member.id || member.signupId || member.providerId || 'browser') + ':' + btoa((subscription && subscription.endpoint) || 'local').replace(/=+$/,''),
-      member_id: member.id || '',
-      signup_id: member.signupId || member.loginId || '',
-      provider: member.provider || member.signupMethod || '',
-      endpoint: subscription && subscription.endpoint ? subscription.endpoint : '',
-      subscription_json: subscription ? JSON.stringify(subscription) : '',
+      endpoint,
+      subscription_json: subscriptionObject ? JSON.stringify(subscriptionObject) : '',
       permission: getNotificationPermission(),
       device_info: navigator.userAgent || '',
       app_version: APP_VERSION,
       updated_at: nowIso(),
       created_at: nowIso(),
-      memo: extra && extra.memo ? extra.memo : 'SitePass PWA 푸시알림 구독 준비'
+      memo: extra && extra.memo ? extra.memo : 'SitePass 보안 RPC Web Push 구독'
     };
     writeLocal(SUBSCRIPTION_KEY, row);
-    const api = supabaseApi();
-    if (!api.upsert) return { data: row, error: { message: 'Supabase API 모듈 없음 - 브라우저에만 저장됨' } };
+
+    if (!endpoint || !subscriptionObject) {
+      return { data:row, error:{ message:'유효한 Web Push 구독정보가 없습니다.' } };
+    }
+
+    const client = window.sitepassSupabase || null;
+    if (!client || typeof client.rpc !== 'function') {
+      return { data:row, error:{ message:'Supabase RPC 연결 없음 - 브라우저에만 저장됨' } };
+    }
+
     try {
-      const res = await api.upsert(PUSH_TABLE, row, { onConflict: 'id' });
-      return res;
+      const result = await client.rpc('sitepass_register_my_push_subscription_v2', {
+        p_subscription: subscriptionObject,
+        p_device_class: 'mobile',
+        p_device_info: navigator.userAgent || '',
+        p_app_version: APP_VERSION
+      });
+      if (result && result.error) return { data:row, error:result.error };
+      return { data:result && result.data, local:row, error:null };
     } catch (e) {
-      return { data: row, error: e };
+      return { data:row, error:e };
     }
   }
 
   async function saveSubscriptionIfPossible(){
     const status = getSupportStatus();
+    if (!status.mobilePushEligible) {
+      return {
+        data: {
+          ok: true,
+          skipped: true,
+          reason: 'desktop_not_eligible',
+          deviceClass: status.deviceClass,
+          mobileDeliveryEligible: false
+        },
+        error: null
+      };
+    }
     if (!status.serviceWorker || !status.notification || status.permission !== 'granted') {
       return { data: null, error: { message: '푸시 권한 또는 서비스워커 없음' } };
     }
@@ -255,10 +321,9 @@
 
     const vapidKey = await getVapidPublicKeyAsync();
     if (!('PushManager' in window) || !vapidKey) {
-      // VAPID 키가 아직 없으면 실제 서버 푸시 구독은 못 만들지만, 권한 허용 기기 기록은 남깁니다.
       const msg = !('PushManager' in window) ? 'PushManager 미지원' : 'VAPID public key를 Edge Function에서 받지 못함';
       writeLocalText(STORAGE_PREFIX + '_last_error', msg);
-      return saveSubscriptionRow(null, { memo: msg + ' - 테스트 알림/권한 기록만 저장' });
+      return { data:null, error:{ message:msg } };
     }
 
     try {
@@ -272,6 +337,53 @@
       return saveSubscriptionRow(sub.toJSON ? sub.toJSON() : sub, { memo: 'Web Push 구독 저장' });
     } catch (e) {
       return { data: null, error: e };
+    }
+  }
+
+  let desktopCleanupRunning = false;
+
+  async function cleanupDesktopPushSubscriptionIfPossible(){
+    if (isMobilePushDevice() || desktopCleanupRunning) {
+      return { ok:true, skipped:true, reason:isMobilePushDevice() ? 'mobile_device' : 'already_running' };
+    }
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return { ok:true, skipped:true, reason:'unsupported' };
+    }
+
+    desktopCleanupRunning = true;
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg || !reg.pushManager) {
+        return { ok:true, skipped:true, reason:'registration_not_found' };
+      }
+
+      const sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        try { localStorage.removeItem(SUBSCRIPTION_KEY); } catch (e) {}
+        return { ok:true, changed:false, reason:'subscription_not_found' };
+      }
+
+      const payload = typeof sub.toJSON === 'function' ? sub.toJSON() : sub;
+      const endpoint = String(payload && payload.endpoint || '').trim();
+      const client = window.sitepassSupabase || null;
+
+      if (endpoint && client && typeof client.rpc === 'function') {
+        const result = await client.rpc('sitepass_remove_my_push_subscription_v1', {
+          p_endpoint: endpoint
+        });
+        if (result && result.error) {
+          return { ok:false, changed:false, error:result.error };
+        }
+      }
+
+      let unsubscribed = false;
+      try { unsubscribed = await sub.unsubscribe(); } catch (e) {}
+      try { localStorage.removeItem(SUBSCRIPTION_KEY); } catch (e) {}
+      return { ok:true, changed:true, unsubscribed, deviceClass:'desktop' };
+    } catch (error) {
+      return { ok:false, changed:false, error };
+    } finally {
+      desktopCleanupRunning = false;
     }
   }
 
@@ -664,7 +776,7 @@
     const res = await saveSubscriptionIfPossible();
     const localSub = readLocal(SUBSCRIPTION_KEY, null);
     const err = res && res.error ? (res.error.message || JSON.stringify(res.error)) : '';
-    if (localSub && localSub.endpoint) {
+    if (!err && localSub && localSub.endpoint) {
       alert('푸시 구독기록을 저장했습니다.\n이제 서버 푸시 테스트를 눌러보세요.');
     } else {
       alert('푸시 구독기록 저장을 확인하지 못했습니다.\n\n마지막 오류: ' + (err || readLocalText(STORAGE_PREFIX + '_last_error', '') || '알 수 없음'));
@@ -676,20 +788,19 @@
     const permission = await ensurePermissionForPush({ silentIfGranted:true });
     if (permission !== 'granted') { alert('알림 권한이 허용되어야 서버 푸시를 테스트할 수 있습니다.'); return; }
     const saved = await saveSubscriptionIfPossible();
-    const localSub = readLocal(SUBSCRIPTION_KEY, null);
-    let subscription = null;
-    try { subscription = safeJsonParse(localSub && localSub.subscription_json, null); } catch (e) { subscription = null; }
-    if (!subscription || !subscription.endpoint) {
-      const last = readLocalText(STORAGE_PREFIX + '_last_error', '');
-      alert('서버 푸시 구독정보가 없습니다.\n\n확인할 것:\n1) send-push Edge Function Verify JWT OFF\n2) VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY Secrets 저장\n3) 알림 권한 허용\n4) HTTPS 또는 홈화면 PWA에서 실행\n\n마지막 상태: ' + (last || '구독 생성 전'));
+    if (saved && saved.error) {
+      const saveMessage = saved.error.message || JSON.stringify(saved.error);
+      writeLocalText(STORAGE_PREFIX + '_last_error', '모바일 전용 보안 RPC 구독 저장 실패: ' + saveMessage);
+      alert('서버 푸시 구독 저장 실패:\n' + saveMessage);
+      refreshPanel();
       return;
     }
     const res = await invokePushFunction({
       action: 'test',
-      endpoint: subscription.endpoint,
-      subscription,
+      roomType: 'system',
       title: 'SitePass 서버 푸시 테스트',
-      body: 'Supabase Edge Function + VAPID 연결이 정상입니다.'
+      body: 'Supabase Edge Function + VAPID + 회원 구독 연결이 정상입니다.',
+      url: './'
     });
     if (res && res.error) {
       const msg = res.error.message || JSON.stringify(res.error);
@@ -698,12 +809,15 @@
       refreshPanel();
       return;
     }
-    alert('서버 푸시 테스트를 보냈습니다. 휴대폰 상단 알림을 확인하세요.');
+    const sent = Number(res && res.data && res.data.sent || 0);
+    if (sent > 0) alert('서버 푸시 테스트를 보냈습니다. 휴대폰 상단 알림을 확인하세요.');
+    else alert('서버 푸시 대상이 없습니다. 이 기기의 알림 권한과 구독 저장 상태를 다시 확인해주세요.');
     refreshPanel();
   }
 
   function getStatusText(){
     const st = getSupportStatus();
+    if (!st.mobilePushEligible) return 'PC 웹에서는 인앱 알림만 표시하며 휴대폰 Push 구독은 등록하지 않습니다.';
     if (!st.notification) return '이 브라우저는 알림을 지원하지 않습니다.';
     if (!st.serviceWorker) return '서비스워커가 없어 PWA 푸시를 사용할 수 없습니다.';
     if (st.permission === 'granted') return '알림 허용됨 - 테스트 푸시 확인 가능';
@@ -723,6 +837,70 @@
     return ' · 장비: ' + escapeHtmlForPush(list.join(', ')) + ((items || []).length > 3 ? ' 외 ' + ((items || []).length - 3) + '대' : '');
   }
 
+
+  // STEP92 R10C — 최고관리자용 알림/Push 운영현황.
+  // 기존 기기 권한/구독/테스트 기능은 변경하지 않고,
+  // 서버의 읽기전용 Summary + Issue cursor RPC만 조회합니다.
+  // STEP92 v775: notification operation implementation moved to
+  // features/admin/notifications/*. Legacy Push code keeps integration bridges only.
+  function adminPushOperationModuleV775(){
+    return window.SitePassAdminNotificationsOperationV92 || null;
+  }
+
+  function renderAdminPushOperationSectionV92(){
+    var operation = adminPushOperationModuleV775();
+    if (operation && typeof operation.render === 'function') {
+      return operation.render();
+    }
+
+    return (
+      '<div class="notice" style="margin:10px 0 14px;">' +
+        '알림 운영 모듈을 불러오지 못했습니다.' +
+      '</div>'
+    );
+  }
+
+  function refreshAdminPushOperationV92(force){
+    var operation = adminPushOperationModuleV775();
+    return operation && typeof operation.refresh === 'function'
+      ? operation.refresh(!!force)
+      : Promise.resolve(false);
+  }
+
+  function loadMoreAdminPushIssuesV92(){
+    var operation = adminPushOperationModuleV775();
+    return operation && typeof operation.loadMore === 'function'
+      ? operation.loadMore()
+      : Promise.resolve(false);
+  }
+
+  function clearAdminPushOperationStateV92(){
+    var operation = adminPushOperationModuleV775();
+    if (operation && typeof operation.clear === 'function') {
+      operation.clear();
+    }
+  }
+
+  function getAdminPushOperationStateV92(){
+    var operation = adminPushOperationModuleV775();
+    if (operation && typeof operation.getState === 'function') {
+      return operation.getState();
+    }
+
+    return {
+      summary: null,
+      issues: [],
+      totalIssues: 0,
+      hasMore: false,
+      nextCursor: null,
+      loading: false,
+      loadingMore: false,
+      error: 'ADMIN_NOTIFICATION_OPERATION_MODULE_UNAVAILABLE',
+      issueError: '',
+      fetchedAt: 0
+    };
+  }
+
   function renderPanelHtml(){
     const st = getSupportStatus();
     const bd = getAlertBreakdown();
@@ -734,8 +912,10 @@
     return '' +
       '<div id="sitepassPushPanel" class="card" style="box-shadow:none;margin-top:14px;border:1px solid #d9e5ff;">' +
         '<h3>푸시알림 관리</h3>' +
-        '<div class="notice blue-note">휴대폰 상단에 뜨는 PWA 푸시알림입니다. 기준은 <b>서류 만료 7일 전/만료일</b>, <b>이용권 만료 7일 전/만료일</b>, <b>작성중 서류 다음날 1회</b>입니다. 14일 전 알림과 반복 알림, 기사/인부 인증요청 푸시는 제외했습니다.</div>' +
-        '<div class="small" style="margin:8px 0;"><b>상태:</b> ' + escapeHtmlForPush(getStatusText()) + ' · 권한: ' + escapeHtmlForPush(st.permission) + ' · 홈화면앱: ' + (st.standalone ? '예' : '아니오') + '</div>' +
+        renderAdminPushOperationSectionV92() +
+        '<div style="margin:14px 0 6px;padding-top:12px;border-top:1px solid #e2e8f0;"><b>기기·테스트 도구</b></div>' +
+        '<div class="notice blue-note">휴대폰 상단에만 뜨는 PWA 푸시알림입니다. PC 웹에서는 채팅·알림·안읽음·배지만 표시하고 Windows Push는 등록하지 않습니다. 기준은 <b>서류 만료 7일 전/만료일</b>, <b>이용권 만료 7일 전/만료일</b>, <b>작성중 서류 다음날 1회</b>입니다. 14일 전 알림과 반복 알림, 기사/인부 인증요청 푸시는 제외했습니다.</div>' +
+        '<div class="small" style="margin:8px 0;"><b>상태:</b> ' + escapeHtmlForPush(getStatusText()) + ' · 기기: ' + escapeHtmlForPush(st.deviceClass) + ' · 권한: ' + escapeHtmlForPush(st.permission) + ' · 홈화면앱: ' + (st.standalone ? '예' : '아니오') + '</div>' +
         '<div class="actions" style="margin:8px 0 10px;">' +
           '<button type="button" class="primary" data-push-action="permission" onclick="sitepassRequestPushPermission()">알림 권한 요청</button>' +
           '<button type="button" class="secondary" data-push-action="local-test" onclick="sitepassSendTestPush()">기기 알림 테스트</button>' +
@@ -765,31 +945,41 @@
 
   function injectPanel(){
     const adminScreen = document.getElementById('adminScreen');
-    const adminBox = document.getElementById('adminBox');
-    if (!adminScreen || !adminBox || adminScreen.classList.contains('hidden')) return;
+    const host = document.getElementById('sitepassPushPanelHostV683');
+
+    // v683: 푸시알림은 독립 관리자 폴더에서만 표시한다.
+    if (!adminScreen || !host || adminScreen.classList.contains('hidden')) return;
+
     const existing = document.getElementById('sitepassPushPanel');
     const html = renderPanelHtml();
-    if (existing && (pushPanelLastHtml487 === html || existing.outerHTML === html)) {
+
+    if (existing && existing.parentNode === host && (pushPanelLastHtml487 === html || existing.outerHTML === html)) {
       pushPanelLastHtml487 = html;
       return;
     }
+
     const wrapper = document.createElement('div');
     wrapper.innerHTML = html;
     const node = wrapper.firstElementChild;
     if (!node) return;
+
     pushPanelLastHtml487 = html;
-    if (existing) {
+
+    if (existing && existing.parentNode === host) {
       existing.replaceWith(node);
       return;
     }
-    const firstCard = adminBox.querySelector('.card');
-    if (firstCard && firstCard.parentNode === adminBox) adminBox.insertBefore(node, firstCard);
-    else adminBox.appendChild(node);
+
+    if (existing && existing.parentNode) existing.remove();
+    host.replaceChildren(node);
   }
 
   function refreshPanel(){
     clearTimeout(pushPanelRefreshTimer487);
-    pushPanelRefreshTimer487 = setTimeout(injectPanel, 100);
+    pushPanelRefreshTimer487 = setTimeout(function(){
+      injectPanel();
+      refreshAdminPushOperationV92(false);
+    }, 100);
   }
 
   function setupPushButtonDelegates(){
@@ -807,11 +997,38 @@
       if (action === 'resubscribe') return resavePushSubscription();
       if (action === 'due-list') return showDueAlertsPreview();
       if (action === 'due-test') return sendFirstDueAlertAsTest();
+      if (action === 'operation-refresh') return refreshAdminPushOperationV92(true);
+      if (action === 'operation-more') return loadMoreAdminPushIssuesV92();
     }, true);
   }
 
   function boot(){
+    var adminOperationV775 = adminPushOperationModuleV775();
+    if (
+      adminOperationV775 &&
+      typeof adminOperationV775.setRenderCallback === 'function'
+    ) {
+      adminOperationV775.setRenderCallback(injectPanel);
+    }
+
     setupPushButtonDelegates();
+
+    try {
+      const authSessionV92 = window.SitePassAuthSession || null;
+      if (
+        authSessionV92 &&
+        typeof authSessionV92.subscribe === 'function' &&
+        !window.__sitepassAdminPushOperationAuthBoundV92
+      ) {
+        window.__sitepassAdminPushOperationAuthBoundV92 = true;
+
+        authSessionV92.subscribe(function(event){
+          if (event !== 'SIGNED_OUT') return;
+          clearAdminPushOperationStateV92();
+        });
+      }
+    } catch (e) {}
+
     refreshPanel();
     // v23.7.493: 관리자 화면 전체를 주기적으로 교체하지 않습니다.
     // 관리자 화면 렌더 완료·푸시 버튼 동작 뒤에만 필요한 경우 패널을 갱신합니다.
@@ -830,7 +1047,12 @@
   window.SitePassPushNotify = {
     version: APP_VERSION,
     refreshPanel,
+    refreshAdminOperation: refreshAdminPushOperationV92,
+    getAdminOperationState: getAdminPushOperationStateV92,
     getSupportStatus,
+    getDeviceClass,
+    isMobilePushDevice,
+    cleanupDesktopPushSubscriptionIfPossible,
     requestPermission,
     sendLocalTestNotification,
     sendServerTestPush,

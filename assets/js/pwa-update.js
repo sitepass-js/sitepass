@@ -1,4 +1,4 @@
-// SitePass v23.7.553-test - 담당자 링크 보존 + 반복 spfresh 이동 방지
+// SitePass v23.7.553-recovery-test - 담당자 링크 보존 + 반복 spfresh 이동 방지
 // 이 파일에는 새 버전 확인, 캐시 삭제, 강제 새로고침, 서비스워커 등록 기능을 둡니다.
 (function(){
   'use strict';
@@ -10,7 +10,7 @@
   }
   function getFixedAppUrl(){
     const rt = runtime();
-    return String((rt.getFixedAppUrl && rt.getFixedAppUrl()) || window.SITEPASS_DB_CONFIG?.appUrl || 'https://sitepass-js.github.io/sitepass/');
+    return String((rt.getFixedAppUrl && rt.getFixedAppUrl()) || window.SITEPASS_DB_CONFIG?.appUrl || 'https://sitepass.co.kr/');
   }
   function setHomeStatus(message){
     const rt = runtime();
@@ -30,7 +30,7 @@
   const UPDATE_NOTICE_KEY = 'sitepass_last_update_notice_version';
 
   function isOfficialGithubUrl(){
-    return location.hostname === 'sitepass-js.github.io' && location.pathname.indexOf('/sitepass') === 0;
+    return location.hostname === 'sitepass.co.kr' || location.hostname === 'www.sitepass.co.kr';
   }
 
 

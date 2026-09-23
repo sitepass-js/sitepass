@@ -5,10 +5,21 @@
 
 
     function completeAutoPaymentForItem(code, plan, sourceLabel, options) {
+      const localPaymentTestAllowed =
+        typeof window.sitePassIsLocalPaymentTestRuntimeV718 === 'function' &&
+        window.sitePassIsLocalPaymentTestRuntimeV718() === true;
+      if (!localPaymentTestAllowed) {
+        return {
+          ok:false,
+          blocked:true,
+          code:code || '',
+          message:'운영환경에서는 테스트 결제완료 경로를 사용할 수 없습니다.'
+        };
+      }
       const items = getItems();
       const idx = items.findIndex(item => String(item.code || '') === String(code || ''));
       if (idx < 0) return { ok:false, message:'결제할 서류함을 찾을 수 없습니다.', code:code || '' };
-      const info = getPlanInfo(plan || 'monthly', { additional: !!(options && options.additional) });
+      const info = getPlanInfo(plan || 'annual_auto', { additional: !!(options && options.additional) });
       const now = new Date();
       const nowIso = now.toISOString();
       const currentEnd = items[idx].trialEndsAt ? new Date(items[idx].trialEndsAt) : now;
@@ -50,7 +61,7 @@
         const pair = part.split('=');
         params[decodeURIComponent(pair[0] || '')] = decodeURIComponent(pair.slice(1).join('=') || '');
       });
-      const plan = params.plan === 'annual' ? 'annual' : 'monthly';
+      const plan = 'annual_auto';
       const additional = params.tier === 'additional';
       const result = completeAutoPaymentForItem(code, plan, '자동결제 링크 확인', { additional });
       if (!silent) {
@@ -74,7 +85,7 @@
         alert('7일 링크 만료검사에 사용할 미결제 임시 장비가 없습니다.\n임시 50명 / 장비 100대를 다시 생성해주세요.');
         return;
       }
-      handleAutoPaymentHash(makeAutoPaymentHash(target.code, 'monthly'), true);
+      handleAutoPaymentHash(makeAutoPaymentHash(target.code, 'annual_auto'), true);
       const paidItem = getItemByCode(target.code);
       const validExp = getSevenDaysFromNowMs();
       const validSig = getManagerLinkSignature(paidItem.code, validExp);
@@ -85,7 +96,7 @@
       const tamperBlocked = !isManagerLinkSignatureValid(paidItem, Date.now() + (365 * 24 * 60 * 60 * 1000), 'FAKE-SIG');
       alert('담당자 7일 링크 만료검사 결과\n\n' +
         '대상 장비: ' + getShareItemLabel(paidItem) + '\n' +
-        '결제상태: 1개월 자동결제 성공 처리\n' +
+        '결제상태: 연간 자동결제 성공 처리\n' +
         '7일 안 링크 접속: ' + (validOpen ? '정상 열림' : '오류') + '\n' +
         '7일 지난 링크 접속: ' + (expiredBlocked ? '정상 차단' : '오류') + '\n' +
         '만료시간 조작 링크: ' + (tamperBlocked ? '정상 차단' : '오류') + '\n\n' +
@@ -105,25 +116,27 @@
       const untouchedCode = blocked[2].code;
       const beforeMonthlyBlocked = isServiceShareBlocked(getItemByCode(monthlyCode));
       const beforeAnnualBlocked = isServiceShareBlocked(getItemByCode(annualCode));
-      const monthlyResult = handleAutoPaymentHash(makeAutoPaymentHash(monthlyCode, 'monthly'), true);
-      const annualResult = handleAutoPaymentHash(makeAutoPaymentHash(annualCode, 'annual'), true);
+      const monthlyResult = handleAutoPaymentHash(makeAutoPaymentHash(monthlyCode, 'annual_auto'), true);
+      const annualResult = handleAutoPaymentHash(makeAutoPaymentHash(annualCode, 'annual_auto'), true);
       const monthlyItem = getItemByCode(monthlyCode);
       const annualItem = getItemByCode(annualCode);
       const untouchedItem = getItemByCode(untouchedCode);
       const monthlyDays = Math.ceil((new Date(monthlyItem.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24));
       const annualDays = Math.ceil((new Date(annualItem.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24));
-      const monthlyOk = beforeMonthlyBlocked && monthlyResult.ok && !isServiceShareBlocked(monthlyItem) && monthlyItem.paymentPlan === 'monthly' && monthlyDays >= 29 && monthlyDays <= 31;
-      const annualOk = beforeAnnualBlocked && annualResult.ok && !isServiceShareBlocked(annualItem) && annualItem.paymentPlan === 'annual' && annualDays >= 364 && annualDays <= 366;
+      const monthlyOk = beforeMonthlyBlocked && monthlyResult.ok && !isServiceShareBlocked(monthlyItem) && monthlyItem.paymentPlan === 'annual_auto' && monthlyDays >= 364 && monthlyDays <= 366;
+      const annualOk = beforeAnnualBlocked && annualResult.ok && !isServiceShareBlocked(annualItem) && annualItem.paymentPlan === 'annual_auto' && annualDays >= 364 && annualDays <= 366;
       const untouchedOk = isServiceShareBlocked(untouchedItem);
       const allOk = monthlyOk && annualOk && untouchedOk;
-      alert('자동결제 링크 검사 결과\n\n1개월결제 링크: ' + (monthlyOk ? '정상' : '오류') + '\n- 장비코드: ' + monthlyCode + '\n- 남은기간: 약 ' + monthlyDays + '일\n- QR 접속: ' + (!isServiceShareBlocked(monthlyItem) ? '가능' : '차단') + '\n\n1년결제 링크: ' + (annualOk ? '정상' : '오류') + '\n- 장비코드: ' + annualCode + '\n- 남은기간: 약 ' + annualDays + '일\n- QR 접속: ' + (!isServiceShareBlocked(annualItem) ? '가능' : '차단') + '\n\n결제하지 않은 다른 장비 유지차단: ' + (untouchedOk ? '정상' : '오류') + '\n\n' + (allOk ? '정상입니다. 관리자 수동처리 없이 자동결제 링크만으로 QR이 활성화됩니다.' : '오류가 있습니다. 위 항목을 확인해야 합니다.'));
+      alert('자동결제 연간 링크 검사 결과\n\n연간 자동결제 A: ' + (monthlyOk ? '정상' : '오류') + '\n- 장비코드: ' + monthlyCode + '\n- 남은기간: 약 ' + monthlyDays + '일\n- QR 접속: ' + (!isServiceShareBlocked(monthlyItem) ? '가능' : '차단') + '\n\n연간 자동결제 B: ' + (annualOk ? '정상' : '오류') + '\n- 장비코드: ' + annualCode + '\n- 남은기간: 약 ' + annualDays + '일\n- QR 접속: ' + (!isServiceShareBlocked(annualItem) ? '가능' : '차단') + '\n\n결제하지 않은 다른 장비 유지차단: ' + (untouchedOk ? '정상' : '오류') + '\n\n' + (allOk ? '정상입니다. 연간 자동결제 처리만으로 QR이 활성화됩니다.' : '오류가 있습니다. 위 항목을 확인해야 합니다.'));
       renderAdmin();
     }
 
     function renderPricingScreen() {
-      const savedPlan = localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'monthly';
+      const savedPlan = 'annual';
       const radio = document.querySelector('input[name="paymentPlan"][value="' + savedPlan + '"]');
       if (radio) radio.checked = true;
+      const paymentTermsAgree86 = document.getElementById('paymentTermsAgree86');
+      if (paymentTermsAgree86) paymentTermsAgree86.checked = false;
       updateSelectedPaymentPlan();
       const pending = getPendingRegistration();
       const renewCard = document.getElementById('pricingRenewCard');
@@ -134,6 +147,12 @@
     }
 
     function startRegistrationWithSelectedPlan() {
+      const paymentTermsAgree86 = document.getElementById('paymentTermsAgree86');
+      if (paymentTermsAgree86 && !paymentTermsAgree86.checked) {
+        alert('결제 및 유료서비스 이용약관을 확인하고 필수 동의에 체크해주세요.');
+        try { paymentTermsAgree86.focus(); } catch (e) {}
+        return;
+      }
       const pending = getPendingRegistration();
       if (pending && pending.item) {
         // v23.7.282: 결제하기 직전에 결제 입력칸을 다시 그리면 주민번호/통신사/카드정보가 사라집니다.
@@ -178,9 +197,9 @@ function renderRenewPanel(item) {
       const dueText = getPaymentDueText(item);
       const showChip = isPaymentDueSoon(item) ? '<div class="renew-chip">연장 필요 · ' + escapeHtml(dueText) + '</div>' : '<div class="small">종료까지 ' + escapeHtml(dueText) + '</div>';
       const additional = isAdditionalPaymentItem(item);
-      const monthlyInfo = getPlanInfo('monthly', { additional });
       const annualInfo = getPlanInfo('annual', { additional });
-      return '<div class="renew-panel"><b>결제/연장</b><span>' + (additional ? '추가등록 장비 요금으로 연장됩니다.' : '첫 1대 등록 요금으로 연장됩니다.') + ' 현재 종료일 기준으로 기간이 연장되고, 카드/휴대폰 결제는 본인 명의 확인을 한 번 더 진행합니다.</span>' + showChip + '<div class="renew-actions"><button class="ghost" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'monthly\')">' + escapeHtml(monthlyInfo.price) + ' 연장</button><button class="primary" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'annual\')">' + escapeHtml(annualInfo.price) + ' 연장</button></div></div>';
+      const autoAnnualInfo = getPlanInfo('annual_auto', { additional });
+      return '<div class="renew-panel"><b>연간 결제/연장</b><span>월 유료결제는 없습니다. 일반 연간결제는 ' + escapeHtml(annualInfo.price) + ', 자동결제 연간이용권은 ' + escapeHtml(autoAnnualInfo.price) + '입니다.</span>' + showChip + '<div class="renew-actions"><button class="primary" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'annual\')">' + escapeHtml(annualInfo.price) + ' 일반 연간연장</button></div></div>';
     }
 
     function renderListRenewButton(item) {
@@ -190,8 +209,66 @@ function renderRenewPanel(item) {
       const guide = diff === 0
         ? '오늘 만료됩니다. 회원에게 기간연장 사이트 링크를 보내고 결제 후 QR을 다시 활성화합니다.'
         : getPaymentDueText(item) + ' · 만료 7일 전부터 회원에게 연장 안내를 보낼 수 있습니다.';
-      return '<div class="renew-panel"><b>' + escapeHtml(title) + '</b><span>' + escapeHtml(guide) + '</span><div class="renew-actions"><button class="okBtn" onclick="sendPaymentRenewalNotice(\'' + escapeJs(item.code) + '\')">연장 알림 보내기</button><button class="ghost" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'monthly\')">월 연장</button><button class="primary" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'annual\')">연 연장</button></div></div>';
+      return '<div class="renew-panel"><b>' + escapeHtml(title) + '</b><span>' + escapeHtml(guide) + '</span><div class="renew-actions"><button class="okBtn" onclick="sendPaymentRenewalNotice(\'' + escapeJs(item.code) + '\')">연장 알림 보내기</button><button class="primary" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'annual\')">연간 연장</button></div></div>';
     }
+
+    // STEP91 R9O — 베타 등록완료와 실제 유료결제를 분리해서 해석한다.
+    // paymentStatus='등록결제완료'는 등록 절차 완료 표식으로 보존할 수 있지만,
+    // test-free/결제없음/실사용베타 자료는 실제 결제완료로 간주하지 않는다.
+    function sitePassIsBetaNoChargeEquipmentV91(item) {
+      if (!item || typeof item !== 'object') return false;
+
+      const plan = String(item.paymentPlan || item.payment_plan || '').trim().toLowerCase();
+      const service = String(item.serviceStatus || item.service_status || '').trim().toLowerCase();
+      const amount = String(item.paymentAmount || item.payment_amount || '').trim().toLowerCase();
+      const method = String(item.paymentMethod || item.payment_method || '').trim().toLowerCase();
+      const basicPlan = String(item.basicPlan || item.basic_plan || '').trim().toLowerCase();
+
+      if (plan === 'test-free') return true;
+
+      const betaService =
+        service === '실사용베타' ||
+        service.indexOf('베타') >= 0;
+
+      const noCharge =
+        amount === '결제없음' ||
+        amount === '0' ||
+        amount === '0원' ||
+        basicPlan.indexOf('결제없음') >= 0;
+
+      const testMethod =
+        method.indexOf('테스트') >= 0 ||
+        method.indexOf('test') >= 0;
+
+      return !!(betaService && (noCharge || testMethod));
+    }
+
+    function sitePassNeedsPaidConversionV91(item) {
+      return sitePassIsBetaNoChargeEquipmentV91(item);
+    }
+
+    function sitePassPaymentDisplayTextV91(item) {
+      if (!item || typeof item !== 'object') return '확인필요';
+
+      const raw = String(
+        item.paymentStatus ||
+        item.payment_status ||
+        ''
+      ).trim();
+
+      if (sitePassIsBetaNoChargeEquipmentV91(item)) {
+        return (raw || '등록완료') + ' · 베타/실결제없음';
+      }
+
+      return raw || '확인필요';
+    }
+
+    window.sitePassIsBetaNoChargeEquipmentV91 =
+      sitePassIsBetaNoChargeEquipmentV91;
+    window.sitePassNeedsPaidConversionV91 =
+      sitePassNeedsPaidConversionV91;
+    window.sitePassPaymentDisplayTextV91 =
+      sitePassPaymentDisplayTextV91;
 
     function renderPricingTargetList() {
       const box = document.getElementById('pricingTargetList');
@@ -199,25 +276,25 @@ function renderRenewPanel(item) {
       const items = getItems();
       const plan = getSelectedPaymentPlan();
       if (!items.length) {
-        box.innerHTML = '<div class="empty">아직 등록된 서류함이 없습니다.<br>첫 장비는 서류 등록 후 월 2,000원 또는 연 19,900원 결제를 완료하면 QR링크가 생성됩니다.</div>';
+        box.innerHTML = '<div class="empty">아직 등록된 서류함이 없습니다.<br>정식 유료 이용권은 월결제 없이 일반 연간 30,000원 / 자동결제 연간 20,000원 정책입니다.</div>';
         return;
       }
       box.innerHTML = items.map(item => {
         const additional = isAdditionalPaymentItem(item, items);
         const info = getPlanInfo(plan, { additional });
-        const monthlyInfo = getPlanInfo('monthly', { additional });
         const annualInfo = getPlanInfo('annual', { additional });
+        const autoAnnualInfo = getPlanInfo('annual_auto', { additional });
         const tier = additional ? 'additional' : 'first';
-        const monthlyLink = makeAutoPaymentTestLink(item.code, 'monthly', tier);
-        const annualLink = makeAutoPaymentTestLink(item.code, 'annual', tier);
+        const autoAnnualLink = makeAutoPaymentTestLink(item.code, 'annual_auto', tier);
         return '<div class="list-item"><strong>' + escapeHtml(getItemTitle(item)) + '</strong>' +
           '<div class="small">현재 상태: ' + escapeHtml(getServiceStatusText(item)) + '</div>' +
+          '<div class="small">결제 해석: ' + escapeHtml(sitePassPaymentDisplayTextV91(item)) + '</div>' +
+          '<div class="small">유료전환 대상: ' + (sitePassNeedsPaidConversionV91(item) ? '<b>예 · 베타등록완료/실결제없음</b>' : '아니오') + '</div>' +
           '<div class="small">적용 구분: ' + (additional ? '2대부터 추가등록 요금' : '1대 등록 기본요금') + '</div>' +
           '<div class="small">선택 요금제: ' + escapeHtml(info.label + ' / ' + info.price) + '</div>' +
           '<div class="renew-panel"><b>자동결제 링크 확인</b><span>결제 성공 링크가 돌아왔을 때 QR·담당자 링크가 바로 열리는지 확인합니다.</span>' +
             '<div class="renew-actions">' +
-              '<a class="auto-pay-link monthly" href="' + escapeHtml(monthlyLink) + '">' + escapeHtml(monthlyInfo.price) + ' 결제 확인</a>' +
-              '<a class="auto-pay-link annual" href="' + escapeHtml(annualLink) + '">' + escapeHtml(annualInfo.price) + ' 결제 확인</a>' +
+              '<a class="auto-pay-link annual" href="' + escapeHtml(autoAnnualLink) + '">' + escapeHtml(autoAnnualInfo.price) + ' 자동결제 확인</a>' +
             '</div>' +
           '</div>' +
           '<div class="actions"><button class="okBtn" onclick="sendPaymentRenewalNotice(\'' + escapeJs(item.code) + '\')">연장 알림 보내기</button><button class="primary" onclick="renewItemService(\'' + escapeJs(item.code) + '\', \'' + escapeJs(plan) + '\')">선택한 요금제로 수동연장</button><button class="ghost" onclick="renderDetail(\'' + escapeJs(item.code) + '\')">상세보기</button></div></div>';
@@ -228,17 +305,15 @@ function renderRenewPanel(item) {
     function buildPaymentRenewalNoticeText(item) {
       const diff = getPaymentDueDays(item);
       const additional = isAdditionalPaymentItem(item);
-      const monthlyLink = makeAutoPaymentTestLink(item.code, 'monthly', additional ? 'additional' : 'first');
-      const annualLink = makeAutoPaymentTestLink(item.code, 'annual', additional ? 'additional' : 'first');
+      const autoAnnualLink = makeAutoPaymentTestLink(item.code, 'annual_auto', additional ? 'additional' : 'first');
       const title = diff === 0 ? '오늘 SitePass 이용기간이 만료됩니다.' : 'SitePass 이용기간이 ' + getPaymentDueText(item) + ' 남았습니다.';
       return '[SitePass 기간연장 안내]\n' +
         title + '\n' +
         '장비/서류함: ' + getItemTitle(item) + '\n' +
-        '월 결제: ' + getPlanInfo('monthly', { additional }).price + '\n' +
-        '연 결제: ' + getPlanInfo('annual', { additional }).price + '\n\n' +
-        '기간연장 사이트에서 결제하면 QR·담당자 링크가 다시 활성화됩니다.\n' +
-        '월 결제 링크: ' + monthlyLink + '\n' +
-        '연 결제 링크: ' + annualLink;
+        '일반 연간결제: ' + getPlanInfo('annual', { additional }).price + '\n' +
+        '자동결제 연간이용권: ' + getPlanInfo('annual_auto', { additional }).price + '\n\n' +
+        '월 유료결제는 제공하지 않습니다. 자동결제 신청/해지는 내정보에서 관리합니다.\n' +
+        '자동결제 테스트 링크: ' + autoAnnualLink;
     }
 
     function sendPaymentRenewalNotice(code) {
@@ -714,49 +789,12 @@ async function withdrawCurrentSupabaseAuthMember(reason) {
     }
 
     async function markMemberWithdrawnInSupabase(member, reason) {
-      try {
-        if (!window.sitepassSupabase || !member) return 0;
-        const keys = getMemberLoginKeys(member);
-        if (!keys.length) return 0;
-
-        // v23.7.216: DB에서도 확실히 withdrawn 처리합니다.
-        // 기존에는 대표 login_id 1개만 upsert해서 다른 login_id 행이 다시 살아나는 문제가 있었습니다.
-        try {
-          const { data, error } = await window.sitepassSupabase.rpc('sitepass_force_withdraw_member', {
-            p_login_keys: keys,
-            p_reason: reason || 'SitePass 회원 탈퇴/강제탈퇴 처리'
-          });
-          if (!error) return Number(data || 0);
-          console.warn('Supabase 강제탈퇴 RPC 실패, 단일 upsert로 보조 처리:', error.message);
-        } catch (rpcError) {
-          console.warn('Supabase 강제탈퇴 RPC 예외, 단일 upsert로 보조 처리:', rpcError?.message || rpcError);
-        }
-
-        const loginId = String(member.supabaseLoginId || member.providerId || member.signupId || member.phone || member.id || '').trim();
-        if (!loginId || isSuperAdminLoginId(loginId)) return 0;
-        const row = {
-          login_id: loginId,
-          name: '탈퇴회원',
-          phone: null,
-          signup_method: normalizeSignupProviderKey(member.signupMethod || member.provider || 'withdrawn') || 'withdrawn',
-          role: 'member',
-          status: 'withdrawn',
-          plan_type: 'withdrawn',
-          plan_label: '회원탈퇴',
-          plan_started_at: member.paymentStartedAt || member.createdAt || new Date().toISOString(),
-          plan_ends_at: new Date().toISOString(),
-          last_login_at: member.lastLoginAt || member.loggedInAt || new Date().toISOString(),
-          admin_memo: reason || '회원 탈퇴/강제탈퇴 처리'
-        };
-        const { error } = await window.sitepassSupabase
-          .from('sitepass_members')
-          .upsert(row, { onConflict:'login_id' });
-        if (error) console.warn('Supabase 탈퇴 상태 저장 실패:', error.message);
-        return error ? 0 : 1;
-      } catch (e) {
-        console.warn('Supabase 탈퇴 상태 저장 예외:', e);
-        return 0;
-      }
+      // 59/60 추가강화:
+      // 강제탈퇴 DB RPC는 service_role 전용입니다.
+      // 브라우저의 publishable/anon/authenticated 세션에서 직접 호출하거나
+      // sitepass_members를 직접 upsert하여 강제탈퇴를 흉내내는 구형 fallback은 금지합니다.
+      console.warn('관리자 강제탈퇴는 서버에서 관리자 신원을 검증하는 안전한 경로가 연결된 뒤에만 실행할 수 있습니다.');
+      return 0;
     }
 
 
@@ -793,9 +831,9 @@ async function withdrawCurrentSupabaseAuthMember(reason) {
 
     function getMemberSocialText(member) {
       const type = getMemberSignupProviderType(member);
-      if (type === 'kakao') return member?.providerId || member?.kakaoUserId || member?.supabaseLoginId || '카카오 연동';
-      if (type === 'naver') return member?.providerId || member?.naverUserId || member?.supabaseLoginId || '네이버 연동';
-      return '미연동';
+      if (type === 'kakao') return '카카오 가입';
+      if (type === 'naver') return '네이버 가입';
+      return 'SitePass 가입';
     }
 
     function getMemberKakaoText(member) {
@@ -876,21 +914,6 @@ async function withdrawCurrentSupabaseAuthMember(reason) {
       return removedCount;
     }
 
-    function buildWithdrawCleanupPayload(member) {
-      const keys = getMemberAdminIdentifiers(member).concat(getMemberLoginKeys(member)).map(normalizeAdminRoleKey).filter(Boolean);
-      return {
-        id: member?.id || '',
-        signup_id: member?.signupId || member?.signup_id || '',
-        provider_id: member?.providerId || member?.provider_id || '',
-        phone: member?.phone || '',
-        name: member?.name || '',
-        email: member?.email || '',
-        provider: member?.provider || member?.signupMethod || '',
-        keys: Array.from(new Set(keys))
-      };
-    }
-
-
     function removeServerEquipmentCacheForMember(member) {
       try {
         const cache = getServerEquipmentCache();
@@ -903,33 +926,16 @@ async function withdrawCurrentSupabaseAuthMember(reason) {
     }
 
     async function deleteOwnedServerItemsForMember(member) {
-      if (!member || member.isSuperAdminVirtual || isDesignatedSuperAdminMember(member)) return { ok:true, skipped:true, equipmentDeleted:0, sharesDeleted:0 };
+      // 59/60 추가강화 호환용 안전 스텁.
+      // 구형 탈퇴 서버정리 RPC는 더 이상 호출하지 않습니다.
       const localCacheRemoved = removeServerEquipmentCacheForMember(member);
-      const api = window.SitePassSupabaseApi;
-      const payload = buildWithdrawCleanupPayload(member);
-      let result = { ok:false, equipmentDeleted:0, sharesDeleted:0, localCacheRemoved, error:null };
-      try {
-        if (api && api.rpc) {
-          const rpcResult = await api.rpc('sitepass_withdraw_member_cleanup', { p_member: payload });
-          if (rpcResult && rpcResult.error) throw rpcResult.error;
-          let data = rpcResult ? rpcResult.data : null;
-          if (typeof data === 'string') { try { data = JSON.parse(data); } catch (e) {} }
-          result = { ok:true, equipmentDeleted:Number(data?.equipment_deleted || data?.equipmentDeleted || 0), sharesDeleted:Number(data?.shares_deleted || data?.sharesDeleted || 0), localCacheRemoved };
-        } else if (window.sitepassSupabase && window.sitepassSupabase.rpc) {
-          const { data, error } = await window.sitepassSupabase.rpc('sitepass_withdraw_member_cleanup', { p_member: payload });
-          if (error) throw error;
-          result = { ok:true, equipmentDeleted:Number(data?.equipment_deleted || data?.equipmentDeleted || 0), sharesDeleted:Number(data?.shares_deleted || data?.sharesDeleted || 0), localCacheRemoved };
-        } else {
-          result = { ok:false, skipped:true, equipmentDeleted:0, sharesDeleted:0, localCacheRemoved, error:'Supabase RPC 연결 없음' };
-        }
-      } catch (e) {
-        console.warn('회원탈퇴 장비/QR 서버정리 실패:', e);
-        result = { ok:false, equipmentDeleted:0, sharesDeleted:0, localCacheRemoved, error:e };
-      }
-      try { await syncSupabaseEquipmentItems(true); } catch (e) {}
-      sitePassEquipmentSyncMessage = result.ok
-        ? '회원탈퇴 서버정리 완료: 장비 ' + result.equipmentDeleted + '건 / QR링크 ' + result.sharesDeleted + '건'
-        : '회원탈퇴 서버정리 확인 필요: ' + (result.error?.message || result.error || '알 수 없음');
-      return result;
+      return {
+        ok: true,
+        skipped: true,
+        equipmentDeleted: 0,
+        sharesDeleted: 0,
+        localCacheRemoved,
+        reason: 'LEGACY_WITHDRAW_SERVER_DELETE_DISABLED'
+      };
     }
 

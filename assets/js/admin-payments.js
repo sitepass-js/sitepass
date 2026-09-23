@@ -4,21 +4,46 @@
 (function(){
   'use strict';
 
+  // STEP86: 유료 월결제 폐지. 기존 monthly 값은 데이터 호환을 위해 일반 연간결제로 정규화한다.
   function normalizePlan(plan) {
-    return plan === 'annual' ? 'annual' : 'monthly';
+    const raw = String(plan || '').trim().toLowerCase();
+    if (raw === 'annual_auto' || raw === 'auto_annual' || raw === 'autopay_annual') return 'annual_auto';
+    return 'annual';
   }
 
   function getPlanInfo(plan, options) {
     const cleanPlan = normalizePlan(plan);
     const additional = typeof options === 'boolean' ? options : !!(options && options.additional);
-    if (cleanPlan === 'annual') {
-      const price = additional ? '연 9,900원' : '연 19,900원';
-      const label = additional ? '추가등록 연 결제' : '1대 등록 연 결제';
-      return { key:'annual', label, price, days:365, serviceStatus:'유료사용', planText:label + ' · ' + price, additional };
+
+    if (cleanPlan === 'annual_auto') {
+      const price = '연 20,000원';
+      const label = '자동결제 연간이용권';
+      return {
+        key:'annual_auto',
+        label,
+        price,
+        amountKrw:20000,
+        days:365,
+        serviceStatus:'유료사용',
+        planText:label + ' · ' + price,
+        additional,
+        autoRenew:true
+      };
     }
-    const price = additional ? '월 1,000원' : '월 2,000원';
-    const label = additional ? '추가등록 월 결제' : '1대 등록 월 결제';
-    return { key:'monthly', label, price, days:30, serviceStatus:'유료사용', planText:label + ' · ' + price, additional };
+
+    const price = '연 30,000원';
+    const label = '일반 연간이용권';
+    return {
+      key:'annual',
+      label,
+      price,
+      amountKrw:30000,
+      days:365,
+      serviceStatus:'유료사용',
+      planText:label + ' · ' + price,
+      additional,
+      autoRenew:false
+    };
   }
 
   function addDaysIso(baseIso, days) {

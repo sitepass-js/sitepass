@@ -19,7 +19,7 @@
     function openNativeCameraFile(card) {
       const targetCard = card || activeCameraCard;
       if (!targetCard) return false;
-      if (!requirePrivateDocAuth(targetCard)) return false;
+      if (!window.SitePassDocument.verification.requirePrivate(targetCard)) return false;
       const fallback = targetCard.querySelector('input[data-role="camera-fallback"]');
       if (fallback) {
         fallback.click();
@@ -31,7 +31,7 @@
     async function openCameraGuide(docKey) {
       const card = document.querySelector('.doc-card[data-doc-key="' + docKey + '"]');
       if (!card) return;
-      if (!requirePrivateDocAuth(card)) return;
+      if (!window.SitePassDocument.verification.requirePrivate(card)) return;
       activeCameraCard = card;
 
       // v23.7.160: 사진찍기 모드 오류 수정.
@@ -127,7 +127,7 @@
       const targetCard = activeCameraCard;
       closeCameraGuide();
       if (!targetCard) return;
-      if (!requirePrivateDocAuth(targetCard)) return;
+      if (!window.SitePassDocument.verification.requirePrivate(targetCard)) return;
       openNativeCameraFile(targetCard);
     }
 
@@ -143,7 +143,7 @@
           fallbackCameraFile();
           return;
         }
-        if (!requirePrivateDocAuth(targetCard)) {
+        if (!window.SitePassDocument.verification.requirePrivate(targetCard)) {
           closeCameraGuide();
           return;
         }
@@ -721,20 +721,20 @@ function drawCameraAutoBox(box, sourceW, sourceH) {
         if (input.dataset.boundChange === 'yes') return;
         input.addEventListener('click', function(event) {
           const card = event.target.closest('.doc-card');
-          if (!requirePrivateDocAuth(card)) {
+          if (!window.SitePassDocument.verification.requirePrivate(card)) {
             event.preventDefault();
             event.stopImmediatePropagation();
             return false;
           }
         }, true);
-        input.addEventListener('change', handleFileChange);
+        input.addEventListener('change', function(event){ return window.SitePassDocument.upload.handleFileChange(event); });
         input.dataset.boundChange = 'yes';
       });
       target.querySelectorAll('[data-upload-label], .camera-launch').forEach(el => {
         if (el.dataset.boundAuthGate === 'yes') return;
         el.addEventListener('click', function(event) {
           const card = event.target.closest('.doc-card');
-          if (!requirePrivateDocAuth(card)) {
+          if (!window.SitePassDocument.verification.requirePrivate(card)) {
             event.preventDefault();
             event.stopImmediatePropagation();
             return false;
@@ -788,6 +788,9 @@ function renderDocCardHtml(group, doc, index, options = {}) {
       if (options.authPhone) authMetaAttrs.push('data-auth-phone="' + escapeHtml(options.authPhone) + '"');
       if (options.authPersonName) authMetaAttrs.push('data-auth-person-name="' + escapeHtml(options.authPersonName) + '"');
       if (options.authVerifiedAt) authMetaAttrs.push('data-auth-verified-at="' + escapeHtml(options.authVerifiedAt) + '"');
+      if (options.authSubjectId) authMetaAttrs.push('data-auth-subject-id="' + escapeHtml(options.authSubjectId) + '"');
+      if (options.authVerificationId) authMetaAttrs.push('data-auth-verification-id="' + escapeHtml(options.authVerificationId) + '"');
+      if (options.identityStatus) authMetaAttrs.push('data-identity-status="' + escapeHtml(options.identityStatus) + '"');
       const lockedNoteHtml = isPrivateDoc && !authVerified ? '<div class="auth-status">🔒 ' + (groupKey === 'driver' ? '기사 본인 동의/인증을 한 번 완료하면 기사서류 전체가 열립니다.' : '인부 동의/인증을 완료한 사람만 서류 업로드가 열립니다.') + '</div>' : '';
       const extraPhoneHtml = options.extraPhone ? '<div class="id-phone-input"><label>' + escapeHtml(options.phoneLabel || '전화번호 선택입력') + '</label><input type="tel" data-extra-phone-key="' + escapeHtml(options.phoneKey || 'phone') + '" placeholder="예: 010-0000-0000" inputmode="tel" autocomplete="tel" /></div>' : '';
       const extraTaskHtml = options.extraTask ? '<div class="id-phone-input" data-special-task-box><label>특수인부 작업내용 선택입력</label><input type="text" data-extra-task-key="workerTask" placeholder="예: 신호수 / 용접 / 타워크레인 신호 / 유도원" autocomplete="off" /></div>' : '';

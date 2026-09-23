@@ -1,4 +1,4 @@
-// SitePass v23.7.350 - speed optimized medium chunk (app-register-share-payment-speed 04/04)
+// SitePass v23.7.676-72-e3-server-signature-consumption - speed optimized medium chunk (04/04)
 // ---- merged from app-register-share-payment-13.js ----
 // SitePass v23.7.350 - app-register-share-payment finer split (13/15)
 function cssEscapeValue(value) {
@@ -87,9 +87,81 @@ function cssEscapeValue(value) {
     }
 
     function getManagerLinkSignature(code, expireAt) {
-      const token = getOrCreateManagerShareToken(code);
-      if (!token) return '';
-      return makeManagerLinkSignature(code, expireAt, token);
+      const qrShare = getQrShareModule();
+
+      // v23.7.676 / 72-E3:
+      // 실제 외부 링크에는 현재 세션에서 서버가 발급한 64-hex capability만 사용합니다.
+      if (qrShare && typeof qrShare.getServerIssuedShareSignatureV676 === 'function') {
+        const serverSig = String(
+          qrShare.getServerIssuedShareSignatureV676(code, expireAt) || ''
+        ).trim();
+        if (/^[0-9a-f]{64}$/.test(serverSig)) return serverSig;
+      }
+
+      // 서버 발급 전에는 서명 없는 URL만 만들 수 있습니다.
+      // 과거 8자리 client hash는 더 이상 발급/전송하지 않습니다.
+      return '';
+    }
+
+    function isServerIssuedManagerSignatureV676(sig) {
+      return /^[0-9a-f]{64}$/.test(String(sig || '').trim());
+    }
+
+    async function ensureServerIssuedManagerShareItemV676(item, actionLabel) {
+      if (!item) return { ok:false, message:'공유할 장비를 찾을 수 없습니다.' };
+
+      const code = ensureManagerShareCodeForItem(item);
+      const expireAt = getManagerExpireAt(item);
+      const existingSig = getManagerLinkSignature(code, expireAt);
+
+      if (isServerIssuedManagerSignatureV676(existingSig)) {
+        return { ok:true, item:item, share_sig:existingSig, reused:true };
+      }
+
+      if (typeof prepareManagerShareItemsForServerV497 !== 'function' ||
+          typeof saveManagerShareItemsToSupabase !== 'function') {
+        return { ok:false, message:'서버 공유 준비 함수를 확인하지 못했습니다.' };
+      }
+
+      const prepared = await prepareManagerShareItemsForServerV497([item]);
+      if (!prepared || prepared.ok !== true || !Array.isArray(prepared.items) || !prepared.items.length) {
+        return {
+          ok:false,
+          message:String(prepared && prepared.message || '담당자 링크를 서버 공유용으로 준비하지 못했습니다.')
+        };
+      }
+
+      const saved = await saveManagerShareItemsToSupabase(prepared.items);
+      if (!saved || saved.ok !== true || !saved.serverSignatureApplied ||
+          !Array.isArray(saved.shares) || !saved.shares.length) {
+        return {
+          ok:false,
+          message:String(saved && saved.message || '서버 발급 공유서명을 받지 못했습니다.')
+        };
+      }
+
+      const issuedItem = Array.isArray(saved.items) && saved.items.length
+        ? saved.items[0]
+        : prepared.items[0];
+
+      const issuedExpireAt = getManagerExpireAt(issuedItem);
+      const issuedSig = getManagerLinkSignature(
+        ensureManagerShareCodeForItem(issuedItem),
+        issuedExpireAt
+      );
+
+      if (!isServerIssuedManagerSignatureV676(issuedSig)) {
+        return { ok:false, message:'서버 발급 공유서명 형식이 올바르지 않습니다.' };
+      }
+
+      return {
+        ok:true,
+        item:issuedItem,
+        share_sig:issuedSig,
+        shares:saved.shares,
+        action:String(actionLabel || ''),
+        reused:false
+      };
     }
 
     function isManagerLinkSignatureValid(item, expireAt, sig) {
@@ -184,12 +256,34 @@ function cssEscapeValue(value) {
       return item;
     }
 
-    function downloadShortcutFile(code) {
-      const item = getShortcutItem(code);
-      if (!item) return;
+    async function downloadShortcutFile(code) {
+      const sourceItem = getShortcutItem(code);
+      if (!sourceItem) return;
+
+      const ensured = await ensureServerIssuedManagerShareItemV676(
+        sourceItem,
+        '담당자 바탕화면 파일'
+      );
+      if (!ensured.ok) {
+        alert('담당자 바탕화면 파일용 서버 링크를 준비하지 못했습니다.\n\n오류: ' + ensured.message);
+        return;
+      }
+
+      const item = ensured.item;
       const name = getShortcutName(item);
       const expireAt = getManagerExpireAt(item);
       const link = makeManagerLink(item.code, expireAt);
+
+      try {
+        const parsed = new URL(link, window.location.href);
+        if (!isServerIssuedManagerSignatureV676(parsed.searchParams.get('sig'))) {
+          alert('서버 발급 공유서명이 확인되지 않아 바탕화면 파일 생성을 중단했습니다.');
+          return;
+        }
+      } catch (e) {
+        alert('담당자 바탕화면 링크 형식을 확인하지 못했습니다.');
+        return;
+      }
       const expireDateText = new Date(expireAt).toLocaleString('ko-KR');
       const safeName = escapeHtml(name);
       const safeCode = escapeHtml(item.code || '');
@@ -522,7 +616,8 @@ function normalizePendingRegistrationTier(pending) {
 
     function getSelectedPaymentPlan() {
       const checked = document.querySelector('input[name="paymentPlan"]:checked');
-      return checked?.value || localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'monthly';
+      const raw = checked?.value || localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'annual';
+      return raw === 'annual_auto' ? 'annual_auto' : 'annual';
     }
 
     function isAdditionalRegistrationContext() {
@@ -542,14 +637,14 @@ function normalizePendingRegistrationTier(pending) {
       const payments = getAdminPaymentsModule();
       if (payments.getPlanInfo) return payments.getPlanInfo(plan, options);
       const additional = typeof options === 'boolean' ? options : !!(options && options.additional);
-      if (plan === 'annual') {
-        const price = additional ? '연 9,900원' : '연 19,900원';
-        const label = additional ? '추가등록 연 결제' : '1대 등록 연 결제';
-        return { key:'annual', label, price, days:365, serviceStatus:'유료사용', planText:label + ' · ' + price, additional };
+      if (plan === 'annual_auto') {
+        const price = '연 20,000원';
+        const label = '자동결제 연간이용권';
+        return { key:'annual_auto', label, price, amountKrw:20000, days:365, serviceStatus:'유료사용', planText:label + ' · ' + price, additional, autoRenew:true };
       }
-      const price = additional ? '월 1,000원' : '월 2,000원';
-      const label = additional ? '추가등록 월 결제' : '1대 등록 월 결제';
-      return { key:'monthly', label, price, days:30, serviceStatus:'유료사용', planText:label + ' · ' + price, additional };
+      const price = '연 30,000원';
+      const label = '일반 연간이용권';
+      return { key:'annual', label, price, amountKrw:30000, days:365, serviceStatus:'유료사용', planText:label + ' · ' + price, additional, autoRenew:false };
     }
 
     function updateSelectedPaymentPlan() {
@@ -557,22 +652,22 @@ function normalizePendingRegistrationTier(pending) {
       localStorage.setItem(SELECTED_PAYMENT_PLAN_KEY, plan);
       const additional = isAdditionalRegistrationContext();
       const info = getPlanInfo(plan, { additional });
-      const monthlyInfo = getPlanInfo('monthly', { additional });
       const annualInfo = getPlanInfo('annual', { additional });
-      const monthlyPrice = document.getElementById('monthlyPlanPriceText');
+      const autoAnnualInfo = getPlanInfo('annual_auto', { additional });
       const annualPrice = document.getElementById('annualPlanPriceText');
-      const monthlyDesc = document.getElementById('monthlyPlanDescText');
+      const autoAnnualPrice = document.getElementById('autoAnnualPlanPriceText');
       const annualDesc = document.getElementById('annualPlanDescText');
+      const autoAnnualDesc = document.getElementById('autoAnnualPlanDescText');
       const registerButton = document.getElementById('paymentRegisterButton');
       const pending = getPendingRegistration();
-      if (monthlyPrice) monthlyPrice.textContent = monthlyInfo.price;
       if (annualPrice) annualPrice.textContent = annualInfo.price;
-      if (monthlyDesc) monthlyDesc.textContent = additional ? '2대부터 추가등록 기준. 한 달씩 이용하는 방식입니다.' : '처음 1대 등록 기준. 한 달씩 이용하는 방식입니다.';
-      if (annualDesc) annualDesc.textContent = additional ? '2대부터 추가등록 기준. 1년 동안 이용하는 방식입니다.' : '처음 1대 등록 기준. 1년 동안 이용하는 방식입니다.';
+      if (autoAnnualPrice) autoAnnualPrice.textContent = autoAnnualInfo.price;
+      if (annualDesc) annualDesc.textContent = '1년 단위 일반결제입니다. 월 유료결제는 제공하지 않습니다.';
+      if (autoAnnualDesc) autoAnnualDesc.textContent = '1년 단위 자동갱신 요금입니다. 실제 신청은 결제대행사 연동 후 내정보에서 진행합니다.';
       if (registerButton) registerButton.textContent = window.SITEPASS_TEST_NO_PAYMENT_MODE ? (pending ? '결제없이 QR링크 생성' : '테스트 등록 시작') : (pending ? '결제하고 QR링크 생성' : (additional ? '선택한 결제방법으로 추가등록하기' : '선택한 결제방법으로 1대 등록하기'));
       const note = document.getElementById('selectedPlanNote');
       if (note) {
-        note.innerHTML = window.SITEPASS_TEST_NO_PAYMENT_MODE ? '<b>테스트 기간:</b> 결제단계 없이 등록 완료 후 QR·보관함 저장을 확인합니다.<br>정식 결제서비스 연결 때 카드/휴대폰/계좌 본인확인을 다시 켭니다.' : '<b>선택한 요금제:</b> ' + escapeHtml(info.label) + ' / ' + escapeHtml(info.price) + '<br>' + (additional ? '2대부터 추가등록 요금으로 결제됩니다.' : '첫 장비 1대 등록 요금으로 결제됩니다.') + '<br>' + (pending ? '결제를 완료하면 보관함에 저장되고 QR·담당자 링크가 바로 생성됩니다.' : '정식 서비스에서는 카드 명의자 확인, 휴대폰 소액결제 명의 확인, 계좌이체 은행 인증을 결제대행사와 연결합니다.');
+        note.innerHTML = window.SITEPASS_TEST_NO_PAYMENT_MODE ? '<b>테스트 기간:</b> 결제단계 없이 등록 완료 후 QR·보관함 저장을 확인합니다.<br><b>정식 유료정책:</b> 일반 연간 30,000원 / 자동결제 연간 20,000원 · 월 유료결제 없음' : '<b>선택한 요금제:</b> ' + escapeHtml(info.label) + ' / ' + escapeHtml(info.price) + '<br>유료 이용권은 1년 단위만 제공합니다.<br>' + (pending ? '결제를 완료하면 보관함에 저장되고 QR·담당자 링크가 바로 생성됩니다.' : '실제 결제는 선정된 결제대행사(PG)의 본인확인·승인 절차와 연결합니다.');
       }
       renderPendingRegistrationPaymentBox();
       renderPricingTargetList();
@@ -580,7 +675,7 @@ function normalizePendingRegistrationTier(pending) {
 
 
     function makeAutoPaymentHash(code, plan, tier) {
-      const cleanPlan = plan === 'annual' ? 'annual' : 'monthly';
+      const cleanPlan = plan === 'annual_auto' ? 'annual_auto' : 'annual';
       const cleanTier = tier === 'additional' ? 'additional' : 'first';
       return '#pay=' + encodeURIComponent(code || '') + '&plan=' + encodeURIComponent(cleanPlan) + '&tier=' + encodeURIComponent(cleanTier) + '&result=success';
     }
@@ -599,7 +694,7 @@ function normalizePendingRegistrationTier(pending) {
       const paidOwned = ownedItems.filter(item => !isServiceShareBlocked(item)).length;
       const totalOwned = ownedItems.length;
       const allOwnedPaid = totalOwned > 0 && paidOwned >= totalOwned;
-      const label = info.key === 'annual' ? '1년권' : '1개월권';
+      const label = '1년권';
       const planLabel = allOwnedPaid ? label : '일부장비 ' + label;
       const maxEnd = ownedItems.reduce((latest, item) => {
         const time = item.trialEndsAt ? new Date(item.trialEndsAt).getTime() : 0;

@@ -2991,6 +2991,531 @@
     }
 
   
+    /* SITEPASS_45_ADMIN_PAGE_V578 - 관리자페이지 상위 폴더 구조 */
+    .sitepass-admin-shell-v578 { margin-top:8px; }
+    .sitepass-admin-role-note-v578 { margin-bottom:10px; }
+    .sitepass-admin-nav-v578 {
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:7px;
+      margin:10px 0 12px;
+      padding:10px;
+      border:1px solid #dbe7f8;
+      border-radius:18px;
+      background:#f8fbff;
+    }
+    .sitepass-admin-nav-btn-v578 {
+      min-height:42px;
+      border:1px solid #cfe0ff;
+      border-radius:13px;
+      background:#fff;
+      color:#18418f;
+      font-weight:950;
+      font-size:12px;
+      letter-spacing:-.35px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+    }
+    .sitepass-admin-nav-btn-v578 > span {
+      min-width:20px;
+      padding:2px 5px;
+      border-radius:999px;
+      background:#edf4ff;
+      color:#18418f;
+      font-size:10px;
+      line-height:1.2;
+    }
+    .sitepass-admin-nav-btn-v578.active {
+      background:#172033;
+      color:#fff;
+      border-color:#172033;
+    }
+    .sitepass-admin-nav-btn-v578.active > span { background:rgba(255,255,255,.18); color:#fff; }
+    .sitepass-admin-content-v578 { min-height:220px; }
+    .sitepass-admin-section-card-v578 { margin-top:0 !important; }
+    .sitepass-admin-section-head-v578 {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .sitepass-admin-section-head-v578 h3 { margin:0 0 4px; }
+    .sitepass-admin-section-note-v578 { margin-top:0; }
+    .sitepass-admin-kpi-grid-v578 {
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:8px;
+      margin:10px 0;
+    }
+    .sitepass-admin-kpi-grid-v578 > div {
+      min-height:64px;
+      padding:10px 8px;
+      border:1px solid #e0e8f5;
+      border-radius:14px;
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:4px;
+      text-align:center;
+    }
+    .sitepass-admin-kpi-grid-v578 b { font-size:11px; color:#667085; }
+    .sitepass-admin-kpi-grid-v578 span { font-size:19px; font-weight:950; color:#172033; }
+    .sitepass-admin-filter-actions-v578 {
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:7px;
+      margin:10px 0;
+    }
+    .sitepass-admin-list-v578 { margin-top:10px; }
+    .sitepass-admin-eq-row-v578,
+    .sitepass-admin-event-row-v578 {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:11px 2px;
+      border-bottom:1px solid #edf1f7;
+    }
+    .sitepass-admin-eq-row-v578:last-child,
+    .sitepass-admin-event-row-v578:last-child { border-bottom:0; }
+    .sitepass-admin-eq-row-v578 > div,
+    .sitepass-admin-event-main-v578 { min-width:0; display:flex; flex-direction:column; gap:3px; }
+    .sitepass-admin-eq-row-v578 span,
+    .sitepass-admin-event-main-v578 span { font-size:12px; color:#667085; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sitepass-admin-eq-row-v578 > b { flex:0 0 auto; font-size:11px; color:#18418f; }
+    .sitepass-admin-action-grid-v578 {
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:9px;
+      margin-top:10px;
+    }
+    .sitepass-admin-action-grid-v578 button {
+      min-height:88px;
+      padding:12px;
+      border:1px solid #dbe7f8;
+      border-radius:16px;
+      background:#fff;
+      text-align:left;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .sitepass-admin-action-grid-v578 button b { color:#172033; }
+    .sitepass-admin-action-grid-v578 button span { font-size:20px; font-weight:950; color:#18418f; }
+    .sitepass-admin-action-grid-v578 button small { color:#667085; }
+    .sitepass-admin-share-search-v578 {
+      display:grid;
+      grid-template-columns:1fr auto auto;
+      gap:7px;
+      margin:10px 0;
+    }
+    .sitepass-admin-share-search-v578 input { min-width:0; min-height:42px; border-radius:12px; }
+    .sitepass-admin-share-filters-v578 {
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:6px;
+      margin:8px 0;
+    }
+    .sitepass-admin-share-filters-v578 button {
+      min-height:36px;
+      padding:6px 4px;
+      border:1px solid #dbe7f8;
+      border-radius:999px;
+      background:#fff;
+      color:#344054;
+      font-size:11px;
+      font-weight:900;
+    }
+    .sitepass-admin-share-filters-v578 button.active { background:#172033; color:#fff; border-color:#172033; }
+    .sitepass-admin-share-filters-v578 button span { font-size:10px; opacity:.8; }
+    .sitepass-admin-result-count-v578 { margin:8px 0 4px; text-align:right; }
+    .sitepass-admin-event-main-v578 { flex:1 1 auto; }
+    .sitepass-admin-event-meta-v578 {
+      flex:0 0 auto;
+      display:flex;
+      align-items:flex-end;
+      flex-direction:column;
+      gap:3px;
+      font-size:11px;
+      color:#667085;
+    }
+    .sitepass-admin-event-meta-v578 b {
+      padding:3px 7px;
+      border-radius:999px;
+      background:#edf4ff;
+      color:#18418f;
+      font-size:10px;
+    }
+    .sitepass-admin-event-meta-v578 time { white-space:nowrap; }
+
+    /* STEP91 R9H — 공유기록 장비별 전체 이력 카드 */
+    .sitepass-admin-share-history-v91 {
+      overflow:visible;
+    }
+    .sitepass-admin-share-overview-v91,
+    .sitepass-admin-share-count-grid-v91 {
+      display:grid;
+      grid-template-columns:repeat(7,minmax(0,1fr));
+      gap:7px;
+    }
+    .sitepass-admin-share-overview-v91 {
+      margin:10px 0 12px;
+    }
+    .sitepass-admin-share-count-cell-v91 {
+      min-width:0;
+      min-height:68px;
+      border:1px solid #b8cff0;
+      border-radius:14px;
+      background:#f7faff;
+      box-shadow:0 2px 7px rgba(34,87,164,.08);
+      padding:9px 6px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+      text-align:center;
+    }
+    .sitepass-admin-share-count-cell-v91 span {
+      color:#667085;
+      font-size:11px;
+      font-weight:850;
+      line-height:1.25;
+      word-break:keep-all;
+    }
+    .sitepass-admin-share-count-cell-v91 strong {
+      color:#174ea6;
+      font-size:21px;
+      font-weight:950;
+      line-height:1;
+    }
+
+    .sitepass-admin-share-count-cell-v91:last-child {
+      border-color:#efcf9b;
+      background:#fff8ea;
+    }
+    .sitepass-admin-share-count-cell-v91:last-child strong {
+      color:#9a5b00;
+    }
+    .sitepass-admin-share-folder-v91:last-child {
+      border-color:#efcf9b;
+      background:#fff8ea;
+      color:#7a4b00;
+    }
+    .sitepass-admin-share-folder-v91:last-child.active {
+      border-color:#b56f00;
+      background:#b56f00;
+      color:#fff;
+    }
+    .sitepass-admin-share-equipment-list-v91 {
+      display:grid;
+      gap:10px;
+      margin-top:8px;
+    }
+    .sitepass-admin-share-equipment-card-v91 {
+      border:1px solid #b7cff2;
+      border-radius:18px;
+      background:#eef5ff;
+      box-shadow:0 4px 12px rgba(34,87,164,.08);
+      padding:12px;
+    }
+    .sitepass-admin-share-equipment-head-v91 {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .sitepass-admin-share-equipment-head-v91 h4 {
+      margin:0;
+      color:#172033;
+      font-size:16px;
+    }
+
+    .sitepass-admin-share-equipment-title-v91 {
+      min-width:0;
+    }
+    .sitepass-admin-share-equipment-meta-v91 {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+      margin-top:6px;
+      margin-bottom:3px;
+    }
+    .sitepass-admin-share-equipment-meta-v91 > span {
+      margin:0;
+      padding:4px 7px;
+      border:1px solid #cbd9ef;
+      border-radius:999px;
+      background:#fff;
+      color:#4d5f79;
+      font-size:10.5px;
+      font-weight:750;
+      line-height:1.2;
+    }
+    .sitepass-admin-share-equipment-meta-v91 > span b {
+      color:#172033;
+      font-weight:950;
+    }
+    .sitepass-admin-share-operation-v91.normal {
+      border-color:#a7d9b8;
+      background:#edf9f1;
+      color:#16733d;
+      font-weight:950;
+    }
+    .sitepass-admin-share-operation-v91.warning {
+      border-color:#efcf9b;
+      background:#fff8ea;
+      color:#8a5700;
+      font-weight:950;
+    }
+    .sitepass-admin-share-operation-v91.blocked {
+      border-color:#efb0b0;
+      background:#fff1f1;
+      color:#a12626;
+      font-weight:950;
+    }
+    .sitepass-admin-share-operation-v91.unknown {
+      border-color:#cfd6e1;
+      background:#f6f7f9;
+      color:#667085;
+      font-weight:950;
+    }
+    .sitepass-admin-share-equipment-head-v91 span {
+      display:block;
+      margin-top:3px;
+      color:#667085;
+      font-size:11px;
+    }
+    .sitepass-admin-share-equipment-head-v91 button {
+      flex:0 0 auto;
+    }
+    .sitepass-admin-share-excluded-v91 {
+      margin-top:8px;
+      padding:8px 10px;
+      border-radius:12px;
+      background:#fff7e8;
+      color:#7a4b00;
+      font-size:11px;
+      line-height:1.45;
+    }
+    .sitepass-admin-share-detail-v91 {
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px solid #dbe7f8;
+    }
+
+    .sitepass-admin-share-folders-v91 {
+      display:grid;
+      grid-template-columns:repeat(7,minmax(0,1fr));
+      gap:7px;
+      margin:9px 0 10px;
+    }
+    .sitepass-admin-share-folder-v91 {
+      min-width:0;
+      min-height:62px;
+      border:1px solid #b8cff0;
+      border-radius:14px 14px 8px 8px;
+      background:#f7faff;
+      color:#304b73;
+      padding:8px 5px;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      font:inherit;
+      box-shadow:0 2px 6px rgba(34,87,164,.06);
+    }
+    .sitepass-admin-share-folder-v91:hover {
+      border-color:#7da8e8;
+      background:#edf4ff;
+    }
+    .sitepass-admin-share-folder-v91.active {
+      border-color:#2f6bd8;
+      background:#2f6bd8;
+      color:#fff;
+      box-shadow:0 4px 10px rgba(47,107,216,.18);
+    }
+    .sitepass-admin-share-folder-v91 span {
+      font-size:11px;
+      font-weight:850;
+      line-height:1.25;
+      word-break:keep-all;
+    }
+    .sitepass-admin-share-folder-v91 strong {
+      font-size:18px;
+      font-weight:950;
+      line-height:1;
+    }
+    .sitepass-admin-share-folder-panel-v91 {
+      border:1px solid #d7e4f7;
+      border-radius:14px;
+      background:#fff;
+      padding:9px;
+    }
+    .sitepass-admin-share-folder-panel-head-v91 {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:7px;
+    }
+    .sitepass-admin-share-folder-panel-head-v91 b {
+      color:#172033;
+      font-size:12px;
+    }
+    .sitepass-admin-share-folder-panel-head-v91 span {
+      color:#667085;
+      font-size:10px;
+    }
+    .sitepass-admin-share-folder-empty-v91 {
+      border:0;
+      min-height:76px;
+    }
+    .sitepass-admin-share-excluded-audit-v91 {
+      margin-top:9px;
+      padding:9px;
+      border:1px solid #f0d7a2;
+      border-radius:13px;
+      background:#fff9ed;
+    }
+    .sitepass-admin-share-excluded-audit-list-v91 {
+      margin-top:8px;
+      max-height:300px;
+      overflow:auto;
+      border:1px solid #f0dfba;
+      border-radius:11px;
+      background:#fff;
+    }
+    .sitepass-admin-share-detail-head-v91 {
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      margin-bottom:7px;
+      font-size:11px;
+      color:#667085;
+    }
+    .sitepass-admin-share-detail-head-v91 b {
+      color:#172033;
+      font-size:12px;
+    }
+    .sitepass-admin-share-detail-list-v91 {
+      max-height:430px;
+      overflow:auto;
+      border:1px solid #e6edf8;
+      border-radius:13px;
+      background:#fff;
+    }
+    .sitepass-admin-share-detail-row-v91 {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:10px;
+      padding:9px 10px;
+      border-bottom:1px solid #edf2f8;
+    }
+    .sitepass-admin-share-detail-row-v91:last-child {
+      border-bottom:0;
+    }
+    .sitepass-admin-share-detail-row-v91 > div {
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .sitepass-admin-share-detail-row-v91 > div:last-child {
+      text-align:right;
+      align-items:flex-end;
+    }
+    .sitepass-admin-share-detail-row-v91 b {
+      color:#172033;
+      font-size:12px;
+    }
+    .sitepass-admin-share-detail-row-v91 span,
+    .sitepass-admin-share-detail-row-v91 time,
+    .sitepass-admin-share-detail-row-v91 small {
+      color:#667085;
+      font-size:10px;
+      line-height:1.35;
+    }
+
+    .sitepass-admin-share-detail-button-v91 {
+      border-color:#9dbcf0;
+      background:#fff;
+      color:#174ea6;
+      font-weight:900;
+    }
+    .sitepass-admin-share-pager-v91 {
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      gap:10px;
+      align-items:center;
+      margin-top:12px;
+      padding-top:12px;
+      border-top:1px solid #dbe7f8;
+    }
+    .sitepass-admin-share-pager-v91 > span {
+      text-align:center;
+      color:#667085;
+      font-size:11.5px;
+    }
+    @media (min-width:720px) {
+      .sitepass-admin-nav-v578 { grid-template-columns:repeat(6, minmax(0, 1fr)); }
+      .sitepass-admin-kpi-grid-v578 { grid-template-columns:repeat(6, minmax(0, 1fr)); }
+      .sitepass-admin-filter-actions-v578 { grid-template-columns:repeat(4, minmax(0, 1fr)); }
+      .sitepass-admin-action-grid-v578 { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+      .sitepass-admin-share-filters-v578 { grid-template-columns:repeat(7, minmax(0, 1fr)); }
+    }
+    @media (max-width:520px) {
+      .sitepass-admin-share-overview-v91,
+      .sitepass-admin-share-count-grid-v91 {
+        grid-template-columns:repeat(7,minmax(92px,1fr));
+        overflow-x:auto;
+        padding-bottom:4px;
+      }
+      .sitepass-admin-share-folders-v91 {
+        grid-template-columns:repeat(7,minmax(96px,1fr));
+        overflow-x:auto;
+        padding-bottom:4px;
+      }
+      .sitepass-admin-share-folder-panel-head-v91 {
+        align-items:flex-start;
+        flex-direction:column;
+      }
+      .sitepass-admin-share-equipment-head-v91 {
+        align-items:flex-start;
+      }
+      .sitepass-admin-share-detail-head-v91 {
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .sitepass-admin-share-detail-row-v91 {
+        grid-template-columns:1fr;
+      }
+      .sitepass-admin-share-detail-row-v91 > div:last-child {
+        text-align:left;
+        align-items:flex-start;
+      }
+      .sitepass-admin-share-pager-v91 {
+        grid-template-columns:1fr 1fr;
+      }
+      .sitepass-admin-share-pager-v91 > span {
+        grid-column:1 / -1;
+        grid-row:1;
+      }
+      .sitepass-admin-share-search-v578 { grid-template-columns:1fr 1fr; }
+      .sitepass-admin-share-search-v578 input { grid-column:1 / -1; }
+      .sitepass-admin-section-head-v578 { flex-direction:column; }
+      .sitepass-admin-section-head-v578 > button { width:100%; }
+    }
+
     .admin-member-toolbar {
       display:grid;
       grid-template-columns:1fr;
@@ -4848,7 +5373,7 @@ body.sitepass-fast-shell-loading::after {
 }
 
 
-/* v23.7.553-test - 달력 6주 고정 (담당자 화면 강제 고정 제거) */
+/* v23.7.553-recovery-test - 달력 6주 고정 (담당자 화면 강제 고정 제거) */
 .sitepass-clean-calendar-days475{
   grid-template-rows:repeat(6,minmax(0,1fr));
   height:282px;

@@ -60,12 +60,15 @@ function renderWorkerPeopleSection() {
       personCard.dataset.workerAuthPhone = authMeta.authPhone || '';
       personCard.dataset.workerAuthName = authMeta.authPersonName || '';
       personCard.dataset.workerAuthVerifiedAt = authMeta.authVerifiedAt || '';
+      personCard.dataset.workerAuthSubjectId = authMeta.authSubjectId || '';
+      personCard.dataset.workerAuthVerificationId = authMeta.authVerificationId || '';
       personCard.querySelectorAll('.doc-card[data-group-key="worker"]').forEach(card => {
         card.dataset.authVerified = 'true';
         card.dataset.authVerifiedAt = authMeta.authVerifiedAt || new Date().toISOString();
         if (authMeta.authPhone) card.dataset.authPhone = authMeta.authPhone;
         if (authMeta.authPersonName) card.dataset.authPersonName = authMeta.authPersonName;
         if (authMeta.authVerificationId) card.dataset.authVerificationId = authMeta.authVerificationId;
+        if (authMeta.authSubjectId) card.dataset.authSubjectId = authMeta.authSubjectId;
         if (authMeta.authBirth6) card.dataset.authBirth6 = authMeta.authBirth6;
         if (authMeta.authGenderDigit) card.dataset.authGenderDigit = authMeta.authGenderDigit;
         if (authMeta.authCarrier) card.dataset.authCarrier = authMeta.authCarrier;
@@ -94,6 +97,7 @@ function renderWorkerPeopleSection() {
         authPersonName:panel.dataset.pendingName || '',
         authVerifiedAt:panel.dataset.pendingVerifiedAt || new Date().toISOString(),
         authVerificationId:panel.dataset.pendingVerificationId || '',
+        authSubjectId:panel.dataset.pendingSubjectId || '',
         authBirth6:panel.dataset.pendingBirth6 || '',
         authGenderDigit:panel.dataset.pendingGenderDigit || '',
         authCarrier:panel.dataset.pendingCarrier || '',
@@ -176,7 +180,13 @@ function renderWorkerPeopleSection() {
         authVerified:firstDoc?.dataset.authVerified === 'true',
         authPhone:firstDoc?.dataset.authPhone || person.dataset.workerAuthPhone || '',
         authPersonName:firstDoc?.dataset.authPersonName || person.dataset.workerAuthName || '',
-        authVerifiedAt:firstDoc?.dataset.authVerifiedAt || person.dataset.workerAuthVerifiedAt || ''
+        authVerifiedAt:firstDoc?.dataset.authVerifiedAt || person.dataset.workerAuthVerifiedAt || '',
+        authSubjectId:firstDoc?.dataset.authSubjectId || person.dataset.workerAuthSubjectId || '',
+        authVerificationId:firstDoc?.dataset.authVerificationId || person.dataset.workerAuthVerificationId || '',
+        authBirth6:firstDoc?.dataset.authBirth6 || '',
+        authGenderDigit:firstDoc?.dataset.authGenderDigit || '',
+        authCarrier:firstDoc?.dataset.authCarrier || '',
+        identityStatus:firstDoc?.dataset.identityStatus || '미완료'
       };
       person.outerHTML = renderWorkerPersonCard(newType, uid, authMeta);
       const newPerson = document.querySelector('.worker-person-card[data-worker-uid="' + uid + '"]');
@@ -184,6 +194,8 @@ function renderWorkerPeopleSection() {
         newPerson.dataset.workerAuthPhone = authMeta.authPhone || '';
         newPerson.dataset.workerAuthName = authMeta.authPersonName || '';
         newPerson.dataset.workerAuthVerifiedAt = authMeta.authVerifiedAt || '';
+        newPerson.dataset.workerAuthSubjectId = authMeta.authSubjectId || '';
+        newPerson.dataset.workerAuthVerificationId = authMeta.authVerificationId || '';
         const phoneInput = newPerson.querySelector('[data-extra-phone-key="workerPhone"]');
         if (phoneInput && !phoneInput.value) phoneInput.value = authMeta.authPhone || '';
       }
@@ -217,7 +229,7 @@ function renderDocCards() {
       const files = Array.from(event.target.files || []);
       if (!files.length) return;
       const card = event.target.closest('.doc-card');
-      if (!requirePrivateDocAuth(card)) {
+      if (!window.SitePassDocument.verification.requirePrivate(card)) {
         event.target.value = '';
         return;
       }
@@ -233,8 +245,28 @@ function renderDocCards() {
     async function applySelectedFile(card, file, sourceText) {
       if (!card || !file) return;
       const nameBox = card.querySelector('[data-role="filename"]');
-      const pages = getDocPagesFromBox(nameBox);
+      let pages = getDocPagesFromBox(nameBox);
       const page = await buildDocPage(card, file, sourceText);
+
+      let editingActive = false;
+      try {
+        editingActive = !!(
+          window.SitePassEquipment &&
+          window.SitePassEquipment.update &&
+          typeof window.SitePassEquipment.update.getState === 'function' &&
+          String(window.SitePassEquipment.update.getState().editingCode || '').trim()
+        );
+      } catch (error) {}
+
+      if (editingActive) {
+        if (!nameBox || nameBox.dataset.sitepassRenewalStarted !== 'true') {
+          pages = [];
+          if (nameBox) nameBox.dataset.sitepassRenewalStarted = 'true';
+        }
+        if (nameBox) nameBox.dataset.sitepassRenewalCleared = '';
+        page.sitePassRenewalNew = true;
+      }
+
       pages.push(page);
       setDocPagesToCard(card, pages);
     }
@@ -254,7 +286,7 @@ function renderDocCards() {
       setTimeout(function() {
         const ok = confirm(title + ' ' + count + '장 저장되었습니다.\n\n추가 장이 있나요?\n\n확인: 같은 서류에 추가 촬영/추가 업로드\n취소: 이 서류는 완료');
         if (!ok) return;
-        if (!requirePrivateDocAuth(card)) return;
+        if (!window.SitePassDocument.verification.requirePrivate(card)) return;
         const docKey = card.dataset.docKey || '';
         if (String(sourceText || '').includes('사진')) {
           openCameraGuide(docKey);
@@ -284,34 +316,75 @@ function renderDocCards() {
     function getSitePassStoredPreviewUrlV508(obj, parent) {
       obj = obj && typeof obj === 'object' ? obj : {};
       parent = parent && typeof parent === 'object' ? parent : {};
+
+      const memberDetailPrivateFailClosedV91 =
+        obj.sitePassMemberDetailPrivateFailClosedV91 === true ||
+        parent.sitePassMemberDetailPrivateFailClosedV91 === true;
+
       const values = [
         obj.previewDataUrl, obj.editDataUrl, obj.correctedDataUrl, obj.originalDataUrl,
         obj.fileDataUrl, obj.fileObjectUrl, obj.fileUrl, obj.file_url, obj.downloadUrl, obj.download_url,
         obj.storagePublicUrl, obj.storage_public_url, obj.publicUrl, obj.public_url,
         obj.previewUrl, obj.preview_url, obj.signedUrl, obj.signed_url, obj.url, obj.src
       ];
-      const direct = values.map(function(value){ return String(value || '').trim(); }).find(Boolean) || '';
-      if (direct && /^(data:|blob:|https?:\/\/)/i.test(direct)) return direct;
-      const directPath = direct && !/^(첨부됨|미첨부|선택안함|null|undefined|-)$/i.test(direct) ? direct : '';
+
+      const direct = values.map(function(value){
+        return String(value || '').trim();
+      }).find(Boolean) || '';
+
+      const directIsBlockedPrivatePublicV91 =
+        memberDetailPrivateFailClosedV91 &&
+        /\/storage\/v1\/object\/public\/sitepass-documents(?:\/|$)/i.test(direct);
+
+      if (
+        direct &&
+        /^(data:|blob:|https?:\/\/)/i.test(direct) &&
+        !directIsBlockedPrivatePublicV91
+      ) {
+        return direct;
+      }
+
+      const directPath =
+        direct &&
+        !directIsBlockedPrivatePublicV91 &&
+        !/^(첨부됨|미첨부|선택안함|null|undefined|-)$/i.test(direct)
+          ? direct
+          : '';
+
       const path = String(directPath ||
         obj.storagePath || obj.storage_path || obj.filePath || obj.file_path || obj.storageKey || obj.storage_key ||
         obj.objectPath || obj.object_path || obj.uploadPath || obj.upload_path || obj.path || ''
       ).trim().replace(/^\/+/, '');
+
       if (!path) return '';
+
       const bucket = String(
         obj.storageBucket || obj.storage_bucket || obj.bucket || parent.storageBucket || parent.storage_bucket || parent.bucket ||
         (window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.storageBucket) || 'sitepass-documents'
       ).trim() || 'sitepass-documents';
+
+      // STEP91 R9F:
+      // 일반회원 상세보기의 canonical Private 문서는 signed/data/blob URL만 허용한다.
+      // storagePath만으로 /object/public/sitepass-documents URL을 재생성하지 않는다.
+      if (
+        memberDetailPrivateFailClosedV91 &&
+        bucket === 'sitepass-documents'
+      ) {
+        return '';
+      }
+
       try {
         if (window.SitePassSupabaseApi && typeof window.SitePassSupabaseApi.storagePublicUrl === 'function') {
           const publicUrl = window.SitePassSupabaseApi.storagePublicUrl(bucket, path);
           if (publicUrl) return String(publicUrl);
         }
       } catch (e) {}
+
       try {
         const base = String(window.SITEPASS_DB_CONFIG && window.SITEPASS_DB_CONFIG.supabaseUrl || '').replace(/\/$/, '');
         if (base) return base + '/storage/v1/object/public/' + encodeURIComponent(bucket) + '/' + path.split('/').filter(Boolean).map(encodeURIComponent).join('/');
       } catch (e) {}
+
       return '';
     }
 
@@ -332,22 +405,66 @@ function renderDocCards() {
       return p;
     }
 
+    function sitePassPreviewObjectHasRealAttachmentV581(obj) {
+      obj = (obj && typeof obj === 'object') ? obj : {};
+      const path = String(
+        obj.storagePath || obj.storage_path ||
+        obj.objectPath || obj.object_path ||
+        obj.filePath || obj.file_path || ''
+      ).replace(/^\/+/, '').trim();
+      if (path) return true;
+      return [
+        obj.previewDataUrl, obj.editDataUrl, obj.originalDataUrl,
+        obj.correctedDataUrl, obj.fileDataUrl, obj.dataUrl,
+        obj.fileObjectUrl, obj.blobUrl, obj.fileUrl, obj.downloadUrl,
+        obj.signedUrl, obj.storageAccessUrl, obj.storagePublicUrl,
+        obj.publicUrl
+      ].some(function(value){ return !!String(value || '').trim(); });
+    }
+
+    function sitePassMeaningfulLegacyFileNameV581(value) {
+      const text = String(value || '').trim();
+      if (!text) return false;
+      return !(
+        /^첨부됨$/i.test(text) ||
+        /^첨부\s*없음$/i.test(text) ||
+        /^첨부\s*\d+장$/i.test(text) ||
+        /^첨부\s*\d+장\s*[·-]\s*첨부됨$/i.test(text) ||
+        /^첨부파일$/i.test(text)
+      );
+    }
+
     function getDocPagesFromDoc(doc) {
       if (doc && Array.isArray(doc.pages) && doc.pages.length) {
-        return doc.pages.map((page, index) => normalizeDocPageForPreview(page, index, doc));
+        return doc.pages
+          .filter(function(page) {
+            return sitePassPreviewObjectHasRealAttachmentV581(page) ||
+              sitePassMeaningfulLegacyFileNameV581(page && page.fileName);
+          })
+          .map((page, index) => normalizeDocPageForPreview(page, index, doc));
       }
-      if (doc && doc.fileName) {
+      if (
+        doc &&
+        (
+          sitePassPreviewObjectHasRealAttachmentV581(doc) ||
+          sitePassMeaningfulLegacyFileNameV581(doc.fileName)
+        )
+      ) {
         return [normalizeDocPageForPreview({
           id:'legacy_' + (doc.key || '') + '_1',
           fileName:doc.fileName || '',
           fileSource:doc.fileSource || '',
           fileType:doc.fileType || '',
+          storageBucket:doc.storageBucket || doc.storage_bucket || '',
+          storagePath:doc.storagePath || doc.storage_path || '',
           previewDataUrl:getSitePassStoredPreviewUrlV508(doc),
           originalDataUrl:doc.originalDataUrl || '',
           correctedDataUrl:doc.correctedDataUrl || '',
           editDataUrl:doc.editDataUrl || getSitePassStoredPreviewUrlV508(doc),
           fileUrl:doc.fileUrl || doc.downloadUrl || doc.storagePublicUrl || doc.publicUrl || getSitePassStoredPreviewUrlV508(doc),
           downloadUrl:doc.downloadUrl || doc.fileUrl || doc.storagePublicUrl || doc.publicUrl || getSitePassStoredPreviewUrlV508(doc),
+          signedUrl:doc.signedUrl || '',
+          storageAccessUrl:doc.storageAccessUrl || '',
           previewChoice:doc.previewChoice || '',
           autoFit:doc.autoFit || ''
         }, 0, doc)];
@@ -514,7 +631,7 @@ async function buildDocPage(card, file, sourceText) {
             const pdfPage = Object.assign({}, page, { fileObjectUrl:imgSrc || page.fileObjectUrl || '', fileDataUrl:imgSrc || page.fileDataUrl || '' });
             body = renderPdfAttachedBox(pdfPage, imgSrc ? '등록된 PDF 파일을 바로 확인할 수 있습니다.' : '선택한 PDF 파일입니다.');
           } else if (imgSrc) {
-            body = '<div class="paper-frame"><img class="preview-img" alt="첨부 이미지" src="' + imgSrc + '" data-preview-src="' + imgSrc + '" onclick="openPreviewModal(this.dataset.previewSrc)"></div>';
+            body = '<div class="paper-frame"><img class="preview-img" alt="첨부 이미지" src="' + imgSrc + '" data-preview-src="' + imgSrc + '" onclick="window.SitePassDocument.viewer.openPreview(this.dataset.previewSrc)"></div>';
           } else {
             body = '<div class="preview-pdf">첨부됨<br><span class="small">이미지 저장본이 없으면 서버 저장 단계에서 원본 파일 보기로 연결합니다.</span></div>';
           }
@@ -539,18 +656,18 @@ async function buildDocPage(card, file, sourceText) {
               '<div class="compare-grid page-compare-grid">' +
                 '<div class="compare-card ' + (originalSelected ? 'selected' : '') + '" data-page-compare-card="original">' +
                   '<div class="compare-label"><span>원본</span><span class="selected-chip">사용중</span></div>' +
-                  '<div class="paper-frame"><img class="preview-img" alt="원본 미리보기" src="' + page.originalDataUrl + '" data-preview-src="' + page.originalDataUrl + '" onclick="openPreviewModal(this.dataset.previewSrc)"></div>' +
-                  '<div class="preview-actions"><button type="button" class="mini-button use ' + (originalSelected ? 'active' : '') + '" onclick="selectDocPageVersion(\'' + escapeJs(docKey) + '\',' + index + ',\'original\')">원본 사용</button></div>' +
+                  '<div class="paper-frame"><img class="preview-img" alt="원본 미리보기" src="' + page.originalDataUrl + '" data-preview-src="' + page.originalDataUrl + '" onclick="window.SitePassDocument.viewer.openPreview(this.dataset.previewSrc)"></div>' +
+                  '<div class="preview-actions"><button type="button" class="mini-button use ' + (originalSelected ? 'active' : '') + '" onclick="window.SitePassDocument.selection.selectPageVersion(\'' + escapeJs(docKey) + '\',' + index + ',\'original\')">원본 사용</button></div>' +
                 '</div>' +
                 '<div class="compare-card ' + (correctedSelected ? 'selected' : '') + '" data-page-compare-card="corrected">' +
                   '<div class="compare-label"><span>자동보정본</span><span class="selected-chip">사용중</span></div>' +
-                  '<div class="paper-frame"><img class="preview-img" alt="자동보정본 미리보기" src="' + page.correctedDataUrl + '" data-preview-src="' + page.correctedDataUrl + '" onclick="openPreviewModal(this.dataset.previewSrc)"></div>' +
-                  '<div class="preview-actions"><button type="button" class="mini-button use ' + (correctedSelected ? 'active' : '') + '" onclick="selectDocPageVersion(\'' + escapeJs(docKey) + '\',' + index + ',\'corrected\')">보정본 사용</button></div>' +
+                  '<div class="paper-frame"><img class="preview-img" alt="자동보정본 미리보기" src="' + page.correctedDataUrl + '" data-preview-src="' + page.correctedDataUrl + '" onclick="window.SitePassDocument.viewer.openPreview(this.dataset.previewSrc)"></div>' +
+                  '<div class="preview-actions"><button type="button" class="mini-button use ' + (correctedSelected ? 'active' : '') + '" onclick="window.SitePassDocument.selection.selectPageVersion(\'' + escapeJs(docKey) + '\',' + index + ',\'corrected\')">보정본 사용</button></div>' +
                 '</div>' +
               '</div>' +
               '<div class="fit-note"><span>' + escapeHtml(page.fitText || '원본/보정본 선택 가능') + '</span><span>' + escapeHtml(page.ratioText || selectedText) + '</span></div>';
           } else if (page.previewDataUrl) {
-            body = '<div class="paper-frame"><img class="preview-img" alt="' + escapeHtml((index + 1) + '페이지') + '" src="' + page.previewDataUrl + '" data-preview-src="' + page.previewDataUrl + '" onclick="openPreviewModal(this.dataset.previewSrc)"></div>' +
+            body = '<div class="paper-frame"><img class="preview-img" alt="' + escapeHtml((index + 1) + '페이지') + '" src="' + page.previewDataUrl + '" data-preview-src="' + page.previewDataUrl + '" onclick="window.SitePassDocument.viewer.openPreview(this.dataset.previewSrc)"></div>' +
               '<div class="page-choice-note"><span class="page-current-label">현재 첨부됨</span> 원본/보정본이 없는 기존 파일입니다. 필요하면 삭제하고 새로 추가하세요.</div>';
           } else {
             body = isPdf ? renderPdfAttachedBox(page, '선택한 PDF 파일입니다.') : '<div class="preview-pdf">첨부됨<br><span class="small">필요 없으면 삭제하고 새 파일을 추가하세요.</span></div>';
@@ -566,18 +683,18 @@ async function buildDocPage(card, file, sourceText) {
             '<div class="compare-grid page-compare-grid">' +
               '<div class="compare-card ' + (originalSelected ? 'selected' : '') + '" data-page-compare-card="original">' +
                 '<div class="compare-label"><span>원본</span><span class="selected-chip">사용중</span></div>' +
-                '<div class="paper-frame"><img class="preview-img" alt="원본 미리보기" src="' + page.originalDataUrl + '" data-preview-src="' + page.originalDataUrl + '" onclick="openPreviewModal(this.dataset.previewSrc)"></div>' +
-                '<div class="preview-actions"><button type="button" class="mini-button" onclick="openDocPagePreview(\'' + escapeJs(docKey) + '\',' + index + ',\'original\',\'' + escapeJs(docCode) + '\')">원본 크게보기</button><button type="button" class="mini-button use ' + (originalSelected ? 'active' : '') + '" onclick="selectDocPageVersion(\'' + escapeJs(docKey) + '\',' + index + ',\'original\')">원본 사용</button></div>' +
+                '<div class="paper-frame"><img class="preview-img" alt="원본 미리보기" src="' + page.originalDataUrl + '" data-preview-src="' + page.originalDataUrl + '" onclick="window.SitePassDocument.viewer.openPreview(this.dataset.previewSrc)"></div>' +
+                '<div class="preview-actions"><button type="button" class="mini-button" onclick="window.SitePassDocument.viewer.openPage(\'' + escapeJs(docKey) + '\',' + index + ',\'original\',\'' + escapeJs(docCode) + '\')">원본 크게보기</button><button type="button" class="mini-button use ' + (originalSelected ? 'active' : '') + '" onclick="window.SitePassDocument.selection.selectPageVersion(\'' + escapeJs(docKey) + '\',' + index + ',\'original\')">원본 사용</button></div>' +
               '</div>' +
               '<div class="compare-card ' + (correctedSelected ? 'selected' : '') + '" data-page-compare-card="corrected">' +
                 '<div class="compare-label"><span>자동수정본</span><span class="selected-chip">사용중</span></div>' +
-                '<div class="paper-frame"><img class="preview-img" alt="자동수정본 미리보기" src="' + page.correctedDataUrl + '" data-preview-src="' + page.correctedDataUrl + '" onclick="openPreviewModal(this.dataset.previewSrc)"></div>' +
-                '<div class="preview-actions"><button type="button" class="mini-button" onclick="openDocPagePreview(\'' + escapeJs(docKey) + '\',' + index + ',\'corrected\',\'' + escapeJs(docCode) + '\')">수정본 크게보기</button><button type="button" class="mini-button use ' + (correctedSelected ? 'active' : '') + '" onclick="selectDocPageVersion(\'' + escapeJs(docKey) + '\',' + index + ',\'corrected\')">수정본 사용</button></div>' +
+                '<div class="paper-frame"><img class="preview-img" alt="자동수정본 미리보기" src="' + page.correctedDataUrl + '" data-preview-src="' + page.correctedDataUrl + '" onclick="window.SitePassDocument.viewer.openPreview(this.dataset.previewSrc)"></div>' +
+                '<div class="preview-actions"><button type="button" class="mini-button" onclick="window.SitePassDocument.viewer.openPage(\'' + escapeJs(docKey) + '\',' + index + ',\'corrected\',\'' + escapeJs(docCode) + '\')">수정본 크게보기</button><button type="button" class="mini-button use ' + (correctedSelected ? 'active' : '') + '" onclick="window.SitePassDocument.selection.selectPageVersion(\'' + escapeJs(docKey) + '\',' + index + ',\'corrected\')">수정본 사용</button></div>' +
               '</div>' +
             '</div>' +
             '<div class="fit-note"><span>' + escapeHtml(page.fitText || '원본/수정본 선택 가능') + '</span><span>' + escapeHtml(page.ratioText || selectedText) + '</span></div>';
         } else if (page.previewDataUrl) {
-          body = '<div class="paper-frame"><img class="preview-img" alt="' + escapeHtml((index + 1) + '페이지') + '" src="' + page.previewDataUrl + '" data-preview-src="' + page.previewDataUrl + '" onclick="openPreviewModal(this.dataset.previewSrc)"></div>' +
+          body = '<div class="paper-frame"><img class="preview-img" alt="' + escapeHtml((index + 1) + '페이지') + '" src="' + page.previewDataUrl + '" data-preview-src="' + page.previewDataUrl + '" onclick="window.SitePassDocument.viewer.openPreview(this.dataset.previewSrc)"></div>' +
             (canCompare ? '<div class="page-choice-note"><span class="page-current-label">' + selectedText + '</span> 원본/수정본은 보기 버튼으로 확인할 수 있습니다.</div>' : '<div class="page-choice-note"><span class="page-current-label">최종본 저장</span> 스캔앱 방식으로 이 1장만 저장됩니다.</div>');
         } else {
           body = isPdf ? renderPdfAttachedBox(page, '선택한 PDF 파일입니다.') : '<div class="preview-pdf">첨부됨<br><span class="small">서버 연결 전에는 이미지 미리보기 저장본만 바로 인쇄됩니다.</span></div>';
@@ -586,11 +703,11 @@ async function buildDocPage(card, file, sourceText) {
         let viewButton = '';
         if (page.previewDataUrl) {
           viewButton = (docCode || editable)
-            ? '<button type="button" class="mini-button" onclick="openDocPagePreview(\'' + escapeJs(docKey) + '\',' + index + ',\'preview\',\'' + escapeJs(docCode) + '\')">미리보기</button>'
-            : '<button type="button" class="mini-button" onclick="openPreviewModal(this.closest(\'.page-item\').querySelector(\'.preview-img\').dataset.previewSrc)">미리보기</button>';
+            ? '<button type="button" class="mini-button" onclick="window.SitePassDocument.viewer.openPage(\'' + escapeJs(docKey) + '\',' + index + ',\'preview\',\'' + escapeJs(docCode) + '\')">미리보기</button>'
+            : '<button type="button" class="mini-button" onclick="window.SitePassDocument.viewer.openPreview(this.closest(\'.page-item\').querySelector(\'.preview-img\').dataset.previewSrc)">미리보기</button>';
         } else {
           viewButton = (docCode || editable)
-            ? '<button type="button" class="mini-button" onclick="openDocPagePreview(\'' + escapeJs(docKey) + '\',' + index + ',\'preview\',\'' + escapeJs(docCode) + '\')">파일정보</button>'
+            ? '<button type="button" class="mini-button" onclick="window.SitePassDocument.viewer.openPage(\'' + escapeJs(docKey) + '\',' + index + ',\'preview\',\'' + escapeJs(docCode) + '\')">파일정보</button>'
             : '<button type="button" class="mini-button" onclick="alert(\'이미지 미리보기 저장본이 없습니다. 서버 저장 단계에서 원본 파일 보기를 연결합니다.\')">파일정보</button>';
         }
 

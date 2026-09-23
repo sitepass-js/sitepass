@@ -3,7 +3,16 @@
 // SitePass v23.7.350 - app-core-auth finer split (01/19)
 // SitePass v23.7.350 - app.bundle.js remaining split (01 core/auth/member)
 window.__SITEPASS_APP_SPLIT_VERSION = 'v23.7.350';
-window.SITEPASS_TEST_NO_PAYMENT_MODE = true; // v23.7.350 테스트 기간에는 결제단계를 건너뜁니다.
+// STEP86 v23.7.718: 결제 없는 테스트 모드는 로컬 개발주소에서만 허용합니다.
+window.sitePassIsLocalPaymentTestRuntimeV718 = function() {
+  try {
+    const host = String(window.location && window.location.hostname || '').trim().toLowerCase();
+    return host === '127.0.0.1' || host === 'localhost' || host === '::1';
+  } catch (e) {
+    return false;
+  }
+};
+window.SITEPASS_TEST_NO_PAYMENT_MODE = window.sitePassIsLocalPaymentTestRuntimeV718();
 // SitePass v23.7.350 - v23.7.290 기준 남은 파일 쪼개기 / 배포 안정화
 // v23.7.277에서는 push-notify.js로 푸시알림 권한/테스트/대상계산 보조 기능을 분리했습니다.
 const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
@@ -23,9 +32,7 @@ const STORAGE_KEY = 'sitePass_v23_7_7_update_original_corrected';
     const PWA_AUTO_MEMBER_KEY = STORAGE_KEY + '_pwa_auto_member_v23_7_145';
     const BROWSER_AUTO_MEMBER_KEY = STORAGE_KEY + '_browser_auto_member_v23_7_395';
     const ADMIN_ID = 'sitepass@kakao.com'; // 지정 최고관리자 ID
-    const LEGACY_ADMIN_ID = 'dream9473'; // 이전 임시 최고관리자 ID도 비상 접속용으로 유지
-    const LEGACY_ADMIN_ID_2 = 'sitepassadmin'; // 더 이전 임시 최고관리자 ID도 비상 접속용으로 유지
-    const ADMIN_PASSWORD = 'sitepass-admin-beta-2026'; // 임시 비상 관리자 비밀번호 - 공개 저장소/정식 서비스에서는 서버 인증으로 교체
+    const ADMIN_PASSWORD = null; // v561 r6: 구형 고정 관리자 비밀번호 비활성화. 최고관리자는 Supabase Auth 서버 인증만 사용
     const SUPER_ADMIN_ROLE_NAME = '최고관리자';
     const ADMIN_ROLE_MAP_KEY = STORAGE_KEY + '_admin_role_map';
     const ADMIN_WITHDRAWN_MEMBERS_KEY = STORAGE_KEY + '_withdrawn_members';
@@ -299,11 +306,18 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
         phone: member.phone || member.signupIdentityPhone || member.verifiedPhone || '',
         signupIdentityName: member.signupIdentityName || member.verifiedName || member.name || '',
         signupIdentityPhone: member.signupIdentityPhone || member.verifiedPhone || member.phone || '',
-        id: member.id || '',
-        signupId: member.signupId || '',
-        providerId: member.providerId || '',
+        id: member.id || member.memberId || member.member_id || member.serverMemberId || '',
+        memberId: member.memberId || member.member_id || member.id || member.serverMemberId || '',
+        authUserId: member.authUserId || member.auth_user_id || member.supabaseAuthUserId || member.userId || '',
+        auth_user_id: member.auth_user_id || member.authUserId || member.supabaseAuthUserId || member.userId || '',
+        supabaseAuthUserId: member.supabaseAuthUserId || member.authUserId || member.auth_user_id || member.userId || '',
+        signupId: member.signupId || member.loginId || member.login_id || member.supabaseLoginId || '',
+        supabaseLoginId: member.supabaseLoginId || member.signupId || member.login_id || '',
+        providerId: member.providerId || member.provider_id || '',
+        provider_id: member.provider_id || member.providerId || '',
+        email: member.email || '',
         provider: member.provider || '',
-        signupMethod: member.signupMethod || member.provider || '',
+        signupMethod: member.signupMethod || member.signup_method || member.provider || '',
         securityMemo: '자동 로그인 사용 중',
         loggedInAt: new Date().toISOString(),
         autoLoginType: 'browser_auto_login'
@@ -347,11 +361,18 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
         phone: member.phone || member.signupIdentityPhone || member.verifiedPhone || '',
         signupIdentityName: member.signupIdentityName || member.verifiedName || member.name || '',
         signupIdentityPhone: member.signupIdentityPhone || member.verifiedPhone || member.phone || '',
-        id: member.id || '',
-        signupId: member.signupId || '',
-        providerId: member.providerId || '',
+        id: member.id || member.memberId || member.member_id || member.serverMemberId || '',
+        memberId: member.memberId || member.member_id || member.id || member.serverMemberId || '',
+        authUserId: member.authUserId || member.auth_user_id || member.supabaseAuthUserId || member.userId || '',
+        auth_user_id: member.auth_user_id || member.authUserId || member.supabaseAuthUserId || member.userId || '',
+        supabaseAuthUserId: member.supabaseAuthUserId || member.authUserId || member.auth_user_id || member.userId || '',
+        signupId: member.signupId || member.loginId || member.login_id || member.supabaseLoginId || '',
+        supabaseLoginId: member.supabaseLoginId || member.signupId || member.login_id || '',
+        providerId: member.providerId || member.provider_id || '',
+        provider_id: member.provider_id || member.providerId || '',
+        email: member.email || '',
         provider: member.provider || '',
-        signupMethod: member.signupMethod || member.provider || '',
+        signupMethod: member.signupMethod || member.signup_method || member.provider || '',
         securityMemo: '중요작업은 비밀번호 재확인',
         loggedInAt: new Date().toISOString(),
         autoLoginType: 'pwa_home_screen'
@@ -383,17 +404,41 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
       return true;
     }
 
+    // v23.7.561: 현재 로그인 세션은 표시이름이 아니라 강한 계정 식별자를 보존합니다.
+    // 특히 카카오/네이버 Auth UID가 setCurrentMemberTest()에서 사라지면 동일 이름의 일반회원과
+    // 캐시/보관함 범위가 섞일 수 있으므로 member UUID, auth.uid(), login/provider ID를 모두 유지합니다.
     function setCurrentMemberTest(member) {
+      member = member || {};
+      const memberId = member.id || member.memberId || member.member_id || member.serverMemberId || member.server_member_id || '';
+      const authUserId = member.authUserId || member.auth_user_id || member.supabaseAuthUserId || member.userId || member.user_id || '';
+      const signupId = member.signupId || member.loginId || member.login_id || member.supabaseLoginId || '';
+      const providerId = member.providerId || member.provider_id || '';
       const current = {
-        name: member?.name || member?.signupId || 'SitePass 회원',
-        phone: member?.phone || member?.signupIdentityPhone || member?.verifiedPhone || '',
-        signupIdentityName: member?.signupIdentityName || member?.verifiedName || member?.name || '',
-        signupIdentityPhone: member?.signupIdentityPhone || member?.verifiedPhone || member?.phone || '',
-        id: member?.id || '',
-        signupId: member?.signupId || '',
-        providerId: member?.providerId || '',
-        provider: member?.provider || '',
-        signupMethod: member?.signupMethod || '',
+        name: member.name || signupId || 'SitePass 회원',
+        phone: member.phone || member.signupIdentityPhone || member.verifiedPhone || '',
+        email: member.email || '',
+        signupIdentityName: member.signupIdentityName || member.verifiedName || member.name || '',
+        signupIdentityPhone: member.signupIdentityPhone || member.verifiedPhone || member.phone || '',
+        id: memberId,
+        memberId: memberId,
+        member_id: memberId,
+        serverMemberId: member.serverMemberId || member.server_member_id || memberId,
+        authUserId: authUserId,
+        auth_user_id: authUserId,
+        supabaseAuthUserId: authUserId,
+        userId: authUserId,
+        signupId: signupId,
+        loginId: signupId,
+        login_id: signupId,
+        supabaseLoginId: member.supabaseLoginId || signupId,
+        providerId: providerId,
+        provider_id: providerId,
+        provider: member.provider || '',
+        signupMethod: member.signupMethod || member.signup_method || member.provider || '',
+        signup_method: member.signup_method || member.signupMethod || member.provider || '',
+        role: member.role || 'member',
+        status: member.status || member.memberStatus || 'active',
+        plan_type: member.plan_type || 'beta',
         securityMemo: '중요작업은 비밀번호 재확인',
         loggedInAt: new Date().toISOString()
       };
@@ -418,7 +463,27 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
         completeMemberAdminLogin(member);
         return;
       }
-      const updatedMember = updateMemberLastLogin(member, member?.signupMethod || member?.provider || 'SitePass 로그인') || member;
+      // Step79: 로그인 구현은 회원정보 저장방식을 직접 수정하지 않습니다.
+      // 회원 저장/최근로그인 메타 갱신은 member-profile-store 공개 API로 위임합니다.
+      let updatedMember = member;
+
+      try {
+        const memberStore =
+          window.SitePassMemberProfileStore ||
+          null;
+
+        if (
+          memberStore &&
+          typeof memberStore.touchLogin ===
+            'function'
+        ) {
+          updatedMember =
+            memberStore.touchLogin(member) ||
+            member;
+        }
+      } catch (e) {
+        updatedMember = member;
+      }
       setCurrentMemberTest(updatedMember || {});
       const current = getCurrentMemberTest();
       if (isSitePassAutoLoginEnabled()) {
@@ -426,9 +491,18 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
         if (isSitePassInstalledAppMode()) setPwaAutoMemberTest(current || updatedMember || {});
       }
       if (!isSitePassAutoLoginEnabled()) clearPwaAutoMemberTest();
-      try { if (window.sitePassClearServerAuthoritativeEquipmentItems) window.sitePassClearServerAuthoritativeEquipmentItems(); } catch (e) {}
-      // v23.7.520: 같은 회원의 마지막 서버 보관함 캐시는 유지해 로그인 직후 전체 목록을 즉시 표시합니다.
-      try { if (window.sitePassPrimeMemberEquipmentCacheV520) window.sitePassPrimeMemberEquipmentCacheV520(); } catch (e) {}
+      // Step79: 장비 캐시 구현은 로그인 코드에서 직접 호출하지 않습니다.
+      try {
+        if (
+          window.SitePassAuthEvents &&
+          typeof window.SitePassAuthEvents.emitSignedIn ===
+            'function'
+        ) {
+          window.SitePassAuthEvents.emitSignedIn(
+            'legacy-social-login-complete'
+          );
+        }
+      } catch (e) {}
       refreshMemberUi();
       if (message) alert(message);
       showScreen(isSitePassInstalledAppMode() ? 'listScreen' : 'homeScreen');
@@ -440,8 +514,8 @@ const EQUIPMENT_REGISTER_MODULE = getEquipmentRegisterModule();
 function memberLogout() {
       removeSessionValue(CURRENT_MEMBER_KEY);
       clearPwaAutoMemberTest();
-      try { if (window.sitePassClearServerAuthoritativeEquipmentItems) window.sitePassClearServerAuthoritativeEquipmentItems(); } catch (e) {}
-      try { localStorage.removeItem(SERVER_EQUIPMENT_CACHE_KEY); } catch (e) {}
+      // Step79 V2: SIGNED_OUT은 auth-general wrapper가 단일 발행합니다.
+      // legacy memberLogout은 로컬 세션/UI 정리만 담당합니다.
       refreshMemberUi();
       // v23.7.428: 로그아웃 후 회원가입 hash/화면이 남지 않게 첫 로그인 화면으로 보냅니다.
       try {
@@ -466,11 +540,19 @@ function memberLogout() {
         showScreen('signupScreen');
         return;
       }
-      const firstOk = confirm('회원탈퇴를 진행할까요?\n\n회원탈퇴하면 현재 가입자/회원목록에서 바로 제외되고, 이 브라우저에 저장된 보관함 서류/코드가 삭제됩니다.');
+      const firstOk = confirm('회원탈퇴를 진행할까요?\n\n서버에서 회원 접근 권한, 회원간 장비연동, 활성 공유를 먼저 해제한 뒤 이 브라우저의 회원 보관함 임시 데이터를 정리합니다. 장비 원본은 이 단계에서 물리 삭제하지 않습니다.');
       if (!firstOk) return;
-      const typed = prompt('정말 탈퇴하려면 아래에 탈퇴 라고 입력해주세요.\n삭제 후에는 이 브라우저 임시 데이터가 복구되지 않습니다.');
+      const typed = prompt('정말 탈퇴하려면 아래에 탈퇴 라고 입력해주세요.\n서버 탈퇴가 정상 완료된 경우에만 이 브라우저 임시 데이터를 정리합니다.');
       if ((typed || '').trim() !== '탈퇴') {
         alert('회원탈퇴가 취소되었습니다.');
+        return;
+      }
+
+      // 59/60 추가강화: 서버의 auth.uid() 기반 본인탈퇴가 성공하기 전에는
+      // 로컬 회원/장비/세션을 먼저 지우지 않습니다.
+      const currentAuthWithdrawn = await withdrawCurrentSupabaseAuthMember('회원이 직접 탈퇴했습니다. 현재 로그인 Auth 계정 기준으로 회원간 장비연동/활성공유 접근을 해제합니다.');
+      if (Number(currentAuthWithdrawn || 0) !== 1) {
+        alert('회원탈퇴 서버처리가 완료되지 않아 탈퇴를 중단했습니다.\n회원정보와 이 브라우저의 보관함/세션은 변경하지 않았습니다. 잠시 후 다시 시도해주세요.');
         return;
       }
 
@@ -488,26 +570,30 @@ function memberLogout() {
       });
       setMembers(members);
       addWithdrawnMemberRecord(current, '회원 직접 탈퇴', '회원탈퇴');
-      const currentAuthWithdrawn = await withdrawCurrentSupabaseAuthMember('회원이 직접 탈퇴했습니다. 현재 로그인한 소셜/Auth 계정 기준으로 현재회원 삭제');
-      const keyWithdrawn = await markMemberWithdrawnInSupabase(current, '회원이 직접 탈퇴했습니다. 현재회원에서 완전 제외');
-      const serverUpdated = Number(currentAuthWithdrawn || 0) + Number(keyWithdrawn || 0);
       adminServerMemberRows = removeRowsByMemberKeys(adminServerMemberRows, current);
       adminMemberSummaryStats = null;
       adminSupabaseMemberSyncedAt = 0;
       const removedDocs = deleteOwnedItemsForMember(current);
-      const serverCleanup = await deleteOwnedServerItemsForMember(current);
+      try { removeServerEquipmentCacheForMember(current); } catch (e) {}
       await signOutSupabaseAuthQuietly();
-      [SELECTED_PAYMENT_PLAN_KEY, PENDING_REGISTRATION_KEY, REGISTRATION_DRAFT_KEY, REGISTRATION_DRAFT_PROMPT_SESSION_KEY].forEach(key => {
+
+      // STEP88 v730R3: registration draft가 회원별 scoped key로 분리되므로
+      // 회원탈퇴에서는 현재 회원 scoped draft만 명시적으로 삭제합니다.
+      // 다른 회원 draft는 건드리지 않습니다.
+      try {
+        if (typeof clearRegistrationDraft === 'function') {
+          clearRegistrationDraft();
+        }
+      } catch (e) {}
+
+      [SELECTED_PAYMENT_PLAN_KEY, PENDING_REGISTRATION_KEY, REGISTRATION_DRAFT_PROMPT_SESSION_KEY].forEach(key => {
         try { if (key) localStorage.removeItem(key); } catch (e) {}
       });
       removeSessionValue(CURRENT_MEMBER_KEY);
       clearPwaAutoMemberTest();
       refreshMemberUi();
       resetForm();
-      const serverCleanupText = serverCleanup && serverCleanup.ok
-        ? '\n서버 장비 ' + (serverCleanup.equipmentDeleted || 0) + '건, QR링크 ' + (serverCleanup.sharesDeleted || 0) + '건 정리했습니다.'
-        : '\n서버 장비/큐알 정리는 확인이 필요합니다: ' + escapePlainTextForAlert(serverCleanup?.error?.message || serverCleanup?.error || 'RPC 미연결');
-      alert('회원탈퇴가 완료되었습니다.\n현재 가입자/관리자 회원목록에서는 바로 제외됩니다.\n연결된 서류/코드 ' + removedDocs + '건과 회원정보를 삭제했고, 같은 계정의 바로 로그인을 차단했습니다.\n서버 탈퇴처리 ' + (serverUpdated || 0) + '건 반영했습니다.' + serverCleanupText);
+      alert('회원탈퇴가 완료되었습니다.\n서버에서 회원간 장비연동과 활성 공유 접근을 해제하고 Auth 연결을 종료했습니다.\n이 브라우저의 회원 보관함 임시 데이터 ' + removedDocs + '건을 정리했습니다.');
       showScreen('signupScreen');
     }
 
@@ -834,13 +920,13 @@ function getAdminSampleEquipmentOwner() {
         provider:'SitePass',
         providerId:'SITEPASS-extension-user',
         signupMethod:'SitePass 로그인',
-        status:'1개월 연장결제',
-        paymentPlanLabel:'1개월권',
-        memberPlan:'1개월권',
+        status:'일반 연간 연장결제',
+        paymentPlanLabel:'일반 연간이용권',
+        memberPlan:'일반 연간이용권',
         paymentStartedAt:new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
-        paymentEndsAt:addDaysIso(new Date().toISOString(), 35),
+        paymentEndsAt:addDaysIso(new Date().toISOString(), 365),
         paymentStatus:'연장결제완료',
-        adminLastAction:'1개월 연장결제 처리',
+        adminLastAction:'일반 연간 연장결제 처리',
         adminLastActionAt:new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
         createdAt:'2026-06-26T00:20:00.000Z',
         lastLoginAt:new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),

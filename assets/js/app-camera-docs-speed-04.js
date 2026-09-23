@@ -675,25 +675,35 @@ function resizeCanvasIfNeeded(canvas, maxSize) {
     }
 
     function makePagesForStorage(rawPages) {
-      // 담당자 링크에서 사진이 보이려면 localStorage에 실제 이미지 미리보기 데이터가 남아야 합니다.
-      // 기존 버전은 원본/보정본/선택본을 모두 저장해 용량이 커졌고, 저장공간 부족 시 사진 데이터를 모두 지워
-      // 담당자 화면에 "첨부됨"만 보이는 문제가 있었습니다. 저장 시에는 선택된 미리보기 1장만 남깁니다.
+      // STEP81 V5: 현재 서류의 실제 Storage 참조와 갱신 후보 표식을 보존합니다.
+      // 기존 미리보기 축소 정책은 유지하되, canonical 갱신에 필요한 경로/Blob URL을 버리지 않습니다.
       return (Array.isArray(rawPages) ? rawPages : []).filter(Boolean).map((page, index) => {
         const selectedPreview = getSelectedPreviewDataUrl(page);
         return {
           id: page.id || ('p_saved_' + Date.now() + '_' + index),
           fileName: page.fileName || '첨부파일',
           fileSource: page.fileSource || '',
-          fileType: page.fileType || '',
-          previewDataUrl: selectedPreview || '',
-          editDataUrl: selectedPreview || '',
+          fileType: page.fileType || page.mimeType || page.mime_type || '',
+          fileObjectUrl: page.fileObjectUrl || '',
+          blobUrl: page.blobUrl || '',
+          storageBucket: page.storageBucket || page.storage_bucket || '',
+          storagePath: page.storagePath || page.storage_path || '',
+          signedUrl: page.signedUrl || '',
+          storageAccessUrl: page.storageAccessUrl || '',
+          fileUrl: page.fileUrl || '',
+          downloadUrl: page.downloadUrl || '',
+          previewDataUrl: selectedPreview || page.previewDataUrl || '',
+          editDataUrl: selectedPreview || page.editDataUrl || page.previewDataUrl || '',
           originalDataUrl: '',
           correctedDataUrl: '',
           previewChoice: selectedPreview ? 'preview' : (page.previewChoice || ''),
           autoFit: page.autoFit || '',
           fitText: page.fitText || '',
           ratioText: page.ratioText || '',
-          addedAt: page.addedAt || new Date().toISOString()
+          addedAt: page.addedAt || new Date().toISOString(),
+          sitePassRenewalNew: page.sitePassRenewalNew === true,
+          canonicalFileId: page.canonicalFileId || page.file_id || '',
+          canonicalVersionId: page.canonicalVersionId || page.version_id || ''
         };
       });
     }
@@ -743,6 +753,7 @@ function resizeCanvasIfNeeded(canvas, maxSize) {
           dateMode: card.dataset.dateMode || '',
           pages,
           pageCount:pages.length,
+          sitePassRenewalCleared: fileBoxDataset.sitepassRenewalCleared === 'true',
           fileName: pages.length ? ('첨부 ' + pages.length + '장 · ' + summarizePages(pages)) : '',
           fileSource: firstPrintable.fileSource || fileBoxDataset.fileSource || '',
           fileType: firstPrintable.fileType || fileBoxDataset.fileType || '',
@@ -763,6 +774,9 @@ function resizeCanvasIfNeeded(canvas, maxSize) {
           docKind: card.dataset.docKind || '',
           authVerified: !isPrivateDocCard(card) || card.dataset.authVerified === 'true',
           authVerifiedAt: card.dataset.authVerifiedAt || '',
+          authSubjectId: card.dataset.authSubjectId || '',
+          authVerificationId: card.dataset.authVerificationId || '',
+          identityStatus: card.dataset.identityStatus || '',
           authPhone: card.dataset.authPhone || (card.querySelector('[data-auth-phone-input]')?.value || '').trim(),
           authPersonName: card.dataset.authPersonName || '',
           authBirth6: card.dataset.authBirth6 || '',

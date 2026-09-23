@@ -27,17 +27,17 @@
   font-weight: 750;
   line-height: 1.35;
 }
-.sitepass-chat-room-list { display: grid; gap: 10px; }
+.sitepass-chat-room-list { display: grid; gap: 7px; }
 .sitepass-chat-room-item {
   width: 100%;
   appearance: none;
   border: 1px solid #e7ebf3;
-  border-radius: 22px;
+  border-radius: 19px;
   background: #ffffff;
-  padding: 14px;
+  padding: 10px 11px;
   display: grid;
-  grid-template-columns: 48px 1fr auto;
-  gap: 12px;
+  grid-template-columns: 42px 1fr auto;
+  gap: 10px;
   align-items: center;
   text-align: left;
   cursor: pointer;
@@ -45,15 +45,15 @@
 }
 .sitepass-chat-room-item:active { transform: translateY(1px); }
 .sitepass-chat-room-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: #fff4d6;
-  font-size: 24px;
-  flex: 0 0 48px;
+  font-size: 21px;
+  flex: 0 0 42px;
 }
 .sitepass-chat-room-item b {
   display: block;
@@ -64,9 +64,9 @@
 }
 .sitepass-chat-room-item small {
   display: block;
-  margin-top: 4px;
+  margin-top: 2px;
   color: #64748b;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.3;
 }
@@ -74,13 +74,13 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 7px;
+  gap: 5px;
   white-space: nowrap;
 }
 .sitepass-chat-pill {
   border-radius: 999px;
-  padding: 5px 8px;
-  font-size: 11px;
+  padding: 4px 7px;
+  font-size: 10px;
   font-weight: 950;
   background: #ecfdf5;
   color: #047857;
@@ -233,14 +233,14 @@
   }
   .sitepass-chat-composer-row { grid-template-columns: 1fr; }
   .sitepass-chat-room-item {
-    grid-template-columns: 44px 1fr auto;
-    padding: 12px;
+    grid-template-columns: 40px 1fr auto;
+    padding: 9px 10px;
   }
   .sitepass-chat-room-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 16px;
-    font-size: 22px;
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    font-size: 20px;
   }
   .sitepass-chat-bubble { max-width: 92%; }
 }
@@ -341,12 +341,14 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
   .sitepass-chat-room-actions {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
   }
   .sitepass-chat-delete-all,
   .sitepass-chat-toggle {
+    min-height: 34px;
     padding: 7px 8px;
     font-size: 11px;
   }
@@ -559,3 +561,1096 @@
 .sitepass-expiry-test-tools479 button { min-height: 39px; border: 0; border-radius: 10px; background: #2d5bd7; color: white; font-weight: 800; cursor: pointer; }
 .sitepass-expiry-test-tools479 button.secondary { background: #e9eef8; color: #274168; }
 @media (max-width: 560px) { .sitepass-expiry-test-tools479 > div { grid-template-columns: 1fr; } }
+
+
+/* SitePass v23.7.588-52-chat-card-one-third-compact
+ * 6구간 52단계: 알림/채팅 목록 카드만 약 1/3 축소. 방 내부 UI는 변경하지 않음.
+ */
+.sitepass-chat-room-item {
+  min-height: 44px;
+  padding: 5px 9px;
+  grid-template-columns: 34px 1fr auto;
+  gap: 8px;
+  border-radius: 16px;
+}
+.sitepass-chat-room-icon {
+  width: 34px;
+  height: 34px;
+  flex-basis: 34px;
+  border-radius: 11px;
+  font-size: 18px;
+}
+.sitepass-chat-room-item small {
+  margin-top: 1px;
+  line-height: 1.15;
+}
+.sitepass-chat-room-meta { gap: 2px; }
+.sitepass-chat-pill {
+  padding: 2px 6px;
+  font-size: 9px;
+}
+.sitepass-chat-time { font-size: 10px; }
+@media (max-width: 560px) {
+  .sitepass-chat-room-item {
+    min-height: 44px;
+    padding: 5px 9px;
+    grid-template-columns: 34px 1fr auto;
+    gap: 8px;
+  }
+  .sitepass-chat-room-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    font-size: 18px;
+  }
+}
+
+
+/* SitePass v23.7.592-55-chat-list-three-column-align
+ * 6구간 55단계: 목록 카드 = 왼쪽(아이콘+방이름) / 가운데(내용) / 오른쪽(알림상태+읽음/시간).
+ * 가운데 내용은 1줄 말줄임 처리하며 기존 44px compact 높이를 유지한다.
+ */
+.sitepass-chat-room-item.sp592-room-grid {
+  grid-template-columns: minmax(118px, 130px) minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+.sp592-room-ident {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sp592-room-ident b {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 1.15;
+}
+.sitepass-chat-room-item .sp592-room-preview {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.2;
+}
+.sp592-room-unread {
+  color: #dc2626;
+  font-weight: 950;
+}
+@media (max-width: 560px) {
+  .sitepass-chat-room-item.sp592-room-grid {
+    grid-template-columns: minmax(112px, 126px) minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+  .sp592-room-ident { gap: 5px; }
+  .sp592-room-ident b { font-size: 13px; }
+  .sitepass-chat-room-item .sp592-room-preview { font-size: 10.5px; }
+}
+
+
+/* SitePass v23.7.593-55-room-name-preserve-preview-larger
+ * 6구간 55단계 UI 보완: 왼쪽 아이콘+방이름은 잘리지 않게 폭을 넓히고, 가운데 내용 글자를 조금 키운다.
+ * 카드 높이/오른쪽 상태영역/가운데 1줄 말줄임 규칙은 유지한다.
+ */
+.sitepass-chat-room-item.sp592-room-grid {
+  grid-template-columns: minmax(145px, 160px) minmax(0, 1fr) auto;
+}
+.sp592-room-ident b {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.sitepass-chat-room-item .sp592-room-preview {
+  font-size: 12.5px;
+}
+@media (max-width: 560px) {
+  .sitepass-chat-room-item.sp592-room-grid {
+    grid-template-columns: minmax(132px, 145px) minmax(0, 1fr) auto;
+  }
+  .sp592-room-ident b { font-size: 13px; }
+  .sitepass-chat-room-item .sp592-room-preview { font-size: 11.5px; }
+}
+
+/* SitePass v23.7.595-55-all-room-push-toggle
+ * 고정방/회원방 공통 3열 기준: 왼쪽 2줄 식별영역, 가운데 최근내용, 오른쪽 Push ON/OFF + 읽음/시간.
+ * 모든 카드의 가운데 내용 시작선과 오른쪽 상태 폭을 동일하게 맞춘다.
+ */
+.sitepass-chat-card {
+  --sp595-room-left-column: minmax(190px, 220px);
+  --sp595-room-right-column: 84px;
+  --sp595-room-column-gap: 7px;
+}
+.sitepass-chat-room-item.sp595-room-grid {
+  grid-template-columns: var(--sp595-room-left-column) minmax(0, 1fr) var(--sp595-room-right-column);
+  column-gap: var(--sp595-room-column-gap);
+}
+.sitepass-chat-room-item.sp595-room-grid .sp595-room-meta {
+  width: var(--sp595-room-right-column);
+  min-width: var(--sp595-room-right-column);
+  align-items: flex-end;
+}
+.sp595-room-push-toggle {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.sp595-room-push-toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.sp595-room-push-toggle.sp595-push-busy {
+  opacity: 0.62;
+  pointer-events: none;
+}
+@media (max-width: 560px) {
+  .sitepass-chat-card {
+    --sp595-room-left-column: minmax(168px, 190px);
+    --sp595-room-right-column: 76px;
+    --sp595-room-column-gap: 5px;
+  }
+  .sitepass-chat-room-item.sp595-room-grid {
+    grid-template-columns: var(--sp595-room-left-column) minmax(0, 1fr) var(--sp595-room-right-column);
+  }
+}
+.sp595-room-push-toggle { font-style: normal; }
+
+
+/* SitePass v23.7.598-55-delete-left-of-push-toggle
+ * 공유기록을 제외한 고정방에서 삭제 버튼을 알림 ON/OFF 바로 왼쪽에 한 줄로 정렬한다.
+ */
+.sitepass-chat-room-actions {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+.sitepass-chat-room-actions .sitepass-chat-delete-all,
+.sitepass-chat-room-actions .sitepass-chat-toggle {
+  margin: 0;
+  vertical-align: middle;
+}
+
+
+/* SitePass v23.7.609-55-chat-header-fullname-qr-retry-fixed-room-back */
+.sitepass-chat-room-head { grid-template-columns:26px minmax(0,1fr) auto; align-items:center; gap:8px; min-height:42px; }
+.sitepass-chat-back { width:26px; height:26px; min-width:26px; min-height:26px; padding:0; border-radius:9px; display:grid; place-items:center; font-family:Arial,sans-serif; font-size:19px; font-weight:900; line-height:1; text-align:center; }
+.sitepass-chat-room-title b { font-family:"Pretendard Variable",Pretendard,"Noto Sans KR","Apple SD Gothic Neo",sans-serif; letter-spacing:-.025em; }
+@media(max-width:460px){.sitepass-chat-room-head{grid-template-columns:24px minmax(0,1fr) auto;gap:7px}.sitepass-chat-back{width:24px;height:24px;min-width:24px;min-height:24px;border-radius:8px;font-size:18px}}
+
+
+/* SitePass v23.7.610-55-back-icon-svg-exact-center
+ * SitePass 알림·공유기록·만료알림·관리자문의의 뒤로가기 아이콘을 SVG 정중앙으로 통일한다.
+ */
+.sitepass-chat-back {
+  display: inline-grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+  text-indent: 0 !important;
+  overflow: hidden;
+}
+.sitepass-chat-back .sp610-back-svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex: 0 0 auto;
+  transform: none;
+}
+@media (max-width: 460px) {
+  .sitepass-chat-back .sp610-back-svg { width: 13px; height: 13px; }
+}
+
+
+/* SitePass v23.7.616-55-clean-split-chat-real-file-cards
+ * Desktop alert/chat screen inspired by a clean messenger layout:
+ * left room list + right conversation panel. Existing mobile navigation remains unchanged.
+ */
+@media (min-width: 920px) {
+  .app:has(#contactScreen:not(.hidden)) {
+    max-width: 1540px;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  #contactScreen {
+    width: 100%;
+  }
+
+  #contactScreen .sitepass-chat-shell {
+    padding-bottom: 82px;
+  }
+
+  #contactScreen .sitepass-chat-card {
+    min-height: 650px;
+    height: calc(100dvh - 178px);
+    max-height: 900px;
+    display: grid;
+    grid-template-columns: minmax(330px, 410px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #dde5ef;
+    border-radius: 22px;
+    background: #ffffff;
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.10);
+  }
+
+  #contactScreen #sitepassChatListPanel {
+    display: block !important;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    height: 100%;
+    overflow-y: auto;
+    padding: 20px 14px 18px;
+    border-right: 1px solid #e2e8f0;
+    background: #fbfcfe;
+  }
+
+  #contactScreen #sitepassChatRoomPanel,
+  #contactScreen #sp566MemberRoomPanel {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    padding: 18px 22px 14px;
+    background: #ffffff;
+  }
+
+  #contactScreen #sitepassChatRoomPanel:not(.sitepass-chat-hidden) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #contactScreen #sp566MemberRoomPanel:not(.hidden) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #contactScreen .sitepass-chat-card:not(:has(#sitepassChatRoomPanel:not(.sitepass-chat-hidden), #sp566MemberRoomPanel:not(.hidden)))::after {
+    content: '왼쪽에서 알림 또는 채팅방을 선택해주세요.';
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    place-items: center;
+    padding: 32px;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 850;
+    background: radial-gradient(circle at 50% 42%, #ffffff 0%, #f8fafc 76%);
+  }
+
+  #contactScreen .sitepass-chat-head {
+    position: sticky;
+    top: -20px;
+    z-index: 3;
+    margin: -20px -14px 13px;
+    padding: 20px 16px 13px;
+    background: rgba(251, 252, 254, 0.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #edf1f6;
+  }
+
+  #contactScreen .sitepass-chat-title-box h2 {
+    font-size: 23px;
+  }
+
+  #contactScreen .sitepass-chat-subtitle {
+    max-width: 330px;
+    font-size: 11.5px;
+  }
+
+  #contactScreen .sitepass-chat-room-list,
+  #contactScreen .sp566-member-room-list {
+    gap: 6px;
+  }
+
+  #contactScreen .sitepass-chat-room-item,
+  #contactScreen .sp566-member-room-button {
+    border-radius: 14px;
+    min-height: 62px;
+    padding: 8px 9px;
+    box-shadow: none;
+  }
+
+  #contactScreen .sitepass-chat-room-item:hover,
+  #contactScreen .sp566-member-room-button:hover {
+    border-color: #f2c900;
+    background: #fffaf0;
+  }
+
+  #contactScreen .sitepass-chat-room-head,
+  #contactScreen .sp566-member-room-head.sp606-member-room-head {
+    flex: 0 0 auto;
+    margin: -18px -22px 12px;
+    padding: 15px 20px;
+    min-height: 72px;
+    border-bottom: 1px solid #e5eaf1;
+    background: #ffffff;
+  }
+
+  #contactScreen #sitepassChatMessages,
+  #contactScreen .sp566-member-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    padding: 12px 8px 18px;
+    scrollbar-width: thin;
+  }
+
+  #contactScreen #sitepassChatComposer,
+  #contactScreen .sp566-member-composer,
+  #contactScreen .sp566-member-read-only {
+    flex: 0 0 auto;
+    position: relative;
+    inset: auto;
+    margin-top: 0;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.05);
+  }
+
+  #contactScreen #sitepassChatRoomPanel {
+    padding-bottom: 14px;
+  }
+
+  #contactScreen .sitepass-chat-notice {
+    display: none;
+  }
+}
+
+/* SitePass v23.7.617-55-chat-wide-conversation-composer-fix
+ * Keep the room list compact and reserve the larger area for the active conversation.
+ */
+@media (min-width: 920px) {
+  #contactScreen .sitepass-chat-card {
+    grid-template-columns: clamp(285px, 33%, 360px) minmax(0, 1fr);
+  }
+
+  #contactScreen #sitepassChatListPanel {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  #contactScreen #sitepassChatRoomPanel,
+  #contactScreen #sp566MemberRoomPanel {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+@media (min-width: 1180px) {
+  #contactScreen .sitepass-chat-card {
+    grid-template-columns: clamp(320px, 30%, 400px) minmax(0, 1fr);
+  }
+}
+
+
+/* SitePass v23.7.618-55-balanced-sidebar-premium-bottom-nav
+ * Keep the desktop room list visually useful even with few member rooms,
+ * and replace emoji bottom tabs with a refined SVG navigation treatment.
+ */
+@media (min-width: 920px) {
+  #contactScreen .sitepass-chat-card {
+    grid-template-columns: clamp(330px, 35%, 420px) minmax(0, 1fr);
+  }
+
+  #contactScreen #sitepassChatListPanel {
+    display: flex !important;
+    flex-direction: column;
+    padding: 20px 14px 16px;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(254, 229, 0, 0.10), transparent 30%),
+      linear-gradient(180deg, #fcfdff 0%, #f7f9fc 100%);
+  }
+
+  #contactScreen .sitepass-chat-head {
+    flex: 0 0 auto;
+  }
+
+  #contactScreen .sitepass-chat-room-list,
+  #contactScreen #sp566MemberChatSection {
+    flex: 0 0 auto;
+  }
+
+  #contactScreen .sitepass-chat-notice {
+    display: block;
+    margin-top: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 14px 14px 14px 46px;
+    min-height: 68px;
+    position: relative;
+    background: rgba(255,255,255,0.92);
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.55;
+    box-shadow: 0 8px 22px rgba(15,23,42,0.05);
+  }
+
+  #contactScreen .sitepass-chat-notice::before {
+    content: '✓';
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: #fff4b8;
+    color: #8a6400;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  #contactScreen .sitepass-chat-notice::after {
+    content: '대화 안내';
+    display: block;
+    margin-bottom: 3px;
+    color: #243044;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  #contactScreen .sitepass-chat-room-item,
+  #contactScreen .sp566-member-room-button {
+    min-height: 66px;
+    border: 1px solid #e0e7f0;
+    background: rgba(255,255,255,0.94);
+  }
+
+  #contactScreen .sitepass-chat-room-item:hover,
+  #contactScreen .sp566-member-room-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+  }
+}
+
+.sitepass-bottom-nav {
+  width: min(calc(100% - 24px), 920px);
+  height: 78px;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  gap: 8px;
+  border: 1px solid rgba(226,232,240,0.92);
+  border-bottom: 0;
+  border-radius: 22px 22px 0 0;
+  background: rgba(255,255,255,0.96);
+  box-shadow: 0 -10px 28px rgba(15,23,42,0.09);
+}
+
+.sitepass-bottom-nav button {
+  position: relative;
+  min-width: 0;
+  min-height: 58px !important;
+  gap: 4px;
+  border-radius: 16px;
+  color: #64748b;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.sitepass-bottom-nav button span {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+}
+
+.sitepass-bottom-nav button span svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sitepass-bottom-nav button b {
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.sitepass-bottom-nav button:hover {
+  color: #263347;
+  background: #f8fafc;
+}
+
+.sitepass-bottom-nav button.active {
+  color: #b77900;
+  background: linear-gradient(180deg, #fff8dc 0%, #fff3bd 100%);
+  box-shadow: inset 0 0 0 1px rgba(245, 168, 0, 0.12);
+}
+
+.sitepass-bottom-nav button.active::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 34px;
+  height: 3px;
+  border-radius: 999px;
+  background: #f5b400;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 8px rgba(245,180,0,0.38);
+}
+
+.sitepass-bottom-nav button:active {
+  transform: scale(.98);
+}
+
+@media (max-width: 560px) {
+  .sitepass-bottom-nav {
+    width: 100%;
+    height: 72px;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 18px 18px 0 0;
+    gap: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .sitepass-bottom-nav button {
+    border-radius: 13px;
+  }
+
+  .sitepass-bottom-nav button span {
+    width: 25px;
+    height: 25px;
+    min-height: 25px;
+  }
+
+  .sitepass-bottom-nav button span svg {
+    width: 21px;
+    height: 21px;
+  }
+}
+
+
+/* SitePass v23.7.620-55-fixed-ellipsis-clean-nav
+ * v618 정상 레이아웃을 유지하면서 왼쪽 고정방 카드의 칸을 고정하고 넘치는 글자를 말줄임표로 처리한다.
+ */
+@media (min-width: 920px) {
+  #contactScreen #sitepassChatListPanel {
+    overflow-x: hidden !important;
+  }
+
+  #contactScreen .sitepass-chat-room-item.sp592-room-grid.sp595-room-grid {
+    grid-template-columns: minmax(0, 1fr) 78px !important;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "ident meta"
+      "preview meta";
+    column-gap: 8px !important;
+    row-gap: 3px;
+    min-height: 68px;
+    padding: 9px 10px !important;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  #contactScreen .sitepass-chat-room-ident.sp592-room-ident {
+    grid-area: ident;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  #contactScreen .sitepass-chat-room-ident.sp592-room-ident b {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  #contactScreen .sitepass-chat-room-preview.sp592-room-preview {
+    grid-area: preview;
+    min-width: 0;
+    margin-left: 42px;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  #contactScreen .sitepass-chat-room-meta.sp595-room-meta {
+    grid-area: meta;
+    width: 78px !important;
+    min-width: 78px !important;
+    align-items: flex-end;
+    justify-self: end;
+  }
+}
+
+/* v620 하단 5탭: 통일된 선형 아이콘 */
+.sitepass-bottom-nav button span svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sitepass-bottom-nav button {
+  gap: 4px;
+}
+
+.sitepass-bottom-nav button.active span {
+  transform: translateY(-1px);
+}
+
+
+/* SitePass v23.7.621-55-fullwidth-white-shell-nav-align
+ * 회색 바탕을 없애고 전체 앱/하단 5탭의 가로폭을 맞춘다.
+ * 하단 5탭은 카드처럼 분리되어 보이지 않게 단순화하고, 내정보 아이콘 누락을 보정한다.
+ */
+html.sitepass-stable-member-shell-v498,
+html.sitepass-stable-member-shell-v498 body,
+body.sitepass-app-nav-active,
+body.sitepass-app-nav-active .app,
+body.sitepass-app-nav-active .screen,
+body.sitepass-app-nav-active #homeScreen.sitepass-app-home-screen,
+body.sitepass-app-nav-active #contactScreen,
+body.sitepass-app-nav-active #listScreen,
+body.sitepass-app-nav-active #registerScreen,
+body.sitepass-app-nav-active #myAccountScreen {
+  background: #ffffff !important;
+}
+
+html.sitepass-stable-member-shell-v498 body .app,
+body.sitepass-app-nav-active .app {
+  max-width: 960px !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-bottom: 84px !important;
+}
+
+#homeScreen.sitepass-app-home-screen .sitepass-app-shell {
+  max-width: 960px !important;
+  margin: 0 auto !important;
+  padding: 4px 16px 16px !important;
+}
+
+#myAccountScreen > .card,
+#registerScreen > .card,
+#listScreen > .card,
+#installScreen > .card,
+#usageGuideScreen > .card {
+  max-width: 960px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+#contactScreen .sitepass-chat-shell {
+  max-width: 960px !important;
+  margin: 0 auto !important;
+  padding: 0 16px !important;
+  background: #ffffff !important;
+}
+
+#contactScreen .sitepass-chat-card {
+  min-height: calc(100dvh - 96px) !important;
+  height: calc(100dvh - 96px) !important;
+  max-height: none !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.sitepass-bottom-nav {
+  width: min(calc(100% - 32px), 960px) !important;
+  height: 74px;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  background: #ffffff !important;
+  border-top: 1px solid #e5e7eb !important;
+  border-left: 1px solid #eef2f7 !important;
+  border-right: 1px solid #eef2f7 !important;
+  border-radius: 22px 22px 0 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.sitepass-bottom-nav button {
+  border-radius: 0 !important;
+  gap: 4px;
+  color: #64748b;
+}
+
+.sitepass-bottom-nav button span {
+  min-height: 26px;
+}
+
+.sitepass-bottom-nav button.active {
+  background: transparent !important;
+  color: #c78800 !important;
+  position: relative;
+}
+
+.sitepass-bottom-nav button.active::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 38px;
+  height: 3px;
+  border-radius: 999px;
+  background: #f5b400;
+}
+
+@media (max-width: 820px) {
+  html.sitepass-stable-member-shell-v498 body .app,
+  body.sitepass-app-nav-active .app {
+    max-width: 100% !important;
+  }
+
+  #homeScreen.sitepass-app-home-screen .sitepass-app-shell,
+  #contactScreen .sitepass-chat-shell {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .sitepass-bottom-nav {
+    width: 100% !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+  }
+}
+
+
+/* SitePass v23.7.622-55-unified-page-width-and-gutters
+ * 홈/등록/보관함/알림채팅/내정보 화면의 좌우 시작선과 하단 5탭 폭을 완전히 통일한다.
+ */
+:root {
+  --sp622-shell-max: 960px;
+  --sp622-gutter: 16px;
+}
+
+html.sitepass-stable-member-shell-v498 body .app,
+body.sitepass-app-nav-active .app {
+  max-width: calc(var(--sp622-shell-max) + (var(--sp622-gutter) * 2)) !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding-left: var(--sp622-gutter) !important;
+  padding-right: var(--sp622-gutter) !important;
+  box-sizing: border-box !important;
+}
+
+body.sitepass-app-nav-active .screen {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#homeScreen.sitepass-app-home-screen .sitepass-app-shell,
+#contactScreen .sitepass-chat-shell,
+#myAccountScreen > .card,
+#registerScreen > .card,
+#listScreen > .card,
+#installScreen > .card,
+#usageGuideScreen > .card {
+  width: 100% !important;
+  max-width: var(--sp622-shell-max) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+}
+
+#homeScreen.sitepass-app-home-screen .sitepass-app-shell,
+#contactScreen .sitepass-chat-shell {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+#myAccountScreen,
+#registerScreen,
+#listScreen,
+#contactScreen,
+#homeScreen.sitepass-app-home-screen,
+#installScreen,
+#usageGuideScreen {
+  background: #ffffff !important;
+}
+
+#contactScreen .sitepass-chat-card {
+  width: 100% !important;
+}
+
+.sitepass-bottom-nav {
+  width: min(100%, calc(var(--sp622-shell-max) + (var(--sp622-gutter) * 2))) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 820px) {
+  :root {
+    --sp622-gutter: 14px;
+  }
+
+  .sitepass-bottom-nav {
+    width: 100% !important;
+  }
+}
+
+/* SitePass v23.7.638-55-final-attachment-and-bottom-nav-cleanup
+ * 하단 5탭: 글자만 소폭 확대하고 외곽/칸/활성선은 모두 제거한다.
+ */
+.sitepass-bottom-nav {
+  border: 0 !important;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  background: #ffffff !important;
+}
+
+.sitepass-bottom-nav button,
+.sitepass-bottom-nav button:hover,
+.sitepass-bottom-nav button:active,
+.sitepass-bottom-nav button.active {
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.sitepass-bottom-nav button::before,
+.sitepass-bottom-nav button::after,
+.sitepass-bottom-nav button.active::before,
+.sitepass-bottom-nav button.active::after {
+  display: none !important;
+  content: none !important;
+}
+
+.sitepass-bottom-nav button b {
+  font-size: 12.5px !important;
+  line-height: 1.2 !important;
+}
+
+/* SitePass v23.7.639-55-fit-attachment-bubble-and-nav-cache-fix
+ * 하단 5탭의 큰 외곽 네모와 선택 칸 네모를 제거하고 글자를 실제로 확대한다.
+ */
+.sitepass-bottom-nav {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  background: #ffffff !important;
+}
+
+.sitepass-bottom-nav button,
+.sitepass-bottom-nav button:hover,
+.sitepass-bottom-nav button:focus,
+.sitepass-bottom-nav button:active,
+.sitepass-bottom-nav button.active {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  background: transparent !important;
+}
+
+.sitepass-bottom-nav button::before,
+.sitepass-bottom-nav button::after,
+.sitepass-bottom-nav button.active::before,
+.sitepass-bottom-nav button.active::after {
+  content: none !important;
+  display: none !important;
+}
+
+.sitepass-bottom-nav button b {
+  font-size: 14px !important;
+  line-height: 1.15 !important;
+  font-weight: 850 !important;
+}
+
+
+/* SitePass v23.7.641-55-chat-search-member-single-line */
+.sp641-chat-search {
+  width: 100%;
+  height: 40px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px 0 8px;
+  box-sizing: border-box;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.sp641-chat-search:focus-within {
+  border-color: #f0b400;
+  box-shadow: 0 0 0 3px rgba(240,180,0,.12);
+}
+.sp641-chat-search-icon {
+  flex: 0 0 auto;
+  color: #64748b;
+  font-size: 18px;
+  line-height: 1;
+  transform: rotate(-15deg);
+}
+#sp641ChatListSearch {
+  min-width: 0;
+  flex: 1 1 auto;
+  width: auto;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #0f172a;
+  font: 750 11.5px/1.2 inherit;
+  letter-spacing: -0.1px;
+}
+#sp641ChatListSearch::placeholder {
+  color: #94a3b8;
+  font-size: 11.5px;
+  letter-spacing: -0.1px;
+}
+.sp641-search-hidden { display: none !important; }
+.sp641-search-empty {
+  display: none;
+  padding: 18px 10px 8px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: center;
+}
+.sp641-search-empty.show { display: block; }
+
+@media (min-width: 920px) {
+  #contactScreen .sitepass-chat-card {
+    grid-template-columns: clamp(350px, 37%, 440px) minmax(0, 1fr) !important;
+  }
+  #contactScreen .sp594-member-room-ident-copy {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  #contactScreen .sp594-member-room-ident-copy b {
+    display: block !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}
+
+
+/* SitePass v23.7.643-55-chat-search-hard-reset-no-focus-box */
+.sp641-chat-search,
+.sp641-chat-search:focus,
+.sp641-chat-search:focus-within {
+  border-color: #dbe4f0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: #ffffff !important;
+}
+
+#sp641ChatListSearch,
+#sp641ChatListSearch:focus,
+#sp641ChatListSearch:focus-visible,
+#sp641ChatListSearch:active {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+#sp641ChatListSearch::-webkit-search-decoration,
+#sp641ChatListSearch::-webkit-search-cancel-button,
+#sp641ChatListSearch::-webkit-search-results-button,
+#sp641ChatListSearch::-webkit-search-results-decoration {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: none !important;
+}
+
+
+/* SitePass STEP84 V40 fixed-room mobile scroll / composer / visualViewport.
+ * Scope is intentionally limited to the four legacy fixed rooms.  The normal
+ * member-link room panel and its composer keep their locked implementation.
+ */
+@media (max-width: 919px) {
+  #contactScreen #sitepassChatRoomPanel:not(.sitepass-chat-hidden) {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: var(--sitepass-fixed-room-height-v40, calc(100dvh - 132px));
+    min-height: 0;
+    max-height: none;
+    padding-bottom: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  #contactScreen #sitepassChatRoomPanel > .sitepass-chat-room-head,
+  #contactScreen #sitepassChatRoomPanel > .sitepass-expiry-test-tools479,
+  #contactScreen #sitepassChatRoomPanel > #sitepassChatDeleteBar {
+    flex: 0 0 auto;
+  }
+
+  #contactScreen #sitepassChatMessages {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #contactScreen #sitepassChatComposer {
+    flex: 0 0 auto;
+    position: relative;
+    inset: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: 8px;
+    box-sizing: border-box;
+  }
+
+  #contactScreen #sitepassChatComposer .sitepass-chat-compose-line {
+    align-items: end;
+  }
+
+  #contactScreen #sitepassChatComposer .sitepass-chat-textarea {
+    height: 54px;
+    min-height: 54px;
+    max-height: 150px;
+    padding: 16px 11px;
+    line-height: 20px;
+    box-sizing: border-box;
+    overflow-y: hidden;
+    resize: none;
+  }
+
+  #contactScreen #sitepassChatComposer .sitepass-chat-textarea::placeholder {
+    line-height: 20px;
+  }
+}

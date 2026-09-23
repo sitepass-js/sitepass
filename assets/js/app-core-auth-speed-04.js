@@ -302,7 +302,7 @@ function renderAdminContactManager() {
       } catch (e) {}
     }
 
-    /* v23.7.553-test - 강력 새로고침 직전 실제로 보이는 화면을 저장합니다.
+    /* v23.7.553-recovery-test - 강력 새로고침 직전 실제로 보이는 화면을 저장합니다.
        history.state가 이전 보관함 화면으로 남아 있어도 현재 알림/채팅·내정보 화면이 우선 복원됩니다. */
     function persistVisibleSitePassScreenV525() {
       try {
@@ -327,7 +327,7 @@ function renderAdminContactManager() {
     window.addEventListener('beforeunload', persistVisibleSitePassScreenV525);
 
     function showScreen(id, options) {
-      // v23.7.553-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
+      // v23.7.553-recovery-test: 메인 앱 화면 전환은 회원·관리자·기존 QR 화면만 담당합니다.
       // 담당자 링크는 recipient.html에서 독립 실행되어 showScreen과 충돌하지 않습니다.
       const managerOnlyScreens = ['publicScreen'];
       // v23.7.463: 내정보는 화면을 열기 전에 현재 비밀번호를 다시 확인합니다.
@@ -356,7 +356,7 @@ function renderAdminContactManager() {
         id = 'signupScreen';
       }
       document.body.classList.toggle('manager-view-mode', managerOnlyScreens.includes(id));
-      // v23.7.553-test: 화면 표시 상태는 hidden 클래스 하나로만 관리합니다.
+      // v23.7.553-recovery-test: 화면 표시 상태는 hidden 클래스 하나로만 관리합니다.
       // 예전 하단탭/알림 보정 코드가 남긴 display:none·opacity:0 인라인 값을
       // 모든 화면 전환 때 제거해 새로고침 후 전체 화면이 빈 상태가 되는 것을 막습니다.
       document.querySelectorAll('.screen').forEach(function(screen){
@@ -403,7 +403,7 @@ function renderAdminContactManager() {
       if (id === 'registerScreen') { const docBox = document.getElementById('docCards'); if (docBox && !docBox.innerHTML.trim()) renderDocCards(); renderAlertPreview(); renderBundleSummary(); updateRegisterModeUi(); updateRegistrationDraftNotice(); }
       if (id === 'adminScreen') { renderAdmin(); setTimeout(() => syncSupabaseMembersForAdmin(false), 80); }
       if (id === 'contactScreen') {
-        // v23.7.553-test: 화면 전환 함수는 contactScreen 표시만 담당합니다.
+        // v23.7.553-recovery-test: 화면 전환 함수는 contactScreen 표시만 담당합니다.
         // 알림/채팅 목록 렌더링은 sitepass-chat-v460.js 한 곳에서만 실행해 순환 호출을 막습니다.
         try { if (typeof renderContactHistory === 'function') renderContactHistory(); } catch(e) {}
       }
@@ -548,6 +548,7 @@ function adminLogout() {
       if (meta.birth6) card.dataset.authBirth6 = meta.birth6;
       if (meta.genderDigit) card.dataset.authGenderDigit = meta.genderDigit;
       if (meta.verificationId) card.dataset.authVerificationId = meta.verificationId;
+      if (meta.subjectId) card.dataset.authSubjectId = meta.subjectId;
       if (meta.identityStatus) card.dataset.identityStatus = meta.identityStatus;
       unlockPrivateDocUpload(card);
     }
@@ -715,18 +716,6 @@ function setPersonAuthStatus(kind, text, mode) {
       renderPersonSmsPreview(kind);
     }
 
-    function makePersonConsentFallbackCode458(raw) {
-      const seed = String(raw || '').trim();
-      if (!seed) return '';
-      let h = 2166136261;
-      for (let i = 0; i < seed.length; i++) {
-        h ^= seed.charCodeAt(i);
-        h = Math.imul(h, 16777619);
-      }
-      const n = (h >>> 0) % 900000 + 100000;
-      return String(n);
-    }
-
     function buildPersonConsentSubjectId458(kind, values) {
       const sens = window.SitePassSens351;
       const phoneLast4 = sens && sens.cleanPhone ? sens.cleanPhone(values.phone).slice(-4) : String(values.phone || '').replace(/[^0-9]/g, '').slice(-4);
@@ -792,7 +781,6 @@ function setPersonAuthStatus(kind, text, mode) {
         }
         values.panel.dataset.authVerificationId = data.verificationId || '';
         values.panel.dataset.authSubjectId = subjectId;
-        values.panel.dataset.authFallbackCode458 = makePersonConsentFallbackCode458(subjectId);
         togglePersonAuthCodeInput(values.panel, true);
         renderPersonSmsPreview(kind);
         setPersonAuthStatus(kind, '약관/개인정보 동의 링크를 발송했습니다. 기사/인부가 자기 휴대폰에서 링크를 열고 필수 동의 체크 후 인증번호 보기를 누르면 번호가 화면에 표시됩니다. 그 번호를 물어 입력하세요. 끝 4자리: ' + (data.phoneLast4 || sens.cleanPhone(values.phone).slice(-4)), 'pending');
@@ -831,21 +819,14 @@ function setPersonAuthStatus(kind, text, mode) {
       if (verifyButton) verifyButton.disabled = true;
       setPersonAuthStatus(kind, '인증번호를 확인하고 있습니다.', 'pending');
       let data;
-      const normalizedCode458 = String(values.code || '').replace(/[^0-9]/g, '');
-      const subjectId458 = values.panel.dataset.authSubjectId || buildPersonConsentSubjectId458(kind, values);
-      const fallbackCode458 = values.panel.dataset.authFallbackCode458 || makePersonConsentFallbackCode458(subjectId458);
       try {
         data = await sens.verifyPhoneCode(values.panel.dataset.authVerificationId, values.code);
       } catch (err) {
         console.error(err);
-        if (fallbackCode458 && normalizedCode458 === fallbackCode458) {
-          data = { verifiedAt: new Date().toISOString(), fallbackConsentAccepted: true };
-        } else {
-          if (verifyButton) verifyButton.disabled = false;
-          setPersonAuthStatus(kind, '인증 실패: ' + sens.koreanError(err), 'rejected');
-          alert('인증 실패: ' + sens.koreanError(err));
-          return;
-        }
+        if (verifyButton) verifyButton.disabled = false;
+        setPersonAuthStatus(kind, '인증 실패: ' + sens.koreanError(err), 'rejected');
+        alert('인증 실패: ' + sens.koreanError(err));
+        return;
       }
       const meta = personAuth.buildVerifiedMeta ? personAuth.buildVerifiedMeta(values, data.verifiedAt) : {
         personName: values.name,
@@ -854,6 +835,7 @@ function setPersonAuthStatus(kind, text, mode) {
         verifiedAt: data.verifiedAt || new Date().toISOString()
       };
       meta.verificationId = values.panel.dataset.authVerificationId || '';
+      meta.subjectId = values.panel.dataset.authSubjectId || '';
       meta.birth6 = values.birth6;
       meta.genderDigit = values.genderDigit;
       meta.carrier = values.carrier;
@@ -876,6 +858,7 @@ function setPersonAuthStatus(kind, text, mode) {
       values.panel.dataset.pendingType = values.type || 'normal';
       values.panel.dataset.pendingVerifiedAt = meta.verifiedAt;
       values.panel.dataset.pendingVerificationId = meta.verificationId || '';
+      values.panel.dataset.pendingSubjectId = meta.subjectId || '';
       values.panel.dataset.pendingBirth6 = values.birth6 || '';
       values.panel.dataset.pendingGenderDigit = values.genderDigit || '';
       values.panel.dataset.pendingCarrier = values.carrier || '';
@@ -917,6 +900,10 @@ function setPersonAuthStatus(kind, text, mode) {
       values.panel.dataset.pendingName = '';
       values.panel.dataset.pendingPhone = '';
       values.panel.dataset.pendingVerifiedAt = '';
+      values.panel.dataset.pendingVerificationId = '';
+      values.panel.dataset.pendingSubjectId = '';
+      values.panel.dataset.authVerificationId = '';
+      values.panel.dataset.authSubjectId = '';
       values.panel.querySelectorAll('input').forEach(input => { input.disabled = false; if (input.type === 'checkbox') input.checked = false; else input.value = ''; });
       values.panel.querySelectorAll('select, button').forEach(el => { el.disabled = false; });
       togglePersonAuthCodeInput(values.panel, false);
