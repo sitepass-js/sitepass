@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.784r14-step93-admin-support-chats-security-reinforcement';
-const SITEPASS_CACHE = 'sitepass-fast-23.7.781r14-step93-admin-support-chats-message-scroll-transaction-fix';
+const SITEPASS_SW_VERSION = 'v23.7.785r9p1-step93-alert-ui-polling-dedup';
+const SITEPASS_CACHE = 'sitepass-fast-23.7.785r9p1-step93-alert-ui-polling-dedup';
 const SITEPASS_CHAT_PRESENCE_V40 = new Map();
 const SITEPASS_SHELL = [
   './index.html',
@@ -15,7 +15,7 @@ const SITEPASS_SHELL = [
   './assets/css/sitepass-archive-v562.css?v=23.7.567-test',
   './assets/css/sitepass-chat-v460.css?v=23.7.712-step84-v40-fixed-room-mobile-ux',
   './assets/css/sitepass-member-link-chat-v566.css?v=23.7.773-r14-member-chat-enter-newline-auto-resize',
-  './assets/js/sitepass-chat-v667.js?step=84-v40-fixed-room-mobile-ux',
+  './assets/js/sitepass-chat-v667.js?step=93-v785r9p1-alert-ui-polling-dedup',
   './assets/js/features/equipment-link/link-api.js?step=82-v28',
   './assets/js/features/equipment-link/request.js?step=82-v28',
   './assets/js/features/equipment-link/approval.js?step=82-v28',

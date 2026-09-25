@@ -2408,13 +2408,13 @@
   });
   window.addEventListener('pageshow', function(){ setTimeout(init, 100); });
   window.addEventListener('focus', function(){
-    syncAlertUiStateV22(true);
+    queueAlertUiStateSyncV22(120);
     refreshShareTrackingServerV521(false);
     refreshSystemNotificationRoomV585(true);
   });
   document.addEventListener('visibilitychange', function(){
     if (!document.hidden) {
-      syncAlertUiStateV22(true);
+      queueAlertUiStateSyncV22(120);
       refreshShareTrackingServerV521(false);
       refreshSystemNotificationRoomV585(true);
     }
@@ -2437,7 +2437,6 @@
       renderMessages('expiry');
     }
     if (!document.hidden) {
-      syncAlertUiStateV22(false);
       refreshShareTrackingServerV521(false);
     }
     renderRoomList();
