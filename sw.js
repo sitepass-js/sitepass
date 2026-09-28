@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.785r9p1-step93-alert-ui-polling-dedup';
-const SITEPASS_CACHE = 'sitepass-fast-23.7.785r9p1-step93-alert-ui-polling-dedup';
+const SITEPASS_SW_VERSION = 'v23.7.785r9p3-logopt-equipment-archive-event-driven';
+const SITEPASS_CACHE = 'sitepass-fast-23.7.785r9p3-logopt-equipment-archive-event-driven';
 const SITEPASS_CHAT_PRESENCE_V40 = new Map();
 const SITEPASS_SHELL = [
   './index.html',
@@ -22,7 +22,7 @@ const SITEPASS_SHELL = [
   './assets/js/features/equipment-link/revoke.js?step=82-v28',
   './assets/js/features/equipment-link/badge.js?step=82-v28',
   './assets/js/sitepass-realtime-v664.js?step=84-v40-mobile-chat-realtime-push-pwa',
-  './assets/js/sitepass-member-link-chat-v663.js?step=r14-member-chat-enter-newline-auto-resize-v773',
+  './assets/js/sitepass-member-link-chat-v663.js?step=logopt-v785r9p2-member-chat-realtime-polling-guard',
   './assets/js/features/chat/notifications.js?step=84-v39-chat-role-modularization',
   './assets/js/features/chat/pinned-rooms.js?step=84-v39-chat-role-modularization',
   './assets/js/features/chat/member-chat-list.js?step=84-v39-chat-role-modularization',
@@ -83,7 +83,7 @@ const SITEPASS_SHELL = [
   './assets/js/app-register-share-payment-speed-03.js?step=r14-friend-chat-recipient-share-fresh-token-fix-v764',
   './assets/js/app-register-share-payment-speed-04.js?v=23.7.676-72-e3-server-signature-consumption',
   './assets/js/sitepass-detail-refresh-v700.js?v=23.7.700-75-detail-refresh-restore-v2',
-  './assets/js/sitepass-archive-v562.js?step=82-v29-equipment-link-cache-boundary-fix',
+  './assets/js/sitepass-archive-v562.js?step=logopt-v785r9p3-equipment-archive-event-driven',
   './assets/js/sitepass-shadow-lookup-v698.js?v=23.7.698-75-shadow-lookup-scale',
   './assets/js/qr-share.js?v=23.7.676-72-e3-server-signature-consumption'
 ];

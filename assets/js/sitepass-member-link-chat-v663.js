@@ -6168,9 +6168,35 @@
 
       setInterval(function () {
         installLegacyHooks();
-        if (isMemberMode() && !document.hidden) {
-          refresh(false);
+
+        if (!isMemberMode() || document.hidden) {
+          return;
         }
+
+        var realtimeState = null;
+
+        try {
+          var realtimeApi = window.SitePassRealtimeV664;
+
+          if (
+            realtimeApi &&
+            typeof realtimeApi.getState === 'function'
+          ) {
+            realtimeState = realtimeApi.getState();
+          }
+        } catch (error) {
+          realtimeState = null;
+        }
+
+        if (
+          realtimeState &&
+          realtimeState.connected === true &&
+          String(realtimeState.status || '').toUpperCase() === 'SUBSCRIBED'
+        ) {
+          return;
+        }
+
+        refresh(false);
       }, 15000);
 
       /*

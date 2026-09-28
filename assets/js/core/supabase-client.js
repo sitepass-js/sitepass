@@ -1,4 +1,4 @@
-// SitePass v23.7.710-78-core-modularization - common core Supabase singleton
+﻿// SitePass v23.7.710-78-core-modularization - common core Supabase singleton
 window.SITEPASS_DB_CONFIG = {
     provider: 'supabase',
     supabaseUrl: 'https://kbshbjrsjyqegacbtxme.supabase.co',
@@ -7,7 +7,7 @@ window.SITEPASS_DB_CONFIG = {
     // v23.7.561-test: Storage 비공개 + 15분 기간제 signed URL 사용
     storageAccessMode: 'signed',
     storageSignedUrlTtlSeconds: 900,
-    appVersion: 'v23.7.784r14-step93-admin-support-chats-security-reinforcement',
+    appVersion: 'v23.7.785r9p2-logopt-member-chat-realtime-polling-guard',
     appUrl: 'https://sitepass.co.kr/',
     pushFunctionName: 'send-push',
     // VAPID public key는 Edge Function에서 자동으로 받아옵니다.

@@ -348,19 +348,45 @@
     data: null,
     loadedAt: 0,
     promise: null,
-    authEpoch: 0
+    authEpoch: 0,
+    invalidationEpoch: 0
   };
 
+  function archiveRealtimeHealthyV785R9P3() {
+    try {
+      var realtime = window.SitePassRealtimeV664 || null;
+      if (!realtime || typeof realtime.getState !== 'function') return false;
+
+      var realtimeState = realtime.getState();
+      return !!(
+        realtimeState &&
+        realtimeState.connected === true &&
+        String(realtimeState.status || '').toUpperCase() === 'SUBSCRIBED'
+      );
+    } catch (error) {
+      return false;
+    }
+  }
+
   function archiveHomeSnapshotFreshV571(data, loadedAt) {
-    return !!(
-      validateArchiveResponse(data) &&
-      Date.now() - Number(loadedAt || 0) < 30000
-    );
+    var loaded = Number(loadedAt || 0);
+
+    if (!validateArchiveResponse(data) || loaded <= 0) return false;
+
+    if (archiveRealtimeHealthyV785R9P3()) return true;
+
+    return Date.now() - loaded < 60000;
   }
 
   function invalidateHomeSnapshotV571() {
+    homeSnapshotV571.invalidationEpoch =
+      Number(homeSnapshotV571.invalidationEpoch || 0) + 1;
+
     homeSnapshotV571.data = null;
     homeSnapshotV571.loadedAt = 0;
+
+    state.loadedKey = '';
+    state.loadedAt = 0;
   }
 
   async function getHomeSnapshotV571(force) {
@@ -409,6 +435,8 @@
     }
 
     var requestEpoch = Number(homeSnapshotV571.authEpoch || 0);
+    var requestInvalidationEpoch =
+      Number(homeSnapshotV571.invalidationEpoch || 0);
 
     var requestPromise = (async function () {
       var data = await callRpc(
@@ -427,6 +455,13 @@
 
       if (requestEpoch !== Number(homeSnapshotV571.authEpoch || 0)) {
         throw new Error('HOME_SNAPSHOT_AUTH_SCOPE_CHANGED');
+      }
+
+      if (
+        requestInvalidationEpoch !==
+        Number(homeSnapshotV571.invalidationEpoch || 0)
+      ) {
+        throw new Error('HOME_SNAPSHOT_INVALIDATED_DURING_REQUEST');
       }
 
       homeSnapshotV571.data = data;
@@ -464,6 +499,8 @@
     state.error = '';
     state.requestKey = requestKey;
     var requestSequence = ++state.requestSequence;
+    var requestInvalidationEpoch =
+      Number(homeSnapshotV571.invalidationEpoch || 0);
     renderMemberArchive();
 
     try {
@@ -481,6 +518,13 @@
         throw new Error('통합 보관함 응답 형식이 올바르지 않습니다.');
       }
       if (requestSequence !== state.requestSequence) return;
+
+      if (
+        requestInvalidationEpoch !==
+        Number(homeSnapshotV571.invalidationEpoch || 0)
+      ) {
+        return;
+      }
 
       state.data = data;
       state.page = Number(data.paging.page || 1);
@@ -2244,6 +2288,172 @@
 
     return true;
   }
+
+  var archiveResumeHiddenV785R9P3 = false;
+  var archiveBlurAtV785R9P3 = 0;
+  var archiveLastResumeReconcileAtV785R9P3 = 0;
+  var archiveHomeRenderTimerV785R9P3 = 0;
+
+  function archiveHomeVisibleV785R9P3() {
+    try {
+      var home = document.getElementById('homeScreen');
+      return !!(
+        home &&
+        home.classList &&
+        !home.classList.contains('hidden')
+      );
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function scheduleArchiveHomeRenderV785R9P3() {
+    if (document.hidden) return;
+    if (!archiveHomeVisibleV785R9P3()) return;
+
+    var renderAfterPending = function () {
+      clearTimeout(archiveHomeRenderTimerV785R9P3);
+
+      archiveHomeRenderTimerV785R9P3 = setTimeout(function () {
+        if (document.hidden) return;
+        if (!archiveHomeVisibleV785R9P3()) return;
+
+        try {
+          if (typeof window.renderSitePassAppHome430 === 'function') {
+            window.renderSitePassAppHome430();
+          }
+        } catch (error) {}
+      }, 0);
+    };
+
+    var pending = homeSnapshotV571.promise;
+
+    if (pending && typeof pending.then === 'function') {
+      Promise.resolve(pending).then(
+        renderAfterPending,
+        renderAfterPending
+      );
+      return;
+    }
+
+    renderAfterPending();
+  }
+
+  function invalidateArchiveForEquipmentChangeV785R9P3() {
+    if (!isMemberMode()) return;
+
+    invalidateHomeSnapshotV571();
+    scheduleArchiveHomeRenderV785R9P3();
+  }
+
+  async function reconcileArchiveAfterResumeV785R9P3() {
+    if (!isMemberMode()) return;
+
+    var now = Date.now();
+
+    if (
+      now - Number(archiveLastResumeReconcileAtV785R9P3 || 0) < 500
+    ) {
+      return;
+    }
+
+    archiveLastResumeReconcileAtV785R9P3 = now;
+
+    /*
+      R9P3 auth boundary:
+      memberLogout()는 Supabase signOut 성공/검증 후
+      legacy CURRENT_MEMBER_KEY를 제거합니다.
+
+      그 짧은 구간의 blur -> focus resume에서
+      isMemberMode()만 보면 이전 member key가 아직 남아
+      signed-out archive RPC가 발생할 수 있습니다.
+
+      Resume reconcile에만 실제 Supabase session을
+      fail-closed로 확인합니다.
+      Realtime equipment_archive invalidation 경로는 변경하지 않습니다.
+    */
+    try {
+      var authClient = window.sitepassSupabase;
+
+      if (
+        !authClient ||
+        !authClient.auth ||
+        typeof authClient.auth.getSession !== 'function'
+      ) {
+        return;
+      }
+
+      var authResult = await authClient.auth.getSession();
+
+      if (
+        !authResult ||
+        authResult.error ||
+        !authResult.data ||
+        !authResult.data.session
+      ) {
+        return;
+      }
+    } catch (error) {
+      return;
+    }
+
+    /*
+      getSession() 대기 중 local member boundary도 바뀔 수 있으므로
+      실제 invalidation 직전에 다시 확인합니다.
+    */
+    if (!isMemberMode()) return;
+
+    invalidateArchiveForEquipmentChangeV785R9P3();
+  }
+
+  window.addEventListener(
+    'sitepass-realtime-invalidation-v664',
+    function (event) {
+      var detail =
+        event && event.detail && typeof event.detail === 'object'
+          ? event.detail
+          : {};
+
+      if (String(detail.topic || '') !== 'equipment_archive') return;
+
+      invalidateArchiveForEquipmentChangeV785R9P3();
+    }
+  );
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      archiveResumeHiddenV785R9P3 = true;
+      return;
+    }
+
+    if (!archiveResumeHiddenV785R9P3) return;
+
+    archiveResumeHiddenV785R9P3 = false;
+    reconcileArchiveAfterResumeV785R9P3();
+  });
+
+  window.addEventListener('blur', function () {
+    archiveBlurAtV785R9P3 = Date.now();
+  });
+
+  window.addEventListener('focus', function () {
+    var blurredAt = Number(archiveBlurAtV785R9P3 || 0);
+    archiveBlurAtV785R9P3 = 0;
+
+    if (blurredAt > 0 && Date.now() - blurredAt >= 1000) {
+      reconcileArchiveAfterResumeV785R9P3();
+    }
+  });
+
+  window.addEventListener('pageshow', function (event) {
+    if (event && event.persisted === true) {
+      reconcileArchiveAfterResumeV785R9P3();
+    }
+  });
+
+  window.addEventListener('online', function () {
+    reconcileArchiveAfterResumeV785R9P3();
+  });
 
   legacyArchive.renderList = renderList;
   legacyArchive.searchFromInput = searchFromInput;

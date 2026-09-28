@@ -116,25 +116,36 @@
       channelStatus = 'CONNECTING';
       channelStartedAt = Date.now();
 
+      var handleInvalidationChangeV664 = function(payload){
+        if (generation !== channelGeneration || channel !== nextChannel) return;
+        var row = payload && (payload.new || payload.old) || {};
+        emit(row.topic, {
+          scopeKey: row.scope_key || '',
+          revision: Number(row.revision || 0),
+          updatedAt: row.updated_at || '',
+          reason: 'postgres_changes'
+        });
+      };
+
       var nextChannel = sb
         .channel('sitepass-member-invalidations-v664-' + key)
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'INSERT',
             schema: 'public',
             table: 'sitepass_member_realtime_invalidations_v1'
           },
-          function(payload){
-            if (generation !== channelGeneration || channel !== nextChannel) return;
-            var row = payload && (payload.new || payload.old) || {};
-            emit(row.topic, {
-              scopeKey: row.scope_key || '',
-              revision: Number(row.revision || 0),
-              updatedAt: row.updated_at || '',
-              reason: 'postgres_changes'
-            });
-          }
+          handleInvalidationChangeV664
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'sitepass_member_realtime_invalidations_v1'
+          },
+          handleInvalidationChangeV664
         )
         .subscribe(function(status){
           if (generation !== channelGeneration || channel !== nextChannel) return;
