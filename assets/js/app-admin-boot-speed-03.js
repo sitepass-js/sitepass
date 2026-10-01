@@ -1844,6 +1844,40 @@ function sitePassAdminEquipmentDetailHtmlV736(item) {
   const driverGroups = sitePassAdminEquipmentDriverGroupsV737(item);
   const workerGroups = sitePassAdminEquipmentWorkerGroupsV737(item);
 
+  const paymentEquipmentId = String(item && (
+    item.equipmentId ||
+    item.equipment_id ||
+    ''
+  ) || '').trim();
+
+  const paymentEquipmentNo =
+    sitePassAdminEquipmentNoV737(item) || '-';
+
+  const paymentOwnerId =
+    sitePassAdminEquipmentOwnerIdV736(item);
+
+  const paymentUuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  const canProcessEquipmentPayment =
+    paymentUuidPattern.test(paymentEquipmentId) &&
+    !!paymentOwnerId &&
+    paymentOwnerId !== '-';
+
+  const paymentHtml =
+    '<section class="sitepass-admin-eq-payment-v94">' +
+      '<h4>장비 결제관리</h4>' +
+      '<div class="small" style="margin-bottom:8px;">선택한 장비 1대 기준으로 연간결제를 처리합니다.</div>' +
+      (
+        canProcessEquipmentPayment
+          ? '<button type="button" class="primary" onclick="processEquipmentAnnualPaymentFromMemberDetail(\'' +
+              escapeJs(paymentOwnerId) + '\',\'' +
+              escapeJs(paymentEquipmentId) + '\',\'' +
+              escapeJs(paymentEquipmentNo) + '\',this)">연간결제 처리</button>'
+          : '<button type="button" class="primary" disabled title="서버 equipment_id 또는 회원 식별값 확인 필요">연간결제 처리</button>'
+      ) +
+    '</section>';
+
   const driverHtml = driverGroups.length
     ? driverGroups.map(function(group, index){
         return sitePassAdminEquipmentPersonGroupHtmlV737('driver', group, index);
@@ -1857,6 +1891,7 @@ function sitePassAdminEquipmentDetailHtmlV736(item) {
     : '<div class="empty sitepass-admin-eq-empty-v736">등록된 인부서류·인증정보가 없습니다.</div>';
 
   return '<div class="sitepass-admin-eq-detail-v736">' +
+    paymentHtml +
     '<section><h4>장비 상세서류</h4>' + sitePassAdminEquipmentDocRowsHtmlV736(equipmentDocs) + '</section>' +
     '<section><h4>기사 상세서류 및 인증·약관동의</h4>' + driverHtml + '</section>' +
     '<section><h4>인부 서류 및 인증·약관동의</h4>' + workerHtml + '</section>' +

@@ -35,8 +35,8 @@
       newSignup: countTodaySignups(userMembers),
       free: userMembers.filter(m => String(getMemberPlanInfo(m).label).includes('무료')).length,
       monthly: userMembers.filter(m => String(getMemberPlanInfo(m).label).includes('1개월') || String(getMemberPlanInfo(m).label).includes('monthly')).length,
-      due: userMembers.filter(isMemberPaymentDueSoon).length,
-      grace14: userMembers.filter(isMemberGrace14Over).length,
+      due: userMembers.filter(m => !String(m.paymentStatus || m.status || '').includes('환불처리') && isMemberPaymentDueSoon(m)).length,
+      grace14: userMembers.filter(m => !String(m.paymentStatus || m.status || '').includes('환불처리') && isMemberGrace14Over(m)).length,
       super: adminMembers.filter(m => (m.adminRole || supabaseRoleToAdminRole(m.role)) === SUPER_ADMIN_ROLE_NAME).length,
       admin: adminMembers.filter(m => ['관리자','운영관리자','조회관리자'].includes(m.adminRole || supabaseRoleToAdminRole(m.role))).length,
       suspended: userMembers.filter(m => m.suspended || m.status === '정지').length,
@@ -87,8 +87,8 @@
     if (folder === 'newSignup') return getLocalDateKey(member?.createdAt) === getLocalDateKey();
     if (folder === 'free') return String(getMemberPlanInfo(member).label).includes('무료');
     if (folder === 'monthly') return String(getMemberPlanInfo(member).label).includes('1개월') || String(getMemberPlanInfo(member).label).includes('monthly');
-    if (folder === 'due') return isMemberPaymentDueSoon(member);
-    if (folder === 'grace14') return isMemberGrace14Over(member);
+    if (folder === 'due') return !String(member.paymentStatus || member.status || '').includes('환불처리') && isMemberPaymentDueSoon(member);
+    if (folder === 'grace14') return !String(member.paymentStatus || member.status || '').includes('환불처리') && isMemberGrace14Over(member);
     if (folder === 'suspended') return member.suspended || member.status === '정지';
     if (folder === 'newPay') return String(member.paymentStatus || member.status || '').includes('신규결제');
     if (folder === 'extensionPay') return String(member.paymentStatus || member.status || '').includes('연장결제');

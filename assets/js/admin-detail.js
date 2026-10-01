@@ -248,6 +248,21 @@
     }
     const { members, target } = getAdminEditableMember(memberId);
     if (!target) { alert('회원을 찾을 수 없습니다.'); return; }
+    if (
+      target.refundProcessedAt ||
+      target.paymentRefundedAt ||
+      String(target.paymentStatus || target.status || '').includes('환불처리')
+    ) {
+      alert('이미 환불처리된 회원입니다. 환불요청을 다시 등록하지 않았습니다.');
+      return;
+    }
+    if (
+      target.refundRequestPending ||
+      String(target.paymentStatus || '').includes('환불요청')
+    ) {
+      alert('이미 환불요청으로 등록된 회원입니다. 중복 등록하지 않았습니다.');
+      return;
+    }
     const input = readAdminPaymentInputs(memberId);
     if (!confirm((target.name || target.signupId || '회원') + '님의 환불요청을 등록할까요?')) return;
     const nowIso = new Date().toISOString();
@@ -270,6 +285,21 @@
     }
     const { members, target } = getAdminEditableMember(memberId);
     if (!target) { alert('회원을 찾을 수 없습니다.'); return; }
+    if (
+      target.refundProcessedAt ||
+      target.paymentRefundedAt ||
+      String(target.paymentStatus || target.status || '').includes('환불처리')
+    ) {
+      alert('이미 환불처리된 회원입니다. 다시 처리하지 않았습니다.');
+      return;
+    }
+    if (
+      !target.refundRequestPending &&
+      !String(target.paymentStatus || '').includes('환불요청')
+    ) {
+      alert('환불요청 상태가 아닙니다. 먼저 환불요청을 등록한 뒤 처리해주세요.');
+      return;
+    }
     const input = readAdminPaymentInputs(memberId);
     if (!confirm((target.name || target.signupId || '회원') + '님을 환불처리할까요?')) return;
     if (!confirm('환불처리하면 결제상태가 환불처리로 표시되고 남은기간은 만료로 처리됩니다. 계속할까요?')) return;
@@ -433,6 +463,346 @@
       if (button && document.body.contains(button)) {
         button.disabled = originalDisabled;
         button.textContent = originalText || '무료 1개월권';
+      }
+    }
+  }
+
+  async function processEquipmentAnnualPaymentFromMemberDetail(memberId, equipmentId, equipmentNo, button) {
+    if (!isSuperAdminLoggedIn()) {
+      alert('장비 연간결제 처리는 최고관리자만 가능합니다.');
+      return;
+    }
+
+    const cleanEquipmentId = String(equipmentId || '').trim();
+    const cleanEquipmentNo = String(equipmentNo || '').trim() || '선택 장비';
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (!uuidPattern.test(cleanEquipmentId)) {
+      alert('장비의 서버 equipment_id를 확인하지 못했습니다. 결제를 처리하지 않았습니다.');
+      return;
+    }
+
+    const displayMember = getAdminAllMemberRows().find(
+      member => isSameAdminActionMember(member, memberId)
+    );
+
+    if (!displayMember) {
+      alert('회원 상세정보를 찾지 못했습니다. 결제를 처리하지 않았습니다.');
+      return;
+    }
+
+    const membersApi = window.SitePassAdminMembersApi || null;
+
+    if (!membersApi || typeof membersApi.getForMember !== 'function') {
+      alert('회원의 서버 UUID를 확인할 수 없습니다. 결제를 처리하지 않았습니다.');
+      return;
+    }
+
+    let serverMember = null;
+
+    try {
+      serverMember = membersApi.getForMember(displayMember);
+
+      if (
+        (!serverMember ||
+          serverMember.found !== true ||
+          !serverMember.memberId) &&
+        typeof membersApi.refresh === 'function'
+      ) {
+        await membersApi.refresh(true);
+        serverMember = membersApi.getForMember(displayMember);
+      }
+    } catch (e) {
+      alert(
+        '회원 서버정보 확인에 실패했습니다.\n' +
+        (e?.message || e)
+      );
+      return;
+    }
+
+    const expectedOwnerMemberUuid =
+      String(serverMember?.memberId || '').trim();
+
+    if (!uuidPattern.test(expectedOwnerMemberUuid)) {
+      alert(
+        '회원의 실제 서버 member UUID를 확인하지 못했습니다. ' +
+        '결제를 처리하지 않았습니다.'
+      );
+      return;
+    }
+
+    if (
+      !confirm(
+        cleanEquipmentNo +
+        ' 장비의 연간결제 처리를 확인할까요?\n\n' +
+        '선택한 장비 1대에만 적용됩니다.\n' +
+        '같은 회원의 다른 장비에는 적용되지 않습니다.'
+      )
+    ) {
+      return;
+    }
+
+    const api = window.SitePassSupabaseApi || null;
+
+    if (!api || typeof api.rpc !== 'function') {
+      alert(
+        'Supabase RPC 연결을 확인하지 못했습니다. ' +
+        '결제를 처리하지 않았습니다.'
+      );
+      return;
+    }
+
+    const originalDisabled = !!button?.disabled;
+    const originalText = button?.textContent || '';
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = '결제 확인 중';
+    }
+
+    const readRpcData = function(rpcResult) {
+      if (rpcResult?.error) {
+        throw rpcResult.error;
+      }
+
+      let data = rpcResult?.data;
+
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {}
+      }
+
+      return data;
+    };
+
+    let startedNextPayment = false;
+
+    try {
+      const prepareResult = await api.rpc(
+        'sitepass_admin_prepare_equipment_annual_payment_v1',
+        {
+          p_equipment_id: cleanEquipmentId,
+          p_expected_owner_member_uuid: expectedOwnerMemberUuid,
+          p_amount_krw: null,
+          p_admin_memo: '관리자 장비별 연간결제'
+        }
+      );
+
+      const prepareData = readRpcData(prepareResult);
+
+      if (
+        !prepareData ||
+        prepareData.ok !== true ||
+        Number(prepareData.prepareApiVersion || 0) !== 2 ||
+        prepareData.ownerContextVerified !== true ||
+        String(prepareData.equipmentId || '') !== cleanEquipmentId ||
+        String(prepareData.ownerMemberUuid || '') !== expectedOwnerMemberUuid
+      ) {
+        throw new Error(
+          'EQUIPMENT_PAYMENT_PREPARE_SERVER_RESULT_INVALID'
+        );
+      }
+
+      let paymentId =
+        String(prepareData.paymentId || '').trim();
+
+      if (!uuidPattern.test(paymentId)) {
+        throw new Error('EQUIPMENT_PAYMENT_ID_INVALID');
+      }
+
+      if (prepareData.operationState === 'completed') {
+        if (prepareData.requiresExplicitNext !== true) {
+          throw new Error(
+            'EQUIPMENT_PAYMENT_COMPLETED_STATE_INVALID'
+          );
+        }
+
+        const completedEndText =
+          prepareData.serviceEndsAt
+            ? '\n현재 결제 만료: ' +
+              formatNullableDateTime(prepareData.serviceEndsAt)
+            : '';
+
+        if (
+          !confirm(
+            cleanEquipmentNo +
+            ' 장비에는 이미 완료된 연간결제가 있습니다.' +
+            completedEndText +
+            '\n\n새 결제건으로 1년 연장결제를 시작할까요?\n' +
+            '확인을 누른 경우에만 새 결제건이 생성됩니다.'
+          )
+        ) {
+          return;
+        }
+
+        if (button) {
+          button.textContent = '연장결제 준비 중';
+        }
+
+        const startNextResult = await api.rpc(
+          'sitepass_admin_start_next_equipment_annual_payment_v1',
+          {
+            p_previous_payment_id: paymentId,
+            p_equipment_id: cleanEquipmentId,
+            p_expected_owner_member_uuid: expectedOwnerMemberUuid,
+            p_amount_krw: null,
+            p_admin_memo: '관리자 장비별 1년 연장결제'
+          }
+        );
+
+        const startNextData =
+          readRpcData(startNextResult);
+
+        if (
+          !startNextData ||
+          startNextData.ok !== true ||
+          Number(startNextData.startNextApiVersion || 0) !== 1 ||
+          String(startNextData.equipmentId || '') !== cleanEquipmentId ||
+          String(startNextData.ownerMemberUuid || '') !== expectedOwnerMemberUuid ||
+          String(startNextData.paymentStatus || '') !== 'requested'
+        ) {
+          throw new Error(
+            'EQUIPMENT_PAYMENT_START_NEXT_SERVER_RESULT_INVALID'
+          );
+        }
+
+        paymentId =
+          String(startNextData.paymentId || '').trim();
+
+        if (!uuidPattern.test(paymentId)) {
+          throw new Error(
+            'EQUIPMENT_PAYMENT_NEXT_ID_INVALID'
+          );
+        }
+
+        startedNextPayment = true;
+
+      } else if (prepareData.operationState === 'requested') {
+
+        if (
+          String(prepareData.paymentStatus || '') !== 'requested'
+        ) {
+          throw new Error(
+            'EQUIPMENT_PAYMENT_REQUESTED_STATE_INVALID'
+          );
+        }
+
+      } else {
+        throw new Error(
+          'EQUIPMENT_PAYMENT_OPERATION_STATE_INVALID'
+        );
+      }
+
+      if (button) {
+        button.textContent = '결제 적용 중';
+      }
+
+      const applyResult = await api.rpc(
+        'sitepass_admin_apply_equipment_annual_payment_v1',
+        {
+          p_payment_id: paymentId,
+          p_equipment_id: cleanEquipmentId,
+          p_expected_owner_member_uuid: expectedOwnerMemberUuid,
+          p_amount_krw: null,
+          p_admin_memo:
+            startedNextPayment
+              ? '관리자 장비별 1년 연장결제'
+              : '관리자 장비별 연간결제'
+        }
+      );
+
+      const applyData = readRpcData(applyResult);
+
+      if (
+        !applyData ||
+        applyData.ok !== true ||
+        Number(applyData.applyApiVersion || 0) !== 1 ||
+        applyData.ownerContextVerified !== true ||
+        String(applyData.paymentId || '') !== paymentId ||
+        String(applyData.equipmentId || '') !== cleanEquipmentId ||
+        String(applyData.ownerMemberUuid || '') !== expectedOwnerMemberUuid
+      ) {
+        throw new Error(
+          'EQUIPMENT_PAYMENT_APPLY_SERVER_RESULT_INVALID'
+        );
+      }
+
+      const alreadyApplied =
+        applyData.alreadyApplied === true;
+
+      const updatedCount =
+        Number(applyData.equipmentUpdatedCount || 0);
+
+      if (
+        (!alreadyApplied && updatedCount !== 1) ||
+        (alreadyApplied && updatedCount !== 0)
+      ) {
+        throw new Error(
+          'EQUIPMENT_PAYMENT_UPDATE_COUNT_INVALID'
+        );
+      }
+
+      let syncOk = true;
+
+      try {
+        if (typeof syncSupabaseEquipmentItems === 'function') {
+          const syncResult =
+            await syncSupabaseEquipmentItems(true);
+
+          syncOk =
+            !(syncResult && syncResult.ok === false);
+        }
+      } catch (syncError) {
+        syncOk = false;
+      }
+
+      try {
+        renderAdmin();
+      } catch (e) {}
+
+      if (alreadyApplied) {
+        alert(
+          cleanEquipmentNo +
+          ' 장비의 동일 결제건은 이미 서버에서 처리되어 있습니다.\n' +
+          '기간을 중복 연장하지 않았습니다.'
+        );
+
+      } else if (syncOk) {
+        alert(
+          cleanEquipmentNo +
+          (
+            startedNextPayment
+              ? ' 장비의 1년 연장결제를 처리했습니다.'
+              : ' 장비의 연간결제를 처리했습니다.'
+          ) +
+          '\n선택 장비 1대에만 적용되었습니다.'
+        );
+
+      } else {
+        alert(
+          cleanEquipmentNo +
+          ' 장비의 결제는 서버에서 완료되었습니다.\n' +
+          '화면 새로고침에 실패했으므로 ' +
+          '장비목록을 새로고침한 뒤 다시 확인해주세요.'
+        );
+      }
+
+    } catch (e) {
+      alert(
+        '장비 연간결제 처리에 실패했습니다.\n' +
+        '다른 장비나 회원정보는 임의로 변경하지 않습니다.\n\n' +
+        (e?.message || e)
+      );
+
+    } finally {
+      if (
+        button &&
+        document.body.contains(button)
+      ) {
+        button.disabled = originalDisabled;
+        button.textContent =
+          originalText || '연간결제 처리';
       }
     }
   }
@@ -750,6 +1120,7 @@
   window.processMemberRefund = processMemberRefund;
   window.renderAdminPaymentWindow = renderAdminPaymentWindow;
   window.grantEquipmentFreeMonthFromMemberDetail = grantEquipmentFreeMonthFromMemberDetail;
+  window.processEquipmentAnnualPaymentFromMemberDetail = processEquipmentAnnualPaymentFromMemberDetail;
   window.setMemberPaidMonth = setMemberPaidMonth;
   window.toggleMemberSuspended = toggleMemberSuspended;
   window.saveAdminMemberMemo = saveAdminMemberMemo;
@@ -776,6 +1147,7 @@
     processMemberRefund: processMemberRefund,
     renderAdminPaymentWindow: renderAdminPaymentWindow,
     grantEquipmentFreeMonthFromMemberDetail: grantEquipmentFreeMonthFromMemberDetail,
+    processEquipmentAnnualPaymentFromMemberDetail: processEquipmentAnnualPaymentFromMemberDetail,
     setMemberPaidMonth: setMemberPaidMonth,
     toggleMemberSuspended: toggleMemberSuspended,
     saveAdminMemberMemo: saveAdminMemberMemo,
