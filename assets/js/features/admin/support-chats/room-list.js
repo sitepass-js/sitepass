@@ -13,6 +13,26 @@
   var ROOM_STATUSES = core.ROOM_STATUSES;
   var ROOM_STATUS_LABELS = core.ROOM_STATUS_LABELS;
 
+  async function getRoomListPageSizeV96() {
+    var settings = window.SitePassAdminSettingsV96 || null;
+
+    if (!settings) return 30;
+
+    try {
+      if (typeof settings.ensureLoaded === 'function') {
+        await settings.ensureLoaded();
+      }
+    } catch (e) {}
+
+    try {
+      return typeof settings.getInt === 'function'
+        ? settings.getInt('support_chats.room_list_page_size', 30)
+        : 30;
+    } catch (e) {
+      return 30;
+    }
+  }
+
   function callRpc() {
     var target = core.callRpc;
     if (typeof target !== 'function') {
@@ -175,6 +195,8 @@
     }
 
     try {
+      var roomListPageSizeV96 = await getRoomListPageSizeV96();
+
       var cursor = reset
         ? {}
         : listCursorParams(
@@ -185,7 +207,7 @@
         p_search: state.search || null,
         p_room_status: state.roomStatus || 'all',
         p_unread_only: Boolean(state.unreadOnly),
-        p_limit: 30,
+        p_limit: roomListPageSizeV96,
         p_before_queue_rank:
           cursor.p_before_queue_rank ?? null,
         p_before_activity_at:

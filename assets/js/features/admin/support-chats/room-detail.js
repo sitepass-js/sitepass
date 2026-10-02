@@ -13,6 +13,26 @@
   var ROOM_STATUSES = core.ROOM_STATUSES;
   var ROOM_STATUS_LABELS = core.ROOM_STATUS_LABELS;
 
+  async function getRoomDetailPageSizeV96() {
+    var settings = window.SitePassAdminSettingsV96 || null;
+
+    if (!settings) return 50;
+
+    try {
+      if (typeof settings.ensureLoaded === 'function') {
+        await settings.ensureLoaded();
+      }
+    } catch (e) {}
+
+    try {
+      return typeof settings.getInt === 'function'
+        ? settings.getInt('support_chats.room_detail_page_size', 50)
+        : 50;
+    } catch (e) {
+      return 50;
+    }
+  }
+
   function callRpc() {
     var target = core.callRpc;
     if (typeof target !== 'function') {
@@ -305,6 +325,8 @@
     }
 
     try {
+      var roomDetailPageSizeV96 = await getRoomDetailPageSizeV96();
+
       var currentMessages =
         state.detail &&
         state.detail.messages &&
@@ -325,7 +347,7 @@
 
       var payload = await callRpc(RPC.detail, {
         p_room_id: id,
-        p_limit: 50,
+        p_limit: roomDetailPageSizeV96,
         p_before_created_at:
           cursor.p_before_created_at ?? null,
         p_before_message_id:

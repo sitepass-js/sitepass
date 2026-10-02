@@ -32,6 +32,26 @@
     }
   }
 
+  async function getOperationPageSizeV96(){
+    var settings = window.SitePassAdminSettingsV96 || null;
+
+    if (!settings) return 20;
+
+    try {
+      if (typeof settings.ensureLoaded === 'function') {
+        await settings.ensureLoaded();
+      }
+    } catch (e) {}
+
+    try {
+      return typeof settings.getInt === 'function'
+        ? settings.getInt('notifications.operation_page_size', 20)
+        : 20;
+    } catch (e) {
+      return 20;
+    }
+  }
+
   function escapeHtml(value){
     return String(value == null ? '' : value).replace(
       /[&<>"]/g,
@@ -496,12 +516,14 @@
     notifyRender();
 
     try {
+      var operationPageSizeV96 = await getOperationPageSizeV96();
+
       var results = await Promise.all([
         client.rpc(client.SUMMARY_RPC, {}),
         client.rpc(
           client.ISSUES_RPC,
           {
-            p_limit: 20,
+            p_limit: operationPageSizeV96,
             p_before_created_at: null,
             p_before_outbox_id: null
           }
@@ -615,10 +637,12 @@
     notifyRender();
 
     try {
+      var operationPageSizeV96 = await getOperationPageSizeV96();
+
       var result = await client.rpc(
         client.ISSUES_RPC,
         {
-          p_limit: 20,
+          p_limit: operationPageSizeV96,
           p_before_created_at: createdAt,
           p_before_outbox_id: outboxId
         }

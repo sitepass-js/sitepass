@@ -32,6 +32,63 @@
   const getAdminMemberActionId = member => detail.getAdminMemberActionId(member);
 
   let sitePassMemberEquipmentCountsRefreshScheduledV731R2 = false;
+  let sitePassMemberPageSizeSettingsScheduledV96 = false;
+  let sitePassMemberPageSizeSettingsAttemptedV96 = false;
+
+  function getMemberPageSizeV96() {
+    const settings = window.SitePassAdminSettingsV96 || null;
+    if (!settings || typeof settings.getInt !== 'function') return 20;
+
+    try {
+      return settings.getInt('members.page_size', 20);
+    } catch (e) {
+      return 20;
+    }
+  }
+
+  function scheduleMemberPageSizeSettingsLoadV96() {
+    const settings = window.SitePassAdminSettingsV96 || null;
+    if (
+      !settings ||
+      typeof settings.ensureLoaded !== 'function' ||
+      typeof settings.getState !== 'function'
+    ) {
+      return false;
+    }
+
+    let snapshot = null;
+    try {
+      snapshot = settings.getState();
+    } catch (e) {
+      snapshot = null;
+    }
+
+    if (snapshot && snapshot.loaded === true) return false;
+    if (sitePassMemberPageSizeSettingsAttemptedV96) return false;
+    if (sitePassMemberPageSizeSettingsScheduledV96) return false;
+
+    sitePassMemberPageSizeSettingsAttemptedV96 = true;
+    sitePassMemberPageSizeSettingsScheduledV96 = true;
+
+    setTimeout(async function(){
+      try {
+        await settings.ensureLoaded();
+      } catch (e) {
+        console.warn('STEP96 회원 페이지크기 설정 조회 실패:', e);
+      } finally {
+        sitePassMemberPageSizeSettingsScheduledV96 = false;
+        try {
+          if (typeof window.sitePassRequestAdminRender487 === 'function') {
+            window.sitePassRequestAdminRender487(20);
+          } else if (typeof renderAdmin === 'function') {
+            renderAdmin();
+          }
+        } catch (e) {}
+      }
+    }, 0);
+
+    return true;
+  }
 
   function getMemberEquipmentCountsV731R2(member) {
     const api = window.SitePassAdminMembersApi || null;
@@ -178,7 +235,8 @@
       .filter(member => filterAdminMembersByFolder(member, currentFolder))
       .filter(member => adminMemberMatchesSearch(member, currentSearchText));
 
-    const pageSize = 20;
+    scheduleMemberPageSizeSettingsLoadV96();
+    const pageSize = getMemberPageSizeV96();
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     if (currentPage >= totalPages) {
       currentPage = totalPages - 1;
@@ -258,9 +316,9 @@
     }).join('') || '<div class="empty">' + (adminOnly ? '조건에 맞는 관리자 계정이 없습니다.' : '조건에 맞는 회원이 없습니다.') + '</div>';
 
     const pager = '<div class="admin-pager">' +
-      '<button class="ghost" onclick="changeAdminMemberPage(-1)" ' + (currentPage <= 0 ? 'disabled' : '') + '>이전 20명</button>' +
+      '<button class="ghost" onclick="changeAdminMemberPage(-1)" ' + (currentPage <= 0 ? 'disabled' : '') + '>이전 ' + pageSize + '명</button>' +
       '<span class="small">' + (currentPage + 1) + ' / ' + totalPages + ' 페이지 · 검색결과 ' + filtered.length + '명</span>' +
-      '<button class="ghost" onclick="changeAdminMemberPage(1)" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>다음 20명</button>' +
+      '<button class="ghost" onclick="changeAdminMemberPage(1)" ' + (currentPage >= totalPages - 1 ? 'disabled' : '') + '>다음 ' + pageSize + '명</button>' +
     '</div>';
 
     const heading = adminOnly ? '관리자 계정 관리' : '회원관리';

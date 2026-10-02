@@ -2519,10 +2519,24 @@ function sitePassRenderAdminSectionV578(ctx) {
     return '<div class="notice blue-note sitepass-admin-section-note-v578"><b>최고관리자 전용</b></div>' + renderAdminStaffManager(ctx.members || []);
   }
   if (sitePassAdminSectionV578 === 'settings' && isSuperAdminLoggedIn()) {
-    return sitePassRenderAdminPlaceholderV578('시스템설정', '관리자페이지 구조만 먼저 확정했습니다. 운영 정책·환경 설정 기능은 이후 공식 단계에서 서버 권한과 함께 구현하며, 현재 정상 설정은 변경하지 않습니다.');
+    const step96SettingsPageV96 = window.SitePassAdminSettingsPageV96 || null;
+    if (step96SettingsPageV96 && typeof step96SettingsPageV96.render === 'function') {
+      return step96SettingsPageV96.render();
+    }
+    return sitePassRenderAdminPlaceholderV578(
+      '시스템설정',
+      'STEP96 시스템설정 모듈을 불러오지 못했습니다.'
+    );
   }
   if (sitePassAdminSectionV578 === 'audit' && isSuperAdminLoggedIn()) {
-    return sitePassRenderAdminPlaceholderV578('감사기록', '보안·권한·관리자 조작 감사 화면 자리입니다. 현재 5구간의 Recipient 공유 이벤트 기록과 별개이며, 별도 감사정책을 확정한 뒤 연결합니다.');
+    const step95PageV95 = window.SitePassAdminStep95Page || null;
+    if (step95PageV95 && typeof step95PageV95.render === 'function') {
+      return step95PageV95.render();
+    }
+    return sitePassRenderAdminPlaceholderV578(
+      '감사기록',
+      'STEP95 이전·Storage 검사·감사기록 모듈을 불러오지 못했습니다.'
+    );
   }
   if (sitePassAdminSectionV578 === 'push') {
     return '<div id="sitepassPushPanelHostV683" aria-live="polite"></div>';
@@ -2559,7 +2573,17 @@ function renderAdmin() {
       if (!isAdminLoggedIn()) { showScreen('signupScreen'); return; }
       sitePassAdminRenderBusy488 = true;
       try {
-      try { sitePassEnsureAdminInquiryNotificationLinkV675(); } catch (e) {}
+      const isStep95AuditV95 =
+        sitePassAdminSectionV578 === 'audit' &&
+        isSuperAdminLoggedIn();
+
+      const isStep96SettingsV96 =
+        sitePassAdminSectionV578 === 'settings' &&
+        isSuperAdminLoggedIn();
+
+      if (!isStep95AuditV95 && !isStep96SettingsV96) {
+        try { sitePassEnsureAdminInquiryNotificationLinkV675(); } catch (e) {}
+      }
 
       const isDashboardV727 =
         sitePassAdminSectionV578 === 'dashboard';
@@ -2583,6 +2607,11 @@ function renderAdmin() {
               contactsV727.filter(x => x.status !== '답변완료').length
           }
         };
+      } else if (isStep95AuditV95 || isStep96SettingsV96) {
+        // STEP95/96: 감사·시스템설정 메뉴는 자체 on-demand RPC만 사용한다.
+        // 장비 동기화/Recipient 공유 prefetch/Push refresh 등
+        // 기존 비대시보드 공통 네트워크 작업을 의도적으로 실행하지 않는다.
+        adminContextV578 = {};
       } else {
         // 기존 비대시보드 관리자 기능은 v726 흐름을 그대로 유지한다.
         if (!sitePassEquipmentSyncing && (!sitePassEquipmentSyncedAt || Date.now() - sitePassEquipmentSyncedAt > 30000)) {
@@ -2655,13 +2684,15 @@ function renderAdmin() {
       }
       try { sitePassSyncAdminErrorMonitorVisibilityV682(); } catch (e) {}
 
-      setTimeout(function(){
-        try {
-          if (window.SitePassPushNotify && typeof window.SitePassPushNotify.refreshPanel === 'function') {
-            window.SitePassPushNotify.refreshPanel();
-          }
-        } catch (e) {}
-      }, 30);
+      if (!isStep95AuditV95 && !isStep96SettingsV96) {
+        setTimeout(function(){
+          try {
+            if (window.SitePassPushNotify && typeof window.SitePassPushNotify.refreshPanel === 'function') {
+              window.SitePassPushNotify.refreshPanel();
+            }
+          } catch (e) {}
+        }, 30);
+      }
 
       if (isDashboardV727) {
         setTimeout(function(){
@@ -2671,6 +2702,31 @@ function renderAdmin() {
               typeof window.SitePassAdminDashboardPage.refresh === 'function'
             ) {
               window.SitePassAdminDashboardPage.refresh(false);
+            }
+          } catch (e) {}
+        }, 60);
+      } else if (isStep95AuditV95) {
+        // STEP95: 현재 선택 탭만 최초 1회 조회한다.
+        // page 모듈 자체 cache 때문에 재렌더/탭 재진입만으로는 재호출하지 않는다.
+        setTimeout(function(){
+          try {
+            if (
+              window.SitePassAdminStep95Page &&
+              typeof window.SitePassAdminStep95Page.ensureActive === 'function'
+            ) {
+              window.SitePassAdminStep95Page.ensureActive();
+            }
+          } catch (e) {}
+        }, 60);
+      } else if (isStep96SettingsV96) {
+        // STEP96: 시스템설정은 첫 진입 1회만 조회하고 이후 동일 탭 재렌더는 cache를 사용한다.
+        setTimeout(function(){
+          try {
+            if (
+              window.SitePassAdminSettingsPageV96 &&
+              typeof window.SitePassAdminSettingsPageV96.ensureActive === 'function'
+            ) {
+              window.SitePassAdminSettingsPageV96.ensureActive();
             }
           } catch (e) {}
         }, 60);
