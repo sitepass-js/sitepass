@@ -4375,8 +4375,13 @@ function normalizePhoneForShare(phone) {
     // 상세보기 equipment 문서는 기존 Document public API의 canonical current hydration을
     // 그대로 사용한다. 이 함수는 연결만 담당하며 DB/RPC/Storage 쓰기를 하지 않는다.
     // 실패 시 기존 V12 stable 상세를 유지하여 다른 정상기능을 지우지 않는다.
-    async function sitePassHydrateCanonicalDetailDocumentsV13(item, requestedCode) {
+    async function sitePassHydrateCanonicalDetailDocumentsV13(item, requestedCode, hydrateOptions) {
       if (!item || typeof item !== 'object') return item;
+
+      hydrateOptions =
+        hydrateOptions && typeof hydrateOptions === 'object'
+          ? hydrateOptions
+          : {};
 
       const documentApi =
         window.SitePassDocument &&
@@ -4391,7 +4396,15 @@ function normalizePhoneForShare(phone) {
 
       try {
         const canonical =
-          await documentApi.hydrateActiveDocumentState(item);
+          await documentApi.hydrateActiveDocumentState(
+            item,
+            {
+              prefetchedDetail:
+                hydrateOptions.prefetchedDetail || null,
+              expectedEquipmentId:
+                hydrateOptions.expectedEquipmentId || ''
+            }
+          );
 
         if (!canonical || typeof canonical !== 'object') {
           return item;
@@ -4540,15 +4553,83 @@ function normalizePhoneForShare(phone) {
       sitePassOpenAdminMemberEquipmentDetailV91;
 
     function renderDetail(code, options) {
-      options = options || {};
+      options = options && typeof options === 'object' ? options : {};
       const requestedCodeV519 = String(code || '').trim();
+      const authoritativeItemV98 =
+        options.authoritativeItem &&
+        typeof options.authoritativeItem === 'object'
+          ? options.authoritativeItem
+          : null;
+      const authoritativeDetailV98 =
+        options.authoritativeDetail &&
+        typeof options.authoritativeDetail === 'object'
+          ? options.authoritativeDetail
+          : null;
+      const authoritativeEquipmentIdV98 = String(
+        options.authoritativeEquipmentId ||
+        authoritativeItemV98 &&
+          (authoritativeItemV98.equipmentId || authoritativeItemV98.equipment_id) ||
+        ''
+      ).trim();
+      const authoritativeModeV98 =
+        options.source === 'archive-step98' &&
+        !!authoritativeItemV98 &&
+        !!authoritativeEquipmentIdV98;
+
       try { window.sitePassCurrentDetailCodeV519 = requestedCodeV519; } catch (e) {}
-      let item = sitePassBuildStableDetailItemV536(requestedCodeV519);
+
+      if (authoritativeModeV98) {
+        const itemEquipmentIdV98 = String(
+          authoritativeItemV98.equipmentId ||
+          authoritativeItemV98.equipment_id ||
+          ''
+        ).trim();
+        const itemCodeV98 = String(
+          authoritativeItemV98.code ||
+          authoritativeItemV98.share_code ||
+          authoritativeItemV98.equipmentCode ||
+          authoritativeItemV98.equipment_code ||
+          ''
+        ).trim();
+        const detailEquipmentIdV98 = String(
+          authoritativeDetailV98 &&
+          authoritativeDetailV98.equipment &&
+          authoritativeDetailV98.equipment.equipment_id ||
+          ''
+        ).trim();
+
+        if (
+          !itemEquipmentIdV98 ||
+          itemEquipmentIdV98 !== authoritativeEquipmentIdV98 ||
+          !authoritativeDetailV98 ||
+          !detailEquipmentIdV98 ||
+          detailEquipmentIdV98 !== authoritativeEquipmentIdV98 ||
+          (
+            requestedCodeV519 &&
+            itemCodeV98 &&
+            itemCodeV98 !== requestedCodeV519
+          )
+        ) {
+          const mismatchBoxV98 = document.getElementById('detailBox');
+          if (mismatchBoxV98) {
+            mismatchBoxV98.innerHTML =
+              '<div class="empty"><b>장비 상세 식별정보가 일치하지 않습니다.</b><br>' +
+              '보관함으로 돌아가 다시 열어주세요.</div>';
+          }
+          showScreen('detailScreen');
+          return false;
+        }
+      }
+
+      let item = authoritativeModeV98
+        ? authoritativeItemV98
+        : sitePassBuildStableDetailItemV536(requestedCodeV519);
+
       if (!item) {
         const detailBox = document.getElementById('detailBox');
         if (detailBox) detailBox.innerHTML = '<div class="empty"><b>장비 정보를 불러오는 중입니다.</b><br>서버 확인이 끝나기 전에는 장비 없음으로 표시하지 않습니다.</div>';
         showScreen('detailScreen');
-        if (!options.skipMissingRetry && typeof syncSupabaseMyEquipmentItems === 'function') {
+        if (!authoritativeModeV98 && !options.skipMissingRetry && typeof syncSupabaseMyEquipmentItems === 'function') {
           Promise.resolve(syncSupabaseMyEquipmentItems(true, true)).then(function(){
             if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
             const retryItem = sitePassBuildStableDetailItemV536(requestedCodeV519);
@@ -4563,18 +4644,32 @@ function normalizePhoneForShare(phone) {
         }
         return;
       }
+
       const detailDocsBeforeV541 = sitePassGetRegisteredDetailDocsV536(item);
-      const shouldWaitForDocsV541 = !detailDocsBeforeV541.length && !options.skipEmptyDocsRetry;
-      sitePassPaintMemberDetailV536(item, requestedCodeV519, { docsPending:shouldWaitForDocsV541 });
+      const shouldWaitForDocsV541 =
+        !authoritativeModeV98 &&
+        !detailDocsBeforeV541.length &&
+        !options.skipEmptyDocsRetry;
+
+      sitePassPaintMemberDetailV536(
+        item,
+        requestedCodeV519,
+        { docsPending:shouldWaitForDocsV541 }
+      );
 
       // 비공개 Storage 파일은 상세화면을 먼저 보여준 뒤 기간 제한 주소만 뒤에서 채웁니다.
       Promise.resolve(hydrateItemStorageAccessUrlsV523(item, true)).then(function(hydrated){
         if (String(window.sitePassCurrentDetailCodeV519 || '') !== requestedCodeV519) return;
         if (typeof sitePassCurrentScreenId !== 'undefined' && sitePassCurrentScreenId !== 'detailScreen') return;
+
         const rebuiltStableV12 =
-          sitePassBuildStableDetailItemV536(requestedCodeV519) ||
-          hydrated ||
-          item;
+          authoritativeModeV98
+            ? (hydrated || item)
+            : (
+                sitePassBuildStableDetailItemV536(requestedCodeV519) ||
+                hydrated ||
+                item
+              );
 
         const stableV12 =
           sitePassOverlayFreshDetailStorageUrlsV12(
@@ -4585,7 +4680,13 @@ function normalizePhoneForShare(phone) {
         return Promise.resolve(
           sitePassHydrateCanonicalDetailDocumentsV13(
             stableV12,
-            requestedCodeV519
+            requestedCodeV519,
+            authoritativeModeV98
+              ? {
+                  prefetchedDetail: authoritativeDetailV98,
+                  expectedEquipmentId: authoritativeEquipmentIdV98
+                }
+              : null
           )
         ).then(function(stable) {
           if (
@@ -4603,6 +4704,19 @@ function normalizePhoneForShare(phone) {
             stable && typeof stable === 'object'
               ? stable
               : stableV12;
+
+          if (authoritativeModeV98) {
+            const stableEquipmentIdV98 = String(
+              stable.equipmentId ||
+              stable.equipment_id ||
+              ''
+            ).trim();
+            if (stableEquipmentIdV98 !== authoritativeEquipmentIdV98) {
+              throw new Error(
+                'STEP98 canonical 상세 equipment_id가 보관함 카드와 일치하지 않습니다.'
+              );
+            }
+          }
 
           const stableDocs =
             sitePassGetRegisteredDetailDocsV536(stable);
@@ -4624,7 +4738,11 @@ function normalizePhoneForShare(phone) {
         });
       }).catch(function(error){ console.warn('회원 상세 서류주소 준비 실패:', error); });
 
-      if (shouldWaitForDocsV541 && typeof syncSupabaseMyEquipmentItems === 'function') {
+      if (
+        !authoritativeModeV98 &&
+        shouldWaitForDocsV541 &&
+        typeof syncSupabaseMyEquipmentItems === 'function'
+      ) {
         // 장비 한 건 직접조회는 전체 보관함 동기화와 병렬로 실행합니다.
         // RLS가 허용하는 환경에서는 해당 장비 서류가 먼저 도착하는 즉시 화면을 다시 그립니다.
         if (typeof window.sitePassLoadMemberEquipmentItemByCodeV541 === 'function') {
@@ -4646,9 +4764,11 @@ function normalizePhoneForShare(phone) {
           }
           if (refreshed) sitePassPaintMemberDetailV536(refreshed, requestedCodeV519, { docsPending:false });
         }).catch(function(error){ console.warn('상세보기 서류목록 빠른 확인 실패:', error); });
-      } else if (!options.skipServerRefresh) {
+      } else if (!authoritativeModeV98 && !options.skipServerRefresh) {
         refreshMemberDetailFromServerV519(requestedCodeV519 || item.code);
       }
+
+      return true;
     }
 
     function renderDocDetail(doc) {

@@ -1,20 +1,25 @@
 (function () {
   'use strict';
 
-  function renderDetailPublic(code) {
+  function renderDetailPublic(code, options) {
     if (typeof window.renderDetail !== 'function') {
       throw new Error('[SitePass Step80] equipment detail renderer unavailable');
     }
-    return window.renderDetail(String(code || ''));
+    return window.renderDetail(
+      String(code || ''),
+      options && typeof options === 'object'
+        ? options
+        : {}
+    );
   }
 
   var api = {
-    open: function (code) {
-      return renderDetailPublic(code);
+    open: function (code, options) {
+      return renderDetailPublic(code, options);
     },
 
-    render: function (code) {
-      return renderDetailPublic(code);
+    render: function (code, options) {
+      return renderDetailPublic(code, options);
     },
 
     refresh: function (code) {

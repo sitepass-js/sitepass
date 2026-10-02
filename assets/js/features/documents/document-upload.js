@@ -221,18 +221,33 @@
     return doc;
   }
 
-  async function hydrateActiveDocumentState(item){
+  async function hydrateActiveDocumentState(item,options){
     if(!item || typeof item!=='object')throw new Error('수정 대상 장비가 없습니다.');
+    options=options&&typeof options==='object'?options:{};
     var api=window.SitePassSupabaseApi;
     if(!api || typeof api.rpc!=='function')throw new Error('Supabase RPC 연결이 없습니다.');
 
     var output=clone(item)||{};
-    var equipmentId=await resolveEquipmentId(output);
-    if(!equipmentId)throw new Error('현재 장비의 equipment_id를 정상 회원 RPC에서 확인하지 못했습니다.');
+    var expectedEquipmentId=clean(options.expectedEquipmentId);
+    var directEquipmentId=clean(output.equipmentId || output.equipment_id);
+    if(expectedEquipmentId && directEquipmentId && expectedEquipmentId!==directEquipmentId){
+      throw new Error('STEP98 상세 equipment_id와 문서 대상 equipment_id가 일치하지 않습니다.');
+    }
 
-    var detailResult=await api.rpc('sitepass_get_equipment_detail_v1',{p_equipment_id:equipmentId});
-    if(detailResult && detailResult.error)throw detailResult.error;
-    var detail=parseRpcData(detailResult && detailResult.data);
+    var equipmentId=directEquipmentId || await resolveEquipmentId(output);
+    if(!equipmentId)throw new Error('현재 장비의 equipment_id를 정상 회원 RPC에서 확인하지 못했습니다.');
+    if(expectedEquipmentId && equipmentId!==expectedEquipmentId){
+      throw new Error('STEP98 상세 equipment_id와 canonical 문서 equipment_id가 일치하지 않습니다.');
+    }
+
+    var detail=null;
+    if(options.prefetchedDetail && typeof options.prefetchedDetail==='object'){
+      detail=parseRpcData(options.prefetchedDetail);
+    }else{
+      var detailResult=await api.rpc('sitepass_get_equipment_detail_v1',{p_equipment_id:equipmentId});
+      if(detailResult && detailResult.error)throw detailResult.error;
+      detail=parseRpcData(detailResult && detailResult.data);
+    }
     if(!detail || typeof detail!=='object')throw new Error('canonical 장비 상세 결과가 없습니다.');
 
     var equipment=detail.equipment&&typeof detail.equipment==='object'?detail.equipment:{};

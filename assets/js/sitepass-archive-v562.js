@@ -56,6 +56,7 @@
   var summaryByCode = new Map();
   var summaryByEquipmentId = new Map();
   var runtimeItemByCode = new Map();
+  var runtimeDetailByEquipmentId = new Map();
 
   var FILTERS = [
     { key: 'all', label: '전체' },
@@ -1750,37 +1751,68 @@
     var summary = getSummary(equipmentId, code);
     if (!summary) throw new Error('보관함 장비 요약을 찾지 못했습니다.');
 
-    var saved = runtimeItemByCode.get(String(code || ''));
-    if (saved) return saved;
+    var requestedEquipmentId = String(
+      equipmentId ||
+      summary.equipmentId ||
+      ''
+    ).trim();
 
-    var existing = null;
-    try {
-      if (typeof window.getItemByCode === 'function') {
-        existing = window.getItemByCode(String(code || ''));
-      }
-    } catch (error) {}
+    if (!requestedEquipmentId) {
+      throw new Error('장비 상세 equipment_id를 확인하지 못했습니다.');
+    }
 
+    var summaryEquipmentId = String(summary.equipmentId || '').trim();
     if (
-      existing &&
-      summary.relationType !== 'linked_in' &&
-      summary.relationType !== 'linked_out' &&
-      existing.docs &&
-      typeof existing.docs === 'object'
+      summaryEquipmentId &&
+      summaryEquipmentId !== requestedEquipmentId
     ) {
-      return rememberRuntimeItem(applySummaryToItem(existing, summary));
+      throw new Error('보관함 카드와 상세 equipment_id가 일치하지 않습니다.');
     }
 
     var detail = await callRpc('sitepass_get_equipment_detail_v1', {
-      p_equipment_id: String(equipmentId || summary.equipmentId || '')
+      p_equipment_id: requestedEquipmentId
     });
+
+    var returnedEquipmentId = String(
+      detail &&
+      detail.equipment &&
+      detail.equipment.equipment_id ||
+      ''
+    ).trim();
+
+    if (
+      !returnedEquipmentId ||
+      returnedEquipmentId !== requestedEquipmentId
+    ) {
+      throw new Error('서버 상세 equipment_id가 요청한 장비와 일치하지 않습니다.');
+    }
+
     var item = adaptDetailResponse(summary, detail);
+    var itemEquipmentId = String(
+      item &&
+      (item.equipmentId || item.equipment_id) ||
+      ''
+    ).trim();
+
+    if (itemEquipmentId !== requestedEquipmentId) {
+      throw new Error('상세 렌더링 장비 식별자가 요청한 equipment_id와 일치하지 않습니다.');
+    }
+
+    runtimeDetailByEquipmentId.set(requestedEquipmentId, detail);
     return rememberRuntimeItem(item);
   }
 
   async function openDetail(equipmentId, code) {
     try {
       var summary = getSummary(equipmentId, code);
-      var item = await resolveItem(equipmentId, code);
+      var requestedEquipmentId = String(
+        equipmentId ||
+        (summary && summary.equipmentId) ||
+        ''
+      ).trim();
+
+      var item = await resolveItem(requestedEquipmentId, code);
+
       // v644: 상세/QR에서도 private Storage 파일을 공개 URL로 직접 열지 않는다.
       // 원소유자와 연동회원 모두 현재 로그인 세션으로 짧은 signed URL을 준비한다.
       if (summary) {
@@ -1795,7 +1827,16 @@
       ) {
         throw new Error('상세보기 공개 API를 불러오지 못했습니다.');
       }
-      window.SitePassEquipmentDetail.render(String(code || ''));
+      window.SitePassEquipmentDetail.render(
+        String(code || ''),
+        {
+          authoritativeItem: item,
+          authoritativeDetail:
+            runtimeDetailByEquipmentId.get(requestedEquipmentId) || null,
+          authoritativeEquipmentId: requestedEquipmentId,
+          source: 'archive-step98'
+        }
+      );
     } catch (error) {
       alert('장비 상세정보를 열지 못했습니다.\n\n' + errorText(error));
     }
