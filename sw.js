@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.785r9p3-step98-detail-single-source-v1';
-const SITEPASS_CACHE = 'sitepass-fast-23.7.785r9p3-step98-detail-single-source-v1';
+const SITEPASS_SW_VERSION = 'v23.7.785r9p3-step99-member-link-forms-v1';
+const SITEPASS_CACHE = 'sitepass-fast-23.7.785r9p3-step99-member-link-forms-v1';
 const SITEPASS_CHAT_PRESENCE_V40 = new Map();
 const SITEPASS_SHELL = [
   './index.html',

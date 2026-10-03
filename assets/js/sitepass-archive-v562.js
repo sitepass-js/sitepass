@@ -849,26 +849,260 @@
     return './assets/img/equipment-27/' + filename + '?v=450';
   }
 
-  function renderOptionalTemplates(item) {
-    var equipmentId = String(item.equipmentId || '');
-    var equipmentName = String(item.equipmentName || '장비').trim() || '장비';
+  var templateSelectionV99 = Object.create(null);
+
+  var WORK_PLAN_FORM_MAP_V99 = Object.freeze({
+    '굴착기':'excavator.hwp',
+    '덤프트럭':'truck.hwp',
+    '기중기':'mobile-crane.hwp',
+    '콘크리트믹서트럭':'concrete-mixer-truck.hwp',
+    '로더':'loader.hwp',
+    '롤러':'roller.hwp',
+    '항타및항발기':'pile-driver.hwp',
+    '지게차':'forklift.hwp'
+  });
+
+  function normalizeEquipmentNameV99(name) {
+    var normalized = String(name || '')
+      .replace(/\s+/g, '')
+      .trim();
+
+    if (/굴착|굴삭|포크레인|백호/.test(normalized)) {
+      return '굴착기';
+    }
+    if (/덤프/.test(normalized)) {
+      return '덤프트럭';
+    }
+    if (/기중기/.test(normalized)) {
+      return '기중기';
+    }
+    if (/콘크리트믹서/.test(normalized)) {
+      return '콘크리트믹서트럭';
+    }
+    if (/페이로더|휠로더|로더/.test(normalized)) {
+      return '로더';
+    }
+    if (/롤러/.test(normalized)) {
+      return '롤러';
+    }
+    if (/항타|항발|파일드라이버/.test(normalized)) {
+      return '항타및항발기';
+    }
+    if (/포크리프트|지게차/.test(normalized)) {
+      return '지게차';
+    }
+    if (/고소작업대/.test(normalized)) {
+      return '고소작업대';
+    }
+    if (/콘크리트펌프카/.test(normalized)) {
+      return '콘크리트펌프카';
+    }
+
+    return normalized;
+  }
+
+  function workPlanFileForEquipmentV99(name) {
+    var normalized =
+      normalizeEquipmentNameV99(name);
+
+    if (normalized === '고소작업대') {
+      return 'aerial-work-platform.hwp';
+    }
+
+    if (normalized === '콘크리트펌프카') {
+      return 'concrete-pump-car.hwp';
+    }
+
     return (
-      '<div class="sp562-template-options" aria-label="추가 양식 선택 예정">' +
-        '<label title="한글 양식과 담당자 링크 연결 후 활성화됩니다.">' +
-          '<input type="checkbox" data-sp562-template="rental" data-equipment-id="' +
+      WORK_PLAN_FORM_MAP_V99[normalized] ||
+      ''
+    );
+  }
+
+  function templateInputV99(type, equipmentId) {
+    var targetId =
+      String(equipmentId || '');
+
+    return (
+      Array.from(
+        document.querySelectorAll(
+          'input[data-sp562-template="' +
+          String(type || '') +
+          '"]'
+        )
+      ).find(function (input) {
+        return (
+          String(
+            input.getAttribute(
+              'data-equipment-id'
+            ) || ''
+          ) === targetId
+        );
+      }) || null
+    );
+  }
+
+  function rebuildTemplateSelectionV99(selected) {
+    templateSelectionV99 =
+      Object.create(null);
+
+    (selected || []).forEach(
+      function (selectedItem) {
+
+        var equipmentId =
+          String(
+            selectedItem.equipmentId ||
+            ''
+          );
+
+        if (!equipmentId) return;
+
+        var workPlanInput =
+          templateInputV99(
+            'work-plan',
+            equipmentId
+          );
+
+        var rentalInput =
+          templateInputV99(
+            'rental',
+            equipmentId
+          );
+
+        templateSelectionV99[equipmentId] = {
+          workPlan: !!(
+            workPlanInput &&
+            !workPlanInput.disabled &&
+            workPlanInput.checked
+          ),
+
+          rental: !!(
+            rentalInput &&
+            !rentalInput.disabled &&
+            rentalInput.checked
+          )
+        };
+      }
+    );
+  }
+
+  function clearTemplateSelectionV99() {
+    templateSelectionV99 =
+      Object.create(null);
+  }
+
+  function getTemplateSelectionV99(equipmentId) {
+    var row =
+      templateSelectionV99[
+        String(equipmentId || '')
+      ] || null;
+
+    return row
+      ? {
+          workPlan:
+            row.workPlan === true,
+
+          rental:
+            row.rental === true
+        }
+      : {
+          workPlan:false,
+          rental:false
+        };
+  }
+
+  function renderOptionalTemplates(item) {
+    var equipmentId =
+      String(item.equipmentId || '');
+
+    var equipmentName =
+      String(
+        item.equipmentName ||
+        '장비'
+      ).trim() || '장비';
+
+    var canShare =
+      permission(
+        item,
+        'canShare'
+      );
+
+    var workPlanFile =
+      workPlanFileForEquipmentV99(
+        equipmentName
+      );
+
+    var workPlanEnabled =
+      !!(
+        canShare &&
+        workPlanFile
+      );
+
+    var workPlanTitle =
+      !canShare
+        ? '이 장비는 담당자 전송 권한이 없습니다.'
+        : workPlanFile
+          ? '고용노동부 편집 가능한 HWP 원본을 담당자 링크에 포함합니다.'
+          : '이 장비의 공식 전용 작업계획서 HWP 원본은 아직 연결되지 않았습니다.';
+
+    return (
+      '<div class="sp562-template-options" aria-label="추가 양식 선택">' +
+
+        '<label title="' +
+          html(
+            canShare
+              ? '표준약관 제10059호 편집 가능한 HWP 원본을 담당자 링크에 포함합니다.'
+              : '이 장비는 담당자 전송 권한이 없습니다.'
+          ) +
+          '">' +
+
+          '<input type="checkbox" ' +
+            'data-sp562-template="rental" ' +
+            'data-equipment-id="' +
             html(equipmentId) +
-            '" disabled aria-disabled="true" />' +
-          '<span>임대차계약서양식 보내기</span>' +
+            '" ' +
+            (
+              canShare
+                ? ''
+                : 'disabled aria-disabled="true"'
+            ) +
+            ' />' +
+
+          '<span>임대차계약서 양식보내기</span>' +
+
         '</label>' +
-        '<label title="장비종류별 엑셀 작업계획서 연결 후 활성화됩니다.">' +
-          '<input type="checkbox" data-sp562-template="work-plan" data-equipment-id="' +
+        '<label title="' +
+          html(workPlanTitle) +
+          '">' +
+
+          '<input type="checkbox" ' +
+            'data-sp562-template="work-plan" ' +
+            'data-equipment-id="' +
             html(equipmentId) +
-            '" disabled aria-disabled="true" />' +
+            '" data-work-plan-file="' +
+            html(workPlanFile) +
+            '" ' +
+            (
+              workPlanEnabled
+                ? ''
+                : 'disabled aria-disabled="true"'
+            ) +
+            ' />' +
+
           '<span>' +
             html(equipmentName) +
-            ' 작업계획서 보내기</span>' +
+            ' 작업계획서 양식보내기</span>' +
+
         '</label>' +
-        '<small>임대차 한글·장비별 작업계획서 엑셀 양식 연결 후 사용</small>' +
+
+        '<small>' +
+          (
+            workPlanFile
+              ? '작업계획서: 고용노동부 편집 가능한 HWP 원본'
+              : '작업계획서: 공식 전용 HWP 원본 확인 후 활성화'
+          ) +
+        '</small>' +
+
       '</div>'
     );
   }
@@ -2157,38 +2391,97 @@
 
   async function shareSelected(channel) {
     var selected = selectedEntries();
+
     if (!selected.length) {
       alert('공유할 장비를 먼저 선택해주세요.');
       return;
     }
-    var buttonBar = document.getElementById('sp562SelectionBar');
-    if (buttonBar) buttonBar.classList.add('busy');
 
-    try {
-      var items = await Promise.all(
-        selected.map(function (selectedItem) {
-          var summary = getSummary(
-            selectedItem.equipmentId,
-            selectedItem.code
-          );
-          if (!summary || !permission(summary, 'canShare')) {
-            throw new Error('전송할 수 없는 장비가 선택되었습니다.');
-          }
-          return resolveItem(
-            summary.equipmentId,
-            selectedItem.code
-          );
-        })
+    rebuildTemplateSelectionV99(
+      selected
+    );
+
+    var buttonBar =
+      document.getElementById(
+        'sp562SelectionBar'
       );
 
-      if (typeof window.shareManagerItemsByChannel !== 'function') {
-        throw new Error('기존 카카오톡·문자·이메일 전송 기능을 찾지 못했습니다.');
+    if (buttonBar) {
+      buttonBar.classList.add(
+        'busy'
+      );
+    }
+
+    try {
+
+      var items =
+        await Promise.all(
+          selected.map(
+            function (selectedItem) {
+
+              var summary =
+                getSummary(
+                  selectedItem.equipmentId,
+                  selectedItem.code
+                );
+
+              if (
+                !summary ||
+                !permission(
+                  summary,
+                  'canShare'
+                )
+              ) {
+                throw new Error(
+                  '전송할 수 없는 장비가 선택되었습니다.'
+                );
+              }
+
+              return resolveItem(
+                summary.equipmentId,
+                selectedItem.code
+              );
+            }
+          )
+        );
+
+      if (
+        typeof window
+          .shareManagerItemsByChannel !==
+        'function'
+      ) {
+        throw new Error(
+          '기존 카카오톡·문자·이메일 전송 기능을 찾지 못했습니다.'
+        );
       }
-      await window.shareManagerItemsByChannel(items, String(channel || 'kakao'));
-    } catch (error) {
-      alert('선택한 장비를 보내지 못했습니다.\n\n' + errorText(error));
-    } finally {
-      if (buttonBar) buttonBar.classList.remove('busy');
+
+      await window
+        .shareManagerItemsByChannel(
+          items,
+          String(
+            channel ||
+            'kakao'
+          )
+        );
+
+    }
+    catch (error) {
+
+      alert(
+        '선택한 장비를 보내지 못했습니다.\n\n' +
+        errorText(error)
+      );
+
+    }
+    finally {
+
+      clearTemplateSelectionV99();
+
+      if (buttonBar) {
+        buttonBar.classList.remove(
+          'busy'
+        );
+      }
     }
   }
 
@@ -2528,6 +2821,7 @@
     selectForSend: selectForSend,
     updateSelection: updateSelection,
     shareSelected: shareSelected,
+    getTemplateSelection: getTemplateSelectionV99,
     unlink: unlink,
     deleteOwner: deleteOwner,
     getHomeSnapshot: getHomeSnapshotV571,

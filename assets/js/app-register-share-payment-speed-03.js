@@ -1671,6 +1671,81 @@ function shareOneListItemEmail(code) {
       return recipientView.makeRecipientShareLink(rawToken, trackingToken);
     }
 
+    function makeRecipientShareLinkForItemV99(
+      rawToken,
+      trackingToken,
+      item
+    ) {
+
+      const base =
+        makeRecipientShareLinkV573(
+          rawToken,
+          trackingToken
+        );
+
+      if (!base) return '';
+
+      const equipmentId =
+        getRecipientEquipmentIdV573(
+          item
+        );
+
+      const archive =
+        window.SitePassArchiveV562;
+
+      const selection =
+        archive &&
+        typeof archive
+          .getTemplateSelection ===
+          'function'
+          ? archive.getTemplateSelection(
+              equipmentId
+            )
+          : null;
+
+      if (
+        !selection ||
+        (
+          selection.workPlan !== true &&
+          selection.rental !== true
+        )
+      ) {
+        return base;
+      }
+
+      try {
+
+        const url =
+          new URL(base);
+
+        if (
+          selection.workPlan ===
+          true
+        ) {
+          url.searchParams.set(
+            'wp',
+            '1'
+          );
+        }
+
+        if (
+          selection.rental ===
+          true
+        ) {
+          url.searchParams.set(
+            'rental',
+            '1'
+          );
+        }
+
+        return url.toString();
+
+      }
+      catch (error) {
+        return base;
+      }
+    }
+
     async function revokeRecipientTokenBundleV573(bundle) {
       const shareCreate = window.SitePassShareCreate;
       if (!shareCreate || typeof shareCreate.revokeRecipientTokenBundle !== 'function') return;
@@ -3223,9 +3298,10 @@ function shareOneListItemEmail(code) {
       const list = safeItems.map(function(item, index) {
         const entry = entries[index];
 
-        const link = makeRecipientShareLinkV573(
+        const link = makeRecipientShareLinkForItemV99(
           entry && entry.token,
-          trackingToken
+          trackingToken,
+          item
         );
 
         if (!link) return '';
@@ -3268,9 +3344,10 @@ function shareOneListItemEmail(code) {
       const firstLink =
         safeItems.length &&
         entries.length
-          ? makeRecipientShareLinkV573(
+          ? makeRecipientShareLinkForItemV99(
               entries[0].token,
-              trackingToken
+              trackingToken,
+              safeItems[0]
             )
           : '';
 
