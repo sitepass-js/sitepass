@@ -852,6 +852,7 @@
       recipient_channel:String(row.recipientChannel || row.recipient_channel || ''),
       recipient_name:String(row.recipientName || row.recipient_name || ''),
       recipient_phone:String(row.recipientPhone || row.recipient_phone || ''),
+      recipient_email:String(row.recipientEmail || row.recipient_email || ''),
       recipient_context_resolved:
         row.recipientContextResolved === true ||
         row.recipient_context_resolved === true
@@ -1522,6 +1523,13 @@
           recipientLine =
             recipientParts.join(' · ') +
             (row.event_type === 'sent' ? '' : '로 전송한 링크');
+        }
+      } else if (row.recipient_context_resolved === true && row.recipient_channel === 'email') {
+        var recipientEmail = String(row.recipient_email || '').trim();
+        if (recipientEmail) {
+          recipientLine =
+            recipientEmail +
+            (row.event_type === 'sent' ? '으로 전송' : '으로 전송한 링크');
         }
       }
       var allRead = (group.event_ids || []).every(function(eventId){ return readIds.indexOf(eventId) >= 0; });

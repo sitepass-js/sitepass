@@ -3358,120 +3358,291 @@ function shareOneListItemEmail(code) {
     }
 
     // SITEPASS_42_3C_B_EMAIL_TOKEN_V2_FIX1
-    async function openRecipientEmailShareV573(items) {
+    // STEP101:
+    // Recipient Token / tracking / 7일 TTL 생성 경로는 그대로 유지하고
+    // 이메일 전달 마지막 단계만 인증된 Edge Function + Resend HTML 메일로 교체한다.
+    // raw Recipient Token은 서버 검증에 필요한 링크 query에만 포함되며
+    // localStorage/공유이력/로그에는 추가 저장하지 않는다.
+    let sitePassRecipientEmailSendingV101 = false;
+
+    function sitePassBuildRecipientEmailLinksV101(items, bundle, trackingToken) {
       const safeItems = (items || []).filter(Boolean);
+      const entries = bundle && Array.isArray(bundle.entries)
+        ? bundle.entries
+        : [];
 
-      const email = prompt(
-        '받는 사람 이메일을 입력해주세요.\n예: site@example.com'
-      );
-
-      if (email === null) return;
-
-      const cleanEmail = String(email || '').trim();
-
-      if (!cleanEmail || !cleanEmail.includes('@')) {
-        alert('받는 사람 이메일을 정확히 입력해주세요.');
-        return;
+      if (!safeItems.length || safeItems.length !== entries.length) {
+        return [];
       }
 
-      // 이메일도 SMS/Kakao와 동일한 서버 추적 흐름을 사용한다.
-      const prepared = await prepareShareTrackingV521(
-        safeItems,
-        'email',
-        {
-          receiver:cleanEmail,
-          email:cleanEmail
+      return safeItems.map(function(item, index) {
+        const entry = entries[index] || {};
+        return String(
+          makeRecipientShareLinkForItemV99(
+            entry.token,
+            trackingToken,
+            item
+          ) || ''
+        ).trim();
+      }).filter(Boolean);
+    }
+
+    async function sitePassSendRecipientEmailV101(
+      email,
+      items,
+      bundle,
+      trackingToken
+    ) {
+      const client = await sitePassWaitForSupabaseClientV609(4000);
+
+      if (
+        !client ||
+        !client.functions ||
+        typeof client.functions.invoke !== 'function'
+      ) {
+        return {
+          ok:false,
+          message:'SUPABASE_FUNCTIONS_CLIENT_REQUIRED'
+        };
+      }
+
+      const links = sitePassBuildRecipientEmailLinksV101(
+        items,
+        bundle,
+        trackingToken
+      );
+
+      if (!links.length || links.length !== (items || []).filter(Boolean).length) {
+        return {
+          ok:false,
+          message:'RECIPIENT_EMAIL_LINK_BUILD_FAILED'
+        };
+      }
+
+      try {
+        const result = await client.functions.invoke(
+          'sitepass-send-recipient-email-v1',
+          {
+            body:{
+              to:String(email || '').trim(),
+              links:links,
+              shareRows:getShareTrackingRowsV521(items),
+              equipmentNo:getShareTrackingEquipmentNoV521(items),
+              equipmentLabel:getShareTrackingEquipmentLabelV521(items)
+            }
+          }
+        );
+
+        if (result && result.error) {
+          return {
+            ok:false,
+            message:String(
+              result.error.message ||
+              result.error.name ||
+              'RECIPIENT_EMAIL_FUNCTION_FAILED'
+            )
+          };
         }
-      );
 
-      if (!prepared.ok) {
-        alert(
-          '이메일 링크 전송 준비를 완료하지 못했습니다.\n\n오류: ' +
-          (prepared.message || '알 수 없는 오류')
-        );
-        return;
-      }
+        const data = result && result.data;
 
-      const recipientBundle =
-        await createRecipientTokenBundleV573(safeItems);
-
-      if (!recipientBundle.ok) {
-        await cancelShareTrackingV521(prepared.token);
-
-        alert(
-          '수신자 Token V2 링크를 만들지 못했습니다.\n\n오류: ' +
-          (recipientBundle.message || '알 수 없는 오류')
-        );
-        return;
-      }
-
-      const payload = buildRecipientTrackedSharePayloadV573(
-        safeItems,
-        recipientBundle,
-        prepared.token
-      );
-
-      if (!payload || !payload.text) {
-        await revokeRecipientTokenBundleV573(recipientBundle);
-        await cancelShareTrackingV521(prepared.token);
-
-        alert('수신자 Token V2 이메일 공유문을 만들지 못했습니다.');
-        return;
-      }
-
-      const activated =
-        await activateShareTrackingV521(prepared.token);
-
-      if (!activated.ok) {
-        await revokeRecipientTokenBundleV573(recipientBundle);
-        await cancelShareTrackingV521(prepared.token);
-
-        alert(
-          '이메일 링크 전송 기록을 서버에 저장하지 못했습니다.\n\n오류: ' +
-          (activated.message || '알 수 없는 오류')
-        );
-        return;
-      }
-
-      const recipientSentV577 =
-        await markRecipientShareSentBundleV577(recipientBundle, prepared.token);
-
-      if (!recipientSentV577.ok) {
-        alert(
-          '이메일 작성창은 열지만 Recipient 전송 기록 일부를 저장하지 못했습니다.\n\n오류: ' +
-          (recipientSentV577.message || '알 수 없는 오류')
-        );
-      }
-
-      const subjectBase = getShareTitleForItems(safeItems);
-      const subject = encodeURIComponent(
-        '[SitePass] ' + subjectBase + ' QR·링크'
-      );
-
-      // 기존 로컬 공유이력 형식은 유지한다.
-      // Recipient Token 원문은 localStorage에 기록하지 않는다.
-      recordSitePassShareHistoryV520(
-        safeItems,
-        {
-          method:'이메일 공유',
-          receiver:cleanEmail,
-          email:cleanEmail,
-          status:'이메일 작성창 열기'
+        if (!data || data.ok !== true) {
+          return {
+            ok:false,
+            message:String(
+              data && (data.error || data.message) ||
+              'RECIPIENT_EMAIL_SEND_FAILED'
+            )
+          };
         }
-      );
 
-      // v580: 이메일에서는 Recipient URL을 별도 줄에 두어
-      // 일반 메일 클라이언트의 자동 링크 인식률을 높인다.
-      // SMS/Kakao/QR/Recipient 링크 생성 방식은 변경하지 않는다.
-      const emailBodyText = String(payload.text || '')
-        .replace(/담당자 화면:\s*(https?:\/\/[^\r\n]+)/g, '담당자 화면 바로 열기\n$1')
-        .replace(/\r?\n/g, '\r\n');
-      const body = encodeURIComponent(emailBodyText);
+        return {
+          ok:true,
+          id:String(data.id || ''),
+          sentCount:Number(data.itemCount || links.length)
+        };
+      } catch (error) {
+        return {
+          ok:false,
+          message:error && error.message
+            ? error.message
+            : String(error || 'RECIPIENT_EMAIL_FUNCTION_FAILED')
+        };
+      }
+    }
 
-      window.location.href =
-        'mailto:' + cleanEmail +
-        '?subject=' + subject +
-        '&body=' + body;
+    // SITEPASS_42_3C_B_EMAIL_TOKEN_V2_FIX1
+    async function openRecipientEmailShareV573(items) {
+      if (sitePassRecipientEmailSendingV101) {
+        alert('이메일을 전송하고 있습니다.\n잠시만 기다려주세요.');
+        return;
+      }
+
+      sitePassRecipientEmailSendingV101 = true;
+
+      let prepared = null;
+      let recipientBundle = null;
+      let emailAccepted = false;
+
+      try {
+        const safeItems = (items || []).filter(Boolean);
+
+        const email = prompt(
+          '받는 사람 이메일을 입력해주세요.\n예: site@example.com'
+        );
+
+        if (email === null) return;
+
+        const cleanEmail = String(email || '').trim();
+
+        if (
+          !cleanEmail ||
+          cleanEmail.length > 254 ||
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
+        ) {
+          alert('받는 사람 이메일을 정확히 입력해주세요.');
+          return;
+        }
+
+        // 이메일도 SMS/Kakao와 동일한 서버 추적 흐름을 사용한다.
+        prepared = await prepareShareTrackingV521(
+          safeItems,
+          'email',
+          {
+            receiver:cleanEmail,
+            email:cleanEmail
+          }
+        );
+
+        if (!prepared.ok) {
+          alert(
+            '이메일 링크 전송 준비를 완료하지 못했습니다.\n\n오류: ' +
+            (prepared.message || '알 수 없는 오류')
+          );
+          return;
+        }
+
+        recipientBundle =
+          await createRecipientTokenBundleV573(safeItems);
+
+        if (!recipientBundle.ok) {
+          await cancelShareTrackingV521(prepared.token);
+
+          alert(
+            '수신자 Token V2 링크를 만들지 못했습니다.\n\n오류: ' +
+            (recipientBundle.message || '알 수 없는 오류')
+          );
+          return;
+        }
+
+        const payload = buildRecipientTrackedSharePayloadV573(
+          safeItems,
+          recipientBundle,
+          prepared.token
+        );
+
+        if (!payload || !payload.text) {
+          await revokeRecipientTokenBundleV573(recipientBundle);
+          await cancelShareTrackingV521(prepared.token);
+
+          alert('수신자 Token V2 이메일 공유문을 만들지 못했습니다.');
+          return;
+        }
+
+        // STEP101 R2:
+        // 메일 Edge Function이 기존 sitepass_create_share_tracking_v521 RPC를
+        // 같은 로그인 JWT로 다시 호출해 현재 회원/장비/결제/공유행을 서버측 재검증한다.
+        // 실제 Resend 접수 성공 전에는 sent_at을 올리지 않는다.
+        const sent = await sitePassSendRecipientEmailV101(
+          cleanEmail,
+          safeItems,
+          recipientBundle,
+          prepared.token
+        );
+
+        if (!sent.ok) {
+          // 실제 메일이 접수되지 않은 경우에만 이번 테스트용 Recipient
+          // Token과 tracking을 즉시 정리한다.
+          await revokeRecipientTokenBundleV573(recipientBundle);
+          await cancelShareTrackingV521(prepared.token);
+
+          alert(
+            '이메일을 보내지 못했습니다.\n\n오류: ' +
+            (sent.message || '알 수 없는 오류')
+          );
+          return;
+        }
+
+        emailAccepted = true;
+
+        // 실제 외부 메일 접수 성공 후에만 sent_at을 활성화한다.
+        // 따라서 provider 실패 시 아래 catch/실패분기의 cancel RPC가
+        // 아직 sent_at is null인 준비행을 정상 취소할 수 있다.
+        const activated =
+          await activateShareTrackingV521(prepared.token);
+
+        if (!activated.ok) {
+          alert(
+            '이메일은 전송됐지만 전송 기록을 활성화하지 못했습니다.\n\n오류: ' +
+            (activated.message || '알 수 없는 오류')
+          );
+        }
+
+        const recipientSentV577 =
+          await markRecipientShareSentBundleV577(
+            recipientBundle,
+            prepared.token
+          );
+
+        if (!recipientSentV577.ok) {
+          // 메일은 이미 외부 서비스에 접수됐으므로 Token을 되돌리면
+          // 받은 메일이 죽은 링크가 된다. 이 경우 sent 이력만 경고한다.
+          alert(
+            '이메일은 전송됐지만 Recipient 전송 기록 일부를 저장하지 못했습니다.\n\n오류: ' +
+            (recipientSentV577.message || '알 수 없는 오류')
+          );
+        }
+
+        // 기존 로컬 공유이력 형식은 유지한다.
+        // Recipient Token 원문은 localStorage에 기록하지 않는다.
+        recordSitePassShareHistoryV520(
+          safeItems,
+          {
+            method:'이메일 공유',
+            receiver:cleanEmail,
+            email:cleanEmail,
+            status:'이메일 발송 완료'
+          }
+        );
+
+        alert(
+          '이메일을 보냈습니다.\n' +
+          '받은 메일의 "담당자 서류 바로 열기" 버튼을 누르면 됩니다.'
+        );
+      } catch (error) {
+        if (!emailAccepted) {
+          try {
+            if (recipientBundle && recipientBundle.ok) {
+              await revokeRecipientTokenBundleV573(recipientBundle);
+            }
+          } catch (e) {}
+
+          try {
+            if (prepared && prepared.token) {
+              await cancelShareTrackingV521(prepared.token);
+            }
+          } catch (e) {}
+        }
+
+        alert(
+          '이메일 전송 중 오류가 발생했습니다.\n\n오류: ' +
+          (error && error.message
+            ? error.message
+            : String(error || '알 수 없는 오류'))
+        );
+      } finally {
+        sitePassRecipientEmailSendingV101 = false;
+      }
     }
     function buildTrackedSharePayloadV521(items, token) {
       const previous = window.sitePassShareTrackingTokenV521;

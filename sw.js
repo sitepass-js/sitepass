@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.786-step100-recipient-link-days-admin-v1';
-const SITEPASS_CACHE = 'sitepass-fast-23.7.786-step100-recipient-link-days-admin-v1';
+const SITEPASS_SW_VERSION = 'v23.7.787r3-step101-email-recipient-context';
+const SITEPASS_CACHE = 'sitepass-fast-23.7.787r3-step101-email-recipient-context';
 const SITEPASS_CHAT_PRESENCE_V40 = new Map();
 const SITEPASS_SHELL = [
   './index.html',
@@ -15,7 +15,7 @@ const SITEPASS_SHELL = [
   './assets/css/sitepass-archive-v562.css?v=23.7.567-test',
   './assets/css/sitepass-chat-v460.css?v=23.7.712-step84-v40-fixed-room-mobile-ux',
   './assets/css/sitepass-member-link-chat-v566.css?v=23.7.773-r14-member-chat-enter-newline-auto-resize',
-  './assets/js/sitepass-chat-v667.js?step=93-v785r9p1-alert-ui-polling-dedup',
+  './assets/js/sitepass-chat-v667.js?step=101-v787r3-email-recipient-context',
   './assets/js/features/equipment-link/link-api.js?step=82-v28',
   './assets/js/features/equipment-link/request.js?step=82-v28',
   './assets/js/features/equipment-link/approval.js?step=82-v28',
@@ -80,7 +80,7 @@ const SITEPASS_SHELL = [
   './assets/js/features/share/recipient-view.js?step=83-v34-share-role-modularization',
   './assets/js/features/share/download.js?step=83-v34-share-role-modularization',
   './assets/js/features/share/print.js?step=83-v34-share-role-modularization',
-  './assets/js/app-register-share-payment-speed-03.js?step=100-recipient-link-days-admin-v1',
+  './assets/js/app-register-share-payment-speed-03.js?step=101-recipient-email-security-bind-r2',
   './assets/js/app-register-share-payment-speed-04.js?step=100-recipient-link-days-admin-v1',
   './assets/js/sitepass-detail-refresh-v700.js?v=23.7.700-75-detail-refresh-restore-v2',
   './assets/js/sitepass-archive-v562.js?step=98-detail-single-source-v1',
