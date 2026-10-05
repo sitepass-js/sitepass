@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.785r9p3-step99-member-link-forms-v1';
-const SITEPASS_CACHE = 'sitepass-fast-23.7.785r9p3-step99-member-link-forms-v1';
+const SITEPASS_SW_VERSION = 'v23.7.786-step100-recipient-link-days-admin-v1';
+const SITEPASS_CACHE = 'sitepass-fast-23.7.786-step100-recipient-link-days-admin-v1';
 const SITEPASS_CHAT_PRESENCE_V40 = new Map();
 const SITEPASS_SHELL = [
   './index.html',
@@ -80,8 +80,8 @@ const SITEPASS_SHELL = [
   './assets/js/features/share/recipient-view.js?step=83-v34-share-role-modularization',
   './assets/js/features/share/download.js?step=83-v34-share-role-modularization',
   './assets/js/features/share/print.js?step=83-v34-share-role-modularization',
-  './assets/js/app-register-share-payment-speed-03.js?step=98-detail-single-source-v1',
-  './assets/js/app-register-share-payment-speed-04.js?v=23.7.676-72-e3-server-signature-consumption',
+  './assets/js/app-register-share-payment-speed-03.js?step=100-recipient-link-days-admin-v1',
+  './assets/js/app-register-share-payment-speed-04.js?step=100-recipient-link-days-admin-v1',
   './assets/js/sitepass-detail-refresh-v700.js?v=23.7.700-75-detail-refresh-restore-v2',
   './assets/js/sitepass-archive-v562.js?step=98-detail-single-source-v1',
   './assets/js/sitepass-shadow-lookup-v698.js?v=23.7.698-75-shadow-lookup-scale',

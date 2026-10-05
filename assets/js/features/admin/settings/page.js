@@ -26,6 +26,14 @@
       inputId: 'sitepassStep96SupportRoomDetailPageSize',
       label: '고객센터 메시지 상세 페이지 크기',
       note: '현재 기준값 50'
+    },
+    {
+      key: 'recipient_shares.link_days',
+      inputId: 'sitepassStep100RecipientShareLinkDays',
+      label: '수신자 링크 유효기간',
+      note: '새로 발급·갱신되는 링크에 적용 · 1일 / 7일 / 15일 / 30일',
+      type: 'select',
+      options: [1, 7, 15, 30]
     }
   ];
 
@@ -85,7 +93,12 @@
     var el = document.getElementById(inputId);
     var nextValue = Number(el && el.value);
 
-    if (!Number.isInteger(nextValue) || nextValue < 1 || nextValue > 100) {
+    if (key === 'recipient_shares.link_days') {
+      if ([1, 7, 15, 30].indexOf(nextValue) < 0) {
+        window.alert('수신자 링크 유효기간은 1일, 7일, 15일, 30일 중에서만 선택할 수 있습니다.');
+        return false;
+      }
+    } else if (!Number.isInteger(nextValue) || nextValue < 1 || nextValue > 100) {
       window.alert('페이지 크기는 1~100 사이의 정수만 사용할 수 있습니다.');
       return false;
     }
@@ -122,14 +135,28 @@
       ? updatedAt.toLocaleString()
       : '-';
 
+    var inputHtml = '';
+    if (def.type === 'select' && Array.isArray(def.options)) {
+      inputHtml =
+        '<select id="' + esc(def.inputId) + '" style="width:110px;" aria-label="' + esc(def.label) + '">' +
+          def.options.map(function(option){
+            var selected = Number(value) === Number(option) ? ' selected' : '';
+            return '<option value="' + esc(option) + '"' + selected + '>' + esc(option) + '일</option>';
+          }).join('') +
+        '</select>';
+    } else {
+      inputHtml =
+        '<input id="' + esc(def.inputId) + '" type="number" min="1" max="100" step="1" value="' + esc(value) + '" ' +
+          'style="width:110px;" aria-label="' + esc(def.label) + '">';
+    }
+
     return '<div class="card" style="box-shadow:none;margin:10px 0;">' +
       '<div><b>' + esc(def.label) + '</b></div>' +
       '<div class="small" style="margin-top:4px;">' +
         esc(def.key) + ' · ' + esc(def.note) +
       '</div>' +
       '<div class="actions" style="margin-top:8px;align-items:center;">' +
-        '<input id="' + esc(def.inputId) + '" type="number" min="1" max="100" step="1" value="' + esc(value) + '" ' +
-          'style="width:110px;" aria-label="' + esc(def.label) + '">' +
+        inputHtml +
         '<button type="button" class="primary" ' + (saving ? 'disabled ' : '') +
           'onclick="return SitePassAdminSettingsPageV96.saveSetting(\'' + esc(def.key) + '\',\'' + esc(def.inputId) + '\')">저장</button>' +
       '</div>' +

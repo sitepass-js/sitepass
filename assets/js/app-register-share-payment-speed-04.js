@@ -226,7 +226,7 @@ function cssEscapeValue(value) {
       item.managerExpireAt = new Date(expireAt).toISOString();
       item.updatedAt = new Date().toISOString();
       try { rememberRuntimeEquipmentItems([item]); } catch (e) {}
-      alert('담당자용 QR·링크 유효기간을 오늘부터 1일로 다시 갱신했습니다.\n만료일: ' + getManagerExpireText(item));
+      alert('담당자용 QR·링크 만료 준비값을 갱신했습니다. 실제 유효기간은 서버의 관리자 설정값으로 확정됩니다.\n현재 표시 만료일: ' + getManagerExpireText(item));
       renderDetail(code);
     }
 
@@ -236,17 +236,17 @@ function cssEscapeValue(value) {
       const expireAt = getManagerExpireAt(item);
       const managerLink = makeManagerLink(item.code || '', expireAt);
       return '<div class="shortcut-panel">' +
-        '<b>담당자용 직접공유 1일 접속</b>' +
+        '<b>담당자용 직접공유</b>' +
         '<div class="small">담당자 PC 바탕화면이나 휴대폰 홈화면에 보일 이름</div>' +
         '<div class="shortcut-name">' + escapeHtml(name) + '</div>' +
-        '<div class="manager-expire-box">담당자 QR·링크 만료일: ' + escapeHtml(getManagerExpireText(expireAt)) + '<br>1일 후에는 담당자 다운로드/프린트 창만 열리지 않습니다. 장비업자 원본코드는 유지됩니다.</div>' +
+        '<div class="manager-expire-box">담당자 QR·링크 만료일: ' + escapeHtml(getManagerExpireText(expireAt)) + '<br>표시된 만료시각 이후에는 담당자 다운로드/프린트 창만 열리지 않습니다. 장비업자 원본코드는 유지됩니다.</div>' +
         '<div class="actions">' +
           '<button type="button" class="primary" onclick="downloadShortcutFile(\'' + escapeJs(item.code || '') + '\')">담당자 바탕화면 파일</button>' +
           '<button type="button" class="okBtn" onclick="openManagerPublicView(\'' + escapeJs(item.code || '') + '\')">담당자 화면 열기</button>' +
           '<button type="button" class="ghost" onclick="copyManagerCode(\'' + escapeJs(item.code || '') + '\')">담당자 링크 복사</button>' +
-          '<button type="button" class="secondary" onclick="refreshManagerShare(\'' + escapeJs(item.code || '') + '\')">1일 갱신</button>' +
+          '<button type="button" class="secondary" onclick="refreshManagerShare(\'' + escapeJs(item.code || '') + '\')">기간 갱신</button>' +
         '</div>' +
-        '<div class="small">담당자에게 주는 카톡 링크·문자 링크·QR은 코드 입력 없이 바로 열리고 1일 유효입니다. 담당자는 다운로드·프린트 전용 화면만 봅니다.</div>' +
+        '<div class="small">담당자에게 주는 카톡 링크·문자 링크·QR은 코드 입력 없이 바로 열리고, 최고관리자가 설정한 유효기간이 서버에서 적용됩니다. 담당자는 다운로드·프린트 전용 화면만 봅니다.</div>' +
       '</div>';
     }
 
@@ -296,12 +296,12 @@ function cssEscapeValue(value) {
           var content = document.getElementById('content');
           if (now > expireAt) {
             card.className += ' expired';
-            content.innerHTML = '<div class="warn"><b>만료된 담당자 바로가기입니다.</b><br>이 파일은 발급 후 1일이 지나 더 이상 다운로드/프린트 창을 열 수 없습니다.<br>장비업자에게 새 QR·링크를 다시 받아주세요.</div>';
+            content.innerHTML = '<div class="warn"><b>만료된 담당자 바로가기입니다.</b><br>이 파일은 표시된 유효기간이 지나 더 이상 다운로드/프린트 창을 열 수 없습니다.<br>장비업자에게 새 QR·링크를 다시 받아주세요.</div>';
             return;
           }
           var p = document.createElement('p');
           p.className = 'muted';
-          p.textContent = '자동으로 담당자 다운로드/프린트 창을 엽니다. 1일 후에는 이 바로가기 접속이 차단됩니다. 자동으로 열리지 않으면 아래 버튼을 누르세요.';
+          p.textContent = '자동으로 담당자 다운로드/프린트 창을 엽니다. 표시된 만료시각 이후에는 이 바로가기 접속이 차단됩니다. 자동으로 열리지 않으면 아래 버튼을 누르세요.';
           var a = document.createElement('a');
           a.className = 'btn';
           a.href = link;
@@ -321,7 +321,7 @@ function cssEscapeValue(value) {
           '.btn{display:flex;align-items:center;justify-content:center;min-height:48px;margin-top:12px;padding:12px 16px;border-radius:14px;background:#2457d6;color:#fff;text-decoration:none;font-weight:900}' +
           '.expired .btn{background:#eef2f8;color:#667085;pointer-events:none}.warn{padding:12px;border-radius:14px;background:#fff7e6;border:1px solid #ffd591;color:#694000;font-size:14px;margin-top:12px}' +
         '</style></head><body>' +
-        '<div class="wrap"><div id="card" class="card"><h1>' + safeName + '</h1><p class="muted">SitePass 담당자 다운로드/프린트 바로가기입니다.</p><div class="code">유효기간: ' + escapeHtml(expireDateText) + '까지<br>1일 후 담당자 접속 차단</div><div id="content">확인중입니다.</div></div></div>' +
+        '<div class="wrap"><div id="card" class="card"><h1>' + safeName + '</h1><p class="muted">SitePass 담당자 다운로드/프린트 바로가기입니다.</p><div class="code">유효기간: ' + escapeHtml(expireDateText) + '까지<br>만료시각 이후 담당자 접속 차단</div><div id="content">확인중입니다.</div></div></div>' +
         '<script>' + shortcutScript + '</scr' + 'ipt></body></html>';
       const blob = new Blob([html], { type:'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -332,7 +332,7 @@ function cssEscapeValue(value) {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1200);
-      alert('담당자용 1일 바탕화면 파일을 내려받았습니다.\n파일 이름: ' + name + '.html\n만료일: ' + expireDateText + '\n\n담당자는 이 파일로 다운로드/프린트 창만 열 수 있습니다. 1일 후에는 담당자 QR·링크·바로가기 접속만 만료됩니다.');
+      alert('담당자용 바탕화면 파일을 내려받았습니다.\n파일 이름: ' + name + '.html\n만료일: ' + expireDateText + '\n\n담당자는 이 파일로 다운로드/프린트 창만 열 수 있습니다. 표시된 만료시각 이후에는 담당자 QR·링크·바로가기 접속만 만료됩니다.');
     }
 
     function showPhoneHomeGuide(code) {
@@ -365,14 +365,14 @@ function cssEscapeValue(value) {
     }
 
     function copyCodeText(code) {
-      alert('담당자에게는 코드를 보내지 않고, 카톡 공유/문자 공유로 1일 만료 QR·링크를 보내면 됩니다.');
+      alert('담당자에게는 코드를 보내지 않고, 카톡 공유/문자 공유로 서버 설정 유효기간이 적용된 QR·링크를 보내면 됩니다.');
     }
 
     function copyQrLink() {
       if (!currentDetailLink) { alert('복사할 QR·링크가 없습니다.'); return; }
       const freshLink = getFreshCurrentManagerLink();
       if (!freshLink) return;
-      copyTextFallback('SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크: ' + freshLink + '\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.', '담당자 QR·링크를 복사했습니다.\n카톡이나 문자에 붙여넣으면 됩니다.');
+      copyTextFallback('SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크: ' + freshLink + '\n표시된 만료시각 이후에는 담당자 QR·링크 접속이 차단됩니다.', '담당자 QR·링크를 복사했습니다.\n카톡이나 문자에 붙여넣으면 됩니다.');
     }
 
     function getFreshCurrentManagerLink() {
@@ -390,7 +390,7 @@ function cssEscapeValue(value) {
       if (!currentDetailLink) { alert('공유할 QR·링크가 없습니다.'); return; }
       const freshLink = getFreshCurrentManagerLink();
       if (!freshLink) return;
-      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.';
+      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n링크 유효기간은 관리자 설정에 따라 서버에서 적용됩니다.';
       if (navigator.share) {
         navigator.share({ title:'SitePass 담당자 서류', text, url: freshLink }).catch(() => {});
       } else {
@@ -402,7 +402,7 @@ function cssEscapeValue(value) {
       if (!currentDetailLink) { alert('공유할 QR·링크가 없습니다.'); return; }
       const freshLink = getFreshCurrentManagerLink();
       if (!freshLink) return;
-      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.\n' + freshLink;
+      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n링크 유효기간은 관리자 설정에 따라 서버에서 적용됩니다.\n' + freshLink;
       openSmsShare(text);
     }
 
@@ -410,7 +410,7 @@ function cssEscapeValue(value) {
       if (!currentDetailLink) { alert('공유할 QR·링크가 없습니다.'); return; }
       const freshLink = getFreshCurrentManagerLink();
       if (!freshLink) return;
-      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.\n' + freshLink;
+      const text = 'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n링크 유효기간은 관리자 설정에 따라 서버에서 적용됩니다.\n' + freshLink;
       const item = getItemByCode(getCodeFromManagerLink(currentDetailLink));
       openEmailShare(text, item ? [item] : []);
     }

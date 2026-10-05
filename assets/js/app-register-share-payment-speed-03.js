@@ -3325,7 +3325,7 @@ function shareOneListItemEmail(code) {
       return heading + '\n' +
         'QR·링크를 누르면 코드 입력 없이 바로 담당자 다운로드/프린트 화면이 열립니다.\n' +
         '담당자가 한눈에 알아볼 수 있도록 장비명/장비번호를 먼저 표시했습니다.\n' +
-        '1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.\n\n' +
+         '표시된 유효기간이 지나면 담당자 QR·링크 접속이 차단됩니다.\n\n' +
         list;
     }
 
@@ -3594,7 +3594,7 @@ function shareOneListItemEmail(code) {
       const itemCount = safeItems.length;
       if (navigator.share) {
         const payload = itemCount === 1
-          ? { title:'SitePass 담당자 서류', text:'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.', url:tracked.firstLink }
+          ? { title:'SitePass 담당자 서류', text:'SitePass 담당자 서류 다운로드/프린트입니다.\nQR·링크를 누르면 코드 입력 없이 바로 열립니다.\n링크 유효기간은 관리자 설정에 따라 서버에서 적용됩니다.', url:tracked.firstLink }
           : { title:'SitePass 담당자 서류', text:tracked.text };
         try {
           await navigator.share(payload);
@@ -4269,7 +4269,7 @@ function normalizePhoneForShare(phone) {
         '<div class="line"><b>결제단위</b><span>' + escapeHtml(item?.bundleMeta?.paymentText || '장비 및 인력 통합 1세트 결제') + '</span></div>' +
         '<div class="line"><b>서비스상태</b><span>' + escapeHtml(getServiceStatusText(item)) + '</span></div>' +
         '<div class="line"><b>요금제 기준</b><span>' + escapeHtml(item.basicPlan || BASIC_PRICE_TEXT) + '<br>' + escapeHtml(item.alertPlan || ALERT_PRICE_TEXT) + '</span></div>' +
-        '<div class="line"><b>전달 정책</b><span>' + escapeHtml(item.forwardPolicy || '공유 후 1일 재전송 가능 예정') + '</span></div>' +
+        '<div class="line"><b>전달 정책</b><span>' + escapeHtml(item.forwardPolicy || '공유 후 서버 설정기간 재전송 가능') + '</span></div>' +
         renewalHtml +
         recipientQrHtmlV91 +
         '<h3>등록 서류 폴더</h3>' + docHtml;
@@ -5275,7 +5275,7 @@ function renderDocExpiryStrip(doc) {
         '장비: ' + getItemTitle(item) + '\n' +
         'QR·링크: ' + link + '\n' +
         '만료일: ' + getManagerExpireText(expireAt) + '\n' +
-        '1일 뒤에는 담당자 QR·링크 접속이 차단됩니다.';
+        '표시된 만료시각이 지나면 담당자 QR·링크 접속이 차단됩니다.';
       copyTextFallback(text, '담당자 QR·링크를 복사했습니다.\n카톡이나 문자에 붙여넣으면 담당자가 코드 입력 없이 바로 열 수 있습니다.');
     }
 

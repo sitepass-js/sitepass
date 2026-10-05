@@ -18,7 +18,7 @@
       return staticDocs.concat(dynamicDocs);
     }
 
-    // v23.7.350: 수신자 QR/1일 링크 화면은 회원이 실제 첨부한 서류만 보여줍니다.
+    // 수신자 QR/링크 화면은 회원이 실제 첨부한 서류만 보여줍니다.
     // 등록/수정 화면에서는 빈 필수서류도 보여야 하므로 getDisplayDocs는 그대로 두고,
     // 외부 담당자 화면/다운로드/인쇄에서만 이 필터를 사용합니다.
     function isPlaceholderAttachmentValue(value) {
@@ -1398,7 +1398,7 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
             paymentPlan: oldItem?.paymentPlan || selectedPlan.key,
             basicPlan: oldItem?.basicPlan || ('결제대기 · ' + selectedPlan.planText),
             alertPlan: oldItem?.alertPlan || '보험·검사 만료 알림 포함 준비',
-            forwardPolicy: oldItem?.forwardPolicy || '담당자용 QR·링크 1일 접속 가능',
+            forwardPolicy: oldItem?.forwardPolicy || '담당자용 QR·링크 서버 설정기간 접속 가능',
             managerExpireAt: oldItem?.managerExpireAt || '',
             paymentStatus: oldItem?.paymentStatus || '결제대기',
             paymentAmount: oldItem?.paymentAmount || selectedPlan.price,
