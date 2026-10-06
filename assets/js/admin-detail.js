@@ -190,20 +190,20 @@
     const { members, target } = getAdminEditableMember(memberId);
     if (!target) { alert('회원을 찾을 수 없습니다.'); return; }
     const input = readAdminPaymentInputs(memberId);
-    if (!confirm((target.name || target.signupId || '회원') + '님을 일반 연간결제(30,000원 / 1년)로 처리할까요?')) return;
+    if (!confirm((target.name || target.signupId || '회원') + '님을 일반 연간결제(33,000원 / 1년)로 처리할까요?')) return;
     const nowIso = new Date().toISOString();
     target.paymentPlanLabel = '일반 연간이용권';
     target.memberPlan = '일반 연간이용권';
     target.paymentStartedAt = nowIso;
     target.paymentEndsAt = addDaysIso(nowIso, 365);
     target.paymentStatus = '신규결제완료';
-    target.paymentAmount = input.amount || target.paymentAmount || '30000';
+    target.paymentAmount = input.amount || target.paymentAmount || '33000';
     target.paymentMemo = input.memo || '';
     target.status = '일반 연간결제';
     target.adminLastAction = '일반 연간결제 처리';
     target.adminLastActionAt = nowIso;
-    addMemberPaymentHistory(target, '신규결제', input.memo || '일반 연간이용권 30,000원 결제완료 처리', input.amount || '30000');
-    const activatedCount = applyMemberPaymentToOwnedItems(target, 'annual', 365, '일반 연간결제 · 연 30,000원');
+    addMemberPaymentHistory(target, '신규결제', input.memo || '일반 연간이용권 33,000원 결제완료 처리', input.amount || '33000');
+    const activatedCount = applyMemberPaymentToOwnedItems(target, 'annual', 365, '일반 연간결제 · 연 33,000원');
     setMembers(members);
     alert('신규결제 처리했습니다. 남은기간은 1년으로 표시됩니다.' + (activatedCount ? '\n연결된 장비서류 ' + activatedCount + '건의 QR·링크도 다시 활성화했습니다.' : ''));
     renderAdmin();
@@ -234,8 +234,8 @@
     target.status = '일반 연간 연장결제';
     target.adminLastAction = '일반 연간 연장결제 처리';
     target.adminLastActionAt = nowIso;
-    addMemberPaymentHistory(target, '연장결제', input.memo || '기존 만료일 기준 또는 오늘 기준 1년 연장', input.amount || '30000');
-    const activatedCount = applyMemberPaymentToOwnedItems(target, 'annual', 365, '일반 연간결제 · 연 30,000원');
+    addMemberPaymentHistory(target, '연장결제', input.memo || '기존 만료일 기준 또는 오늘 기준 1년 연장', input.amount || '33000');
+    const activatedCount = applyMemberPaymentToOwnedItems(target, 'annual', 365, '일반 연간결제 · 연 33,000원');
     setMembers(members);
     alert('연장결제 처리했습니다. 만료일이 1년 연장되었습니다.' + (activatedCount ? '\n연결된 장비서류 ' + activatedCount + '건의 QR·링크도 다시 활성화했습니다.' : ''));
     renderAdmin();

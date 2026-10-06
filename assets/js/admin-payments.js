@@ -16,13 +16,13 @@
     const additional = typeof options === 'boolean' ? options : !!(options && options.additional);
 
     if (cleanPlan === 'annual_auto') {
-      const price = '연 20,000원';
+      const price = '연 25,900원';
       const label = '자동결제 연간이용권';
       return {
         key:'annual_auto',
         label,
         price,
-        amountKrw:20000,
+        amountKrw:25900,
         days:365,
         serviceStatus:'유료사용',
         planText:label + ' · ' + price,
@@ -31,13 +31,13 @@
       };
     }
 
-    const price = '연 30,000원';
+    const price = '연 33,000원';
     const label = '일반 연간이용권';
     return {
       key:'annual',
       label,
       price,
-      amountKrw:30000,
+      amountKrw:33000,
       days:365,
       serviceStatus:'유료사용',
       planText:label + ' · ' + price,

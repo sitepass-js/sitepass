@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.787r3-step101-email-recipient-context';
-const SITEPASS_CACHE = 'sitepass-fast-23.7.787r3-step101-email-recipient-context';
+const SITEPASS_SW_VERSION = 'v23.7.788-step102-price-policy-33000-25900';
+const SITEPASS_CACHE = 'sitepass-fast-23.7.788-step102-price-policy-33000-25900';
 const SITEPASS_CHAT_PRESENCE_V40 = new Map();
 const SITEPASS_SHELL = [
   './index.html',
@@ -36,7 +36,7 @@ const SITEPASS_SHELL = [
   './assets/js/sitepass-error-monitor-v537.js?v=23.7.698-75-shadow-lookup-scale',
   './assets/js/pwa-update.js?v=23.7.570-test',
   './assets/js/app-core-auth-speed-04.js?step=90-v732r1-person-auth-binding-failclosed',
-  './assets/js/app-admin-boot-speed-03.js?step=90-v733r2a-registration-management-label',
+  './assets/js/app-admin-boot-speed-03.js?step=102-v788-price-policy-33000-25900',
   './assets/js/features/admin/core/admin-auth.js?step=87-admin-failclosed-v2',
   './assets/js/features/admin/core/permissions.js?step=87-admin-failclosed-v2',
   './assets/js/features/admin/core/admin-api-client.js?step=87-admin-core-shared-v1',
@@ -81,7 +81,7 @@ const SITEPASS_SHELL = [
   './assets/js/features/share/download.js?step=83-v34-share-role-modularization',
   './assets/js/features/share/print.js?step=83-v34-share-role-modularization',
   './assets/js/app-register-share-payment-speed-03.js?step=101-recipient-email-security-bind-r2',
-  './assets/js/app-register-share-payment-speed-04.js?step=100-recipient-link-days-admin-v1',
+  './assets/js/app-register-share-payment-speed-04.js?step=102-v788-price-policy-33000-25900',
   './assets/js/sitepass-detail-refresh-v700.js?v=23.7.700-75-detail-refresh-restore-v2',
   './assets/js/sitepass-archive-v562.js?step=98-detail-single-source-v1',
   './assets/js/sitepass-shadow-lookup-v698.js?v=23.7.698-75-shadow-lookup-scale',

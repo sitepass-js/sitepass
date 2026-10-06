@@ -3245,7 +3245,7 @@ function makeDemoDoc(key, groupKey, groupTitle, title, required, expiry, expireD
         trialEndsAt:paid ? paidEnd : trialEnd,
         serviceStatus:paid ? '유료사용' : '실사용베타',
         paymentPlan:paid ? 'annual' : 'trial',
-        basicPlan:paid ? '일반 연간결제 · 연 30,000원' : '실사용베타 후 결제대기',
+        basicPlan:paid ? '일반 연간결제 · 연 33,000원' : '실사용베타 후 결제대기',
         alertPlan:'보험·검사 만료 알림 포함 준비',
         paidAt:paid ? nowIso : '',
         forwardPolicy:'담당자용 QR·링크 7일 접속 가능',

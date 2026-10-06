@@ -638,13 +638,13 @@ function normalizePendingRegistrationTier(pending) {
       if (payments.getPlanInfo) return payments.getPlanInfo(plan, options);
       const additional = typeof options === 'boolean' ? options : !!(options && options.additional);
       if (plan === 'annual_auto') {
-        const price = '연 20,000원';
+        const price = '연 25,900원';
         const label = '자동결제 연간이용권';
-        return { key:'annual_auto', label, price, amountKrw:20000, days:365, serviceStatus:'유료사용', planText:label + ' · ' + price, additional, autoRenew:true };
+        return { key:'annual_auto', label, price, amountKrw:25900, days:365, serviceStatus:'유료사용', planText:label + ' · ' + price, additional, autoRenew:true };
       }
-      const price = '연 30,000원';
+      const price = '연 33,000원';
       const label = '일반 연간이용권';
-      return { key:'annual', label, price, amountKrw:30000, days:365, serviceStatus:'유료사용', planText:label + ' · ' + price, additional, autoRenew:false };
+      return { key:'annual', label, price, amountKrw:33000, days:365, serviceStatus:'유료사용', planText:label + ' · ' + price, additional, autoRenew:false };
     }
 
     function updateSelectedPaymentPlan() {
@@ -667,7 +667,7 @@ function normalizePendingRegistrationTier(pending) {
       if (registerButton) registerButton.textContent = window.SITEPASS_TEST_NO_PAYMENT_MODE ? (pending ? '결제없이 QR링크 생성' : '테스트 등록 시작') : (pending ? '결제하고 QR링크 생성' : (additional ? '선택한 결제방법으로 추가등록하기' : '선택한 결제방법으로 1대 등록하기'));
       const note = document.getElementById('selectedPlanNote');
       if (note) {
-        note.innerHTML = window.SITEPASS_TEST_NO_PAYMENT_MODE ? '<b>테스트 기간:</b> 결제단계 없이 등록 완료 후 QR·보관함 저장을 확인합니다.<br><b>정식 유료정책:</b> 일반 연간 30,000원 / 자동결제 연간 20,000원 · 월 유료결제 없음' : '<b>선택한 요금제:</b> ' + escapeHtml(info.label) + ' / ' + escapeHtml(info.price) + '<br>유료 이용권은 1년 단위만 제공합니다.<br>' + (pending ? '결제를 완료하면 보관함에 저장되고 QR·담당자 링크가 바로 생성됩니다.' : '실제 결제는 선정된 결제대행사(PG)의 본인확인·승인 절차와 연결합니다.');
+        note.innerHTML = window.SITEPASS_TEST_NO_PAYMENT_MODE ? '<b>테스트 기간:</b> 결제단계 없이 등록 완료 후 QR·보관함 저장을 확인합니다.<br><b>정식 유료정책:</b> 일반 연간 33,000원 / 자동결제 연간 25,900원 · 월 유료결제 없음' : '<b>선택한 요금제:</b> ' + escapeHtml(info.label) + ' / ' + escapeHtml(info.price) + '<br>유료 이용권은 1년 단위만 제공합니다.<br>' + (pending ? '결제를 완료하면 보관함에 저장되고 QR·담당자 링크가 바로 생성됩니다.' : '실제 결제는 선정된 결제대행사(PG)의 본인확인·승인 절차와 연결합니다.');
       }
       renderPendingRegistrationPaymentBox();
       renderPricingTargetList();

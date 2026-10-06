@@ -276,7 +276,7 @@ function renderRenewPanel(item) {
       const items = getItems();
       const plan = getSelectedPaymentPlan();
       if (!items.length) {
-        box.innerHTML = '<div class="empty">아직 등록된 서류함이 없습니다.<br>정식 유료 이용권은 월결제 없이 일반 연간 30,000원 / 자동결제 연간 20,000원 정책입니다.</div>';
+        box.innerHTML = '<div class="empty">아직 등록된 서류함이 없습니다.<br>정식 유료 이용권은 월결제 없이 일반 연간 33,000원 / 자동결제 연간 25,900원 정책입니다.</div>';
         return;
       }
       box.innerHTML = items.map(item => {
