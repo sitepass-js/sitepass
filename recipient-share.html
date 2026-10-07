@@ -1487,7 +1487,40 @@ async function loadRecipientTokenV573(){
       );
     }
   }
+  function blockExternalLegacyRecipientV789(){
+    clearExternalRecipientSnapshotsV677();
+    state.item=null;
+    state.docs=[];
+    state.expiresAt=0;
+    state.serverConfirmed=false;
+    state.rendered=false;
+    state.serverFiles=[];
+    state.serverFilesLoaded=false;
+    renderError(
+      '담당자 링크 정보가 없습니다.',
+      '장비업자에게 새 담당자 링크를 다시 받아주세요.',
+      false
+    );
+  }
+
+  function loadRecipientEntryV789(){
+    if(state.recipientToken){
+      loadRecipientTokenV573();
+      return;
+    }
+    if(state.fromMember){
+      load();
+      return;
+    }
+    blockExternalLegacyRecipientV789();
+  }
+
   async function load(){
+    // 공식 STEP100: legacy public-share RPC는 검증된 회원 미리보기에서만 허용.
+    if(!state.fromMember){
+      blockExternalLegacyRecipientV789();
+      return;
+    }
     if(!state.code){renderError('담당자 링크 정보가 없습니다.','링크 주소를 다시 확인해주세요.',false);return;}
     if(!state.fromMember){
       clearExternalRecipientSnapshotsV677();
@@ -2034,7 +2067,7 @@ async function loadRecipientTokenV573(){
   document.addEventListener('click',function(event){
     var detail=event.target.closest&&event.target.closest('[data-detail-index]');if(detail){event.preventDefault();openDetail(detail.getAttribute('data-detail-index'));return;}
     var preview=event.target.closest&&event.target.closest('[data-open-detail]');if(preview){event.preventDefault();openDetail(preview.getAttribute('data-open-detail'));return;}
-    var retry=event.target.closest&&event.target.closest('[data-retry]');if(retry){event.preventDefault();state.rendered=false;load();return;}
+    var retry=event.target.closest&&event.target.closest('[data-retry]');if(retry){event.preventDefault();state.rendered=false;loadRecipientEntryV789();return;}
     var close=event.target.closest&&event.target.closest('[data-close-modal]');if(close){event.preventDefault();closeModal();return;}
     var memberTarget=event.target.closest&&event.target.closest('[data-member-target]');if(memberTarget){event.preventDefault();goMemberScreen(memberTarget.getAttribute('data-member-target'));return;}
     if(event.target.closest&&event.target.closest('[data-select-all]')){event.preventDefault();setAllChecks(true);return;}
@@ -2044,7 +2077,7 @@ async function loadRecipientTokenV573(){
   });
   document.addEventListener('keydown',function(event){if(event.key==='Escape')closeModal();});
   window.addEventListener('pagehide',function(){Object.keys(signedUrlCacheV523).forEach(function(key){var row=signedUrlCacheV523[key];if(row&&/^blob:/i.test(String(row.url||''))){try{URL.revokeObjectURL(row.url);}catch(e){}}});signedUrlCacheV523={};});
-  var route=parseRoute();state.code=route.code;state.sig=route.sig;state.recipientToken=route.recipientToken||'';state.trackingToken=route.trackingToken;state.memberPreviewToken=route.previewToken||'';state.workPlanRequested=route.workPlanRequested===true;state.rentalRequested=route.rentalRequested===true;state.fromMember=verifyMemberPreviewV542(route);setExitMode();clearExternalRecipientSnapshotsV677();if(state.recipientToken){loadRecipientTokenV573();}else{load();}
+  var route=parseRoute();state.code=route.code;state.sig=route.sig;state.recipientToken=route.recipientToken||'';state.trackingToken=route.trackingToken;state.memberPreviewToken=route.previewToken||'';state.workPlanRequested=route.workPlanRequested===true;state.rentalRequested=route.rentalRequested===true;state.fromMember=verifyMemberPreviewV542(route);setExitMode();clearExternalRecipientSnapshotsV677();loadRecipientEntryV789();
 })();
 </script>
 </body>
