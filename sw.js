@@ -1,5 +1,5 @@
-const SITEPASS_SW_VERSION = 'v23.7.790-official-step101-document-version-id';
-const SITEPASS_CACHE = 'sitepass-fast-23.7.790-official-step101-document-version-id';
+const SITEPASS_SW_VERSION = 'v23.7.791-official-step102-server-equipment-draft';
+const SITEPASS_CACHE = 'sitepass-fast-23.7.791-official-step102-server-equipment-draft';
 const SITEPASS_CHAT_PRESENCE_V40 = new Map();
 const SITEPASS_SHELL = [
   './index.html',

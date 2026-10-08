@@ -284,7 +284,21 @@
         includeWorker:!!includeWorker?.checked,
         docs,
         workerPeople:collectWorkerPeopleMeta(),
-        serverRegistrationDraftIdV730:String(existing?.serverRegistrationDraftIdV730 || '').trim(),
+        serverRegistrationDraftIdV730:String(
+          (sitePassStep102ServerIdentityV791 && sitePassStep102ServerIdentityV791.draftId) ||
+          existing?.serverRegistrationDraftIdV730 ||
+          ''
+        ).trim(),
+        serverEquipmentIdV791:String(
+          (sitePassStep102ServerIdentityV791 && sitePassStep102ServerIdentityV791.equipmentId) ||
+          existing?.serverEquipmentIdV791 ||
+          ''
+        ).trim(),
+        serverEquipmentCodeV791:String(
+          (sitePassStep102ServerIdentityV791 && sitePassStep102ServerIdentityV791.code) ||
+          existing?.serverEquipmentCodeV791 ||
+          ''
+        ).trim(),
         savedAt:nowIso,
         createdAt:existing?.createdAt || nowIso
       };
@@ -625,6 +639,10 @@
       registrationDraftRestoreBusy = false;
       try { window.__sitePassSkipRegistrationDraftSaveOnceV6 = true; } catch (e) {}
       try { editingCode = ''; } catch (e) {}
+      try {
+        sitePassStep102ServerIdentityV791 = null;
+        sitePassStep102IdentityInFlightV791 = null;
+      } catch (e) {}
       try { resetForm(false); } catch (e) {}
       try { updateRegisterModeUi(); } catch (e) {}
       try { updateRegistrationDraftNotice(); } catch (e) {}
@@ -701,10 +719,153 @@
       setupRegistrationDraftAccountIsolationV730R3();
     }
 
-    function restoreRegistrationDraft(draft) {
+
+    // OFFICIAL STEP102 v791:
+    // 신규 장비등록의 실제 equipment_id / code / owner는 서버 tracker touch 결과만 사용합니다.
+    // 브라우저 registration draft UUID는 진행추적용 requested id일 뿐 equipment_id가 아닙니다.
+    let sitePassStep102ServerIdentityV791 = null;
+    let sitePassStep102IdentityInFlightV791 = null;
+
+    function sitePassStep102ValidUuidV791(value) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+    }
+
+    function sitePassStep102ParseDataV791(value) {
+      let out = value;
+      if (typeof out === 'string') {
+        try { out = JSON.parse(out); } catch (e) {}
+      }
+      return out && typeof out === 'object' ? out : null;
+    }
+
+    function sitePassStep102ApplyIdentityToDraftV791(draft, identity) {
+      const out = draft && typeof draft === 'object' ? draft : {};
+      if (!identity) return out;
+      out.serverRegistrationDraftIdV730 = String(identity.draftId || '').trim();
+      out.serverEquipmentIdV791 = String(identity.equipmentId || '').trim();
+      out.serverEquipmentCodeV791 = String(identity.code || '').trim();
+      return out;
+    }
+
+    async function ensureSitePassServerEquipmentDraftV791(requestedDraftId) {
+      if (String(editingCode || '').trim()) {
+        throw new Error('기존 장비 수정에서는 신규 equipment draft를 만들 수 없습니다.');
+      }
+
+      if (sitePassStep102IdentityInFlightV791) {
+        return sitePassStep102IdentityInFlightV791;
+      }
+
+      const task = (async function(){
+        const lifecycleV730 = window.SitePassRegistrationDraftLifecycleV730;
+        if (!lifecycleV730
+            || typeof lifecycleV730.createDraftId !== 'function'
+            || typeof lifecycleV730.touch !== 'function') {
+          throw new Error('신규 장비 서버 draft 연결을 확인하지 못했습니다.');
+        }
+
+        const localDraft = getRegistrationDraft();
+        let requested = String(
+          requestedDraftId ||
+          (sitePassStep102ServerIdentityV791 && sitePassStep102ServerIdentityV791.draftId) ||
+          (localDraft && localDraft.serverRegistrationDraftIdV730) ||
+          ''
+        ).trim();
+
+        if (!sitePassStep102ValidUuidV791(requested)) {
+          requested = String(lifecycleV730.createDraftId() || '').trim();
+        }
+        if (!sitePassStep102ValidUuidV791(requested)) {
+          throw new Error('등록 진행 draft UUID를 만들지 못했습니다.');
+        }
+
+        const touchResult = await lifecycleV730.touch(requested);
+        if (!touchResult || touchResult.ok !== true) {
+          const err = touchResult && touchResult.error;
+          throw (err || new Error('신규 장비 서버 draft 생성에 실패했습니다.'));
+        }
+
+        const data = sitePassStep102ParseDataV791(touchResult.data);
+        const canonicalDraftId = String(data && data.draftId || '').trim();
+        const equipmentId = String(data && (data.equipmentId || data.equipment_id) || '').trim();
+        const code = String(data && (data.code || data.equipmentCode) || '').trim();
+        const status = String(data && data.status || '').trim().toLowerCase();
+        const lifecycleStatus = String(data && (data.lifecycleStatus || data.lifecycle_status) || '').trim().toLowerCase();
+
+        if (!sitePassStep102ValidUuidV791(canonicalDraftId)
+            || !sitePassStep102ValidUuidV791(equipmentId)
+            || !code
+            || status !== 'draft'
+            || (lifecycleStatus && lifecycleStatus !== 'draft')) {
+          throw new Error('서버가 신규 장비 equipment_id/code/draft 상태를 완전하게 반환하지 않았습니다.');
+        }
+
+        const identity = {
+          draftId: canonicalDraftId,
+          equipmentId: equipmentId,
+          code: code
+        };
+        sitePassStep102ServerIdentityV791 = identity;
+
+        const latestDraft = getRegistrationDraft();
+        if (latestDraft && !String(latestDraft.editingCode || '').trim()) {
+          sitePassStep102ApplyIdentityToDraftV791(latestDraft, identity);
+          try {
+            if (setRegistrationDraft(latestDraft)) updateRegistrationDraftNotice();
+          } catch (e) {}
+        }
+
+        return identity;
+      })();
+
+      sitePassStep102IdentityInFlightV791 = task;
+      try {
+        return await task;
+      } finally {
+        if (sitePassStep102IdentityInFlightV791 === task) {
+          sitePassStep102IdentityInFlightV791 = null;
+        }
+      }
+    }
+
+    async function finishSitePassRegistrationDraftV791(draftId, status) {
+      const id = String(draftId || '').trim();
+      if (!sitePassStep102ValidUuidV791(id)) return { ok:true, skipped:true };
+      const lifecycleV730 = window.SitePassRegistrationDraftLifecycleV730;
+      if (!lifecycleV730 || typeof lifecycleV730.finish !== 'function') {
+        throw new Error('등록 draft 종료 RPC 연결을 확인하지 못했습니다.');
+      }
+      const result = await lifecycleV730.finish(id, status);
+      if (!result || result.ok !== true) {
+        const err = result && result.error;
+        throw (err || new Error('등록 draft 종료에 실패했습니다.'));
+      }
+      if (sitePassStep102ServerIdentityV791
+          && sitePassStep102ServerIdentityV791.draftId === id) {
+        sitePassStep102ServerIdentityV791 = null;
+      }
+      return result;
+    }
+
+    async function restoreRegistrationDraft(draft) {
       draft = draft || getRegistrationDraft();
       if (!registrationDraftBelongsToCurrentMemberV730R3(draft)) return false;
       if (!hasMeaningfulRegistrationDraftData(draft)) return false;
+
+      if (!String(draft.editingCode || '').trim()) {
+        try {
+          const identityV791 = await ensureSitePassServerEquipmentDraftV791(
+            String(draft.serverRegistrationDraftIdV730 || '').trim()
+          );
+          draft = sitePassStep102ApplyIdentityToDraftV791(draft, identityV791);
+          try { setRegistrationDraft(draft); } catch (e) {}
+        } catch (error) {
+          console.error('STEP102 신규 장비 서버 draft 복원 실패:', error);
+          alert('신규 장비 서버 draft를 확인하지 못해 등록화면을 열 수 없습니다. 잠시 후 다시 시도해주세요.');
+          return false;
+        }
+      }
+
       registrationDraftRestoreBusy = true;
       try {
         editingCode = draft.editingCode || '';
@@ -793,7 +954,7 @@ function promptRegistrationDraftIfNeeded(reason) {
       return true;
     }
 
-    function startNewRegistration() {
+    async function startNewRegistration() {
       const pendingPay = getPendingRegistration();
       if (pendingPay && pendingPay.item) {
         const label = pendingPay.item.equipmentNo || pendingPay.item.equipmentName || '결제 대기 중인 장비';
@@ -801,33 +962,63 @@ function promptRegistrationDraftIfNeeded(reason) {
           openPendingRegistrationPaymentScreen(pendingPay);
           return;
         }
-        try {
-          const lifecycleV730 = window.SitePassRegistrationDraftLifecycleV730;
-          const pendingDraftIdV730 = String(pendingPay.serverRegistrationDraftIdV730 || '').trim();
-          if (pendingDraftIdV730 && lifecycleV730 && typeof lifecycleV730.finish === 'function') {
-            lifecycleV730.finish(pendingDraftIdV730, 'cancelled').catch(function(){});
+
+        const pendingDraftIdV730 = String(pendingPay.serverRegistrationDraftIdV730 || '').trim();
+        if (pendingDraftIdV730) {
+          try {
+            await finishSitePassRegistrationDraftV791(pendingDraftIdV730, 'cancelled');
+          } catch (error) {
+            console.error('STEP102 결제대기 draft 취소 실패:', error);
+            alert('기존 결제대기 장비의 서버 draft를 취소하지 못했습니다. 새 등록을 시작하지 않습니다.');
+            return;
           }
-        } catch (e) {}
+        }
+
         clearPendingRegistration();
         discardRegistrationDraftCompletely();
         resetForm(false);
         discardRegistrationDraftCompletely();
+        sitePassStep102ServerIdentityV791 = null;
       }
+
       const draft = getRegistrationDraft();
       if (hasMeaningfulRegistrationDraftData(draft)) {
         const label = draft.equipmentNo || draft.equipmentName || '작성 중인 장비';
         if (confirm('등록중인 장비가 있습니다.\n\n' + label + '\n\n확인: 이어서 등록\n취소: 임시저장 삭제하고 새 등록 시작')) {
-          restoreRegistrationDraft(draft);
+          await restoreRegistrationDraft(draft);
           return;
         }
+
+        const draftIdV730 = String(draft.serverRegistrationDraftIdV730 || '').trim();
+        if (draftIdV730) {
+          try {
+            await finishSitePassRegistrationDraftV791(draftIdV730, 'cancelled');
+          } catch (error) {
+            console.error('STEP102 작성중 draft 취소 실패:', error);
+            alert('기존 작성중 장비의 서버 draft를 취소하지 못했습니다. 새 등록을 시작하지 않습니다.');
+            return;
+          }
+        }
+
         discardRegistrationDraftCompletely();
         resetForm(false);
         discardRegistrationDraftCompletely();
+        sitePassStep102ServerIdentityV791 = null;
       }
+
       editingCode = '';
       resetForm(false);
       discardRegistrationDraftCompletely();
       updateRegisterModeUi();
+
+      try {
+        await ensureSitePassServerEquipmentDraftV791('');
+      } catch (error) {
+        console.error('STEP102 신규 장비 서버 draft 시작 실패:', error);
+        alert('서버에서 신규 장비 ID를 만들지 못해 등록을 시작하지 않습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+
       showScreen('registerScreen');
     }
 
@@ -1351,10 +1542,28 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
       const isNewRegistration = !oldItem;
       // v23.7.288: 결제대기/고아장비/탈퇴장비를 기존 장비로 세면 첫 장비도 추가결제로 오판됩니다.
       // 추가결제 여부는 현재 회원의 활성 결제완료 장비만 기준으로 판단합니다.
+      let step102IdentityV791 = null;
+      if (isNewRegistration) {
+        try {
+          const currentDraftV791 = getRegistrationDraft();
+          step102IdentityV791 = await ensureSitePassServerEquipmentDraftV791(
+            String(currentDraftV791 && currentDraftV791.serverRegistrationDraftIdV730 || '').trim()
+          );
+        } catch (error) {
+          console.error('STEP102 저장 전 서버 equipment identity 확인 실패:', error);
+          alert('서버 장비 ID를 확인하지 못해 저장을 중단합니다. 다시 시도해주세요.');
+          return;
+        }
+      }
+
       const isAdditionalRegistration = isNewRegistration && getActivePaidRegistrationItemsForCurrentOwner(currentMember, '').length > 0;
       const selectedPlan = getPlanInfo(localStorage.getItem(SELECTED_PAYMENT_PLAN_KEY) || 'annual', { additional: isAdditionalRegistration });
       const bundleMeta = getBundleMeta();
-      const code = oldItem ? oldItem.code : makeBundleCode(equipmentNo);
+      const code = oldItem ? oldItem.code : String(step102IdentityV791 && step102IdentityV791.code || '').trim();
+      if (isNewRegistration && !code) {
+        alert('서버가 발급한 신규 장비 code가 없어 저장을 중단합니다.');
+        return;
+      }
       if (isNewRegistration && items.some(x => String(x.code || '') === String(code || ''))) {
         alert(`이미 같은 장비 등록번호로 만든 서류함이 있습니다.
 보관함에서 기존 장비를 확인하거나 다른 장비번호로 등록해주세요.`);
@@ -1404,6 +1613,17 @@ ${missingDates.join(String.fromCharCode(10)) || '없음'}
             paymentAmount: oldItem?.paymentAmount || selectedPlan.price,
             paymentTier: oldItem?.paymentTier || (isAdditionalRegistration ? 'additional' : 'first')
           };
+      if (isNewRegistration) {
+        const serverEquipmentIdV791 = String(step102IdentityV791 && step102IdentityV791.equipmentId || '').trim();
+        if (!sitePassStep102ValidUuidV791(serverEquipmentIdV791)) {
+          alert('서버가 발급한 신규 equipment_id가 없어 저장을 중단합니다.');
+          return;
+        }
+        item.equipmentId = serverEquipmentIdV791;
+        item.equipment_id = serverEquipmentIdV791;
+        item.serverRegistrationDraftIdV730 = String(step102IdentityV791.draftId || '').trim();
+      }
+
       if (typeof window.sitePassValidateRegistrationItemForSave === 'function') {
         const attachmentCheck = window.sitePassValidateRegistrationItemForSave(item);
         if (!attachmentCheck || attachmentCheck.ok === false) {
